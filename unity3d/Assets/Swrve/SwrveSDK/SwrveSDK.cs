@@ -53,9 +53,6 @@ public partial class SwrveSDK
     private static extern string _swrveiOSGetLanguage();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveiOSGetIdentifierForVendor();
-
-    [DllImport ("__Internal")]
     private static extern string _swrveiOSGetTimeZone();
 
     [DllImport ("__Internal")]
@@ -272,6 +269,12 @@ public partial class SwrveSDK
             // Use the Swrve user id when empty
             this.userId = GetDeviceUniqueId();
         }
+        // Save to disk if we have a valid unique identifier
+        if (!string.IsNullOrEmpty (this.userId)) {
+            // Save to preferences
+            PlayerPrefs.SetString (DeviceIdKey, this.userId);
+            PlayerPrefs.Save ();
+        }
         SwrveLog.Log("Your user id is: " + this.userId);
         this.escapedUserId = WWW.EscapeURL (this.userId);
 
@@ -339,9 +342,6 @@ public partial class SwrveSDK
             // Its a new user
             NamedEvent("Swrve.first_session");
         }
-
-        // Send identifiers
-        SendIdentifiers ();
 
 #if UNITY_ANDROID
         // Ask for Android registration id
