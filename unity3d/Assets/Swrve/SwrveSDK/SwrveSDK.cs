@@ -1049,8 +1049,7 @@ public partial class SwrveSDK
         try {
             // The message was shown. Take the current time so that we can throttle messages
             // from being shown too quickly.
-            DateTime date = SwrveHelper.GetNow();
-            this.showMessagesAfterDelay = date + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
+            SetMessageMinDelayThrottle();
             this.messagesLeftToShow = this.messagesLeftToShow - 1;
 
             // Update next for round robin
@@ -1289,6 +1288,7 @@ public partial class SwrveSDK
         } else {
             try {
                 if (currentMessage != null) {
+                    SetMessageMinDelayThrottle();
                     currentMessage.Dismiss ();
                 }
             } catch (Exception e) {
