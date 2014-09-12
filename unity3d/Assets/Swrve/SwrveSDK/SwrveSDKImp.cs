@@ -945,6 +945,11 @@ public partial class SwrveSDK
         }
     }
 
+    protected void SetMessageMinDelayThrottle()
+    {
+        this.showMessagesAfterDelay = SwrveHelper.GetNow() + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
+    }
+
     private void AutoShowMessages ()
     {
         // Don't do anything if we've already shown a message or if its too long after session start
