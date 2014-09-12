@@ -1224,6 +1224,8 @@ public partial class SwrveSDK
                                 campaignsDownloaded.Add (campaignId, campaignReason);
                             }
                         }
+                    } else {
+                        qaUser = null;
                     }
 
                     // Campaigns
