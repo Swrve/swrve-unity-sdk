@@ -1,3 +1,7 @@
+Getting started
+---------------
+Have a look at the quick integration guide at https://dashboard.swrve.com/help/category/20127113
+
 Requirements
 ------------
 ### Unity 4.0.0+
