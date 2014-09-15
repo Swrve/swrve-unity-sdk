@@ -8,7 +8,8 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
 {
     private static string[] assets = {
         "Assets/Plugins",
-        "Assets/Swrve"
+        "Assets/Swrve",
+        "Assets/Editor/SwrveSDKPostProcess.cs"
     };
     private static string[] mainScenes = new string[] {
         "Assets/Swrve/UnitySwrveDemo/DemoScene.unity"

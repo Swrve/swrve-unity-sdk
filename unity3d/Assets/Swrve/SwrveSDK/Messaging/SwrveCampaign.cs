@@ -325,6 +325,11 @@ public class SwrveCampaign
         return now < showMessagesAfterDelay;
     }
 
+    protected void SetMessageMinDelayThrottle()
+    {
+        this.showMessagesAfterDelay = SwrveHelper.GetNow () + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
+    }
+
     /// <summary>
     /// Notify that the message was shown to the user. This function
     /// has to be called only once when the message is displayed to
@@ -338,9 +343,7 @@ public class SwrveCampaign
         IncrementImpressions ();
 
         if (Messages.Count > 0) {
-            // The message was shown. Take the current time so that we can throttle messages
-            // from being shown too quickly.
-            this.showMessagesAfterDelay = SwrveHelper.GetNow () + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
+            SetMessageMinDelayThrottle();
             if (!RandomOrder) {
                 int nextMessage = (Next + 1) % Messages.Count;
                 Next = nextMessage;
@@ -349,6 +352,17 @@ public class SwrveCampaign
                 SwrveLog.Log ("Next message in campaign " + Id + " is random");
             }
         }
+    }
+
+    /// <summary>
+    /// Notify that the a message was dismissed.
+    /// This is automatically called by the SDK and will only need
+    /// to be manually called if you are implementing your own
+    /// in-app message rendering code.
+    /// </summary>
+    public void MessageDismissed ()
+    {
+      SetMessageMinDelayThrottle();
     }
 }
 }

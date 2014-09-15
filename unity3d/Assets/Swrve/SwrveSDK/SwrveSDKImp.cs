@@ -69,7 +69,6 @@ public partial class SwrveSDK
     private int deviceWidth;
     private int deviceHeight;
     private long lastSessionTick;
-    private string linkToken;
 
     // Device id
     private static List<String> blacklistedUserIds = new List<String> ()
@@ -90,9 +89,6 @@ public partial class SwrveSDK
     private string abTestResourcesDiffUrl;
     protected bool eventsConnecting;
     protected bool abTestUserResourcesDiffConnecting;
-    private bool appLaunchConnecting;
-    private string linkAppLaunchUrl;
-    private string linkClickThruUrl;
 
     // AB tests and campaigns
     protected string userResourcesRaw;
@@ -102,10 +98,6 @@ public partial class SwrveSDK
     protected string lastETag;
     protected long campaignsAndResourcesLastRefreshed;
     protected bool campaignsAndResourcesInitialized;
-
-    // Internal QA
-    protected event Action<bool> qaSentClickThru;
-    protected event Action<bool> qaSentAppLaunch;
 
     // Talk related
     private static readonly int CampaignAPIVersion = 1;
@@ -264,26 +256,6 @@ public partial class SwrveSDK
         return true;
     }
 
-    private IEnumerator ClickThru_Coroutine (int gameId, string source)
-    {
-        StringBuilder getRequest = new StringBuilder (linkClickThruUrl);
-        getRequest.AppendFormat ("?user={0}&api_key={1}&link_token={2}&destination={3}&source={4}", escapedUserId, apiKey, linkToken, gameId, WWW.EscapeURL (source));
-
-        yield return Container.StartCoroutine(restClient.Get(getRequest.ToString(), delegate(RESTResponse response) {
-            if (response.Error != WwwDeducedError.NetworkError) {
-                // - made it there and it was ok
-                // - made it there and it was rejected
-                // either way don't send again
-                // queue debug event
-                NamedEventInternal ("Swrve.Messages.click_thru");
-                NotifySentClickThru(true);
-            } else {
-                NotifySentClickThru(false);
-            }
-            TaskFinished("ClickThru_Coroutine");
-        }));
-    }
-
     private Dictionary<string, Dictionary<string, string>> ProcessUserResources (IList<object> userResources)
     {
         Dictionary<string, Dictionary<string, string>> result = new Dictionary<string, Dictionary<string, string>> ();
@@ -391,7 +363,7 @@ public partial class SwrveSDK
 
     private string CalculateEndpoint (String url, int gameId)
     {
-        if (url.Equals (SwrveConfig.DefaultContentServer) || url.Equals (SwrveConfig.DefaultEventsServer) || url.Equals (SwrveConfig.DefaultLinkServer)) {
+        if (url.Equals (SwrveConfig.DefaultContentServer) || url.Equals (SwrveConfig.DefaultEventsServer)) {
             if (url.Contains ("http://")) {
                 return url.Replace ("http://", "http://" + gameId + ".");
             } else {
@@ -618,11 +590,6 @@ public partial class SwrveSDK
         return randomString;
     }
 
-    private string GetDefaultLinkToken ()
-    {
-        return "fake_link_token_to_be_removed_in_another_ticket";
-    }
-
     protected virtual IRESTClient CreateRestClient ()
     {
         return new RESTClient ();
@@ -635,13 +602,6 @@ public partial class SwrveSDK
         } else {
             return new SwrveFileStorage (swrvePath, GetUniqueKey ());
         }
-    }
-
-    private static string GenerateLinkToken (String uniqueId)
-    {
-        byte[] hash = SwrveHelper.MD5 (uniqueId);
-        Guid result = new Guid (hash);
-        return result.ToString ();
     }
 
     #region WWW coroutines
@@ -741,33 +701,6 @@ public partial class SwrveSDK
     {
         QueueDeviceInfo ();
         SendQueuedEvents ();
-    }
-
-    private void SendAppLaunchUrl ()
-    {
-        if (!appLaunchConnecting) {
-            appLaunchConnecting = true;
-            StringBuilder getRequest = new StringBuilder (linkAppLaunchUrl);
-            getRequest.AppendFormat ("?user={0}&api_key={1}&app_version={2}&link_token={3}", escapedUserId, apiKey, WWW.EscapeURL (GetAppVersion ()), linkToken);
-            StartTask ("AppLaunch_Coroutine", AppLaunch_Coroutine (getRequest.ToString ()));
-        } else {
-            SwrveLog.LogError ("Failed to initiate A/B test GET request");
-        }
-    }
-
-    private IEnumerator AppLaunch_Coroutine (string getRequest)
-    {
-        yield return Container.StartCoroutine(restClient.Get(getRequest, delegate(RESTResponse response) {
-            if (response.Error != WwwDeducedError.NetworkError) {
-                // - made it there and it was ok
-                // - made it there and it was rejected
-                // either way don't send again
-                NotifySentAppLaunch(true);
-            } else {
-                NotifySentAppLaunch(false);
-            }
-            TaskFinished("AppLaunch_Coroutine");
-        }));
     }
 
     private IEnumerator WaitAndRefreshResourcesAndCampaigns_Coroutine (float delay)
@@ -952,6 +885,11 @@ public partial class SwrveSDK
             clickedButton.Pressed = false;
             currentMessage.Dismiss ();
         }
+    }
+
+    protected void SetMessageMinDelayThrottle()
+    {
+        this.showMessagesAfterDelay = SwrveHelper.GetNow() + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
     }
 
     private void AutoShowMessages ()
@@ -1302,8 +1240,8 @@ public partial class SwrveSDK
                 .AppendFormat ("?user={0}&api_key={1}&app_version={2}&joined={3}", escapedUserId, ApiKey, WWW.EscapeURL (GetAppVersion ()), installTimeEpoch);
 
                 if (config.TalkEnabled) {
-                    getRequest.AppendFormat ("&version={0}&link_token={1}&orientation={2}&language={3}&app_store={4}&device_width={5}&device_height={6}&device_dpi={7}&os_version={8}&device_name={9}",
-                                             CampaignEndpointVersion, linkToken, config.Orientation.ToString ().ToLower (), Language, config.AppStore,
+                    getRequest.AppendFormat ("&version={0}&orientation={1}&language={2}&app_store={3}&device_width={4}&device_height={5}&device_dpi={6}&os_version={7}&device_name={8}",
+                                             CampaignEndpointVersion, config.Orientation.ToString ().ToLower (), Language, config.AppStore,
                                              deviceWidth, deviceHeight, dpi, WWW.EscapeURL (osVersion), WWW.EscapeURL (deviceName));
                 }
 
@@ -1650,20 +1588,6 @@ public partial class SwrveSDK
     private void SetInputManager (IInputManager inputManager)
     {
         this.inputManager = inputManager;
-    }
-
-    private void NotifySentClickThru (bool sent)
-    {
-        if (qaSentClickThru != null) {
-            qaSentClickThru (sent);
-        }
-    }
-
-    private void NotifySentAppLaunch (bool sent)
-    {
-        if (qaSentAppLaunch != null) {
-            qaSentAppLaunch (sent);
-        }
     }
 
     protected class CoroutineReference<T>

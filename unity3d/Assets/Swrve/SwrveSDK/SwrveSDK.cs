@@ -287,21 +287,9 @@ public partial class SwrveSDK
             }
         }
 
-        // Link token
-        String unityId = GetDefaultLinkToken();
-        if (unityId == null) {
-            throw new Exception("The link token is empty. Please provide a link token when initializing the SDK");
-        } else {
-            linkToken = GenerateLinkToken (unityId);
-        }
-
         // End points
-        string linkServer = CalculateEndpoint (config.LinkServer, gameId);
         string abTestServer = CalculateEndpoint (config.ContentServer, gameId);
         eventsUrl = CalculateEndpoint (config.EventsServer, gameId) + "/1/batch";
-
-        linkAppLaunchUrl = linkServer + "/1/app_launch";
-        linkClickThruUrl = linkServer + "/1/click_thru";
         abTestResourcesDiffUrl = abTestServer + "/api/1/user_resources_diff";
         resourcesAndCampaignsUrl = abTestServer + "/api/1/user_resources_and_campaigns";
 
@@ -350,7 +338,6 @@ public partial class SwrveSDK
         }
 #endif
         QueueDeviceInfo ();
-        SendAppLaunchUrl ();
 
         // Send initial events
         SendQueuedEvents();
@@ -717,20 +704,6 @@ public partial class SwrveSDK
     }
 
     /// <summary>
-    /// Send click thru to Swrve.
-    /// </summary>
-    /// <param name="gameId">
-    /// Game identifier.
-    /// </param>
-    /// <param name="source">
-    /// Source.
-    /// </param>
-    public virtual void ClickThru (int gameId, string source)
-    {
-        StartTask ("ClickThru_Coroutine", ClickThru_Coroutine (gameId, source));
-    }
-
-    /// <summary>
     /// Send buffered events to the server.
     /// </summary>
     public bool SendQueuedEvents ()
@@ -1057,14 +1030,6 @@ public partial class SwrveSDK
                     clickPayload.Add ("name", button.Name);
                     NamedEventInternal (clickEvent, clickPayload);
                 }
-
-                if (button.ActionType == SwrveActionType.Install) {
-                    // Send click thru
-                    SwrveLog.Log("Sending click_thru link event, message " + button.Message.Id);
-                    String clickSource = "Swrve.Message-" + button.Message.Id;
-                    ClickThru (button.GameId, clickSource);
-                }
-
             } catch (Exception e) {
                 SwrveLog.LogError("Error while processing button click " + e);
             }
@@ -1084,8 +1049,7 @@ public partial class SwrveSDK
         try {
             // The message was shown. Take the current time so that we can throttle messages
             // from being shown too quickly.
-            DateTime date = SwrveHelper.GetNow();
-            this.showMessagesAfterDelay = date + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
+            SetMessageMinDelayThrottle();
             this.messagesLeftToShow = this.messagesLeftToShow - 1;
 
             // Update next for round robin
@@ -1324,6 +1288,7 @@ public partial class SwrveSDK
         } else {
             try {
                 if (currentMessage != null) {
+                    SetMessageMinDelayThrottle();
                     currentMessage.Dismiss ();
                 }
             } catch (Exception e) {

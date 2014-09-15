@@ -216,6 +216,7 @@ public class SwrveMessageFormat
             this.Closing = true;
             this.CustomButtonListener = null;
             this.InstallButtonListener = null;
+            Message.Campaign.MessageDismissed();
 
             if (this.MessageListener != null) {
                 this.MessageListener.OnDismiss (this);

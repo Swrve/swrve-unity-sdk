@@ -99,12 +99,6 @@ public class SwrveConfig
     public const string DefaultContentServer = "http://content.swrve.com";
 
     /// <summary>
-    /// The URL of the server to send link data to.
-    /// </summary>
-    public string LinkServer = DefaultLinkServer;
-    public const string DefaultLinkServer = "https://link.swrve.com";
-
-    /// <summary>
     /// The SDK will send a session start on init and manage game pauses and resumes.
     /// </summary>
     public bool AutomaticSessionManagement = true;
