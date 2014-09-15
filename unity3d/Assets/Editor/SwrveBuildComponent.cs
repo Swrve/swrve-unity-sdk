@@ -22,13 +22,13 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     public static void ExportUnityPackage ()
     {
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);
-        AssetDatabase.ExportPackage (assets, "../buildtemp/Swrve.unityPackage", ExportPackageOptions.Recurse);
+        AssetDatabase.ExportPackage (assets, "../../buildtemp/Swrve.unityPackage", ExportPackageOptions.Recurse);
     }
 
     [MenuItem ("Swrve Demo/iOS/Build Demo (Xcode project)")]
     public static void BuildDemoiOS ()
     {
-        BuildIOS ("../SwrveDemo", opt, mainScenes, IOSDemoBundleIdentifier);
+        BuildIOS ("../../SwrveDemo", opt, mainScenes, IOSDemoBundleIdentifier);
     }
 
     [MenuItem ("Swrve Demo/iOS/Build and Install Demo")]
@@ -36,7 +36,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     {
         // Build
         bool buildAgain = true;
-        if (System.IO.File.Exists (GetProjectPath () + "/../buildtemp/SwrveDemo")) {
+        if (System.IO.File.Exists (GetProjectPath () + "/../../buildtemp/SwrveDemo")) {
             buildAgain = EditorUtility.DisplayDialog ("Swrve Demo", "The XCode project already exists. Do you want to build again?", "Yes", "Hell no");
         }
 
@@ -45,7 +45,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         }
 
         // Install
-        InstallIOSBuild (GetProjectPath (), "../buildtemp/SwrveDemo");
+        InstallIOSBuild (GetProjectPath (), "../../buildtemp/SwrveDemo");
     }
 
     [MenuItem ("Swrve Demo/Android/Build Demo (.apk)")]
@@ -59,7 +59,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     {
         // Build
         bool buildAgain = true;
-        if (System.IO.File.Exists (GetProjectPath () + "/../buildtemp/SwrveDemo.apk")) {
+        if (System.IO.File.Exists (GetProjectPath () + "/../../buildtemp/SwrveDemo.apk")) {
             buildAgain = EditorUtility.DisplayDialog ("Swrve Demo", "The APK build already exists. Do you want to build again?", "Yes", "Hell no");
         }
 
@@ -68,14 +68,14 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         }
 
         // Install
-        InstallAndroidBuild (GetProjectPath (), "../buildtemp/SwrveDemo.apk", "Demo");
+        InstallAndroidBuild (GetProjectPath (), "../../buildtemp/SwrveDemo.apk", "Demo");
     }
 
     // Tests
     [MenuItem ("Swrve Demo/iOS/Test build with all stripping levels")]
     public static void TestBuildiOS ()
     {
-        string outputPath = "../buildtemp/tmp_iOS";
+        string outputPath = "../../buildtemp/tmp_iOS";
 
         // Build iOS
         PlayerSettings.strippingLevel = StrippingLevel.Disabled;
@@ -97,7 +97,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     [MenuItem ("Swrve Demo/Android/Test build with all stripping levels")]
     public static void TestBuildAndroid ()
     {
-        string outputPath = "../buildtemp/tmp_Android";
+        string outputPath = "../../buildtemp/tmp_Android";
 
         // Build iOS
         PlayerSettings.strippingLevel = StrippingLevel.Disabled;
