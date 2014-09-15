@@ -16,16 +16,6 @@ extern "C"
         return swrveCStringCopy([preferredLang UTF8String]);
     }
 
-    char* _swrveiOSGetIdentifierForVendor()
-    {
-        if ([[UIDevice currentDevice] respondsToSelector:@selector(identifierForVendor)]) {
-            NSUUID *identifierForVendor = [[UIDevice currentDevice] identifierForVendor];
-            return swrveCStringCopy([[identifierForVendor UUIDString] UTF8String]);
-        }
-        
-        return NULL;
-    }
-
     char* _swrveiOSGetTimeZone()
     {
         NSTimeZone* tz = [NSTimeZone localTimeZone];

@@ -39,8 +39,8 @@ public partial class SwrveSDK
     protected const string InstallTimeEpochSave = "Swrve_JoinedDate";
     protected const string iOSdeviceTokenSave = "Swrve_iOSDeviceToken";
     protected const string GcmdeviceTokenSave = "Swrve_gcmDeviceToken";
-    protected const string AbTestUserResourcesSave = "srcngt";
-    protected const string AbTestUserResourcesDiffSave = "rsdfngt";
+    protected const string AbTestUserResourcesSave = "srcngt2"; // Saved securely
+    protected const string AbTestUserResourcesDiffSave = "rsdfngt2"; // Saved securely
     protected const string DeviceIdSave = "Swrve_DeviceId";
     protected const string SeqNumSave = "Swrve_SeqNum";
     protected const string ResourcesCampaignTagSave = "cmpg_etag";
@@ -102,7 +102,7 @@ public partial class SwrveSDK
     // Talk related
     private static readonly int CampaignAPIVersion = 1;
     private static readonly int CampaignEndpointVersion = 4;
-    protected static readonly string CampaignsSave = "cmcc";
+    protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
     protected static readonly string CampaignsSettingsSave = "Swrve_CampaignsData";
     private static readonly string WaitTimeFormat = @"HH\:mm\:ss zzz";
     protected static readonly string InstallTimeFormat = "yyyyMMdd";
@@ -542,7 +542,7 @@ public partial class SwrveSDK
     // Create a unique key that can be used to create HMAC signatures
     protected string GetUniqueKey ()
     {
-        return apiKey + SystemInfo.deviceUniqueIdentifier;
+        return apiKey + userId;
     }
 
     private string GetDeviceUniqueId ()
@@ -550,32 +550,7 @@ public partial class SwrveSDK
         // Try to obtain valid saved user id
         string deviceUniqueId = PlayerPrefs.GetString (DeviceIdKey, null);
         if (string.IsNullOrEmpty (deviceUniqueId)) {
-            deviceUniqueId = SystemInfo.deviceUniqueIdentifier;
-            if (blacklistedUserIds.Contains (deviceUniqueId.ToLower ())) {
-                deviceUniqueId = null;
-            }
-        }
-
-#if UNITY_IPHONE
-        if (string.IsNullOrEmpty(deviceUniqueId)) {
-            try {
-                deviceUniqueId = _swrveiOSGetIdentifierForVendor();
-            } catch (Exception exp) {
-                SwrveLog.LogWarning("Couldn't get identifier for vendor on iOS, make sure you have the plugin inside your project and you are running on a device: " + exp.ToString());
-            }
-        }
-#endif
-
-        if (string.IsNullOrEmpty (deviceUniqueId)) {
-            SwrveLog.LogWarning ("Couldn't get a unique user identifier. Generating a random one...");
             deviceUniqueId = GetRandomUUID ();
-        }
-
-        // Save to disk if we have a valid unique identifier
-        if (!string.IsNullOrEmpty (deviceUniqueId)) {
-            // Save to preferences
-            PlayerPrefs.SetString (DeviceIdKey, deviceUniqueId);
-            PlayerPrefs.Save ();
         }
 
         return deviceUniqueId;
@@ -716,27 +691,6 @@ public partial class SwrveSDK
         }
     }
 
-    private Dictionary<string,string> GetIdentifiers ()
-    {
-        string unity_device_id = SystemInfo.deviceUniqueIdentifier;
-        Dictionary<string,string> identifiers = new Dictionary<string, string> ();
-
-        if (!String.IsNullOrEmpty (unity_device_id)) {
-            identifiers.Add ("unity_device_id", unity_device_id);
-        }
-
-#if UNITY_IPHONE
-        try {
-            string idfv = _swrveiOSGetIdentifierForVendor();
-            identifiers.Add ("ios_idfv", idfv);
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get identifier for vendor on iOS, make sure you have the plugin inside your project and you are running on a device: " + exp.ToString());
-        }
-#endif
-
-        return identifiers;
-    }
-
     private void QueueDeviceInfo ()
     {
         Dictionary<string, string> deviceInfo = GetDeviceInfo ();
@@ -747,18 +701,6 @@ public partial class SwrveSDK
     {
         QueueDeviceInfo ();
         SendQueuedEvents ();
-    }
-
-    private void SendIdentifiers ()
-    {
-        Dictionary<string, object> json = new Dictionary<string, object> ();
-        Dictionary<string,string> identifiers = GetIdentifiers ();
-
-        // Only send if we got at least 1 identifier
-        if (identifiers.Count > 0) {
-            json.Add ("identifiers", identifiers);
-            AppendEventToBuffer ("identifiers", json);
-        }
     }
 
     private IEnumerator WaitAndRefreshResourcesAndCampaigns_Coroutine (float delay)
