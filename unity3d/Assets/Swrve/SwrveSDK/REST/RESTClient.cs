@@ -1,17 +1,3 @@
-/*
- * SWRVE CONFIDENTIAL
- * 
- * (c) Copyright 2010-2014 Swrve New Media, Inc. and its licensors.
- * All Rights Reserved.
- *
- * NOTICE: All information contained herein is and remains the property of Swrve
- * New Media, Inc or its licensors.  The intellectual property and technical
- * concepts contained herein are proprietary to Swrve New Media, Inc. or its
- * licensors and are protected by trade secret and/or copyright law.
- * Dissemination of this information or reproduction of this material is
- * strictly forbidden unless prior written permission is obtained from Swrve.
- */
-
 #if !(UNITY_2_6 || UNITY_2_6_1 || UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5 || UNITY_4_0 || UNITY_4_0_1 || UNITY_4_1 || UNITY_4_2)
 #define SUPPORTS_GZIP_RESPONSES
 #endif

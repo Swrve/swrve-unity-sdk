@@ -1,31 +1,4 @@
-﻿/*
- * SWRVE CONFIDENTIAL
- * 
- * (c) Copyright 2010-2014 Swrve New Media, Inc. and its licensors.
- * All Rights Reserved.
- *
- * NOTICE: All information contained herein is and remains the property of Swrve
- * New Media, Inc or its licensors.  The intellectual property and technical
- * concepts contained herein are proprietary to Swrve New Media, Inc. or its
- * licensors and are protected by trade secret and/or copyright law.
- * Dissemination of this information or reproduction of this material is
- * strictly forbidden unless prior written permission is obtained from Swrve.
- */
-
-/* NETFX_CORE is set only when building Windows Store applications.
- * It is assumed that versions of Unity earlier than 4.2 will not set the
- * NETFX_CORE directive.
- *
- * There are code two paths for the Windows Store.
- * One for unity 4.2 using the suggested legacy code found here:
- * http://unity3d.com/pages/windows/porting
- * The other for 4.3+ using the built-in Unity Windows.File API:
- * http://docs.unity3d.com/Documentation/ScriptReference/Windows.File.html
- * The final code path covers the remaining platforms including
- * Windows Phone 8.
- */
-
-// Setup defines for the legacy and built in code paths
+﻿// Setup defines for the legacy and built in code paths
 #if (NETFX_CORE && UNITY_4_2)
 #error "Windows Store and Windows Phone not supported on Unity 4.2.*"
 #elif NETFX_CORE
