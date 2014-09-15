@@ -1,3 +1,8 @@
+What is Swrve
+-------------
+Swrve is a single integrated platform delivering everything you need to drive mobile engagement and create valuable consumer relationships on mobile.
+This native Unity3D SDK will enable your game to use all of these features.
+
 Getting started
 ---------------
 Have a look at the quick integration guide at https://dashboard.swrve.com/help/category/20127113
@@ -14,7 +19,7 @@ How to run the demo
 -------------------
 - Open the project 'unity3d' from the repository.
 - Open the demo scene under 'Assets/Swrve/UnitySwrveDemo/DemoScene.unity'
-- Under the Hirachy view, click on SwrvePrefab. This is the SDK component in your scene.
+- Under the Hierarchy view, click on SwrvePrefab. This is the SDK component in your scene.
 - Introduce your gameId and apiKey in the Inspector view with the values provided by Swrve.
 - Click the Play button at the top.
 
