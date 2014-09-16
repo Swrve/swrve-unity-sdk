@@ -859,7 +859,12 @@ public partial class SwrveSDK
                 if (normalFlow) {
                     // Open app store
                     if (gameStoreLinks.ContainsKey (gameId)) {
-                        Application.OpenURL (gameStoreLinks [gameId]);
+                        string appStoreUrl = gameStoreLinks [gameId];
+                        if (!string.IsNullOrEmpty(appStoreUrl)) {
+                            Application.OpenURL ();
+                        } else {
+                            SwrveLog.LogError("Install button app store url empty!");
+                        }
                     }
                 }
             } else if (clickedButton.ActionType == SwrveActionType.Custom) {
