@@ -849,18 +849,24 @@ public partial class SwrveSDK
 
             if (clickedButton.ActionType == SwrveActionType.Install) {
                 string gameId = clickedButton.GameId.ToString ();
-                string appStoreUrl = gameStoreLinks [gameId];
-                bool normalFlow = true;
-                if (currentMessage.InstallButtonListener != null) {
-                    // Launch custom button listener
-                    normalFlow = currentMessage.InstallButtonListener.OnAction (appStoreUrl);
-                }
+                if (gameStoreLinks.ContainsKey (gameId)) {
+                    string appStoreUrl = gameStoreLinks [gameId];
+                    if (!string.IsNullOrEmpty(appStoreUrl)) {
+                        bool normalFlow = true;
+                        if (currentMessage.InstallButtonListener != null) {
+                            // Launch custom button listener
+                            normalFlow = currentMessage.InstallButtonListener.OnAction (appStoreUrl);
+                        }
 
-                if (normalFlow) {
-                    // Open app store
-                    if (gameStoreLinks.ContainsKey (gameId)) {
-                        Application.OpenURL (gameStoreLinks [gameId]);
+                        if (normalFlow) {
+                            // Open app store
+                            Application.OpenURL (appStoreUrl);
+                        }
+                    } else {
+                        SwrveLog.LogError("No app store url for game " + gameId);
                     }
+                } else {
+                    SwrveLog.LogError("Install button app store url empty!");
                 }
             } else if (clickedButton.ActionType == SwrveActionType.Custom) {
                 if (currentMessage.CustomButtonListener != null) {
