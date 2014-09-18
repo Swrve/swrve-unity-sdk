@@ -1,7 +1,7 @@
 What is Swrve
 -------------
-Swrve is a single integrated platform delivering everything you need to drive mobile engagement and create valuable consumer relationships on mobile.
-This native Unity3D SDK will enable your game to use all of these features.
+Swrve is a single integrated platform delivering everything you need to drive mobile engagement and create valuable consumer relationships on mobile.  
+This Unity3D SDK will enable your game to use all of these features.
 
 Getting started
 ---------------
@@ -13,12 +13,12 @@ Requirements
 The SDK needs a Unity version higher than 4.0.0 to be able to compile.
 
 ### Unity 4.0.0+ Pro
-Some of the features like push notifications on Android require the use of native plugins. Native plugins are only available for Unity Pro.
+Some of the features like push notifications require the use of native plugins. Native plugins are only available for Unity Pro.
 
 How to run the demo
 -------------------
 - Open the project 'unity3d' from the repository.
-- Open the demo scene under 'Assets/Swrve/UnitySwrveDemo/DemoScene.unity'
+- Open the demo scene under 'Assets/Swrve/UnitySwrveDemo/DemoScene.unity'.
 - Under the Hierarchy view, click on SwrvePrefab. This is the SDK component in your scene.
 - Introduce your gameId and apiKey in the Inspector view with the values provided by Swrve.
 - Click the Play button at the top.
@@ -40,5 +40,6 @@ We would love to see your contributions! Follow these steps:
 
 License
 -------
-Distributed under the [Apache 2.0 License](LICENSE).
-google-play-services_lib copyright (C) 2012 The Android Open Source Project. Licensed under the Apache License.
+© Copyright Swrve Mobile Inc or its licensors. Distributed under the [Apache 2.0 License](LICENSE).  
+Google Play Services Library Copyright © 2012 The Android Open Source Project. Licensed under the Apache License.
+SharpZipLib Copyright © David Pierson, Mike Krueger. Distributed under the GPL License with the [GPL Classpath exception](http://www.gnu.org/software/classpath/license.html).
