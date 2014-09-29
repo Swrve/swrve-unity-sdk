@@ -46,6 +46,9 @@ public partial class SwrveSDK
 
     [DllImport ("__Internal")]
     private static extern void _swrveRegisterForPushNotifications();
+
+    [DllImport ("__Internal")]
+    private static extern void _swrveiOSUUID();
 #endif
 
     private int gameId;
