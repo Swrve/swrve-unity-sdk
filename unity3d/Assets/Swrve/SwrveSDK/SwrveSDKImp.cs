@@ -56,11 +56,6 @@ public partial class SwrveSDK
     private int deviceHeight;
     private long lastSessionTick;
 
-    // Device id
-    private static List<String> blacklistedUserIds = new List<String> ()
-    { "0f607264fc6318a92b9e13c65db7cd3c"
-    };
-
     // Events buffer
     protected StringBuilder eventBufferStringBuilder;
     protected string eventsPostString;
@@ -345,19 +340,6 @@ public partial class SwrveSDK
                 oldResources.Add (uid, oldItemData);
             }
         }
-    }
-
-    private string CalculateEndpoint (String url, int gameId)
-    {
-        if (url.Equals (SwrveConfig.DefaultContentServer) || url.Equals (SwrveConfig.DefaultEventsServer)) {
-            if (url.Contains ("http://")) {
-                return url.Replace ("http://", "http://" + gameId + ".");
-            } else {
-                return url.Replace ("https://", "https://" + gameId + ".");
-            }
-        }
-
-        return url;
     }
 
     private long GetInstallTimeEpoch ()
