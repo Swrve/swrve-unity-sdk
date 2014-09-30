@@ -36,6 +36,12 @@ extern "C"
         return swrveCStringCopy([appVersion UTF8String]);
     }
 
+    char* _swrveiOSUUID()
+    {
+        NSString* swrveUUID = [[NSUUID UUID] UUIDString];
+        return swrveCStringCopy([swrveUUID UTF8String]);    
+    }
+
     void _swrveRegisterForPushNotifications() 
     {
         UIApplication* app = [UIApplication sharedApplication];
