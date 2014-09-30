@@ -79,10 +79,20 @@ public class SwrveConfig
     public const string DefaultEventsServer = "http://api.swrve.com";
 
     /// <summary>
+    /// Use HTTPS for the event server.
+    /// </summary>
+    public bool UseHttpsForEventsServer = false;
+
+    /// <summary>
     /// The URL of the server to request campaign and resources data from.
     /// </summary>
     public string ContentServer = DefaultContentServer;
     public const string DefaultContentServer = "http://content.swrve.com";
+
+    /// <summary>
+    /// Use HTTPS for the in-app message and resources server.
+    /// </summary>
+    public bool UseHttpsForContentServer = false;
 
     /// <summary>
     /// The SDK will send a session start on init and manage game pauses and resumes.
@@ -133,6 +143,26 @@ public class SwrveConfig
     /// Maximum delay in seconds for in-app messages to appear after initialization.
     /// </summary>
     public float AutoShowMessagesMaxDelay = 5;
-}
-}
 
+    public void CalculateEndpoints (int appId)
+    {
+        // Default values are saved in the prefab or component instance.
+        if (EventsServer == DefaultEventsServer) {
+            EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, "api.swrve.com");
+        }
+        if (ContentServer == DefaultContentServer) {
+            ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, "content.swrve.com");
+        }
+    }
+
+    private static string HttpSchema(bool useHttps)
+    {
+        return useHttps? "https" : "http";
+    }
+
+    private static string CalculateEndpoint(bool useHttps, int appId, string suffix)
+    {
+        return HttpSchema(useHttps) + "://" + appId + "." + suffix;
+    }
+}
+}

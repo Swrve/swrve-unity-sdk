@@ -274,8 +274,9 @@ public partial class SwrveSDK
         }
 
         // End points
-        string abTestServer = CalculateEndpoint (config.ContentServer, gameId);
-        eventsUrl = CalculateEndpoint (config.EventsServer, gameId) + "/1/batch";
+        config.CalculateEndpoints(gameId);
+        string abTestServer = config.ContentServer;
+        eventsUrl = config.EventsServer + "/1/batch";
         abTestResourcesDiffUrl = abTestServer + "/api/1/user_resources_diff";
         resourcesAndCampaignsUrl = abTestServer + "/api/1/user_resources_and_campaigns";
 

@@ -25,12 +25,12 @@ public class RESTClient : IRESTClient
     public virtual IEnumerator Get (string url, Action<RESTResponse> listener)
     {
         var headers = new Dictionary<string, string> ();
-#if UNITY_ANDROID || UNITY_IPHONE
+        if (!Application.isEditor) {
+            headers = AddMetricsHeader (headers);
 #if SUPPORTS_GZIP_RESPONSES
-        headers.Add ("Accept-Encoding", "gzip");
+            headers.Add ("Accept-Encoding", "gzip");
 #endif
-        headers = AddMetricsHeader (headers);
-#endif
+        }
 
         long start = SwrveHelper.GetMilliseconds ();
         using (var www = CrossPlatformUtils.MakeWWW(url, null, headers)) {
@@ -43,9 +43,9 @@ public class RESTClient : IRESTClient
 
     public virtual IEnumerator Post (string url, byte[] encodedData, Dictionary<string, string> headers, Action<RESTResponse> listener)
     {
-#if UNITY_ANDROID || UNITY_IPHONE
-        headers = AddMetricsHeader (headers);
-#endif
+        if (!Application.isEditor) {
+            headers = AddMetricsHeader (headers);
+        }
         long start = SwrveHelper.GetMilliseconds ();
         using (var www = CrossPlatformUtils.MakeWWW(url, encodedData, headers)) {
             yield return www;

@@ -175,6 +175,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea7872ee432d340aebd0ee620e3dd2b9, type: 3}
   m_Name: 
+  UIEnabled: 1
 --- !u!196 &18
 NavMeshSettings:
   m_ObjectHideFlags: 0
@@ -273,6 +274,14 @@ Prefab:
       propertyPath: Config.DefaultLanguage
       value: en
       objectReference: {fileID: 0}
+    - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
+      propertyPath: Config.EventsServer
+      value: http://api.swrve.com
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
+      propertyPath: Config.ContentServer
+      value: http://content.swrve.com
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
   m_RootGameObject: {fileID: 1524831352}
@@ -328,13 +337,16 @@ MonoBehaviour:
     AutoDownloadCampaignsAndResources: 1
     Orientation: 2
     EventsServer: http://api.swrve.com
+    UseHttpsForEventsServer: 0
     ContentServer: http://content.swrve.com
-    LinkServer: https://link.swrve.com
+    UseHttpsForContentServer: 0
     AutomaticSessionManagement: 1
     NewSessionInterval: 30
     MaxBufferChars: 20000
     StoreDataInPlayerPrefs: 0
     PushNotificationEnabled: 0
     GCMSenderId: 
+    GCMPushNotificationTitle: '#Your App Title'
+    AutoShowMessagesMaxDelay: 5
   FlushEventsOnApplicationQuit: 1
   InitialiseOnStart: 1
