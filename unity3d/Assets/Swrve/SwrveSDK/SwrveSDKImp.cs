@@ -860,7 +860,7 @@ public partial class SwrveSDK
                 }
             }
             clickedButton.Pressed = false;
-            currentMessage.Dismiss ();
+            DismissMessage();
         }
     }
 
