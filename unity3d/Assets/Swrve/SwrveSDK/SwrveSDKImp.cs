@@ -854,9 +854,15 @@ public partial class SwrveSDK
                     SwrveLog.LogError("Install button app store url empty!");
                 }
             } else if (clickedButton.ActionType == SwrveActionType.Custom) {
+                string buttonAction = clickedButton.Action;
                 if (currentMessage.CustomButtonListener != null) {
                     // Launch custom button listener
-                    currentMessage.CustomButtonListener.OnAction (clickedButton.Action);
+                    currentMessage.CustomButtonListener.OnAction (buttonAction);
+                } else {
+                    SwrveLog.Log("No custom button listener, treating action as URL");
+                    if (!string.IsNullOrEmpty(buttonAction)) {
+                        Application.OpenURL (buttonAction);
+                    }
                 }
             }
             clickedButton.Pressed = false;
