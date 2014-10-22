@@ -46,6 +46,9 @@ public partial class SwrveSDK
 
     [DllImport ("__Internal")]
     private static extern void _swrveRegisterForPushNotifications();
+
+    [DllImport ("__Internal")]
+    private static extern string _swrveiOSUUID();
 #endif
 
     private int gameId;
@@ -274,8 +277,9 @@ public partial class SwrveSDK
         }
 
         // End points
-        string abTestServer = CalculateEndpoint (config.ContentServer, gameId);
-        eventsUrl = CalculateEndpoint (config.EventsServer, gameId) + "/1/batch";
+        config.CalculateEndpoints(gameId);
+        string abTestServer = config.ContentServer;
+        eventsUrl = config.EventsServer + "/1/batch";
         abTestResourcesDiffUrl = abTestServer + "/api/1/user_resources_diff";
         resourcesAndCampaignsUrl = abTestServer + "/api/1/user_resources_and_campaigns";
 
@@ -345,8 +349,8 @@ public partial class SwrveSDK
             }
 
             try {
-                LoadTalkData ();
                 swrveTemporaryPath = GetSwrveTemporaryCachePath();
+                LoadTalkData ();
 
 #if UNITY_IPHONE
                 // If we had a device token, keep asking for a new one

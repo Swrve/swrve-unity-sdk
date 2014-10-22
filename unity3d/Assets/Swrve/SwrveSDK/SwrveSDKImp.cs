@@ -56,11 +56,6 @@ public partial class SwrveSDK
     private int deviceHeight;
     private long lastSessionTick;
 
-    // Device id
-    private static List<String> blacklistedUserIds = new List<String> ()
-    { "0f607264fc6318a92b9e13c65db7cd3c"
-    };
-
     // Events buffer
     protected StringBuilder eventBufferStringBuilder;
     protected string eventsPostString;
@@ -347,19 +342,6 @@ public partial class SwrveSDK
         }
     }
 
-    private string CalculateEndpoint (String url, int gameId)
-    {
-        if (url.Equals (SwrveConfig.DefaultContentServer) || url.Equals (SwrveConfig.DefaultEventsServer)) {
-            if (url.Contains ("http://")) {
-                return url.Replace ("http://", "http://" + gameId + ".");
-            } else {
-                return url.Replace ("https://", "https://" + gameId + ".");
-            }
-        }
-
-        return url;
-    }
-
     private long GetInstallTimeEpoch ()
     {
         string savedInstallTimeEpoch = GetSavedInstallTimeEpoch ();
@@ -544,22 +526,23 @@ public partial class SwrveSDK
 
     private string GetRandomUUID ()
     {
+#if UNITY_IPHONE
+        try {
+            return _swrveiOSUUID();
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
+        }
+#else
         try {
             Type type = System.Type.GetType ("System.Guid");
             if (type != null) {
-#if NETFX_CORE
-                MethodInfo methodInfo = RuntimeReflectionExtensions.GetRuntimeMethod(type, "NewGuid", new Type[0]);
-                MethodInfo stringMethodInfo = RuntimeReflectionExtensions.GetRuntimeMethod(type, "ToString", new Type[0]);
-#else
                 MethodInfo methodInfo = type.GetMethod ("NewGuid");
-                MethodInfo stringMethodInfo = type.GetMethod ("ToString", new Type[0]);
-#endif
-                if (methodInfo != null && stringMethodInfo != null) {
+                if (methodInfo != null) {
                     object result = methodInfo.Invoke (null, null);
                     if (result != null) {
-                        object stringResult = stringMethodInfo.Invoke (result, null);
-                        if (stringResult != null && stringResult is string) {
-                            return (string)stringResult;
+                        string stringResult = result.ToString();
+                        if (!string.IsNullOrEmpty(stringResult)) {
+                            return stringResult;
                         }
                     }
                 }
@@ -567,11 +550,13 @@ public partial class SwrveSDK
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
         }
+#endif
 
-        // Generate random string
-        String randomString = string.Empty;
+        // Generate random string if all fails
+        string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        string randomString = string.Empty;
         for (int i = 0; i < 128; i++) {
-            randomString += (char)UnityEngine.Random.Range (0, char.MaxValue);
+            randomString += chars[UnityEngine.Random.Range (0, chars.Length - 1)];
         }
         return randomString;
     }
@@ -875,7 +860,7 @@ public partial class SwrveSDK
                 }
             }
             clickedButton.Pressed = false;
-            currentMessage.Dismiss ();
+            DismissMessage();
         }
     }
 

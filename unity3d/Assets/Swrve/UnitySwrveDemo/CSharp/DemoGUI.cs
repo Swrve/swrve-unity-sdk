@@ -10,7 +10,7 @@ using Swrve.Messaging;
 public class DemoGUI : BaseDemoGUI
 {
     /// Reference to the Swrve Component in the scene.
-    /*private SwrveComponent swrveComponent;
+    private SwrveComponent swrveComponent;
 
     /// Enable or disable the game UI.
     public bool UIEnabled = true;
@@ -145,5 +145,5 @@ public class DemoGUI : BaseDemoGUI
             // Resume game
             container.UIEnabled = true;
         }
-    }*/
+    }
 }
