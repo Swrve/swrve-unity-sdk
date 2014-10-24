@@ -81,52 +81,59 @@ public class RESTClient : IRESTClient
 
     protected void ProcessResponse (WWW www, long wwwTime, string url, Action<RESTResponse> listener)
     {
-        WwwDeducedError deducedError = UnityWwwHelper.DeduceWwwError (www);
-        if (deducedError == WwwDeducedError.NoError) {
-            // - made it there and it was ok
-            string responseBody = null;
-            bool success = ResponseBodyTester.TestUTF8 (www.bytes, out responseBody);
-            Dictionary<string, string> headers = new Dictionary<string, string> ();
-
-            string contentEncodingHeader = null;
-            if (www.responseHeaders != null) {
-                foreach (string headerKey in www.responseHeaders.Keys) {
-                    if (string.Equals (headerKey, "Content-Encoding", StringComparison.OrdinalIgnoreCase)) {
-                        www.responseHeaders.TryGetValue (headerKey, out contentEncodingHeader);
-                        break;
-                    }
-                    headers.Add (headerKey.ToUpper (), www.responseHeaders [headerKey]);
-                }
-            }
-
-            if (www.bytes != null && www.bytes.Length > 0 && contentEncodingHeader != null && string.Equals (contentEncodingHeader, "gzip", StringComparison.OrdinalIgnoreCase)) {
-                // Check if the response is gzipped or json (eg. iOS automatically unzips it already)
-                if (responseBody != null && !((responseBody.StartsWith ("{") && responseBody.EndsWith ("}")) || (responseBody.StartsWith ("[") && responseBody.EndsWith ("]")))) {
-                    int dataLength = BitConverter.ToInt32 (www.bytes, 0);
-                    var buffer = new byte[dataLength];
-
-                    using (var ms = new MemoryStream(www.bytes)) {
-                        using (var gs = new GZipInputStream(ms)) {
-                            gs.Read (buffer, 0, buffer.Length);
-                            gs.Close ();
+        try {
+            WwwDeducedError deducedError = UnityWwwHelper.DeduceWwwError (www);
+            if (deducedError == WwwDeducedError.NoError) {
+                // - made it there and it was ok
+                string responseBody = null;
+                bool success = ResponseBodyTester.TestUTF8 (www.bytes, out responseBody);
+                Dictionary<string, string> headers = new Dictionary<string, string> ();
+    
+                string contentEncodingHeader = null;
+                if (www.responseHeaders != null) {
+                    foreach (string headerKey in www.responseHeaders.Keys) {
+                        if (string.Equals (headerKey, "Content-Encoding", StringComparison.OrdinalIgnoreCase)) {
+                            www.responseHeaders.TryGetValue (headerKey, out contentEncodingHeader);
+                            break;
                         }
-
-                        success = ResponseBodyTester.TestUTF8 (buffer, out responseBody);
-                        ms.Close ();
+                        headers.Add (headerKey.ToUpper (), www.responseHeaders [headerKey]);
                     }
                 }
-            }
-
-            if (success) {
-                AddMetrics (url, wwwTime, false);
-                listener.Invoke (new RESTResponse (responseBody, headers));
+    
+                // BitConverter.ToInt32 needs at least 4 bytes
+                if (www.bytes != null && www.bytes.Length > 4 && contentEncodingHeader != null && string.Equals (contentEncodingHeader, "gzip", StringComparison.OrdinalIgnoreCase)) {
+                    // Check if the response is gzipped or json (eg. iOS automatically unzips it already)
+                    if (responseBody != null && !((responseBody.StartsWith ("{") && responseBody.EndsWith ("}")) || (responseBody.StartsWith ("[") && responseBody.EndsWith ("]")))) {
+                        int dataLength = BitConverter.ToInt32 (www.bytes, 0);
+                        if (dataLength > 0) {
+                            var buffer = new byte[dataLength];
+            
+                            using (var ms = new MemoryStream(www.bytes)) {
+                                using (var gs = new GZipInputStream(ms)) {
+                                    gs.Read (buffer, 0, buffer.Length);
+                                    gs.Close ();
+                                }
+            
+                                success = ResponseBodyTester.TestUTF8 (buffer, out responseBody);
+                                ms.Close ();
+                            }
+                        }
+                    }
+                }
+    
+                if (success) {
+                    AddMetrics (url, wwwTime, false);
+                    listener.Invoke (new RESTResponse (responseBody, headers));
+                } else {
+                    AddMetrics (url, wwwTime, true);
+                    listener.Invoke (new RESTResponse (WwwDeducedError.ApplicationErrorBody));
+                }
             } else {
                 AddMetrics (url, wwwTime, true);
-                listener.Invoke (new RESTResponse (WwwDeducedError.ApplicationErrorBody));
+                listener.Invoke (new RESTResponse (deducedError));
             }
-        } else {
-            AddMetrics (url, wwwTime, true);
-            listener.Invoke (new RESTResponse (deducedError));
+        } catch(Exception exp) {
+            SwrveLog.LogError(exp);
         }
     }
 }
