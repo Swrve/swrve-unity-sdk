@@ -1309,7 +1309,7 @@ public partial class SwrveSDK
             byte[] token = NotificationServices.deviceToken;
             if (token != null) {
                 // Send token as user update and to Babble if QA user
-                string hexToken = System.BitConverter.ToString(token).Replace("-", string.Empty);
+                string hexToken = SwrveHelper.FilterNonAlphanumeric(System.BitConverter.ToString(token));
                 bool sendDeviceInfo = (iOSdeviceToken != hexToken);
                 if (sendDeviceInfo) {
                     iOSdeviceToken = hexToken;

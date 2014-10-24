@@ -19,6 +19,8 @@ public static class SwrveHelper
     // Reference to avoid this class from getting stripped
     private static System.Security.Cryptography.MD5CryptoServiceProvider fakeReference = new System.Security.Cryptography.MD5CryptoServiceProvider ();
 
+    private static Regex rgxNonAlphanumeric = new Regex("[^a-zA-Z0-9 -]");
+
     public static DateTime GetNow ()
     {
         if (Now != null && Now.HasValue) {
@@ -137,6 +139,10 @@ public static class SwrveHelper
     {
         DateTime epoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         return epoch.AddMilliseconds (epochTime).ToString (format);
+    }
+
+    public static string FilterNonAlphanumeric(string str) {
+        return rgxNonAlphanumeric.Replace(str, string.Empty);
     }
 }
 }
