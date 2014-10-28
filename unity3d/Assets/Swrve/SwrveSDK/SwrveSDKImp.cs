@@ -1487,7 +1487,7 @@ public partial class SwrveSDK
                 using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
                     string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
 
-                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() > 0) {
+                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
                         androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
 
                         if (androidPlugin != null) {
