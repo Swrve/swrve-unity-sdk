@@ -13,6 +13,7 @@ using Swrve.Helpers;
 using Swrve.Storage;
 using System.Reflection;
 using System.Globalization;
+using Swrve.Device;
 
 /// <summary>
 /// Internal base class implementation of the Swrve SDK.
@@ -55,6 +56,7 @@ public partial class SwrveSDK
     private int deviceWidth;
     private int deviceHeight;
     private long lastSessionTick;
+    private ICarrierInfo deviceCarrierInfo;
 
     // Events buffer
     protected StringBuilder eventBufferStringBuilder;
@@ -1419,6 +1421,11 @@ public partial class SwrveSDK
         return (int)(val & 0xFFFFFFFF);
     }
 
+    protected virtual ICarrierInfo GetCarrierInfoProvider()
+    {
+        return deviceCarrierInfo;
+    }
+
 #if UNITY_IPHONE
 
     protected void RegisterForPushNotificationsIOS()
@@ -1516,8 +1523,7 @@ public partial class SwrveSDK
     {
         try {
             AndroidJavaObject cal = new AndroidJavaObject("java.util.GregorianCalendar");
-            string timezone = cal.Call<AndroidJavaObject>("getTimeZone").Call<string>("getID");
-            return timezone;
+            return cal.Call<AndroidJavaObject>("getTimeZone").Call<string>("getID");
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get the device timezone, make sure you are running on an Android device: " + exp.ToString());
         }

@@ -1,6 +1,3 @@
-#import <CoreTelephony/CTCarrier.h>
-#import <CoreTelephony/CTTelephonyNetworkInfo.h>
-
 char* swrveCStringCopy(const char* string)
 {
     if (string == NULL)
@@ -47,34 +44,44 @@ extern "C"
 
     char* _swrveCarrierName()
     {
-        CTTelephonyNetworkInfo *netinfo = [[CTTelephonyNetworkInfo alloc] init];
-        CTCarrier* carrierInfo = [netinfo subscriberCellularProvider];
-        if (carrierInfo != nil) {
-            return swrveCStringCopy([[carrier carrierName] UTF8String]);
+        Class telephonyClass = NSClassFromString(@"CTTelephonyNetworkInfo");
+        if (telephonyClass) {
+            id netinfo = [[telephonyClass alloc] init]; // CTTelephonyNetworkInfo
+            id carrierInfo = [netinfo subscriberCellularProvider]; // CTCarrier
+            if (carrierInfo != nil) {
+                return swrveCStringCopy([[carrierInfo carrierName] UTF8String]);
+            }
         }
         return NULL;
     }
 
     char* _swrveCarrierIsoCountryCode()
     {
-        CTTelephonyNetworkInfo *netinfo = [[CTTelephonyNetworkInfo alloc] init];
-        CTCarrier* carrierInfo = [netinfo subscriberCellularProvider];
-        if (carrierInfo != nil) {
-            return swrveCStringCopy([[carrier isoCountryCode] UTF8String]);
+        Class telephonyClass = NSClassFromString(@"CTTelephonyNetworkInfo");
+        if (telephonyClass) {
+            id netinfo = [[telephonyClass alloc] init]; // CTTelephonyNetworkInfo
+            id carrierInfo = [netinfo subscriberCellularProvider]; // CTCarrier
+            if (carrierInfo != nil) {
+                return swrveCStringCopy([[carrierInfo isoCountryCode] UTF8String]);
+            }
         }
         return NULL;
     }
 
     char* _swrveCarrierCode()
     {
-        CTTelephonyNetworkInfo *netinfo = [[CTTelephonyNetworkInfo alloc] init];
-        CTCarrier* carrierInfo = [netinfo subscriberCellularProvider];
-        if (carrierInfo != nil) {
-            NSString* mobileCountryCode = [carrierInfo mobileCountryCode];
-            NSString* mobileNetworkCode = [carrierInfo mobileNetworkCode];
-            if (mobileCountryCode != nil && mobileNetworkCode != nil) {
-                NSMutableString* carrierCode = [[NSMutableString alloc] initWithString:mobileCountryCode];
-                return swrveCStringCopy([[carrierCode appendString:mobileNetworkCode] UTF8String]);
+        Class telephonyClass = NSClassFromString(@"CTTelephonyNetworkInfo");
+        if (telephonyClass) {
+            id netinfo = [[telephonyClass alloc] init]; // CTTelephonyNetworkInfo
+            id carrierInfo = [netinfo subscriberCellularProvider]; // CTCarrier
+            if (carrierInfo != nil) {
+                NSString* mobileCountryCode = [carrierInfo mobileCountryCode];
+                NSString* mobileNetworkCode = [carrierInfo mobileNetworkCode];
+                if (mobileCountryCode != nil && mobileNetworkCode != nil) {
+                    NSMutableString* carrierCode = [[NSMutableString alloc] initWithString:mobileCountryCode];
+                    [carrierCode appendString:mobileNetworkCode];
+                    return swrveCStringCopy([carrierCode UTF8String]);
+                }
             }
         }
         return NULL;
