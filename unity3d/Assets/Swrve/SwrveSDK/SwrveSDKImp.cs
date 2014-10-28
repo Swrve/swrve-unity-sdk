@@ -1267,61 +1267,63 @@ public partial class SwrveSDK
                 if (!string.IsNullOrEmpty(response.Body)) {
                     Dictionary<string, object> root = (Dictionary<string, object>)Json.Deserialize (response.Body);
 
-                    // Save flush settings
-                    if (root.ContainsKey("flush_frequency")) {
-                        string strFlushFrequency = MiniJsonHelper.GetString(root, "flush_frequency");
-                        if (!string.IsNullOrEmpty(strFlushFrequency)) {
-                            if (float.TryParse(strFlushFrequency, out campaignsAndResourcesFlushFrequency)) {
-                                campaignsAndResourcesFlushFrequency /= 1000;
-                                storage.Save(ResourcesCampaignFlushFrequencySave, strFlushFrequency, userId);
-                            }
-                        }
-                    }
-                    if (root.ContainsKey("flush_refresh_delay")) {
-                        string strFlushRefreshDelay = MiniJsonHelper.GetString(root, "flush_refresh_delay");
-                        if (!string.IsNullOrEmpty(strFlushRefreshDelay)) {
-                            if (float.TryParse(strFlushRefreshDelay, out campaignsAndResourcesFlushRefreshDelay)) {
-                                campaignsAndResourcesFlushRefreshDelay /= 1000;
-                                storage.Save(ResourcesCampaignFlushDelaySave, strFlushRefreshDelay, userId);
-                            }
-                        }
-                    }
-
-                    if (root.ContainsKey("user_resources")) {
-                        // Process user resources
-                        IList<object> userResourcesData = (IList<object>)root["user_resources"];
-                        string userResourcesJson = SwrveMiniJSON.Json.Serialize(userResourcesData);
-                        storage.SaveSecure(AbTestUserResourcesSave, userResourcesJson, userId);
-                        userResources = ProcessUserResources(userResourcesData);
-                        userResourcesRaw = userResourcesJson;
-
-                        if (campaignsAndResourcesInitialized) {
-                            NotifyUpdateUserResources();
-                        }
-                    }
-
-                    if (config.TalkEnabled) {
-                        if (root.ContainsKey("campaigns")) {
-                            Dictionary<string, object> campaignsData = (Dictionary<string, object>)root["campaigns"];
-                            string campaignsJson = SwrveMiniJSON.Json.Serialize(campaignsData);
-                            SaveCampaignsCache (campaignsJson);
-
-                            AutoShowMessages();
-
-                            ProcessCampaigns (campaignsData);
-                            // Construct debug event
-                            StringBuilder campaignIds = new StringBuilder ();
-                            for (int i = 0, j = campaigns.Count; i < j; i++) {
-                                SwrveCampaign campaign = campaigns [i];
-                                if (i != 0) {
-                                    campaignIds.Append (',');
+                    if (root != null) {
+                        // Save flush settings
+                        if (root.ContainsKey("flush_frequency")) {
+                            string strFlushFrequency = MiniJsonHelper.GetString(root, "flush_frequency");
+                            if (!string.IsNullOrEmpty(strFlushFrequency)) {
+                                if (float.TryParse(strFlushFrequency, out campaignsAndResourcesFlushFrequency)) {
+                                    campaignsAndResourcesFlushFrequency /= 1000;
+                                    storage.Save(ResourcesCampaignFlushFrequencySave, strFlushFrequency, userId);
                                 }
-                                campaignIds.Append (campaign.Id);
                             }
-                            Dictionary<string, string> payload = new Dictionary<string, string> ();
-                            payload.Add ("ids", campaignIds.ToString ());
-                            payload.Add ("count", (campaigns == null)? "0" : campaigns.Count.ToString ());
-                            NamedEventInternal ("Swrve.Messages.campaigns_downloaded", payload);
+                        }
+                        if (root.ContainsKey("flush_refresh_delay")) {
+                            string strFlushRefreshDelay = MiniJsonHelper.GetString(root, "flush_refresh_delay");
+                            if (!string.IsNullOrEmpty(strFlushRefreshDelay)) {
+                                if (float.TryParse(strFlushRefreshDelay, out campaignsAndResourcesFlushRefreshDelay)) {
+                                    campaignsAndResourcesFlushRefreshDelay /= 1000;
+                                    storage.Save(ResourcesCampaignFlushDelaySave, strFlushRefreshDelay, userId);
+                                }
+                            }
+                        }
+
+                        if (root.ContainsKey("user_resources")) {
+                            // Process user resources
+                            IList<object> userResourcesData = (IList<object>)root["user_resources"];
+                            string userResourcesJson = SwrveMiniJSON.Json.Serialize(userResourcesData);
+                            storage.SaveSecure(AbTestUserResourcesSave, userResourcesJson, userId);
+                            userResources = ProcessUserResources(userResourcesData);
+                            userResourcesRaw = userResourcesJson;
+
+                            if (campaignsAndResourcesInitialized) {
+                                NotifyUpdateUserResources();
+                            }
+                        }
+
+                        if (config.TalkEnabled) {
+                            if (root.ContainsKey("campaigns")) {
+                                Dictionary<string, object> campaignsData = (Dictionary<string, object>)root["campaigns"];
+                                string campaignsJson = SwrveMiniJSON.Json.Serialize(campaignsData);
+                                SaveCampaignsCache (campaignsJson);
+
+                                AutoShowMessages();
+
+                                ProcessCampaigns (campaignsData);
+                                // Construct debug event
+                                StringBuilder campaignIds = new StringBuilder ();
+                                for (int i = 0, j = campaigns.Count; i < j; i++) {
+                                    SwrveCampaign campaign = campaigns [i];
+                                    if (i != 0) {
+                                        campaignIds.Append (',');
+                                    }
+                                    campaignIds.Append (campaign.Id);
+                                }
+                                Dictionary<string, string> payload = new Dictionary<string, string> ();
+                                payload.Add ("ids", campaignIds.ToString ());
+                                payload.Add ("count", (campaigns == null)? "0" : campaigns.Count.ToString ());
+                                NamedEventInternal ("Swrve.Messages.campaigns_downloaded", payload);
+                            }
                         }
                     }
                 }
