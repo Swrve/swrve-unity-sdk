@@ -392,7 +392,15 @@ public partial class SwrveSDK
         try {
             using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
                 AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
-                language = defaultLocale.Call<string>("toString");
+                language = defaultLocale.Call<string>("getLanguage");
+                string country = defaultLocale.Call<string>("getCountry");
+                if (!string.IsNullOrEmpty (country)) {
+                    language += "-" + country;
+                }
+                string variant = defaultLocale.Call<string>("getVariant");
+                if (!string.IsNullOrEmpty (variant)) {
+                    language += "-" + variant;
+                }
             }
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get the device language, make sure you are running on an Android device: " + exp.ToString());
