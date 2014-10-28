@@ -11,6 +11,7 @@ using SwrveMiniJSON;
 using Swrve.Messaging;
 using Swrve.Helpers;
 using Swrve.ResourceManager;
+using Swrve.Device;
 
 #if UNITY_IPHONE
 using System.Runtime.InteropServices;
@@ -32,7 +33,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const String SdkVersion = "3.2";
+    public const String SdkVersion = "3.3";
 
 #if UNITY_IPHONE
     [DllImport ("__Internal")]
@@ -306,6 +307,7 @@ public partial class SwrveSDK
         InitUserResources();
 
         // Get device info
+        deviceCarrierInfo = new DeviceCarrierInfo();
         GetDeviceScreenInfo ();
 
         Initialised = true;
@@ -925,6 +927,14 @@ public partial class SwrveSDK
             deviceInfo ["swrve.timezone_name"] = timezone;
         }
 #endif
+
+        // Carrier info
+        ICarrierInfo carrierInfo = GetCarrierInfoProvider();
+        if (carrierInfo != null) {
+            deviceInfo ["swrve.sim_operator.name"] = carrierInfo.GetName();
+            deviceInfo ["swrve.sim_operator.iso_country_code"] = carrierInfo.GetIsoCountryCode();
+            deviceInfo ["swrve.sim_operator.code"] = carrierInfo.GetCarrierCode();
+        }
 
         return deviceInfo;
     }
