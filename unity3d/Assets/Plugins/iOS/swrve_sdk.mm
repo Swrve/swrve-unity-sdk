@@ -1,3 +1,6 @@
+#import <CoreTelephony/CTCarrier.h>
+#import <CoreTelephony/CTTelephonyNetworkInfo.h>
+
 char* swrveCStringCopy(const char* string)
 {
     if (string == NULL)
@@ -40,6 +43,41 @@ extern "C"
     {
         NSString* swrveUUID = [[NSUUID UUID] UUIDString];
         return swrveCStringCopy([swrveUUID UTF8String]);    
+    }
+
+    char* _swrveCarrierName()
+    {
+        CTTelephonyNetworkInfo *netinfo = [[CTTelephonyNetworkInfo alloc] init];
+        CTCarrier* carrierInfo = [netinfo subscriberCellularProvider];
+        if (carrierInfo != nil) {
+            return swrveCStringCopy([[carrier carrierName] UTF8String]);
+        }
+        return NULL;
+    }
+
+    char* _swrveCarrierIsoCountryCode()
+    {
+        CTTelephonyNetworkInfo *netinfo = [[CTTelephonyNetworkInfo alloc] init];
+        CTCarrier* carrierInfo = [netinfo subscriberCellularProvider];
+        if (carrierInfo != nil) {
+            return swrveCStringCopy([[carrier isoCountryCode] UTF8String]);
+        }
+        return NULL;
+    }
+
+    char* _swrveCarrierCode()
+    {
+        CTTelephonyNetworkInfo *netinfo = [[CTTelephonyNetworkInfo alloc] init];
+        CTCarrier* carrierInfo = [netinfo subscriberCellularProvider];
+        if (carrierInfo != nil) {
+            NSString* mobileCountryCode = [carrierInfo mobileCountryCode];
+            NSString* mobileNetworkCode = [carrierInfo mobileNetworkCode];
+            if (mobileCountryCode != nil && mobileNetworkCode != nil) {
+                NSMutableString* carrierCode = [[NSMutableString alloc] initWithString:mobileCountryCode];
+                return swrveCStringCopy([[carrierCode appendString:mobileNetworkCode] UTF8String]);
+            }
+        }
+        return NULL;
     }
 
     void _swrveRegisterForPushNotifications() 
