@@ -19,7 +19,7 @@ public static class SwrveHelper
     // Reference to avoid this class from getting stripped
     private static System.Security.Cryptography.MD5CryptoServiceProvider fakeReference = new System.Security.Cryptography.MD5CryptoServiceProvider ();
 
-    private static Regex rgxNonAlphanumeric = new Regex("[^a-zA-Z0-9 -]");
+    private static Regex rgxNonAlphanumeric = new Regex("[^a-zA-Z0-9]");
 
     public static DateTime GetNow ()
     {
