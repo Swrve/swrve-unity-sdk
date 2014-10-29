@@ -42,6 +42,51 @@ extern "C"
         return swrveCStringCopy([swrveUUID UTF8String]);    
     }
 
+    char* _swrveCarrierName()
+    {
+        Class telephonyClass = NSClassFromString(@"CTTelephonyNetworkInfo");
+        if (telephonyClass) {
+            id netinfo = [[telephonyClass alloc] init]; // CTTelephonyNetworkInfo
+            id carrierInfo = [netinfo subscriberCellularProvider]; // CTCarrier
+            if (carrierInfo != nil) {
+                return swrveCStringCopy([[carrierInfo carrierName] UTF8String]);
+            }
+        }
+        return NULL;
+    }
+
+    char* _swrveCarrierIsoCountryCode()
+    {
+        Class telephonyClass = NSClassFromString(@"CTTelephonyNetworkInfo");
+        if (telephonyClass) {
+            id netinfo = [[telephonyClass alloc] init]; // CTTelephonyNetworkInfo
+            id carrierInfo = [netinfo subscriberCellularProvider]; // CTCarrier
+            if (carrierInfo != nil) {
+                return swrveCStringCopy([[carrierInfo isoCountryCode] UTF8String]);
+            }
+        }
+        return NULL;
+    }
+
+    char* _swrveCarrierCode()
+    {
+        Class telephonyClass = NSClassFromString(@"CTTelephonyNetworkInfo");
+        if (telephonyClass) {
+            id netinfo = [[telephonyClass alloc] init]; // CTTelephonyNetworkInfo
+            id carrierInfo = [netinfo subscriberCellularProvider]; // CTCarrier
+            if (carrierInfo != nil) {
+                NSString* mobileCountryCode = [carrierInfo mobileCountryCode];
+                NSString* mobileNetworkCode = [carrierInfo mobileNetworkCode];
+                if (mobileCountryCode != nil && mobileNetworkCode != nil) {
+                    NSMutableString* carrierCode = [[NSMutableString alloc] initWithString:mobileCountryCode];
+                    [carrierCode appendString:mobileNetworkCode];
+                    return swrveCStringCopy([carrierCode UTF8String]);
+                }
+            }
+        }
+        return NULL;
+    }
+
     void _swrveRegisterForPushNotifications() 
     {
         UIApplication* app = [UIApplication sharedApplication];
