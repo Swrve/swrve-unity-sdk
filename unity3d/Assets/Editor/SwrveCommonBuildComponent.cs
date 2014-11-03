@@ -139,7 +139,7 @@ public class SwrveCommonBuildComponent
         info.RedirectStandardError = true;
         info.UseShellExecute = false;
         info.WorkingDirectory = workingDirectory;
-        info.FileName = "/bin/sh";
+        info.FileName = "/bin/bash";
         info.Arguments = arguments;
         System.Diagnostics.Process proc = System.Diagnostics.Process.Start (info);
 

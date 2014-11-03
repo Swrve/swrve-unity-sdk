@@ -45,7 +45,8 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         }
 
         // Install
-        InstallIOSBuild (GetProjectPath (), "../../buildtemp/SwrveDemo");
+        RunSh (GetProjectPath() + "/../../", "scripts/archive_and_install_demo.sh");
+        UnityEngine.Debug.Log("Demo installed on device");
     }
 
     [MenuItem ("Swrve Demo/Android/Build Demo (.apk)")]
