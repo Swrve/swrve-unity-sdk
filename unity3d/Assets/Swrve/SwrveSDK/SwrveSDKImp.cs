@@ -701,8 +701,6 @@ public partial class SwrveSDK
         if (sentEvents) {
             // Wait for events to be processed and then ask for campaigns and resources
             Container.StartCoroutine (WaitAndRefreshResourcesAndCampaigns_Coroutine (campaignsAndResourcesFlushRefreshDelay));
-        } else {
-            RefreshUserResourcesAndCampaigns ();
         }
 
         if (!invokedByTimer) {
@@ -718,12 +716,6 @@ public partial class SwrveSDK
         CheckForCampaignsAndResourcesUpdates (true);
         // Invoke again
         Container.StartCoroutine (CheckForCampaignsAndResourcesUpdates_Coroutine ());
-    }
-
-    private IEnumerator CheckForCampaignsAndResourcesUpdatesAfterDelay_Coroutine (float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        CheckForCampaignsAndResourcesUpdates (true);
     }
 
     protected virtual long GetSessionTime ()
@@ -1623,11 +1615,11 @@ public partial class SwrveSDK
 
         RefreshUserResourcesAndCampaigns ();
 
-        // Start timer to auto-send events
-        Container.StartCoroutine (CheckForCampaignsAndResourcesUpdates_Coroutine ());
+		// Start repeating timer to auto-send events after a specified frequency. eg: 60s
+		Container.StartCoroutine (CheckForCampaignsAndResourcesUpdates_Coroutine ());
 
-        // Call refresh once after refresh delay to ensure campaigns are reloaded after initial events have been sent
-        Container.StartCoroutine (CheckForCampaignsAndResourcesUpdatesAfterDelay_Coroutine (campaignsAndResourcesFlushRefreshDelay));
+		// Call refresh once after refresh delay (eg: 5s) to ensure campaigns are reloaded after initial events have been sent.
+		Container.StartCoroutine (WaitAndRefreshResourcesAndCampaigns_Coroutine (campaignsAndResourcesFlushRefreshDelay));
     }
 
     protected void DisableAutoShowAfterDelay ()
