@@ -511,7 +511,7 @@ public partial class SwrveSDK
     /// </param>
     public void Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards)
     {
-        _Iap (quantity, productId, productPrice, currency, rewards, string.Empty, string.Empty, "unknown_store");
+        _Iap (quantity, productId, productPrice, currency, rewards, string.Empty, string.Empty, string.Empty, "unknown_store");
     }
 
 #if UNITY_IPHONE
@@ -539,12 +539,46 @@ public partial class SwrveSDK
     /// Real world currency used for this transaction. This must be an ISO currency code.
     /// </param>
     /// <param name="receipt">
-    /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve
+    /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
     /// </param>
     public void IapApple (int quantity, string productId, double productPrice, string currency, string receipt)
     {
+        IapApple (quantity, productId, productPrice, currency, receipt, null);
+    }
+
+    /// <summary>
+    /// Buffer the event of a purchase using real currency, where a single item
+    /// (that isn't an in-app currency) was purchased.
+    /// The receipt provided will be validated against the iTunes Store.
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "iap" event.
+    /// Note that this method is currently only supported for the Apple App Store,
+    /// and a valid receipt needs to be provided for verification.
+    /// </remarks>
+    /// <param name="quantity">
+    /// Quantity purchased.
+    /// </param>
+    /// <param name="productId">
+    /// Unique product identifier for the item bought. This should match the Swrve resource name.
+    /// </param>
+    /// <param name="productPrice">
+    /// Price of the product purchased in real money. Note that this is the price
+    /// per product, not the total price of the transaction (when quantity > 1).
+    /// </param>
+    /// <param name="currency">
+    /// Real world currency used for this transaction. This must be an ISO currency code.
+    /// </param>
+    /// <param name="receipt">
+    /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
+    /// </param>
+    /// <param name="transactionId">
+    /// The transaction id identifying the purchase iOS7+ (see SKPaymentTransaction::transactionIdentifier).
+    /// </param>
+    public void IapApple (int quantity, string productId, double productPrice, string currency, string receipt, string transactionId)
+    {
         IapRewards no_rewards = new IapRewards();
-        IapApple (quantity, productId, productPrice, currency, no_rewards, receipt);
+        IapApple (quantity, productId, productPrice, currency, no_rewards, receipt, transactionId);
     }
 
     /// <summary>
@@ -580,6 +614,45 @@ public partial class SwrveSDK
     /// </param>
     public void IapApple (int quantity, string productId, double productPrice, string currency, IapRewards rewards, string receipt)
     {
+        IapApple (quantity, productId, productPrice, currency, rewards, receipt, null);
+    }
+
+    /// <summary>
+    /// Buffer the event of a purchase using real currency, where any in-app
+    /// currencies were purchased, or where multiple items were purchased as part of a bundle.
+    /// The receipt provided will be validated against the iTunes Store.
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "iap" event.
+    /// Note that this method is currently only supported for the Apple App Store,
+    /// and a valid receipt needs to be provided for verification.
+    /// </remarks>
+    /// <param name="quantity">
+    /// Quantity purchased.
+    /// </param>
+    /// <param name="productId">
+    /// Unique product identifier for the item bought. This should match the Swrve resource name.
+    /// </param>
+    /// <param name="productPrice">
+    /// Price of the product purchased in real money. Note that this is the price
+    /// per product, not the total price of the transaction (when quantity > 1).
+    /// </param>
+    /// <param name="currency">
+    /// Real world currency used for this transaction. This must be an ISO currency code.
+    /// </param>
+    /// <param name="rewards">
+    /// SwrveIAPRewards object containing any in-app currency and/or additional items
+    /// included in this purchase that need to be recorded.
+    /// This parameter is optional.
+    /// </param>
+    /// <param name="receipt">
+    /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
+    /// </param>
+    /// <param name="transactionId">
+    /// The transaction id identifying the purchase iOS7+ (see SKPaymentTransaction::transactionIdentifier).
+    /// </param>
+    public void IapApple (int quantity, string productId, double productPrice, string currency, IapRewards rewards, string receipt, string transactionId)
+    {
         if (config.AppStore != "apple") {
             throw new Exception("This function can only be called to validate IAP events from Apple");
         } else {
@@ -587,7 +660,7 @@ public partial class SwrveSDK
                 SwrveLog.LogError("IAP event not sent: receipt cannot be empty for Apple Store verification");
                 return;
             }
-            _Iap (quantity, productId, productPrice, currency, rewards, receipt, string.Empty, config.AppStore);
+            _Iap (quantity, productId, productPrice, currency, rewards, receipt, string.Empty, transactionId, config.AppStore);
         }
     }
 #endif
@@ -670,7 +743,7 @@ public partial class SwrveSDK
                 return;
             }
             // Google IAP is always of quantity 1
-            _Iap (1, productId, productPrice, currency, rewards, purchaseData, dataSignature, config.AppStore);
+            _Iap (1, productId, productPrice, currency, rewards, purchaseData, dataSignature, string.Empty, config.AppStore);
         }
     }
 #endif
