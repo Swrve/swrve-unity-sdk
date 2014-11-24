@@ -1131,17 +1131,17 @@ public partial class SwrveSDK
             }
 
             if (!string.Equals(eventName, DefaultAutoShowMessagesTrigger, StringComparison.OrdinalIgnoreCase) && IsTooSoonToShowMessageAfterLaunch (now)) {
-                NoMessagesWereShown(eventName, "{Game throttle limit} Too soon after launch. Wait until " + showMessagesAfterLaunch.ToString (WaitTimeFormat));
+                NoMessagesWereShown(eventName, "{App throttle limit} Too soon after launch. Wait until " + showMessagesAfterLaunch.ToString (WaitTimeFormat));
                 return null;
             }
 
             if (IsTooSoonToShowMessageAfterDelay (now)) {
-                NoMessagesWereShown(eventName, "{Game throttle limit} Too soon after last message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
+                NoMessagesWereShown(eventName, "{App throttle limit} Too soon after last message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
                 return null;
             }
 
             if (HasShowTooManyMessagesAlready ()) {
-                NoMessagesWereShown(eventName, "{Game throttle limit} Too many messages shown");
+                NoMessagesWereShown(eventName, "{App throttle limit} Too many messages shown");
                 return null;
             }
 
