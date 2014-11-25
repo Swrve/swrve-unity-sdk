@@ -75,9 +75,13 @@ public class SwrveResourceManager
     /// The resource with the given unique identifier if available.
     /// </returns>
     public SwrveResource GetResource (string resourceId)
-    {
-        if (UserResources.ContainsKey (resourceId)) {
-            return UserResources [resourceId];
+    {	
+        if (UserResources != null) {
+            if (UserResources.ContainsKey (resourceId)) {
+                return UserResources [resourceId];
+            }
+        } else {
+            SwrveLog.LogWarning(String.Format("SwrveResourceManager::GetResource('{0}') Failed. 'SwrveResourceManager.UserResources' is not initialized.", resourceId));
         }
         return null;
     }
