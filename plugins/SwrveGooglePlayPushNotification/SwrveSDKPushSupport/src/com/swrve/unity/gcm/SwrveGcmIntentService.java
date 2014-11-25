@@ -14,6 +14,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.preference.PreferenceManager;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.unity3d.player.UnityPlayer;
@@ -21,10 +22,19 @@ import com.unity3d.player.UnityPlayer;
 public class SwrveGcmIntentService extends IntentService {
 	private static final String LOG_TAG = "SwrveGcmIntentService";
 
-	public static int tempNotificationId = 1;
+	private int notificationId = 1;
+    private SharedPreferences settings;
 
 	public SwrveGcmIntentService() {
 		super("SwrveGcmIntentService");
+	}
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		// Read latest push id
+		settings = PreferenceManager.getDefaultSharedPreferences(this);
+		notificationId = settings.getInt(NOTIFICATION_ID_KEY, 0);
 	}
 
 	@Override
@@ -107,7 +117,6 @@ public class SwrveGcmIntentService extends IntentService {
 	 *         elements
 	 */
 	public int showNotification(NotificationManager notificationManager, Notification notification) {
-		int notificationId = tempNotificationId++;
 		notificationManager.notify(notificationId, notification);
 		return notificationId;
 	}
@@ -186,7 +195,7 @@ public class SwrveGcmIntentService extends IntentService {
 	public PendingIntent createPendingIntent(Bundle msg, String activityClassName) {
 		// Add notification to bundle
 		Intent intent = createIntent(msg, activityClassName);
-		return PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		return PendingIntent.getActivity(this, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 	}
 
 	/**
