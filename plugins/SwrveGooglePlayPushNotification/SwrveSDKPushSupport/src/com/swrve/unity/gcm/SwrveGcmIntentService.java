@@ -22,19 +22,8 @@ import com.unity3d.player.UnityPlayer;
 public class SwrveGcmIntentService extends IntentService {
 	private static final String LOG_TAG = "SwrveGcmIntentService";
 
-	private int notificationId = 1;
-    private SharedPreferences settings;
-
 	public SwrveGcmIntentService() {
 		super("SwrveGcmIntentService");
-	}
-
-	@Override
-	public void onCreate() {
-		super.onCreate();
-		// Read latest push id
-		settings = PreferenceManager.getDefaultSharedPreferences(this);
-		notificationId = settings.getInt(NOTIFICATION_ID_KEY, 0);
 	}
 
 	@Override
@@ -117,6 +106,7 @@ public class SwrveGcmIntentService extends IntentService {
 	 *         elements
 	 */
 	public int showNotification(NotificationManager notificationManager, Notification notification) {
+		int notificationId = (int)(new Date().getTime() % Integer.MAX_VALUE);
 		notificationManager.notify(notificationId, notification);
 		return notificationId;
 	}
@@ -194,6 +184,7 @@ public class SwrveGcmIntentService extends IntentService {
 	 */
 	public PendingIntent createPendingIntent(Bundle msg, String activityClassName) {
 		// Add notification to bundle
+		int notificationId = (int)(new Date().getTime() % Integer.MAX_VALUE);
 		Intent intent = createIntent(msg, activityClassName);
 		return PendingIntent.getActivity(this, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 	}
