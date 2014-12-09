@@ -76,8 +76,12 @@ public class SwrveResourceManager
     /// </returns>
     public SwrveResource GetResource (string resourceId)
     {
-        if (UserResources.ContainsKey (resourceId)) {
-            return UserResources [resourceId];
+        if (UserResources != null) {
+            if (UserResources.ContainsKey (resourceId)) {
+                return UserResources [resourceId];
+            }
+        } else {
+            SwrveLog.LogWarning(String.Format("SwrveResourceManager::GetResource('{0}'): Resources are not available yet.", resourceId));
         }
         return null;
     }
