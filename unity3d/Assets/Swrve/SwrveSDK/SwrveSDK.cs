@@ -931,9 +931,18 @@ public partial class SwrveSDK
         // Carrier info
         ICarrierInfo carrierInfo = GetCarrierInfoProvider();
         if (carrierInfo != null) {
-            deviceInfo ["swrve.sim_operator.name"] = carrierInfo.GetName();
-            deviceInfo ["swrve.sim_operator.iso_country_code"] = carrierInfo.GetIsoCountryCode();
-            deviceInfo ["swrve.sim_operator.code"] = carrierInfo.GetCarrierCode();
+            string carrierInfoName = carrierInfo.GetName();
+            if (!string.IsNullOrEmpty(carrierInfoName)) {
+                deviceInfo ["swrve.sim_operator.name"] = carrierInfoName;
+            }
+            string carrierInfoIsoCountryCode = carrierInfo.GetIsoCountryCode();
+            if (!string.IsNullOrEmpty(carrierInfoIsoCountryCode)) {
+                deviceInfo ["swrve.sim_operator.iso_country_code"] = carrierInfoIsoCountryCode;
+            }
+            string carrierInfoCarrierCode = carrierInfo.GetCarrierCode();
+            if (!string.IsNullOrEmpty(carrierInfoCarrierCode)) {
+                deviceInfo ["swrve.sim_operator.code"] = carrierInfoCarrierCode;
+            }
         }
 
         return deviceInfo;
