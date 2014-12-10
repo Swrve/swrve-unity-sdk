@@ -1309,7 +1309,7 @@ public partial class SwrveSDK
     /// <summary>
     /// Reload the campaigns and user resources from the server.
     /// </summary>
-    public void RefreshUserResourcesAndCampaigns ()
+    public virtual void RefreshUserResourcesAndCampaigns ()
     {
         LoadResourcesAndCampaigns ();
     }
