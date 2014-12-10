@@ -155,7 +155,7 @@ public partial class SwrveSDK
         return path;
     }
 
-    private void _Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards, string receipt, string receiptSignature, string appStore)
+    private void _Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards, string receipt, string receiptSignature, string transactionId, string appStore)
     {
         if (!_Iap_check_arguments (quantity, productId, productPrice, currency, appStore)) {
             SwrveLog.LogError ("ERROR: IAP event not sent because it received an illegal argument");
@@ -178,6 +178,9 @@ public partial class SwrveSDK
             // Base64 encode the receipt string
             string receiptString = Convert.ToBase64String (Encoding.UTF8.GetBytes (receipt));
             json.Add ("receipt", receiptString);
+            if (!string.IsNullOrEmpty(transactionId)) {
+                json.Add ("transaction_id", transactionId);
+            }
         } else if (appStore == "google") {
             json.Add ("receipt", receipt);
             json.Add ("receipt_signature", receiptSignature);
