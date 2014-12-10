@@ -543,7 +543,7 @@ public partial class SwrveSDK
     /// </param>
     public void IapApple (int quantity, string productId, double productPrice, string currency, string receipt)
     {
-        IapApple (quantity, productId, productPrice, currency, receipt, null);
+        IapApple (quantity, productId, productPrice, currency, receipt, string.Empty);
     }
 
     /// <summary>
@@ -614,7 +614,7 @@ public partial class SwrveSDK
     /// </param>
     public void IapApple (int quantity, string productId, double productPrice, string currency, IapRewards rewards, string receipt)
     {
-        IapApple (quantity, productId, productPrice, currency, rewards, receipt, null);
+        IapApple (quantity, productId, productPrice, currency, rewards, receipt, string.Empty);
     }
 
     /// <summary>
