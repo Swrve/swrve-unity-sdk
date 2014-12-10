@@ -106,9 +106,21 @@ public class SwrveGcmIntentService extends IntentService {
 	 *         elements
 	 */
 	public int showNotification(NotificationManager notificationManager, Notification notification) {
-		int notificationId = (int)(new Date().getTime() % Integer.MAX_VALUE);
+		int notificationId = generateNotificationId(notification);
 		notificationManager.notify(notificationId, notification);
 		return notificationId;
+	}
+
+	/**
+	 * Generate the id for the new notification.
+	 *
+	 * Defaults to the current milliseconds to have unique notifications.
+	 * 
+	 * @param notification notification data
+	 * @return id for the notification to be displayed
+	 */
+	public int generateNotificationId(Notification notification) {
+		return (int)(new Date().getTime() % Integer.MAX_VALUE);
 	}
 
 	/**
@@ -184,9 +196,21 @@ public class SwrveGcmIntentService extends IntentService {
 	 */
 	public PendingIntent createPendingIntent(Bundle msg, String activityClassName) {
 		// Add notification to bundle
-		int notificationId = (int)(new Date().getTime() % Integer.MAX_VALUE);
 		Intent intent = createIntent(msg, activityClassName);
-		return PendingIntent.getActivity(this, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		return PendingIntent.getActivity(this, generatePendingIntentId(msg), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+	}
+
+	/**
+	 * Generate the id for the pending intent associated with
+	 * the given push payload.
+	 *
+	 * Defaults to the current milliseconds to have unique notifications.
+	 * 
+	 * @param msg push message payload
+	 * @return id for the notification to be displayed
+	 */
+	public int generatePendingIntentId(Bundle msg) {
+		return (int)(new Date().getTime() % Integer.MAX_VALUE);
 	}
 
 	/**
