@@ -14,14 +14,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.preference.PreferenceManager;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.unity3d.player.UnityPlayer;
 
 public class SwrveGcmIntentService extends IntentService {
 	private static final String LOG_TAG = "SwrveGcmIntentService";
-
-	public static int tempNotificationId = 1;
 
 	public SwrveGcmIntentService() {
 		super("SwrveGcmIntentService");
@@ -107,9 +106,21 @@ public class SwrveGcmIntentService extends IntentService {
 	 *         elements
 	 */
 	public int showNotification(NotificationManager notificationManager, Notification notification) {
-		int notificationId = tempNotificationId++;
+		int notificationId = generateNotificationId(notification);
 		notificationManager.notify(notificationId, notification);
 		return notificationId;
+	}
+
+	/**
+	 * Generate the id for the new notification.
+	 *
+	 * Defaults to the current milliseconds to have unique notifications.
+	 * 
+	 * @param notification notification data
+	 * @return id for the notification to be displayed
+	 */
+	public int generateNotificationId(Notification notification) {
+		return (int)(new Date().getTime() % Integer.MAX_VALUE);
 	}
 
 	/**
@@ -186,7 +197,20 @@ public class SwrveGcmIntentService extends IntentService {
 	public PendingIntent createPendingIntent(Bundle msg, String activityClassName) {
 		// Add notification to bundle
 		Intent intent = createIntent(msg, activityClassName);
-		return PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		return PendingIntent.getActivity(this, generatePendingIntentId(msg), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+	}
+
+	/**
+	 * Generate the id for the pending intent associated with
+	 * the given push payload.
+	 *
+	 * Defaults to the current milliseconds to have unique notifications.
+	 * 
+	 * @param msg push message payload
+	 * @return id for the notification to be displayed
+	 */
+	public int generatePendingIntentId(Bundle msg) {
+		return (int)(new Date().getTime() % Integer.MAX_VALUE);
 	}
 
 	/**
