@@ -15,6 +15,8 @@ namespace Swrve.Device
 
     [DllImport ("__Internal")]
     private static extern string _swrveCarrierCode();
+
+    private static readonly string PluginError = "Couldn't invoke native code to get carrier information, make sure you have the iOS plugin inside your project and you are running on a iOS device: ";
 #endif
 
 #if UNITY_ANDROID
@@ -47,7 +49,12 @@ namespace Swrve.Device
 
       public string GetName() {
 #if UNITY_IPHONE
-          return _swrveCarrierName();
+          try {
+              return _swrveCarrierName();
+          } catch(Exception exp) {
+              SwrveLog.LogWarning(PluginError + exp.ToString());
+              return null;
+          }
 #elif UNITY_ANDROID
           return AndroidGetTelephonyManagerAttribute("getSimOperatorName");
 #else
@@ -57,7 +64,12 @@ namespace Swrve.Device
 
       public string GetIsoCountryCode() {
 #if UNITY_IPHONE
-          return _swrveCarrierIsoCountryCode();
+          try {
+              return _swrveCarrierIsoCountryCode();
+          } catch(Exception exp) {
+              SwrveLog.LogWarning(PluginError + exp.ToString());
+              return null;
+          }
 #elif UNITY_ANDROID
           return AndroidGetTelephonyManagerAttribute("getSimCountryIso");
 #else
@@ -67,7 +79,12 @@ namespace Swrve.Device
 
       public string GetCarrierCode() {
 #if UNITY_IPHONE
-          return _swrveCarrierCode();
+          try {
+              return _swrveCarrierCode();
+          } catch(Exception exp) {
+              SwrveLog.LogWarning(PluginError + exp.ToString());
+              return null;
+          }
 #elif UNITY_ANDROID
           return AndroidGetTelephonyManagerAttribute("getSimOperator");
 #else
