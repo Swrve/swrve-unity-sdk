@@ -5,7 +5,7 @@ This Unity3D SDK will enable your game to use all of these features.
 
 Getting started
 ---------------
-Have a look at the quick integration guide at https://dashboard.swrve.com/help/category/20127113
+Have a look at the quick integration guide at http://docs.swrve.com/developer-documentation/37926233/
 
 Requirements
 ------------
