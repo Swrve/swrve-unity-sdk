@@ -202,7 +202,11 @@ public class SwrveQAUser
     }
 
 #if UNITY_IPHONE
+#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5)
     public void PushNotification (RemoteNotification[] notifications, int count)
+#else
+    public void PushNotification (UnityEngine.iOS.RemoteNotification[] notifications, int count)
+#endif
     {
         try {
             String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/push";
@@ -210,7 +214,11 @@ public class SwrveQAUser
             for(int i = 0; i < count; i++) {
                 if (CanMakePushNotificationRequest()) {
                     Dictionary<string, object> pushJson = new Dictionary<string, object>();
+#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5)
                     RemoteNotification notification = notifications[i];
+#else
+                    UnityEngine.iOS.RemoteNotification notification = notifications[i];
+#endif
                     pushJson.Add("alert", notification.alertBody);
                     pushJson.Add("sound", notification.soundName);
                     pushJson.Add("badge", notification.applicationIconBadgeNumber);

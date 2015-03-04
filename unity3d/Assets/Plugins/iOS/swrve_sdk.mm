@@ -1,3 +1,6 @@
+#include <CoreTelephony/CTTelephonyNetworkInfo.h>
+#include <CoreTelephony/CTCarrier.h>
+
 char* swrveCStringCopy(const char* string)
 {
     if (string == NULL)

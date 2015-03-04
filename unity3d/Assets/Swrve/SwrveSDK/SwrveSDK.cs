@@ -1398,7 +1398,11 @@ public partial class SwrveSDK
     public bool ObtainIOSDeviceToken()
     {
         if (config.PushNotificationEnabled) {
+#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5)
             byte[] token = NotificationServices.deviceToken;
+#else
+            byte[] token = UnityEngine.iOS.NotificationServices.deviceToken;
+#endif
             if (token != null) {
                 // Send token as user update and to Babble if QA user
                 string hexToken = SwrveHelper.FilterNonAlphanumeric(System.BitConverter.ToString(token));
@@ -1428,14 +1432,25 @@ public partial class SwrveSDK
     {
         if (config.PushNotificationEnabled) {
             // Process push notifications
+#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5)
             int notificationCount = NotificationServices.remoteNotificationCount;
+#else
+            int notificationCount = UnityEngine.iOS.NotificationServices.remoteNotificationCount;
+#endif
             if(notificationCount > 0) {
                 SwrveLog.Log("Got " + notificationCount + " remote notifications");
 
+#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5)
                 for(int i = 0; i < notificationCount; i++) {
                     ProcessRemoteNotification(NotificationServices.remoteNotifications[i]);
                 }
                 NotificationServices.ClearRemoteNotifications();
+#else
+                for(int i = 0; i < notificationCount; i++) {
+                    ProcessRemoteNotification(UnityEngine.iOS.NotificationServices.remoteNotifications[i]);
+                }
+                UnityEngine.iOS.NotificationServices.ClearRemoteNotifications();
+#endif
             }
         }
     }
