@@ -2,3 +2,4 @@
 /docs/
 /buildtemp/*
 *.log
+.DS_Store
