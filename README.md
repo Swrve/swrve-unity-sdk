@@ -1,7 +1,7 @@
 What is Swrve
 -------------
 Swrve is a single integrated platform delivering everything you need to drive mobile engagement and create valuable consumer relationships on mobile.  
-This Unity3D SDK will enable your game to use all of these features.
+This Unity3D SDK will enable your app to use all of these features.
 
 Getting started
 ---------------
@@ -12,8 +12,8 @@ Requirements
 ### Unity 4.0.0+
 The SDK needs a Unity version higher than 4.0.0 to be able to compile.
 
-### Unity 4.0.0+ Pro
-Some of the features like push notifications require the use of native plugins. Native plugins are only available for Unity Pro.
+### Unity 5+ Personal or Unity 4.0.0+ Pro
+Some of the features like push notifications require the use of native plugins. Native plugins are now available in Unity Personal 5+ or previvous versions of Unity Pro.
 
 How to run the demo
 -------------------
