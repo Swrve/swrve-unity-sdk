@@ -21,6 +21,12 @@ public class MainActivity extends UnityPlayerActivity {
 		super.onResume();
 		processIntent(getApplicationContext(), getIntent());
 	}
+
+	@Override
+	protected void onNewIntent(Intent intent) {
+    	super.onNewIntent(intent);
+		processIntent(getApplicationContext(), intent);
+	}
 	
 	public static void processIntent(Context context, Intent intent) {
 		if (lastIntent != intent) {
