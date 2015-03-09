@@ -81,7 +81,7 @@ public class SwrveConfig
     /// <summary>
     /// Use HTTPS for the event server.
     /// </summary>
-    public bool UseHttpsForEventsServer = false;
+    public bool UseHttpsForEventsServer = true;
 
     /// <summary>
     /// The URL of the server to request campaign and resources data from.
