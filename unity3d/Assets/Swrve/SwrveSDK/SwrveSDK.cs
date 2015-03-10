@@ -12,6 +12,7 @@ using Swrve.Messaging;
 using Swrve.Helpers;
 using Swrve.ResourceManager;
 using Swrve.Device;
+using Swrve.IAP;
 
 #if UNITY_IPHONE
 using System.Runtime.InteropServices;
@@ -33,7 +34,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const String SdkVersion = "3.3.2";
+    public const String SdkVersion = "3.4";
 
 #if UNITY_IPHONE
     [DllImport ("__Internal")]
@@ -540,8 +541,9 @@ public partial class SwrveSDK
     /// </param>
     /// <param name="receipt">
     /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
+    /// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
     /// </param>
-    public void IapApple (int quantity, string productId, double productPrice, string currency, string receipt)
+    public void IapApple (int quantity, string productId, double productPrice, string currency, IapReceipt receipt)
     {
         IapApple (quantity, productId, productPrice, currency, receipt, string.Empty);
     }
@@ -571,11 +573,12 @@ public partial class SwrveSDK
     /// </param>
     /// <param name="receipt">
     /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
+    /// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
     /// </param>
     /// <param name="transactionId">
     /// The transaction id identifying the purchase iOS7+ (see SKPaymentTransaction::transactionIdentifier).
     /// </param>
-    public void IapApple (int quantity, string productId, double productPrice, string currency, string receipt, string transactionId)
+    public void IapApple (int quantity, string productId, double productPrice, string currency, IapReceipt receipt, string transactionId)
     {
         IapRewards no_rewards = new IapRewards();
         IapApple (quantity, productId, productPrice, currency, no_rewards, receipt, transactionId);
@@ -611,8 +614,9 @@ public partial class SwrveSDK
     /// </param>
     /// <param name="receipt">
     /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
+    /// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
     /// </param>
-    public void IapApple (int quantity, string productId, double productPrice, string currency, IapRewards rewards, string receipt)
+    public void IapApple (int quantity, string productId, double productPrice, string currency, IapRewards rewards, IapReceipt receipt)
     {
         IapApple (quantity, productId, productPrice, currency, rewards, receipt, string.Empty);
     }
@@ -647,20 +651,25 @@ public partial class SwrveSDK
     /// </param>
     /// <param name="receipt">
     /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
+    /// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
     /// </param>
     /// <param name="transactionId">
     /// The transaction id identifying the purchase iOS7+ (see SKPaymentTransaction::transactionIdentifier).
     /// </param>
-    public void IapApple (int quantity, string productId, double productPrice, string currency, IapRewards rewards, string receipt, string transactionId)
+    public void IapApple (int quantity, string productId, double productPrice, string currency, IapRewards rewards, IapReceipt receipt, string transactionId)
     {
         if (config.AppStore != "apple") {
             throw new Exception("This function can only be called to validate IAP events from Apple");
         } else {
-            if (String.IsNullOrEmpty(receipt)) {
+            string encodedReceipt = null;
+            if (receipt != null) {
+                encodedReceipt = receipt.GetBase64EncodedReceipt();
+            }
+            if (String.IsNullOrEmpty(encodedReceipt)) {
                 SwrveLog.LogError("IAP event not sent: receipt cannot be empty for Apple Store verification");
                 return;
             }
-            _Iap (quantity, productId, productPrice, currency, rewards, receipt, string.Empty, transactionId, config.AppStore);
+            _Iap (quantity, productId, productPrice, currency, rewards, encodedReceipt, string.Empty, transactionId, config.AppStore);
         }
     }
 #endif
