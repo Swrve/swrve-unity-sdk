@@ -444,7 +444,6 @@ public partial class SwrveSDK
 
     private void InitUserResources ()
     {
-        ResourceManager = new Swrve.ResourceManager.SwrveResourceManager ();
         userResourcesRaw = storage.LoadSecure (AbTestUserResourcesSave, userId);
         if (!string.IsNullOrEmpty (userResourcesRaw)) {
             IList<object> userResourcesJson = (IList<object>)Json.Deserialize (userResourcesRaw);
