@@ -120,5 +120,15 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         PlayerSettings.strippingLevel = StrippingLevel.StripAssemblies;
         BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
     }
+
+    public static void TestBuildWebPlayer ()
+    {
+        string outputPath = "../../buildtemp/tmp_WebPlayer";
+        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.WebPlayer);
+        string error = BuildPipeline.BuildPlayer (mainScenes, outputPath, BuildTarget.WebPlayer, opt);
+        if (error != null && !error.Equals (string.Empty)) {
+            throw new Exception (error);
+        }
+    }
 }
 
