@@ -51,6 +51,11 @@ public class SwrveMessageFormat
     public float Scale = 1f;
 
     /// <summary>
+    /// Color of the background.
+    /// </summary>
+    public Color? BackgroundColor = null;
+
+    /// <summary>
     /// Custom button listener to process install button events.
     /// </summary>
     public ISwrveInstallButtonListener InstallButtonListener;
@@ -99,7 +104,7 @@ public class SwrveMessageFormat
     /// <returns>
     /// Parsed in-app message format.
     /// </returns>
-    public static SwrveMessageFormat LoadFromJSON (SwrveMessage message, Dictionary<string, object> messageFormatData)
+    public static SwrveMessageFormat LoadFromJSON (SwrveSDK sdk, SwrveMessage message, Dictionary<string, object> messageFormatData)
     {
         SwrveMessageFormat messageFormat = new SwrveMessageFormat (message);
 
@@ -111,6 +116,27 @@ public class SwrveMessageFormat
 
         if (messageFormatData.ContainsKey ("orientation")) {
             messageFormat.Orientation = SwrveOrientationHelper.Parse ((string)messageFormatData ["orientation"]);
+        }
+
+        messageFormat.BackgroundColor = sdk.DefaultBackgroundColor;
+        if (messageFormatData.ContainsKey ("color")) {
+            string strColor = (string)messageFormatData ["color"];
+            Color? c = messageFormat.BackgroundColor;
+            if (strColor.Length == 8) {
+                // RRGGBB
+                byte a = byte.Parse(strColor.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+                byte r = byte.Parse(strColor.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+                byte g = byte.Parse(strColor.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+                byte b = byte.Parse(strColor.Substring(6, 2), System.Globalization.NumberStyles.HexNumber);
+                c = new Color32(r, g, b, a);
+            } else if (strColor.Length == 6) {
+                // AARRGGBB
+                byte r = byte.Parse(strColor.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+                byte g = byte.Parse(strColor.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+                byte b = byte.Parse(strColor.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+                c = new Color32(r, g, b, 255);
+            }
+            messageFormat.BackgroundColor = c;
         }
 
         Dictionary<string, object> sizeJson = (Dictionary<string, object>)messageFormatData ["size"];
