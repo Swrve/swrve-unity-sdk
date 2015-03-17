@@ -54,9 +54,9 @@ public class SwrveMessageRenderer
             AnimateMessage (format);
         }
 
-        if (format.Message.BackgroundColor.HasValue && GetBlankTexture () != null) {
-            Color backgroundColor = format.Message.BackgroundColor.Value;
-            backgroundColor.a = format.Message.BackgroundAlpha;
+        if (format.BackgroundColor.HasValue && GetBlankTexture () != null) {
+            Color backgroundColor = format.BackgroundColor.Value;
+            backgroundColor.a = backgroundColor.a * format.Message.BackgroundAlpha;
             GUI.color = backgroundColor;
             WholeScreen.width = Screen.width;
             WholeScreen.height = Screen.height;

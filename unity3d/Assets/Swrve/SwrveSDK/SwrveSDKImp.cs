@@ -1163,7 +1163,7 @@ public partial class SwrveSDK
 
                     for (int i = 0, j = jsonCampaigns.Count; i < j; i++) {
                         Dictionary<string, object> campaignData = (Dictionary<string, object>)jsonCampaigns [i];
-                        SwrveCampaign campaign = SwrveCampaign.LoadFromJSON (campaignData, initialisedTime, swrveTemporaryPath);
+                        SwrveCampaign campaign = SwrveCampaign.LoadFromJSON (this, campaignData, initialisedTime, swrveTemporaryPath);
                         if (campaign.Messages.Count > 0) {
                             assetsQueue.AddRange (campaign.ListOfAssets ());
 
