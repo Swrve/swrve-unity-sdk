@@ -57,25 +57,33 @@ public class SwrveGcmIntentService extends IntentService {
 		SwrveGcmBroadcastReceiver.completeWakefulIntent(intent);
 	}
 
+	private static boolean isSwrveRemoteNotification(final Bundle msg) {
+		Object rawId = msg.get("_p");
+		String msgId = (rawId != null) ? rawId.toString() : null;
+		return !SwrveHelper.isNullOrEmpty(msgId);
+     }
+
 	private void processRemoteNotification(Bundle msg) {
 		try {
-			final SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(getApplicationContext());
-			String activityClassName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_ACTIVITY_NAME, "com.unity3d.player.UnityPlayerNativeActivity");
-			
-			// Process activity name (could be local or a class with a package name)
-			if(!activityClassName.contains(".")) {
-				activityClassName = getPackageName() + "." + activityClassName;
+			if (isSwrveRemoteNotification(msg)) {
+				final SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(getApplicationContext());
+				String activityClassName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_ACTIVITY_NAME, "com.unity3d.player.UnityPlayerNativeActivity");
+				
+				// Process activity name (could be local or a class with a package name)
+				if(!activityClassName.contains(".")) {
+					activityClassName = getPackageName() + "." + activityClassName;
+				}
+				
+				// Only call this listener if there is an activity running
+				if (UnityPlayer.currentActivity != null) {
+					// Call Unity SDK MonoBehaviour container
+					SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
+					SwrveGcmDeviceRegistration.newReceivedNotification(UnityPlayer.currentActivity, swrveNotification);
+		    	}
+		
+				// Process notification
+				processNotification(msg, activityClassName);
 			}
-			
-			// Only call this listener if there is an activity running
-			if (UnityPlayer.currentActivity != null) {
-				// Call Unity SDK MonoBehaviour container
-				SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
-				SwrveGcmDeviceRegistration.newReceivedNotification(UnityPlayer.currentActivity, swrveNotification);
-	    	}
-	
-			// Process notification
-			processNotification(msg, activityClassName);
 		} catch (Exception ex) {
 			Log.e(LOG_TAG, "Error processing push notification", ex);
 		}
