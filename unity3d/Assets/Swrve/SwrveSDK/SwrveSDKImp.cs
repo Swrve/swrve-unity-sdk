@@ -1076,8 +1076,10 @@ public partial class SwrveSDK
             if (!CheckAsset (asset)) {
                 CoroutineReference<Texture2D> resultTexture = new CoroutineReference<Texture2D> ();
                 yield return StartTask ("DownloadAsset", DownloadAsset (asset, resultTexture));
-                if (resultTexture.Value () != null) {
+                Texture2D texture = resultTexture.Value ();
+                if (texture != null) {
                     assetsOnDisk.Add (asset);
+                    Texture2D.Destroy (texture);
                 }
             } else {
                 // Already downloaded
