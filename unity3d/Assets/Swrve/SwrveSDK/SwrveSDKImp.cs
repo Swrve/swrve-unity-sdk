@@ -175,9 +175,8 @@ public partial class SwrveSDK
         }
 
         if (appStore == "apple") {
-            // Base64 encode the receipt string
-            string receiptString = Convert.ToBase64String (Encoding.UTF8.GetBytes (receipt));
-            json.Add ("receipt", receiptString);
+            // receipt comes from the new wrapper and should be base64 encoded here
+            json.Add ("receipt", receipt);
             if (!string.IsNullOrEmpty(transactionId)) {
                 json.Add ("transaction_id", transactionId);
             }

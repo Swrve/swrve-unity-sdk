@@ -7,6 +7,9 @@ using Swrve.Messaging;
 /// <summary>
 /// Swrve SDK demo.
 /// </summary>
+using Swrve.IAP;
+
+
 public class DemoGUI : BaseDemoGUI
 {
     /// Reference to the Swrve Component in the scene.
@@ -65,7 +68,7 @@ public class DemoGUI : BaseDemoGUI
                 rewards.AddItem (@"sword", 1);
 #if UNITY_IPHONE
                 // IAP validation happens on our servers. Provide if possible the receipt from Apple.
-                string receipt = "receipt-from-apple";
+                IapReceipt receipt = RawReceipt.FromString("receipt-from-apple");
                 swrveComponent.SDK.IapApple (1, @"productId", 4.99, @"EUR", rewards, receipt);
 #elif UNITY_ANDROID
                 // IAP validation happens on our servers. Provide if possible the purchase data from Google.
