@@ -1387,6 +1387,15 @@ public partial class SwrveSDK
         LoadResourcesAndCampaigns ();
     }
 
+    /// <summary>
+    ///  Used internally to obtain the configured default background for in-app messages.
+    /// </summary>
+    public Color? DefaultBackgroundColor {
+        get {
+            return config.DefaultBackgroundColor;
+        }
+    }
+
 #if UNITY_IPHONE
 
     /// <summary>

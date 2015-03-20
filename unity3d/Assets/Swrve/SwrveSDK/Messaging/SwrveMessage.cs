@@ -47,11 +47,6 @@ public class SwrveMessage
     public Point TargetPosition = new Point (0, 0);
 
     /// <summary>
-    /// Color of the background.
-    /// </summary>
-    public Color? BackgroundColor = Color.black;
-
-    /// <summary>
     /// Background alpha.
     /// </summary>
     public float BackgroundAlpha = 1f;
@@ -100,7 +95,7 @@ public class SwrveMessage
     /// <returns>
     /// Parsed in-app message.
     /// </returns>
-    public static SwrveMessage LoadFromJSON (SwrveCampaign campaign, Dictionary<string, object> messageData)
+    public static SwrveMessage LoadFromJSON (SwrveSDK sdk, SwrveCampaign campaign, Dictionary<string, object> messageData)
     {
         SwrveMessage message = new SwrveMessage (campaign);
         message.Id = MiniJsonHelper.GetInt (messageData, "id");
@@ -115,7 +110,7 @@ public class SwrveMessage
 
         for (int i = 0, j = jsonFormats.Count; i < j; i++) {
             Dictionary<string, object> messageFormatData = (Dictionary<string, object>)jsonFormats [i];
-            SwrveMessageFormat messageFormat = SwrveMessageFormat.LoadFromJSON (message, messageFormatData);
+            SwrveMessageFormat messageFormat = SwrveMessageFormat.LoadFromJSON (sdk, message, messageFormatData);
             message.Formats.Add (messageFormat);
         }
 

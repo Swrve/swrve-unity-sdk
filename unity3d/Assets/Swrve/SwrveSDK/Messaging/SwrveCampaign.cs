@@ -221,7 +221,7 @@ public class SwrveCampaign
     /// <returns>
     /// Parsed in-app campaign.
     /// </returns>
-    public static SwrveCampaign LoadFromJSON (Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath)
+    public static SwrveCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath)
     {
         SwrveCampaign campaign = new SwrveCampaign (initialisedTime, assetPath);
         campaign.Id = MiniJsonHelper.GetInt (campaignData, "id");
@@ -233,7 +233,7 @@ public class SwrveCampaign
         IList<object> jsonMessages = (IList<object>)campaignData ["messages"];
         for (int k = 0, t = jsonMessages.Count; k < t; k++) {
             Dictionary<string, object> messageData = (Dictionary<string, object>)jsonMessages [k];
-            SwrveMessage message = SwrveMessage.LoadFromJSON (campaign, messageData);
+            SwrveMessage message = SwrveMessage.LoadFromJSON (sdk, campaign, messageData);
             if (message.Formats.Count > 0) {
                 campaign.AddMessage (message);
             }

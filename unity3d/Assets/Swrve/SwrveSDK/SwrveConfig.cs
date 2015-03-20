@@ -2,6 +2,7 @@ using System;
 using Swrve.Messaging;
 using System.Collections.Generic;
 using System.Globalization;
+using UnityEngine;
 
 namespace Swrve
 {
@@ -81,7 +82,7 @@ public class SwrveConfig
     /// <summary>
     /// Use HTTPS for the event server.
     /// </summary>
-    public bool UseHttpsForEventsServer = true;
+    public bool UseHttpsForEventsServer = false;
 
     /// <summary>
     /// The URL of the server to request campaign and resources data from.
@@ -143,6 +144,11 @@ public class SwrveConfig
     /// Maximum delay in seconds for in-app messages to appear after initialization.
     /// </summary>
     public float AutoShowMessagesMaxDelay = 5;
+
+    /// <summary>
+    /// Default in-app background color if none is set in the template.
+    /// </summary>
+    public Color? DefaultBackgroundColor = null;
 
     public void CalculateEndpoints (int appId)
     {
