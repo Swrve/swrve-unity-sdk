@@ -1,11 +1,17 @@
+#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE
+#define SWRVE_SUPPORTED_PLATFORM
+#endif
 #if !(UNITY_2_6 || UNITY_2_6_1 || UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5 || UNITY_4_0 || UNITY_4_0_1 || UNITY_4_1 || UNITY_4_2)
 #define SUPPORTS_GZIP_RESPONSES
 #endif
 using System;
 using System.Collections;
 using System.IO;
+
+#if SWRVE_SUPPORTED_PLATFORM
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Zip;
+#endif
 
 using UnityEngine;
 using System.Collections.Generic;
@@ -81,6 +87,7 @@ public class RESTClient : IRESTClient
 
     protected void ProcessResponse (WWW www, long wwwTime, string url, Action<RESTResponse> listener)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         try {
             WwwDeducedError deducedError = UnityWwwHelper.DeduceWwwError (www);
             if (deducedError == WwwDeducedError.NoError) {
@@ -135,6 +142,7 @@ public class RESTClient : IRESTClient
         } catch(Exception exp) {
             SwrveLog.LogError(exp);
         }
+#endif
     }
 }
 }

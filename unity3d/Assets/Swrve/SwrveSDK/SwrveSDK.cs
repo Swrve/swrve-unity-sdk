@@ -1,3 +1,6 @@
+#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE
+#define SWRVE_SUPPORTED_PLATFORM
+#endif
 using UnityEngine;
 using System;
 using System.Collections;
@@ -236,15 +239,17 @@ public partial class SwrveSDK
     /// </param>
     public virtual void Init (MonoBehaviour container, int gameId, string apiKey, SwrveConfig config)
     {
-        this.lastSessionTick = GetSessionTime ();
-        // Save init time
-        initialisedTime = SwrveHelper.GetNow();
-        this.config = config;
         this.Container = container;
+        this.ResourceManager = new Swrve.ResourceManager.SwrveResourceManager ();
+        this.config = config;
         this.gameId = gameId;
         this.apiKey = apiKey;
         this.userId = config.UserId;
         this.Language = config.Language;
+#if SWRVE_SUPPORTED_PLATFORM
+        this.lastSessionTick = GetSessionTime ();
+        // Save init time
+        initialisedTime = SwrveHelper.GetNow();
         this.campaignsAndResourcesInitialized = false;
         this.autoShowMessagesEnabled = true;
         this.assetsOnDisk = new HashSet<string> ();
@@ -368,9 +373,9 @@ public partial class SwrveSDK
 
         StartCampaignsAndResourcesTimer();
         DisableAutoShowAfterDelay();
+#endif
     }
 
-    #region Public Methods
     /// <summary>
     /// Buffer the event of the start of a play session.
     /// </summary>
@@ -379,8 +384,10 @@ public partial class SwrveSDK
     /// </remarks>
     public void SessionStart ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         QueueSessionStart();
         SendQueuedEvents ();
+#endif
     }
 
     /// <summary>
@@ -391,8 +398,10 @@ public partial class SwrveSDK
     /// </remarks>
     public void SessionEnd ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         Dictionary<string,object> json = new Dictionary<string, object> ();
         AppendEventToBuffer ("session_end", json);
+#endif
     }
 
     /// <summary>
@@ -409,7 +418,9 @@ public partial class SwrveSDK
     /// </param>
     public virtual void NamedEvent (string name, Dictionary<string, string> payload = null)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         NamedEventInternal (name, payload);
+#endif
     }
 
     /// <summary>
@@ -423,6 +434,7 @@ public partial class SwrveSDK
     /// </param>
     public void UserUpdate (Dictionary<string, string> attributes)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         if (attributes != null && attributes.Count > 0) {
             Dictionary<string,object> json = new Dictionary<string, object> ();
             json.Add ("attributes", attributes);
@@ -430,6 +442,7 @@ public partial class SwrveSDK
         } else {
             SwrveLog.LogError ("Invoked user update with no update attributes");
         }
+#endif
     }
 
     /// <summary>
@@ -452,12 +465,14 @@ public partial class SwrveSDK
     /// </param>
     public void Purchase (string item, string currency, int cost, int quantity)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         Dictionary<string,object> json = new Dictionary<string, object> ();
         json.Add ("item", item);
         json.Add ("currency", currency);
         json.Add ("cost", cost);
         json.Add ("quantity", quantity);
         AppendEventToBuffer ("purchase", json);
+#endif
     }
 
     /// <summary>
@@ -484,8 +499,10 @@ public partial class SwrveSDK
     /// </param>
     public void Iap (int quantity, string productId, double productPrice, string currency)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         IapRewards no_rewards = new IapRewards();
         Iap (quantity, productId, productPrice, currency, no_rewards);
+#endif
     }
 
     /// <summary>
@@ -512,7 +529,9 @@ public partial class SwrveSDK
     /// </param>
     public void Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         _Iap (quantity, productId, productPrice, currency, rewards, string.Empty, string.Empty, string.Empty, "unknown_store");
+#endif
     }
 
 #if UNITY_IPHONE
@@ -771,10 +790,12 @@ public partial class SwrveSDK
     /// </param>
     public void CurrencyGiven (string givenCurrency, double amount)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         Dictionary<string, object> json = new Dictionary<string, object> ();
         json.Add ("given_currency", givenCurrency);
         json.Add ("given_amount", amount);
         AppendEventToBuffer ("currency_given", json);
+#endif
     }
 
     /// <summary>
@@ -782,6 +803,7 @@ public partial class SwrveSDK
     /// </summary>
     public bool SendQueuedEvents ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         bool sentEvents = false;
         if (Initialised) {
             if (!eventsConnecting) {
@@ -816,6 +838,9 @@ public partial class SwrveSDK
         }
 
         return sentEvents;
+#else
+        return false;
+#endif
     }
 
     /// <summary>
@@ -829,6 +854,7 @@ public partial class SwrveSDK
     /// </param>
     public void GetUserResources (Action<Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         if (Initialised) {
             if (userResources != null) {
                 onResult.Invoke(userResources, userResourcesRaw);
@@ -836,6 +862,7 @@ public partial class SwrveSDK
                 onResult.Invoke(new Dictionary<string, Dictionary<string, string>>(), "[]");
             }
         }
+#endif
     }
 
     /// <summary>
@@ -849,6 +876,7 @@ public partial class SwrveSDK
     /// </param>
     public void GetUserResourcesDiff (Action<Dictionary<string, Dictionary<string, string>>, Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         if (Initialised && !abTestUserResourcesDiffConnecting) {
             abTestUserResourcesDiffConnecting = true;
             StringBuilder getRequest = new StringBuilder (abTestResourcesDiffUrl);
@@ -864,6 +892,7 @@ public partial class SwrveSDK
                 onError.Invoke(new Exception(errorStr));
             }
         }
+#endif
     }
 
     /// <summary>
@@ -871,7 +900,9 @@ public partial class SwrveSDK
     /// </summary>
     public void LoadFromDisk ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         LoadEventsFromDisk ();
+#endif
     }
 
     /// <summary>
@@ -882,6 +913,7 @@ public partial class SwrveSDK
     /// </param>
     public void FlushToDisk (bool saveEventsBeingSent = false)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         if (Initialised) {
             // Concatenate existing events and buffer
             if (eventBufferStringBuilder != null) {
@@ -921,6 +953,7 @@ public partial class SwrveSDK
                 storage.Save (EventsSave, savedEventString, userId);
             }
         }
+#endif
     }
 
     /// <summary>
@@ -930,7 +963,6 @@ public partial class SwrveSDK
     {
         return swrvePath;
     }
-    #endregion
 
     /// <summary>
     /// Returns a map of Swrve device properties.
@@ -1036,6 +1068,7 @@ public partial class SwrveSDK
     /// </summary>
     public void OnSwrvePause ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         if (Initialised) {
             FlushToDisk ();
             // Session management
@@ -1045,6 +1078,7 @@ public partial class SwrveSDK
                 Container.StopCoroutine ("CheckForCampaignsAndResourcesUpdates_Coroutine");
             }
         }
+#endif
     }
 
     /// <summary>
@@ -1053,6 +1087,7 @@ public partial class SwrveSDK
     /// </summary>
     public void OnSwrveResume ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         if (Initialised) {
             LoadFromDisk ();
             QueueDeviceInfo ();
@@ -1068,6 +1103,7 @@ public partial class SwrveSDK
             StartCampaignsAndResourcesTimer();
             DisableAutoShowAfterDelay();
         }
+#endif
     }
 
     /// <summary>
@@ -1076,6 +1112,7 @@ public partial class SwrveSDK
     /// </summary>
     public void OnSwrveDestroy ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         if (!Destroyed) {
             Destroyed = true;
             if (Initialised) {
@@ -1086,6 +1123,7 @@ public partial class SwrveSDK
                 Container.StopCoroutine ("CheckForCampaignsAndResourcesUpdates_Coroutine");
             }
         }
+#endif
     }
 
     /// <summary>
@@ -1096,7 +1134,11 @@ public partial class SwrveSDK
     /// </returns>
     public List<SwrveCampaign> GetCampaigns ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         return campaigns;
+#else
+        return new List<SwrveCampaign>();
+#endif
     }
 
     /// <summary>
@@ -1109,6 +1151,7 @@ public partial class SwrveSDK
     /// </param>
     public void ButtonWasPressedByUser (SwrveButton button)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         if (button != null) {
             try {
                 SwrveLog.Log("Button " + button.ActionType + ": " + button.Action + " game id: " + button.GameId);
@@ -1125,6 +1168,7 @@ public partial class SwrveSDK
                 SwrveLog.LogError("Error while processing button click " + e);
             }
         }
+#endif
     }
 
     /// <summary>
@@ -1137,6 +1181,7 @@ public partial class SwrveSDK
     /// </param>
     public void MessageWasShownToUser (SwrveMessageFormat messageFormat)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         try {
             // The message was shown. Take the current time so that we can throttle messages
             // from being shown too quickly.
@@ -1161,6 +1206,7 @@ public partial class SwrveSDK
         } catch (Exception e) {
             SwrveLog.LogError("Error while processing message impression " + e);
         }
+#endif
     }
 
     /// <summary>
@@ -1171,7 +1217,11 @@ public partial class SwrveSDK
     /// </returns>
     public bool IsMessageDispaying ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         return (currentMessage != null);
+#else
+        return false;
+#endif
     }
 
     /// <summary>
@@ -1186,11 +1236,15 @@ public partial class SwrveSDK
     /// </returns>
     public string GetAppStoreLink (int gameId)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         string appStoreLink = null;
         if (gameStoreLinks != null) {
             gameStoreLinks.TryGetValue (gameId.ToString (), out appStoreLink);
         }
         return appStoreLink;
+#else
+        return null;
+#endif
     }
 
     /// <summary>
@@ -1207,6 +1261,7 @@ public partial class SwrveSDK
     /// </returns>
     public SwrveMessage GetMessageForEvent (string eventName)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         SwrveMessage result = null;
         SwrveCampaign campaign = null;
         DateTime now = SwrveHelper.GetNow();
@@ -1307,6 +1362,9 @@ public partial class SwrveSDK
         }
 
         return result;
+#else
+        return null;
+#endif
     }
 
     /// <summary>
@@ -1320,6 +1378,7 @@ public partial class SwrveSDK
     /// </returns>
     public SwrveMessage GetMessageForId (int messageId)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         SwrveMessage message = null;
         IEnumerator<SwrveCampaign> itCampaign = campaigns.GetEnumerator ();
         while (itCampaign.MoveNext() && message == null) {
@@ -1331,6 +1390,7 @@ public partial class SwrveSDK
         }
 
         SwrveLog.LogWarning("Message with id " + messageId + " not found");
+#endif
         return null;
     }
 
@@ -1354,6 +1414,7 @@ public partial class SwrveSDK
     /// </param>
     public IEnumerator ShowMessageForEvent (string eventName, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null)
     {
+#if SWRVE_SUPPORTED_PLATFORM
         if (TriggeredMessageListener != null) {
             // They are using a custom listener
             SwrveMessage message = GetMessageForEvent (eventName);
@@ -1367,6 +1428,9 @@ public partial class SwrveSDK
             }
         }
         TaskFinished ("ShowMessageForEvent");
+#else
+        yield return null; 
+#endif
     }
 
     /// <summary>
@@ -1374,6 +1438,7 @@ public partial class SwrveSDK
     /// </summary>
     public void DismissMessage ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         if (TriggeredMessageListener != null) {
             TriggeredMessageListener.DismissCurrentMessage ();
         } else {
@@ -1386,6 +1451,7 @@ public partial class SwrveSDK
                 SwrveLog.LogError("Error while dismissing a message " + e);
             }
         }
+#endif
     }
 
     /// <summary>
@@ -1393,7 +1459,9 @@ public partial class SwrveSDK
     /// </summary>
     public virtual void RefreshUserResourcesAndCampaigns ()
     {
+#if SWRVE_SUPPORTED_PLATFORM
         LoadResourcesAndCampaigns ();
+#endif
     }
 
     /// <summary>
