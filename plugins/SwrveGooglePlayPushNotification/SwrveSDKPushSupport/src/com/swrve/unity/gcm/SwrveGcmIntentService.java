@@ -60,7 +60,7 @@ public class SwrveGcmIntentService extends IntentService {
 	private static boolean isSwrveRemoteNotification(final Bundle msg) {
 		Object rawId = msg.get("_p");
 		String msgId = (rawId != null) ? rawId.toString() : null;
-		return !SwrveHelper.isNullOrEmpty(msgId);
+		return msgId != null && !msgId.equals("");
      }
 
 	private void processRemoteNotification(Bundle msg) {
