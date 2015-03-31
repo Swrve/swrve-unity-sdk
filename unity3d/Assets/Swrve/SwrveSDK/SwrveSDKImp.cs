@@ -1561,12 +1561,8 @@ public partial class SwrveSDK
             using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
                 AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
                 string packageName = context.Call<string>("getPackageName");
-
                 string versionName = context.Call<AndroidJavaObject>("getPackageManager")
                                      .Call<AndroidJavaObject>("getPackageInfo", packageName, 0).Get<string>("versionName");
-
-                SwrveLog.Log ("got version name " + versionName);
-
                 return versionName;
             }
         } catch (Exception exp) {

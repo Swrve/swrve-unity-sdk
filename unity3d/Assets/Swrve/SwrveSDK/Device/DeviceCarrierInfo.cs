@@ -26,7 +26,7 @@ namespace Swrve.Device
           try {
               using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
                   AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
-                  string telephonyService = context.GetStatic<string>("TELEPHONY_SERVICE");
+                  string telephonyService = "phone";//ontext.GetStatic<string>("TELEPHONY_SERVICE");
                   androidTelephonyManager = context.Call<AndroidJavaObject>("getSystemService", telephonyService);
               }
           } catch (Exception exp) {

@@ -5,11 +5,5 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/Swrve/UnitySwrveDemo/TalkDemoScene.unity
-  - enabled: 0
-    path: Assets/SwrveDemo/TalkDemoScene.unity
-  - enabled: 0
-    path: Assets/Editor/SwrveDemo/TalkDemoScene.unity
   - enabled: 1
     path: Assets/Swrve/UnitySwrveDemo/DemoScene.unity
