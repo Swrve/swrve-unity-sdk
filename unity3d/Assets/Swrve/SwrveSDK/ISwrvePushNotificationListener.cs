@@ -18,7 +18,7 @@ public interface ISwrvePushNotificationListener
     /// <param name="notification">
     /// Push notification information including custom payloads.
     /// </param>
-#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5)
+#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
     void OnRemoteNotification(RemoteNotification notification);
 #else
     void OnRemoteNotification(UnityEngine.iOS.RemoteNotification notification);
