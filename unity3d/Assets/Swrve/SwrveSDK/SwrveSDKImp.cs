@@ -1447,7 +1447,7 @@ public partial class SwrveSDK
             _swrveRegisterForPushNotifications();
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-            NotificationServices.RegisterForRemoteNotificationTypes(NotificationType.Alert | NotificationType.Badge | NotificationType.Sound);
+            NotificationServices.RegisterForRemoteNotificationTypes(RemoteNotificationType.Alert | RemoteNotificationType.Badge | RemoteNotificationType.Sound);
         }
 #else
         UnityEngine.iOS.NotificationServices.RegisterForNotifications(UnityEngine.iOS.NotificationType.Alert | UnityEngine.iOS.NotificationType.Badge | UnityEngine.iOS.NotificationType.Sound);
