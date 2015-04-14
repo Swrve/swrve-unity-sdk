@@ -1442,12 +1442,12 @@ public partial class SwrveSDK
     protected void RegisterForPushNotificationsIOS()
     {
         // Use Swrve's native plugin to register for push on old Unity versions that did not support iOS8
-#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5) 
+#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
         try {
             _swrveRegisterForPushNotifications();
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-            NotificationServices.RegisterForNotifications(NotificationType.Alert | NotificationType.Badge | NotificationType.Sound);
+            NotificationServices.RegisterForRemoteNotificationTypes(RemoteNotificationType.Alert | RemoteNotificationType.Badge | RemoteNotificationType.Sound);
         }
 #else
         UnityEngine.iOS.NotificationServices.RegisterForNotifications(UnityEngine.iOS.NotificationType.Alert | UnityEngine.iOS.NotificationType.Badge | UnityEngine.iOS.NotificationType.Sound);
@@ -1464,7 +1464,7 @@ public partial class SwrveSDK
         return null;
     }
 
-#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5)
+#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
     private void ProcessRemoteNotification (RemoteNotification notification)
 #else
     private void ProcessRemoteNotification (UnityEngine.iOS.RemoteNotification notification)
@@ -1487,7 +1487,7 @@ public partial class SwrveSDK
                 PushNotificationListener.OnRemoteNotification(notification);
             }
             if(qaUser != null) {
-#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5)
+#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
                 qaUser.PushNotification(NotificationServices.remoteNotifications, NotificationServices.remoteNotificationCount);
 #else
                 qaUser.PushNotification(UnityEngine.iOS.NotificationServices.remoteNotifications, UnityEngine.iOS.NotificationServices.remoteNotificationCount);
