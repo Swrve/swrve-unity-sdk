@@ -1075,7 +1075,7 @@ public partial class SwrveSDK
             GenerateNewSessionInterval ();
 
             if (config != null && config.AutoDownloadCampaignsAndResources) {
-                Container.StopCoroutine ("CheckForCampaignsAndResourcesUpdates_Coroutine");
+                StopCheckForCampaignAndResources();
             }
         }
 #endif
@@ -1120,7 +1120,7 @@ public partial class SwrveSDK
             }
 
             if (config != null && config.AutoDownloadCampaignsAndResources) {
-                Container.StopCoroutine ("CheckForCampaignsAndResourcesUpdates_Coroutine");
+                StopCheckForCampaignAndResources();
             }
         }
 #endif
