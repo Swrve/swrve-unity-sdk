@@ -626,18 +626,17 @@ public partial class SwrveSDK
 
             AppendEventToBuffer (eventJson);
 
-            string eventName = SwrveHelper.GetEventName (eventParameters);
-
-            if (allowShowMessage && config.TalkEnabled) {
-                StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
-            }
-
 #if UNITY_IPHONE
             // Ask for push notification permission dialog
             if (config.PushNotificationEnabled && (eventName.Equals("Swrve.push_notification_permission") || (config.PushNotificationEvents != null && config.PushNotificationEvents.Contains(eventName)))) {
                 RegisterForPushNotificationsIOS();
             }
 #endif
+        }
+
+        string eventName = SwrveHelper.GetEventName (eventParameters);
+        if (allowShowMessage && config.TalkEnabled) {
+            StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
         }
     }
 
