@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const String SdkVersion = "3.4.1";
+    public const String SdkVersion = "3.5";
 
 #if UNITY_IPHONE
     [DllImport ("__Internal")]
