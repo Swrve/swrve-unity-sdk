@@ -54,6 +54,31 @@ public partial class SwrveSDK
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSUUID();
+
+    // Permission checks
+    [DllImport ("__Internal")]
+    private static extern bool _swrveCheckLocationAlwaysPermission();
+    [DllImport ("__Internal")]
+    private static extern bool _swrveCheckPhotoLibraryPermission();
+    [DllImport ("__Internal")]
+    private static extern bool _swrveCheckCameraPermission();
+    [DllImport ("__Internal")]
+    private static extern bool _swrveCheckContactsPermission();
+    [DllImport ("__Internal")]
+    private static extern bool _swrveCheckPushNotificationsPermission();
+
+    // Permission requests
+    [DllImport ("__Internal")]
+    private static extern void _swrveRequestLocationAlwaysPermission();
+    [DllImport ("__Internal")]
+    private static extern void _swrveRequestPhotoLibraryPermission();
+    [DllImport ("__Internal")]
+    private static extern void _swrveRequestCameraPermission();
+    [DllImport ("__Internal")]
+    private static extern void _swrveRequestContactsPermission();
+    [DllImport ("__Internal")]
+    private static extern void _swrveRequestPushNotificationsPermission();
+
 #endif
 
     private int gameId;
@@ -1031,6 +1056,17 @@ public partial class SwrveSDK
         } catch (Exception e) {
             SwrveLog.LogWarning("Couldn't get device timezone on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
         }
+
+        // iOS permission state
+        try {
+            deviceInfo ["swrve.permission.location"] = _swrveCheckLocationAlwaysPermission()? "true" : "false";
+            deviceInfo ["swrve.permission.photos"] = _swrveCheckPhotoLibraryPermission()? "true" : "false";
+            deviceInfo ["swrve.permission.camera"] = _swrveCheckCameraPermission()? "true" : "false";
+            deviceInfo ["swrve.permission.contacts"] = _swrveCheckContactsPermission()? "true" : "false";
+            deviceInfo ["swrve.permission.push_notifications"] = _swrveCheckPushNotificationsPermission()? "true" : "false";
+        } catch (Exception e) {
+            SwrveLog.LogWarning("Couldn't get device permissions, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
+        }
 #elif UNITY_ANDROID
         if (!string.IsNullOrEmpty(gcmDeviceToken)) {
             deviceInfo["swrve.gcm_token"] = gcmDeviceToken;
@@ -1620,6 +1656,15 @@ public partial class SwrveSDK
         if (pushId != null && androidPlugin != null) {
             // Acknowledge the received notification
             androidPlugin.CallStatic("sdkAcknowledgeOpenedNotification", pushId);
+        }
+
+        // Launch any deeplinks that might be included in the push
+        if  (notification != null && notification.ContainsKey("_d")) {
+            string deeplink = notification["_d"].ToString();
+            bool wasPermissionRequest = ProcessPermissionRequest(deeplink);
+            if (!wasPermissionRequest) {
+                Application.OpenURL (deeplink);
+            }
         }
 
         if (PushNotificationListener != null) {

@@ -40,7 +40,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     {
         // Build
         bool buildAgain = true;
-        if (System.IO.File.Exists (GetProjectPath () + "/../../buildtemp/SwrveDemo")) {
+        if (System.IO.File.Exists (GetProjectPath () + "/../../SwrveDemo")) {
             buildAgain = EditorUtility.DisplayDialog ("Swrve Demo", "The XCode project already exists. Do you want to build again?", "Yes", "Hell no");
         }
 
@@ -56,7 +56,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     [MenuItem ("Swrve Demo/Android/Build Demo (.apk)")]
     public static void BuildDemoAndroid ()
     {
-        BuildAndroid ("../buildtemp/SwrveDemo.apk", opt, mainScenes, AndroidPackageName);
+        BuildAndroid ("../../SwrveDemo.apk", opt, mainScenes, AndroidPackageName);
     }
 
     [MenuItem ("Swrve Demo/Android/Build and Install Demo")]
@@ -64,7 +64,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     {
         // Build
         bool buildAgain = true;
-        if (System.IO.File.Exists (GetProjectPath () + "/../../buildtemp/SwrveDemo.apk")) {
+        if (System.IO.File.Exists (GetProjectPath () + "/../../SwrveDemo.apk")) {
             buildAgain = EditorUtility.DisplayDialog ("Swrve Demo", "The APK build already exists. Do you want to build again?", "Yes", "Hell no");
         }
 
@@ -73,7 +73,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         }
 
         // Install
-        InstallAndroidBuild (GetProjectPath (), "../../buildtemp/SwrveDemo.apk", "Demo");
+        InstallAndroidBuild (GetProjectPath (), "../../SwrveDemo.apk", "Demo");
     }
 
     // Tests
