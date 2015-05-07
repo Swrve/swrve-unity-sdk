@@ -59,6 +59,8 @@ public partial class SwrveSDK
     [DllImport ("__Internal")]
     private static extern bool _swrveCheckLocationAlwaysPermission();
     [DllImport ("__Internal")]
+    private static extern bool _swrveCheckLocationWhenInUsePermission();
+    [DllImport ("__Internal")]
     private static extern bool _swrveCheckPhotoLibraryPermission();
     [DllImport ("__Internal")]
     private static extern bool _swrveCheckCameraPermission();
@@ -70,6 +72,8 @@ public partial class SwrveSDK
     // Permission requests
     [DllImport ("__Internal")]
     private static extern void _swrveRequestLocationAlwaysPermission();
+    [DllImport ("__Internal")]
+    private static extern void _swrveRequestLocationWhenInUsePermission();
     [DllImport ("__Internal")]
     private static extern void _swrveRequestPhotoLibraryPermission();
     [DllImport ("__Internal")]
@@ -1059,11 +1063,12 @@ public partial class SwrveSDK
 
         // iOS permission state
         try {
-            deviceInfo ["swrve.permission.location"] = _swrveCheckLocationAlwaysPermission()? "true" : "false";
-            deviceInfo ["swrve.permission.photos"] = _swrveCheckPhotoLibraryPermission()? "true" : "false";
-            deviceInfo ["swrve.permission.camera"] = _swrveCheckCameraPermission()? "true" : "false";
-            deviceInfo ["swrve.permission.contacts"] = _swrveCheckContactsPermission()? "true" : "false";
-            deviceInfo ["swrve.permission.push_notifications"] = _swrveCheckPushNotificationsPermission()? "true" : "false";
+            deviceInfo ["swrve.permission.ios.location.always"] = _swrveCheckLocationAlwaysPermission()? "true" : "false";
+            deviceInfo ["swrve.permission.ios.location.when_in_use"] = _swrveCheckLocationWhenInUsePermission()? "true" : "false";
+            deviceInfo ["swrve.permission.ios.photos"] = _swrveCheckPhotoLibraryPermission()? "true" : "false";
+            deviceInfo ["swrve.permission.ios.camera"] = _swrveCheckCameraPermission()? "true" : "false";
+            deviceInfo ["swrve.permission.ios.contacts"] = _swrveCheckContactsPermission()? "true" : "false";
+            deviceInfo ["swrve.permission.ios.push_notifications"] = _swrveCheckPushNotificationsPermission()? "true" : "false";
         } catch (Exception e) {
             SwrveLog.LogWarning("Couldn't get device permissions, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
         }

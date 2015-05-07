@@ -2,6 +2,7 @@
 #import "ISHPermissionRequestNotificationsRemote.h"
 
 static ISHPermissionRequest *_locationAlwaysRequest = nil;
+static ISHPermissionRequest *_locationWhenInUseRequest = nil;
 static ISHPermissionRequest *_photoLibraryRequest = nil;
 static ISHPermissionRequest *_cameraRequest = nil;
 static ISHPermissionRequest *_contactsRequest = nil;
@@ -27,7 +28,27 @@ extern "C"
     #pragma unused(request, error)
             UnitySendMessage("SwrveComponent", "RequestLocationAlwaysPermissionListener", (state == ISHPermissionStateAuthorized)? "on" : "off");
         }];
-     }
+    }
+
+    ISHPermissionRequest* _swrveLocationWhenInUseRequestPermission() {
+        if (!_locationWhenInUseRequest) {
+            _locationWhenInUseRequest = [ISHPermissionRequest requestForCategory:ISHPermissionCategoryLocationWhenInUse];
+        }
+        return _locationWhenInUseRequest;
+    }
+
+    BOOL _swrveCheckLocationWhenInUsePermission() {
+        ISHPermissionRequest *r = _swrveLocationWhenInUseRequestPermission();
+        return ([r permissionState] == ISHPermissionStateAuthorized);
+    }
+
+    void _swrveRequestLocationWhenInUsePermission() {
+        ISHPermissionRequest *r = _swrveLocationWhenInUseRequestPermission();
+        [r requestUserPermissionWithCompletionBlock:^(ISHPermissionRequest *request, ISHPermissionState state, NSError *error) {
+    #pragma unused(request, error)
+            UnitySendMessage("SwrveComponent", "RequestLocationWhenInUsePermissionListener", (state == ISHPermissionStateAuthorized)? "on" : "off");
+        }];
+    }
 
     ISHPermissionRequest* _swrvePhotoLibraryRequestPermission() {
         if (!_photoLibraryRequest) {

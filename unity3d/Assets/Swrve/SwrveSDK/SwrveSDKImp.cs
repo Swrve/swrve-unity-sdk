@@ -880,19 +880,22 @@ public partial class SwrveSDK
     protected bool ProcessPermissionRequest(string action) {
 #if UNITY_IPHONE
         try {
-            if (string.Equals(action, "swrve.request_permission.push_notifications", StringComparison.CurrentCultureIgnoreCase)) {
+            if (string.Equals(action, "swrve.request_permission.ios.push_notifications", StringComparison.CurrentCultureIgnoreCase)) {
                 _swrveRequestPushNotificationsPermission();
                 return true;
-            } else if (string.Equals(action, "swrve.request_permission.location", StringComparison.CurrentCultureIgnoreCase)) {
+            } else if (string.Equals(action, "swrve.request_permission.ios.location.always", StringComparison.CurrentCultureIgnoreCase)) {
                 _swrveRequestLocationAlwaysPermission();
                 return true;
-            } else if (string.Equals(action, "swrve.request_permission.contacts", StringComparison.CurrentCultureIgnoreCase)) {
+            } else if (string.Equals(action, "swrve.request_permission.ios.location.when_in_use", StringComparison.CurrentCultureIgnoreCase)) {
+                _swrveRequestLocationWhenInUsePermission();
+                return true;
+            } else if (string.Equals(action, "swrve.request_permission.ios.contacts", StringComparison.CurrentCultureIgnoreCase)) {
                 _swrveRequestContactsPermission();
                 return true;
-            } else if (string.Equals(action, "swrve.request_permission.photos", StringComparison.CurrentCultureIgnoreCase)) {
+            } else if (string.Equals(action, "swrve.request_permission.ios.photos", StringComparison.CurrentCultureIgnoreCase)) {
                 _swrveRequestPhotoLibraryPermission();
                 return true;
-            } else if (string.Equals(action, "swrve.request_permission.camera", StringComparison.CurrentCultureIgnoreCase)) {
+            } else if (string.Equals(action, "swrve.request_permission.ios.camera", StringComparison.CurrentCultureIgnoreCase)) {
                 _swrveRequestCameraPermission();
                 return true;
             }

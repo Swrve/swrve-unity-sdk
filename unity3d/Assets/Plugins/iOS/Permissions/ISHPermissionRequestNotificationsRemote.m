@@ -56,8 +56,10 @@
 
 - (void)requestUserPermissionWithCompletionBlock:(ISHPermissionRequestCompletionBlock)completion {
     NSAssert(completion, @"requestUserPermissionWithCompletionBlock requires a completion block");
-    // ensure that the app delegate implements the didRegisterMethods:
-    NSAssert([[[UIApplication sharedApplication] delegate] respondsToSelector:@selector(application:didRegisterUserNotificationSettings:)], @"AppDelegate must implement application:didRegisterUserNotificationSettings: and post notification ISHPermissionNotificationApplicationDidRegisterUserNotificationSettings");
+    if (![[[UIApplication sharedApplication] delegate] respondsToSelector:@selector(application:didRegisterUserNotificationSettings:)]) {
+        // ensure that the app delegate implements the didRegisterMethods:
+        NSLog(@"AppDelegate must implement application:didRegisterUserNotificationSettings: and post notification ISHPermissionNotificationApplicationDidRegisterUserNotificationSettings", nil);
+    }
     
     ISHPermissionState currentState = self.permissionState;
     if (!ISHPermissionStateAllowsUserPrompt(currentState)) {

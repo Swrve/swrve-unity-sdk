@@ -198,27 +198,32 @@ public class SwrveComponent : MonoBehaviour
 #if UNITY_IPHONE
     // Permissions change listeners
     public void RequestLocationAlwaysPermissionListener(string state) {
-        SDK.NamedEvent("swrve.permission.location." + state);
+        SDK.NamedEvent("swrve.permission.ios.location.always." + state);
+        SDK.UserUpdate(SDK.GetDeviceInfo());
+    }
+
+    public void RequestLocationWhenInUsePermissionListener(string state) {
+        SDK.NamedEvent("swrve.permission.ios.location.when_in_use." + state);
         SDK.UserUpdate(SDK.GetDeviceInfo());
     }
 
     public void RequestPhotoLibraryPermissionListener(string state) {
-        SDK.NamedEvent("swrve.permission.photos." + state);
+        SDK.NamedEvent("swrve.permission.ios.photos." + state);
         SDK.UserUpdate(SDK.GetDeviceInfo());
     }
 
     public void RequestCameraPermissionListener(string state) {
-        SDK.NamedEvent("swrve.permission.camera." + state);
+        SDK.NamedEvent("swrve.permission.ios.camera." + state);
         SDK.UserUpdate(SDK.GetDeviceInfo());
     }
 
     public void RequestContactsPermissionListener(string state) {
-        SDK.NamedEvent("swrve.permission.contacts." + state);
+        SDK.NamedEvent("swrve.permission.ios.contacts." + state);
         SDK.UserUpdate(SDK.GetDeviceInfo());
     }
 
     public void RequestPushNotificationsPermissionListener(string state) {
-        SDK.NamedEvent("swrve.permission.push_notifications." + state);
+        SDK.NamedEvent("swrve.permission.ios.push_notifications." + state);
         SDK.UserUpdate(SDK.GetDeviceInfo());
     }
 #endif
