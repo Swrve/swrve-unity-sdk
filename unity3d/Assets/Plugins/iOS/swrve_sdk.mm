@@ -108,8 +108,8 @@ extern "C"
         [app registerForRemoteNotifications];
     }
 #else
-    // Not building with the latest XCode that contains iOS 8 definitions
-    [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound];
+        // Not building with the latest XCode that contains iOS 8 definitions
+        [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound];
 #endif
     }
 }

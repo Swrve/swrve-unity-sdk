@@ -858,19 +858,52 @@ public partial class SwrveSDK
                 }
             } else if (clickedButton.ActionType == SwrveActionType.Custom) {
                 string buttonAction = clickedButton.Action;
-                if (currentMessage.CustomButtonListener != null) {
-                    // Launch custom button listener
-                    currentMessage.CustomButtonListener.OnAction (buttonAction);
-                } else {
-                    SwrveLog.Log("No custom button listener, treating action as URL");
-                    if (!string.IsNullOrEmpty(buttonAction)) {
-                        Application.OpenURL (buttonAction);
+                // Try to process as a permission request
+                bool wasPermissionRequest = ProcessPermissionRequest(buttonAction);
+                if (!wasPermissionRequest) {
+                    if (currentMessage.CustomButtonListener != null) {
+                        // Launch custom button listener
+                        currentMessage.CustomButtonListener.OnAction (buttonAction);
+                    } else {
+                        SwrveLog.Log("No custom button listener, treating action as URL");
+                        if (!string.IsNullOrEmpty(buttonAction)) {
+                            Application.OpenURL (buttonAction);
+                        }
                     }
                 }
             }
             clickedButton.Pressed = false;
             DismissMessage();
         }
+    }
+
+    protected bool ProcessPermissionRequest(string action) {
+#if UNITY_IPHONE
+        try {
+            if (string.Equals(action, "swrve.request_permission.ios.push_notifications", StringComparison.CurrentCultureIgnoreCase)) {
+                _swrveRequestPushNotificationsPermission();
+                return true;
+            } else if (string.Equals(action, "swrve.request_permission.ios.location.always", StringComparison.CurrentCultureIgnoreCase)) {
+                _swrveRequestLocationAlwaysPermission();
+                return true;
+            } else if (string.Equals(action, "swrve.request_permission.ios.location.when_in_use", StringComparison.CurrentCultureIgnoreCase)) {
+                _swrveRequestLocationWhenInUsePermission();
+                return true;
+            } else if (string.Equals(action, "swrve.request_permission.ios.contacts", StringComparison.CurrentCultureIgnoreCase)) {
+                _swrveRequestContactsPermission();
+                return true;
+            } else if (string.Equals(action, "swrve.request_permission.ios.photos", StringComparison.CurrentCultureIgnoreCase)) {
+                _swrveRequestPhotoLibraryPermission();
+                return true;
+            } else if (string.Equals(action, "swrve.request_permission.ios.camera", StringComparison.CurrentCultureIgnoreCase)) {
+                _swrveRequestCameraPermission();
+                return true;
+            }
+        } catch (Exception e) {
+            SwrveLog.LogWarning("Couldn't request device permissions, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
+        }
+#endif
+        return false;
     }
 
     protected void SetMessageMinDelayThrottle()
@@ -1479,6 +1512,14 @@ public partial class SwrveSDK
                     pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
                 }
                 SendPushNotificationEngagedEvent(pushId);
+
+                if  (notification.userInfo.Contains("_d")) {
+                    string deeplink = notification.userInfo["_d"].ToString();
+                    bool wasPermissionRequest = ProcessPermissionRequest(deeplink);
+                    if (!wasPermissionRequest) {
+                        Application.OpenURL (deeplink);
+                    }
+                }
             } else {
                 SwrveLog.Log("Got unidentified notification");
             }

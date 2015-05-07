@@ -194,4 +194,37 @@ public class SwrveComponent : MonoBehaviour
         }
 #endif
     }
+
+#if UNITY_IPHONE
+    // Permissions change listeners
+    public void RequestLocationAlwaysPermissionListener(string state) {
+        SDK.NamedEvent("swrve.permission.ios.location.always." + state);
+        SDK.UserUpdate(SDK.GetDeviceInfo());
+    }
+
+    public void RequestLocationWhenInUsePermissionListener(string state) {
+        SDK.NamedEvent("swrve.permission.ios.location.when_in_use." + state);
+        SDK.UserUpdate(SDK.GetDeviceInfo());
+    }
+
+    public void RequestPhotoLibraryPermissionListener(string state) {
+        SDK.NamedEvent("swrve.permission.ios.photos." + state);
+        SDK.UserUpdate(SDK.GetDeviceInfo());
+    }
+
+    public void RequestCameraPermissionListener(string state) {
+        SDK.NamedEvent("swrve.permission.ios.camera." + state);
+        SDK.UserUpdate(SDK.GetDeviceInfo());
+    }
+
+    public void RequestContactsPermissionListener(string state) {
+        SDK.NamedEvent("swrve.permission.ios.contacts." + state);
+        SDK.UserUpdate(SDK.GetDeviceInfo());
+    }
+
+    public void RequestPushNotificationsPermissionListener(string state) {
+        SDK.NamedEvent("swrve.permission.ios.push_notifications." + state);
+        SDK.UserUpdate(SDK.GetDeviceInfo());
+    }
+#endif
 }
