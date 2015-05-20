@@ -108,7 +108,12 @@ public class SwrveConfig
     /// <summary>
     /// The maximum number of event characters to buffer before events are discarded.
     /// </summary>
-    public int MaxBufferChars = 20000;
+    public int MaxBufferChars = 262144;
+
+    /// <summary>
+    /// The maximum number of event characters to buffer before events are discarded.
+    /// </summary>
+    public bool SendEventsIfBufferTooLarge = true;
 
     /// <summary>
     /// Force saved data into PlayerPrefs.

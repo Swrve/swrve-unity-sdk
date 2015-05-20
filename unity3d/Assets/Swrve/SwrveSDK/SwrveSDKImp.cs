@@ -618,8 +618,13 @@ public partial class SwrveSDK
 
         // Discard the event if it would cause the buffer to overflow
         String eventJson = Json.Serialize (eventParameters);
+        bool insideMaxBufferLength = eventBufferStringBuilder.Length + eventJson.Length <= config.MaxBufferChars;
+        if (insideMaxBufferLength || config.SendEventsIfBufferTooLarge) {
+            // Send buffer if too large
+            if (!insideMaxBufferLength && config.SendEventsIfBufferTooLarge) {
+                SendQueuedEvents();
+            }
 
-        if (eventBufferStringBuilder.Length + eventJson.Length <= config.MaxBufferChars) {
             if (eventBufferStringBuilder.Length > 0) {
                 eventBufferStringBuilder.Append (',');
             }
@@ -632,6 +637,8 @@ public partial class SwrveSDK
                 RegisterForPushNotificationsIOS();
             }
 #endif
+        } else {
+            Debug.LogError("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");
         }
 
         string eventName = SwrveHelper.GetEventName (eventParameters);
