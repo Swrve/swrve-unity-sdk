@@ -104,7 +104,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     {
         string outputPath = "../../buildtemp/tmp_Android";
 
-        // Build iOS
+        // Build Android
         PlayerSettings.strippingLevel = StrippingLevel.Disabled;
         BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
 

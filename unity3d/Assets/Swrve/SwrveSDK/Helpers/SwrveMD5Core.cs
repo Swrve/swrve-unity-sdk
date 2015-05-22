@@ -11,7 +11,7 @@ using System.Text;
 // **************************************************************
 
 // Simple struct for the (a,b,c,d) which is used to compute the mesage digest.
-struct ABCDStruct {
+struct SwrveABCDStruct {
     public uint A;
     public uint B;
     public uint C;
@@ -76,7 +76,7 @@ public sealed class SwrveMD5Core
             throw new System.ArgumentNullException ("input", "Unable to calculate hash over null input data");
 
         //Intitial values defined in RFC 1321
-        ABCDStruct abcd = new ABCDStruct ();
+        SwrveABCDStruct abcd = new SwrveABCDStruct ();
         abcd.A = 0x67452301;
         abcd.B = 0xefcdab89;
         abcd.C = 0x98badcfe;
@@ -92,7 +92,7 @@ public sealed class SwrveMD5Core
         return SwrveMD5Core.GetHashFinalBlock (input, startIndex, input.Length - startIndex, abcd, (Int64)input.Length * 8);
     }
 
-    internal static byte[] GetHashFinalBlock (byte[] input, int ibStart, int cbSize, ABCDStruct ABCD, Int64 len)
+    internal static byte[] GetHashFinalBlock (byte[] input, int ibStart, int cbSize, SwrveABCDStruct ABCD, Int64 len)
     {
         byte[] working = new byte[64];
         byte[] length = BitConverter.GetBytes (len);
@@ -129,7 +129,7 @@ public sealed class SwrveMD5Core
       //    C = 0x98badcfe;
       //    D = 0x10325476;
       */
-    internal static void GetHashBlock (byte[] input, ref ABCDStruct ABCDValue, int ibStart)
+    internal static void GetHashBlock (byte[] input, ref SwrveABCDStruct ABCDValue, int ibStart)
     {
         uint[] temp = Converter (input, ibStart);
         uint a = ABCDValue.A;
