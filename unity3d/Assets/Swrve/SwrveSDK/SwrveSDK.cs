@@ -1041,7 +1041,6 @@ public partial class SwrveSDK
             SwrveLog.LogWarning("Couldn't get device region on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
         }
 
-        _swrveLocaleCountry
 #elif UNITY_ANDROID
         if (!string.IsNullOrEmpty(gcmDeviceToken)) {
             deviceInfo["swrve.gcm_token"] = gcmDeviceToken;
