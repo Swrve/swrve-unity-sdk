@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 
+#if UNITY_IPHONE && !UNITY_5_0_0
+#define SWRVE_USE_HTTPS_DEFAULTS
+#endif
+
 namespace Swrve
 {
 /// <summary>
@@ -77,23 +81,43 @@ public class SwrveConfig
     /// The URL of the server to send events to.
     /// </summary>
     public string EventsServer = DefaultEventsServer;
-    public const string DefaultEventsServer = "https://api.swrve.com";
+    public const string DefaultEventsServer = 
+#if SWRVE_USE_HTTPS_DEFAULTS
+            "https://api.swrve.com";
+#else
+            "http://api.swrve.com";
+#endif
 
     /// <summary>
     /// Use HTTPS for the event server.
     /// </summary>
-    public bool UseHttpsForEventsServer = true;
+    public bool UseHttpsForEventsServer =
+#if SWRVE_USE_HTTPS_DEFAULTS
+            true;
+#else
+            false;
+#endif
 
     /// <summary>
     /// The URL of the server to request campaign and resources data from.
     /// </summary>
     public string ContentServer = DefaultContentServer;
-    public const string DefaultContentServer = "https://content.swrve.com";
+    public const string DefaultContentServer =
+#if SWRVE_USE_HTTPS_DEFAULTS
+            "https://content.swrve.com";
+#else
+            "http://content.swrve.com";
+#endif
 
     /// <summary>
     /// Use HTTPS for the in-app message and resources server.
     /// </summary>
-    public bool UseHttpsForContentServer = true;
+    public bool UseHttpsForContentServer =
+#if SWRVE_USE_HTTPS_DEFAULTS
+            true;
+#else
+            false;
+#endif
 
     /// <summary>
     /// The SDK will send a session start on init and manage game pauses and resumes.
