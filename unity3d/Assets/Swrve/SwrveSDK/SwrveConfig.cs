@@ -1,12 +1,12 @@
+#if UNITY_IPHONE && !UNITY_5_0_0
+#define SWRVE_USE_HTTPS_DEFAULTS
+#endif
+
 using System;
 using Swrve.Messaging;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
-
-#if UNITY_IPHONE && !UNITY_5_0_0
-#define SWRVE_USE_HTTPS_DEFAULTS
-#endif
 
 namespace Swrve
 {
