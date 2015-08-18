@@ -55,9 +55,9 @@ MonoBehaviour:
     AutoDownloadCampaignsAndResources: 1
     Orientation: 2
     EventsServer: http://api.swrve.com
-    UseHttpsForEventsServer: 0
+    UseHttpsForEventsServer: 1
     ContentServer: http://content.swrve.com
-    UseHttpsForContentServer: 0
+    UseHttpsForContentServer: 1
     AutomaticSessionManagement: 1
     NewSessionInterval: 30
     MaxBufferChars: 20000

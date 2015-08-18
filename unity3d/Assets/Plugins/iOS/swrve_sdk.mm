@@ -23,7 +23,6 @@ extern "C"
     {
         NSTimeZone* tz = [NSTimeZone localTimeZone];
         NSString* timezone_name = [tz name];
-  
         return swrveCStringCopy([timezone_name UTF8String]);    
     }
 
@@ -88,6 +87,12 @@ extern "C"
             }
         }
         return NULL;
+    }
+
+    char* _swrveLocaleCountry()
+    {
+        NSString* localeCountry = [[NSLocale currentLocale] objectForKey: NSLocaleCountryCode];
+        return swrveCStringCopy([localeCountry UTF8String]);    
     }
 
     void _swrveRegisterForPushNotifications() 

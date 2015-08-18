@@ -117,6 +117,9 @@ public partial class SwrveSDK
     // QA
     protected SwrveQAUser qaUser;
 
+    private bool campaignAndResourcesCoroutineEnabled = true;
+    private IEnumerator campaignAndResourcesCoroutineInstance;
+
     private void QueueSessionStart ()
     {
         Dictionary<string,object> json = new Dictionary<string, object> ();
@@ -618,19 +621,19 @@ public partial class SwrveSDK
 
         // Discard the event if it would cause the buffer to overflow
         String eventJson = Json.Serialize (eventParameters);
+        string eventName = SwrveHelper.GetEventName (eventParameters);
+        bool insideMaxBufferLength = eventBufferStringBuilder.Length + eventJson.Length <= config.MaxBufferChars;
+        if (insideMaxBufferLength || config.SendEventsIfBufferTooLarge) {
+            // Send buffer if too large
+            if (!insideMaxBufferLength && config.SendEventsIfBufferTooLarge) {
+                SendQueuedEvents();
+            }
 
-        if (eventBufferStringBuilder.Length + eventJson.Length <= config.MaxBufferChars) {
             if (eventBufferStringBuilder.Length > 0) {
                 eventBufferStringBuilder.Append (',');
             }
 
             AppendEventToBuffer (eventJson);
-
-            string eventName = SwrveHelper.GetEventName (eventParameters);
-
-            if (allowShowMessage && config.TalkEnabled) {
-                StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
-            }
 
 #if UNITY_IPHONE
             // Ask for push notification permission dialog
@@ -638,6 +641,12 @@ public partial class SwrveSDK
                 RegisterForPushNotificationsIOS();
             }
 #endif
+        } else {
+            Debug.LogError("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");
+        }
+
+        if (allowShowMessage && config.TalkEnabled) {
+            StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
         }
     }
 
@@ -706,17 +715,37 @@ public partial class SwrveSDK
 
         if (!invokedByTimer) {
             // Restart flush timer
-            Container.StopCoroutine ("CheckForCampaignsAndResourcesUpdates_Coroutine");
-            Container.StartCoroutine (CheckForCampaignsAndResourcesUpdates_Coroutine ());
+            StopCheckForCampaignAndResources();
+            StartCheckForCampaignsAndResources();
         }
+    }
+
+    private void StartCheckForCampaignsAndResources()
+    {
+        if (campaignAndResourcesCoroutineInstance == null) {
+            campaignAndResourcesCoroutineInstance = CheckForCampaignsAndResourcesUpdates_Coroutine();
+            Container.StartCoroutine (campaignAndResourcesCoroutineInstance);
+        }
+        campaignAndResourcesCoroutineEnabled = true;
+    }
+
+    private void StopCheckForCampaignAndResources()
+    {
+        if (campaignAndResourcesCoroutineInstance != null) {
+            Container.StopCoroutine (campaignAndResourcesCoroutineInstance);
+            campaignAndResourcesCoroutineInstance = null;
+        }
+        campaignAndResourcesCoroutineEnabled = false;
     }
 
     private IEnumerator CheckForCampaignsAndResourcesUpdates_Coroutine ()
     {
         yield return new WaitForSeconds(campaignsAndResourcesFlushFrequency);
         CheckForCampaignsAndResourcesUpdates (true);
-        // Invoke again
-        Container.StartCoroutine (CheckForCampaignsAndResourcesUpdates_Coroutine ());
+        if (campaignAndResourcesCoroutineEnabled) {
+            campaignAndResourcesCoroutineInstance = null;
+            StartCheckForCampaignsAndResources();
+        }
     }
 
     protected virtual long GetSessionTime ()
@@ -1426,7 +1455,7 @@ public partial class SwrveSDK
     protected int ConvertInt64ToInt32Hack (Int64 val)
     {
         // SWRVE-5613
-        // Hack to solve Unity issue where the id is an in64
+        // Hack to solve Unity issue where the id is an int64
         // with a random high part and the int32 value we
         // need in the lower part.
         return (int)(val & 0xFFFFFFFF);
@@ -1627,11 +1656,11 @@ public partial class SwrveSDK
 
         RefreshUserResourcesAndCampaigns ();
 
-		// Start repeating timer to auto-send events after a specified frequency. eg: 60s
-		Container.StartCoroutine (CheckForCampaignsAndResourcesUpdates_Coroutine ());
+        // Start repeating timer to auto-send events after a specified frequency. eg: 60s
+        StartCheckForCampaignsAndResources();
 
-		// Call refresh once after refresh delay (eg: 5s) to ensure campaigns are reloaded after initial events have been sent.
-		Container.StartCoroutine (WaitAndRefreshResourcesAndCampaigns_Coroutine (campaignsAndResourcesFlushRefreshDelay));
+        // Call refresh once after refresh delay (eg: 5s) to ensure campaigns are reloaded after initial events have been sent.
+        Container.StartCoroutine (WaitAndRefreshResourcesAndCampaigns_Coroutine (campaignsAndResourcesFlushRefreshDelay));
     }
 
     protected void DisableAutoShowAfterDelay ()
