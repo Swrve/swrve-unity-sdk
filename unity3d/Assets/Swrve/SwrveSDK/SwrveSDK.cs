@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const String SdkVersion = "3.4.1";
+    public const String SdkVersion = "3.4.2";
 
 #if UNITY_IPHONE
     [DllImport ("__Internal")]
@@ -54,6 +54,9 @@ public partial class SwrveSDK
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSUUID();
+
+    [DllImport ("__Internal")]
+    private static extern string _swrveLocaleCountry();
 #endif
 
     private int gameId;
@@ -1031,6 +1034,13 @@ public partial class SwrveSDK
         } catch (Exception e) {
             SwrveLog.LogWarning("Couldn't get device timezone on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
         }
+
+        try {
+            deviceInfo ["swrve.device_region"] = _swrveLocaleCountry();
+        } catch (Exception e) {
+            SwrveLog.LogWarning("Couldn't get device region on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
+        }
+
 #elif UNITY_ANDROID
         if (!string.IsNullOrEmpty(gcmDeviceToken)) {
             deviceInfo["swrve.gcm_token"] = gcmDeviceToken;
