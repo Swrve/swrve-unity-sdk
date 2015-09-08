@@ -1050,6 +1050,11 @@ public partial class SwrveSDK
         if (!string.IsNullOrEmpty(timezone)) {
             deviceInfo ["swrve.timezone_name"] = timezone;
         }
+
+        string deviceRegion = AndroidGetRegion();
+        if (!string.IsNullOrEmpty(deviceRegion)) {
+            deviceInfo ["swrve.device_region"] = deviceRegion;
+        }
 #endif
 
         // Carrier info
