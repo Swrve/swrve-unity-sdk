@@ -1439,7 +1439,7 @@ public partial class SwrveSDK
         }
         TaskFinished ("ShowMessageForEvent");
 #else
-        yield return null; 
+        yield return null;
 #endif
     }
 
@@ -1477,7 +1477,8 @@ public partial class SwrveSDK
     /// <summary>
     ///  Used internally to obtain the configured default background for in-app messages.
     /// </summary>
-    public Color? DefaultBackgroundColor {
+    public Color? DefaultBackgroundColor
+    {
         get {
             return config.DefaultBackgroundColor;
         }

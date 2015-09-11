@@ -348,7 +348,7 @@ public class SwrveCampaign
     /// </summary>
     public void MessageDismissed ()
     {
-      SetMessageMinDelayThrottle();
+        SetMessageMinDelayThrottle();
     }
 }
 }

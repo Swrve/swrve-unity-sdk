@@ -145,6 +145,7 @@ public class SwrveCommonBuildComponent
     {
         ProcessStartInfo info = new ProcessStartInfo ();
         info.RedirectStandardError = true;
+        info.RedirectStandardOutput = true;
         info.UseShellExecute = false;
         info.WorkingDirectory = workingDirectory;
         info.FileName = "/bin/bash";
@@ -153,14 +154,14 @@ public class SwrveCommonBuildComponent
 
         string errorOutput = string.Empty;
         while (!proc.HasExited) {
-            errorOutput += proc.StandardError.ReadToEnd ();
+            errorOutput += proc.StandardError.ReadToEnd () + " ## STANDARD OUTPUT: " + proc.StandardOutput.ReadToEnd();
         }
 
         if (proc.ExitCode != 0) {
             EditorUtility.DisplayDialog ("Bash sh", "Could run bash sh. Error code: " + proc.ExitCode, "Accept");
             throw new Exception (errorOutput);
         } else {
-            UnityEngine.Debug.Log ("Bash sh " + arguments + " successfull");
+            UnityEngine.Debug.Log ("Bash sh " + arguments + " successfull: " + proc.StandardOutput.ReadToEnd());
         }
     }
 }

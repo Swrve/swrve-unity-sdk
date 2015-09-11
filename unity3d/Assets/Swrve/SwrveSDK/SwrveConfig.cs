@@ -81,11 +81,11 @@ public class SwrveConfig
     /// The URL of the server to send events to.
     /// </summary>
     public string EventsServer = DefaultEventsServer;
-    public const string DefaultEventsServer = 
+    public const string DefaultEventsServer =
 #if SWRVE_USE_HTTPS_DEFAULTS
-            "https://api.swrve.com";
+        "https://api.swrve.com";
 #else
-            "http://api.swrve.com";
+        "http://api.swrve.com";
 #endif
 
     /// <summary>
@@ -93,9 +93,9 @@ public class SwrveConfig
     /// </summary>
     public bool UseHttpsForEventsServer =
 #if SWRVE_USE_HTTPS_DEFAULTS
-            true;
+        true;
 #else
-            false;
+        false;
 #endif
 
     /// <summary>
@@ -104,9 +104,9 @@ public class SwrveConfig
     public string ContentServer = DefaultContentServer;
     public const string DefaultContentServer =
 #if SWRVE_USE_HTTPS_DEFAULTS
-            "https://content.swrve.com";
+        "https://content.swrve.com";
 #else
-            "http://content.swrve.com";
+        "http://content.swrve.com";
 #endif
 
     /// <summary>
@@ -114,9 +114,9 @@ public class SwrveConfig
     /// </summary>
     public bool UseHttpsForContentServer =
 #if SWRVE_USE_HTTPS_DEFAULTS
-            true;
+        true;
 #else
-            false;
+        false;
 #endif
 
     /// <summary>

@@ -1,1 +1,4 @@
 /*.jar
+build/
+.gradle/
+.idea/
