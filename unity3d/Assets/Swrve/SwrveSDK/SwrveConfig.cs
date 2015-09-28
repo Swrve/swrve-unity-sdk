@@ -81,11 +81,11 @@ public class SwrveConfig
     /// The URL of the server to send events to.
     /// </summary>
     public string EventsServer = DefaultEventsServer;
-    public const string DefaultEventsServer = 
+    public const string DefaultEventsServer =
 #if SWRVE_USE_HTTPS_DEFAULTS
-            "https://api.swrve.com";
+        "https://api.swrve.com";
 #else
-            "http://api.swrve.com";
+        "http://api.swrve.com";
 #endif
 
     /// <summary>
@@ -93,9 +93,9 @@ public class SwrveConfig
     /// </summary>
     public bool UseHttpsForEventsServer =
 #if SWRVE_USE_HTTPS_DEFAULTS
-            true;
+        true;
 #else
-            false;
+        false;
 #endif
 
     /// <summary>
@@ -104,9 +104,9 @@ public class SwrveConfig
     public string ContentServer = DefaultContentServer;
     public const string DefaultContentServer =
 #if SWRVE_USE_HTTPS_DEFAULTS
-            "https://content.swrve.com";
+        "https://content.swrve.com";
 #else
-            "http://content.swrve.com";
+        "http://content.swrve.com";
 #endif
 
     /// <summary>
@@ -114,9 +114,9 @@ public class SwrveConfig
     /// </summary>
     public bool UseHttpsForContentServer =
 #if SWRVE_USE_HTTPS_DEFAULTS
-            true;
+        true;
 #else
-            false;
+        false;
 #endif
 
     /// <summary>
@@ -178,6 +178,26 @@ public class SwrveConfig
     /// Default in-app background color if none is set in the template.
     /// </summary>
     public Color? DefaultBackgroundColor = null;
+
+    /// <summary>
+    /// Log Google's Advertising ID as "swrve.GAID". Requires the use of the native Android plugin.
+    /// </summary>
+    public bool LogGoogleAdvertisingId = false;
+
+    /// <summary>
+    /// Log Android ID as "swrve.android_id"
+    /// </summary>
+    public bool LogAndroidId = false;
+
+    /// <summary>
+    /// Log iOS IDFV as "swrve.IDFV"
+    /// </summary>
+    public bool LogAppleIDFV = false;
+
+    /// <summary>
+    /// Log iOS IDFV as "swrve.IDFA"
+    /// </summary>
+    public bool LogAppleIDFA = false;
 
     public void CalculateEndpoints (int appId)
     {

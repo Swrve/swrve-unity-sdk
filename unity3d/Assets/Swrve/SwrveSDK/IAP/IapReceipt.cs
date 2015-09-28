@@ -1,5 +1,7 @@
-﻿namespace Swrve.IAP {
-    public interface IapReceipt {
-        string GetBase64EncodedReceipt();
-    }
+﻿namespace Swrve.IAP
+{
+public interface IapReceipt
+{
+    string GetBase64EncodedReceipt();
+}
 }

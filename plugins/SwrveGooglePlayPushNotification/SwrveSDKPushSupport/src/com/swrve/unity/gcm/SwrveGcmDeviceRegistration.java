@@ -15,8 +15,9 @@ import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.google.android.gms.iid.InstanceID;
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
 import com.unity3d.player.UnityPlayer;
 
 public class SwrveGcmDeviceRegistration {
@@ -308,5 +309,37 @@ public class SwrveGcmDeviceRegistration {
 				}
 			}
 		}
+	}
+
+	public static boolean requestAdvertisingId(final String gameObject) {
+    	if (UnityPlayer.currentActivity != null) {
+    		final Activity activity = UnityPlayer.currentActivity;
+	    	new AsyncTask<Void, Integer, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    try {
+                        Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(activity);
+                        // Notify the SDK of the new advertising ID
+                        notifySDKOfAdvertisingId(gameObject, adInfo.getId());
+                    } catch (Exception ex) {
+                        Log.e(LOG_TAG, "Couldn't obtain Advertising Id", ex);
+                    }
+                    return null;
+                }
+
+                @Override
+                protected void onPostExecute(Void v) {
+                }
+            }.execute(null, null, null);
+    		return true;
+    	} else {
+    		Log.e(LOG_TAG, "UnityPlayer.currentActivity was null");
+    	}
+    	
+    	return false;
+	}
+
+	private static void notifySDKOfAdvertisingId(String gameObject, String advertisingId) {
+		UnityPlayer.UnitySendMessage(gameObject, "OnNewAdvertisingId", advertisingId);
 	}
 }

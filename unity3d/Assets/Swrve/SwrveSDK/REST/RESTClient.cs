@@ -95,7 +95,7 @@ public class RESTClient : IRESTClient
                 string responseBody = null;
                 bool success = ResponseBodyTester.TestUTF8 (www.bytes, out responseBody);
                 Dictionary<string, string> headers = new Dictionary<string, string> ();
-    
+
                 string contentEncodingHeader = null;
                 if (www.responseHeaders != null) {
                     foreach (string headerKey in www.responseHeaders.Keys) {
@@ -106,7 +106,7 @@ public class RESTClient : IRESTClient
                         headers.Add (headerKey.ToUpper (), www.responseHeaders [headerKey]);
                     }
                 }
-    
+
                 // BitConverter.ToInt32 needs at least 4 bytes
                 if (www.bytes != null && www.bytes.Length > 4 && contentEncodingHeader != null && string.Equals (contentEncodingHeader, "gzip", StringComparison.OrdinalIgnoreCase)) {
                     // Check if the response is gzipped or json (eg. iOS automatically unzips it already)
@@ -114,20 +114,20 @@ public class RESTClient : IRESTClient
                         int dataLength = BitConverter.ToInt32 (www.bytes, 0);
                         if (dataLength > 0) {
                             var buffer = new byte[dataLength];
-            
+
                             using (var ms = new MemoryStream(www.bytes)) {
                                 using (var gs = new GZipInputStream(ms)) {
                                     gs.Read (buffer, 0, buffer.Length);
                                     gs.Close ();
                                 }
-            
+
                                 success = ResponseBodyTester.TestUTF8 (buffer, out responseBody);
                                 ms.Close ();
                             }
                         }
                     }
                 }
-    
+
                 if (success) {
                     AddMetrics (url, wwwTime, false);
                     listener.Invoke (new RESTResponse (responseBody, headers));
