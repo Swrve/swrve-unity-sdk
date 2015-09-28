@@ -95,9 +95,9 @@ extern "C"
         return swrveCStringCopy([localeCountry UTF8String]);
     }
 
-    const char* _swrveIDFA()
+    char* _swrveIDFA()
     {
-        return UnityAdvertisingIdentifier();
+        return swrveCStringCopy(UnityAdvertisingIdentifier());
     }
 
     char* _swrveIDFV()
