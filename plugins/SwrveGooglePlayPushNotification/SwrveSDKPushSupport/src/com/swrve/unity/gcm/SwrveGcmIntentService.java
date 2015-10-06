@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -110,18 +112,40 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	 */
 	public NotificationCompat.Builder createNotificationBuilder(String msgText, Bundle msg) {
 		final SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(getApplicationContext());
-		String appTitle = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_APP_TITLE, "Configure your app title");
-		
-		String msgSound = msg.getString("sound");
 		Resources res = getResources();
-		int iconDrawableId = res.getIdentifier("app_icon", "drawable", getPackageName());
+		String appTitle = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_APP_TITLE, "Configure your app title");
+		String iconResourceName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_ICON_ID, null);
+		String materialIconName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_MATERIAL_ICON_ID, null);
+		String largeIconName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_LARGE_ICON_ID, null);
+		int accentColor = prefs.getInt(SwrveGcmDeviceRegistration.PROPERTY_ACCENT_COLOR, -1);
+
+		String msgSound = msg.getString("sound");
+		int iconId = res.getIdentifier((iconResourceName == null)? "app_icon" : iconResourceName, "drawable", getPackageName());
+		int finalIconId = iconId;
+
+		boolean materialDesignIcon = (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP);
+		if (materialDesignIcon && materialIconName != null) {
+			finalIconId = res.getIdentifier(materialIconName, "drawable", getPackageName());
+		}
+
 		// Build notification
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-				.setSmallIcon(iconDrawableId)
+				.setSmallIcon(finalIconId)
 				.setContentTitle(appTitle)
 				.setStyle(new NotificationCompat.BigTextStyle().bigText(msgText))
 				.setContentText(msgText)
+				.setTicker(msgText)
 				.setAutoCancel(true);
+
+		if (largeIconName != null) {
+			int largeIconId = res.getIdentifier(largeIconName, "drawable", getPackageName());
+			Bitmap largeIconBitmap = BitmapFactory.decodeResource(getResources(), largeIconId);
+			mBuilder.setLargeIcon(largeIconBitmap);
+		}
+
+		if (accentColor >= 0) {
+			mBuilder.setColor(accentColor);
+		}
 
 		if (!isEmptyString(msgSound)) {
 			Uri soundUri;
