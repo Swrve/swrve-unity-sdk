@@ -1628,19 +1628,22 @@ public partial class SwrveSDK
         return null;
     }
 
+    private string _androidId;
     private string AndroidGetAndroidId()
     {
-        try {
-            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
-                AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
-                AndroidJavaObject contentResolver = context.Call<AndroidJavaObject> ("getContentResolver");
-                AndroidJavaClass settingsSecure = new AndroidJavaClass ("android.provider.Settings$Secure");
-                return settingsSecure.CallStatic<string> ("getString", contentResolver, "android_id");
+        if (_androidId == null) {
+            try {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
+                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
+                    AndroidJavaObject contentResolver = context.Call<AndroidJavaObject> ("getContentResolver");
+                    AndroidJavaClass settingsSecure = new AndroidJavaClass ("android.provider.Settings$Secure");
+                    _androidId = settingsSecure.CallStatic<string> ("getString", contentResolver, "android_id");
+                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't get the device app version, make sure you are running on an Android device: " + exp.ToString());
             }
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device app version, make sure you are running on an Android device: " + exp.ToString());
         }
-        return null;
+        return _androidId;
     }
 #endif
 

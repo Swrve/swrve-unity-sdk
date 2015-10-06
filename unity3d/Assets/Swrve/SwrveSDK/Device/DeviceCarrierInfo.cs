@@ -27,7 +27,7 @@ public class DeviceCarrierInfo : ICarrierInfo
         try {
             using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
                 AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
-                string telephonyService = "phone";//ontext.GetStatic<string>("TELEPHONY_SERVICE");
+                string telephonyService = "phone";
                 androidTelephonyManager = context.Call<AndroidJavaObject>("getSystemService", telephonyService);
             }
         } catch (Exception exp) {
