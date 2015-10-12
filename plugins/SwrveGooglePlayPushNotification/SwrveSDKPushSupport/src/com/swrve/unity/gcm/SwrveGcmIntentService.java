@@ -5,6 +5,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -38,7 +40,10 @@ public class SwrveGcmIntentService extends GcmListenerService {
 		try {
 			if (isSwrveRemoteNotification(msg)) {
 				final SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(getApplicationContext());
-				String activityClassName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_ACTIVITY_NAME, "com.unity3d.player.UnityPlayerNativeActivity");
+				String activityClassName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_ACTIVITY_NAME, null);
+				if (isEmptyString(activityClassName)) {
+					activityClassName = "com.unity3d.player.UnityPlayerNativeActivity";
+				}
 				
 				// Process activity name (could be local or a class with a package name)
 				if(!activityClassName.contains(".")) {
@@ -111,27 +116,52 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	 * @return
 	 */
 	public NotificationCompat.Builder createNotificationBuilder(String msgText, Bundle msg) {
-		final SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(getApplicationContext());
+		Context context = getApplicationContext();
+		SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(context);
 		Resources res = getResources();
-		String appTitle = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_APP_TITLE, "Configure your app title");
+		String pushTitle = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_APP_TITLE, null);
 		String iconResourceName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_ICON_ID, null);
 		String materialIconName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_MATERIAL_ICON_ID, null);
 		String largeIconName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_LARGE_ICON_ID, null);
 		int accentColor = prefs.getInt(SwrveGcmDeviceRegistration.PROPERTY_ACCENT_COLOR, -1);
 
-		String msgSound = msg.getString("sound");
-		int iconId = res.getIdentifier((iconResourceName == null)? "app_icon" : iconResourceName, "drawable", getPackageName());
-		int finalIconId = iconId;
+		PackageManager packageManager = context.getPackageManager();
+		ApplicationInfo app = packageManager.getApplicationInfo(getPackageName(), 0);
 
-		boolean materialDesignIcon = (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP);
-		if (materialDesignIcon && materialIconName != null) {
+		int iconId = 0;
+		if (isEmptyString(iconResourceName)) {
+			// Default to the application icon
+			iconId = app.icon;
+		} else {
+			iconId = res.getIdentifier(iconResourceName, "drawable", getPackageName());
+		}
+
+		int finalIconId = iconId;
+		boolean mustUseMaterialDesignIcon = (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP);
+		if (isEmptyString(materialIconName)) {
+			// No material (Android L+) icon configured
+			Log.w(LOG_TAG, "No mateiral icon specified. We recommend setting a special material icon for Android L+");
+		} else if(mustUseMaterialDesignIcon) {
+			// Running on Android L+
 			finalIconId = res.getIdentifier(materialIconName, "drawable", getPackageName());
+		}
+
+		if (isEmptyString(pushTitle)) {
+			// No configured push title
+			CharSequence appTitle = app.loadLabel(packageManager);
+			if (appTitle != null) {
+				// Default to the application title
+				pushTitle = appTitle.toString();
+			}
+			if (isEmptyString(pushTitle)) {
+				pushTitle = "Configure your app title";
+			}
 		}
 
 		// Build notification
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
 				.setSmallIcon(finalIconId)
-				.setContentTitle(appTitle)
+				.setContentTitle(pushTitle)
 				.setStyle(new NotificationCompat.BigTextStyle().bigText(msgText))
 				.setContentText(msgText)
 				.setTicker(msgText)
@@ -147,6 +177,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 			mBuilder.setColor(accentColor);
 		}
 
+		String msgSound = msg.getString("sound");
 		if (!isEmptyString(msgSound)) {
 			Uri soundUri;
 			if (msgSound.equalsIgnoreCase("default")) {
