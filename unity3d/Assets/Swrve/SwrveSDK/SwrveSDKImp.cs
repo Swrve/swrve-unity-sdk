@@ -1584,6 +1584,20 @@ public partial class SwrveSDK
         return null;
     }
 
+    private string AndroidGetRegion()
+    {
+        try {
+            using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
+                AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
+                return defaultLocale.Call<string>("getISO3Country");
+            }
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get the device region, make sure you are running on an Android device: " + exp.ToString());
+        }
+        
+        return null;
+    }
+
     private string AndroidGetAppVersion()
     {
         try {
