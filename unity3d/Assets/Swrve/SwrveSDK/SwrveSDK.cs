@@ -1081,6 +1081,11 @@ public partial class SwrveSDK
             deviceInfo ["swrve.timezone_name"] = timezone;
         }
 
+        string deviceRegion = AndroidGetRegion();
+        if (!string.IsNullOrEmpty(deviceRegion)) {
+            deviceInfo ["swrve.device_region"] = deviceRegion;
+        }
+        
         if (config.LogAndroidId) {
             try {
                 deviceInfo ["swrve.android_id"] = AndroidGetAndroidId();

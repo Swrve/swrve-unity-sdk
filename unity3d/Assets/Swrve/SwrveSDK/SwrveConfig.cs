@@ -170,6 +170,28 @@ public class SwrveConfig
     public string GCMPushNotificationTitle = "#Your App Title";
 
     /// <summary>
+    /// The resource identifier for the icon that will be displayed on your GCM notifications.
+    /// </summary>
+    public string GCMPushNotificationIconId = null;
+
+    /// <summary>
+    /// The resource identifier for the Material icon that will be displayed on your GCM notifications
+    /// on Android L+.
+    /// https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorNotifications
+    /// </summary>
+    public string GCMPushNotificationMaterialIconId = null;
+
+    /// <summary>
+    /// The resource identifier for the large icon that will be displayed on your GCM notifications.
+    /// </summary>
+    public string GCMPushNotificationLargeIconId = null;
+
+    /// <summary>
+    /// The color (argb) that will be used as accent color for your GCM notifications.
+    /// </summary>
+    public int GCMPushNotificationAccentColor = -1;
+
+    /// <summary>
     /// Maximum delay in seconds for in-app messages to appear after initialization.
     /// </summary>
     public float AutoShowMessagesMaxDelay = 5;

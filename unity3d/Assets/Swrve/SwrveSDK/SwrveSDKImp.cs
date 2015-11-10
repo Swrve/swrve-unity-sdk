@@ -1529,7 +1529,7 @@ public partial class SwrveSDK
 #endif
 
 #if UNITY_ANDROID
-    private const int GooglePlayPushPluginVersion = 3;
+    private const int GooglePlayPushPluginVersion = 4;
 
     private void GooglePlayRegisterForPushNotification(MonoBehaviour container, string senderId)
     {
@@ -1563,7 +1563,7 @@ public partial class SwrveSDK
             }
 
             if (androidPluginInitializedSuccessfully) {
-                registered = androidPlugin.CallStatic<bool>("registerDevice", container.name, senderId, config.GCMPushNotificationTitle);
+                registered = androidPlugin.CallStatic<bool>("registerDevice", container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
             }
 
             if (!registered) {
@@ -1608,6 +1608,20 @@ public partial class SwrveSDK
             SwrveLog.LogWarning("Couldn't get the device timezone, make sure you are running on an Android device: " + exp.ToString());
         }
 
+        return null;
+    }
+
+    private string AndroidGetRegion()
+    {
+        try {
+            using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
+                AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
+                return defaultLocale.Call<string>("getISO3Country");
+            }
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get the device region, make sure you are running on an Android device: " + exp.ToString());
+        }
+        
         return null;
     }
 
