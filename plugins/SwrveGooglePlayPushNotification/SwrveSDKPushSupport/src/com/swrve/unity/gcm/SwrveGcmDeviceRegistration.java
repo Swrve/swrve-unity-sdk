@@ -21,13 +21,18 @@ import com.unity3d.player.UnityPlayer;
 
 public class SwrveGcmDeviceRegistration {
 	private static final String LOG_TAG = "SwrveGcmRegistration";
-	private static final int VERSION = 3;
+	private static final int VERSION = 4;
 
     public static final String PROPERTY_REG_ID = "registration_id";
     public static final String PROPERTY_APP_VERSION = "appVersion";
     public static final String PROPERTY_ACTIVITY_NAME = "activity_name";
     public static final String PROPERTY_GAME_OBJECT_NAME = "game_object_name";
+
     public static final String PROPERTY_APP_TITLE = "app_title";
+    public static final String PROPERTY_ICON_ID = "icon_id";
+    public static final String PROPERTY_MATERIAL_ICON_ID = "material_icon_id";
+    public static final String PROPERTY_LARGE_ICON_ID = "large_icon_id";
+    public static final String PROPERTY_ACCENT_COLOR = "accent_color";
 
 	public static String lastGameObjectRegistered;
 	public static String lastSenderIdUsed;
@@ -37,8 +42,8 @@ public class SwrveGcmDeviceRegistration {
     public static int getVersion() {
     	return VERSION;
     }
-    
-    public static boolean registerDevice(final String gameObject, final String senderId, final String appTitle) {
+
+    public static boolean registerDevice(final String gameObject, final String senderId, final String appTitle, final String iconId, final String materialIconId, final String largeIconId, final int accentColor) {
     	if (UnityPlayer.currentActivity != null) {
 			lastGameObjectRegistered = gameObject;
 			lastSenderIdUsed = senderId;
@@ -49,7 +54,7 @@ public class SwrveGcmDeviceRegistration {
 				@Override
 				public void run() {
 					try {
-			    		saveConfig(gameObject, activity, appTitle);
+			    		saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
 						String registrationId;
 						if (checkPlayServices(activity)) {
 							Context context = activity.getApplicationContext();
@@ -97,7 +102,7 @@ public class SwrveGcmDeviceRegistration {
 		}
 	}
     
-    private static void saveConfig(String gameObject, Activity activity, String appTitle) {
+    private static void saveConfig(String gameObject, Activity activity, String appTitle, String iconId, String materialIconId, String largeIconId, int accentColor) {
     	Context context = activity.getApplicationContext();
     	final SharedPreferences prefs = getGCMPreferences(context);
     	
@@ -105,6 +110,10 @@ public class SwrveGcmDeviceRegistration {
 	    editor.putString(PROPERTY_ACTIVITY_NAME, activity.getLocalClassName());
 	    editor.putString(PROPERTY_GAME_OBJECT_NAME, gameObject);
 	    editor.putString(PROPERTY_APP_TITLE, appTitle);
+	    editor.putString(PROPERTY_ICON_ID, iconId);
+	    editor.putString(PROPERTY_MATERIAL_ICON_ID, materialIconId);
+	    editor.putString(PROPERTY_LARGE_ICON_ID, largeIconId);
+	    editor.putInt(PROPERTY_ACCENT_COLOR, accentColor);
 	    editor.commit();
     }
     
