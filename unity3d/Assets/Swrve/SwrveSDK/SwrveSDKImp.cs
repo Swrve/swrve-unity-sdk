@@ -25,7 +25,8 @@ public partial class SwrveSDK
     protected const string EventsSave = "Swrve_Events";
     protected const string InstallTimeEpochSave = "Swrve_JoinedDate";
     protected const string iOSdeviceTokenSave = "Swrve_iOSDeviceToken";
-    protected const string GcmdeviceTokenSave = "Swrve_gcmDeviceToken";
+    protected const string GcmDeviceTokenSave = "Swrve_gcmDeviceToken";
+    protected const string GoogleAdvertisingIdSave = "Swrve_googleAdvertisingId";
     protected const string AbTestUserResourcesSave = "srcngt2"; // Saved securely
     protected const string AbTestUserResourcesDiffSave = "rsdfngt2"; // Saved securely
     protected const string DeviceIdSave = "Swrve_DeviceId";
@@ -52,6 +53,7 @@ public partial class SwrveSDK
     private static AndroidJavaObject androidPlugin;
     private static bool androidPluginInitialized = false;
     private static bool androidPluginInitializedSuccessfully = false;
+    private string googlePlayAdvertisingId;
 #endif
     private int deviceWidth;
     private int deviceHeight;
@@ -1533,7 +1535,7 @@ public partial class SwrveSDK
     {
         try {
             bool registered = false;
-            this.gcmDeviceToken = storage.Load (GcmdeviceTokenSave);
+            this.gcmDeviceToken = storage.Load (GcmDeviceTokenSave);
 
             if (!androidPluginInitialized) {
                 androidPluginInitialized = true;
@@ -1566,6 +1568,31 @@ public partial class SwrveSDK
 
             if (!registered) {
                 SwrveLog.LogError("Could not communicate with the Swrve Android Push plugin. Have you copied all the jars to the directory?");
+            }
+        } catch (Exception exp) {
+            SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
+        }
+    }
+
+    public void SetGooglePlayAdvertisingId(string advertisingId)
+    {
+        this.googlePlayAdvertisingId = advertisingId;
+        storage.Save(GoogleAdvertisingIdSave, advertisingId);
+    }
+
+    private void RequestGooglePlayAdvertisingId(MonoBehaviour container)
+    {
+        try {
+            this.googlePlayAdvertisingId = storage.Load(GoogleAdvertisingIdSave);
+            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
+                string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
+
+                if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
+                    androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
+                    if (androidPlugin != null) {
+                        androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
+                    }
+                }
             }
         } catch (Exception exp) {
             SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
@@ -1613,6 +1640,24 @@ public partial class SwrveSDK
         }
 
         return null;
+    }
+
+    private string _androidId;
+    private string AndroidGetAndroidId()
+    {
+        if (_androidId == null) {
+            try {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
+                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
+                    AndroidJavaObject contentResolver = context.Call<AndroidJavaObject> ("getContentResolver");
+                    AndroidJavaClass settingsSecure = new AndroidJavaClass ("android.provider.Settings$Secure");
+                    _androidId = settingsSecure.CallStatic<string> ("getString", contentResolver, "android_id");
+                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't get the device app version, make sure you are running on an Android device: " + exp.ToString());
+            }
+        }
+        return _androidId;
     }
 #endif
 

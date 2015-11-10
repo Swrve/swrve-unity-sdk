@@ -3,8 +3,7 @@ namespace Swrve.Messaging
 /// <summary>
 /// Used internally to represent a point in 2D space.
 /// </summary>
-public struct Point
-{
+public struct Point {
     public int X;
     public int Y;
 

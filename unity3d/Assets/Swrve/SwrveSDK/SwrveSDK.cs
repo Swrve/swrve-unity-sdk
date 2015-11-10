@@ -57,6 +57,12 @@ public partial class SwrveSDK
 
     [DllImport ("__Internal")]
     private static extern string _swrveLocaleCountry();
+
+    [DllImport ("__Internal")]
+    private static extern string _swrveIDFA();
+
+    [DllImport ("__Internal")]
+    private static extern string _swrveIDFV();
 #endif
 
     private int gameId;
@@ -336,6 +342,10 @@ public partial class SwrveSDK
         // Ask for Android registration id
         if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
             GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
+        }
+
+        if (config.LogGoogleAdvertisingId) {
+            RequestGooglePlayAdvertisingId(Container);
         }
 #endif
         QueueDeviceInfo ();
@@ -1041,6 +1051,26 @@ public partial class SwrveSDK
             SwrveLog.LogWarning("Couldn't get device region on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
         }
 
+        if (config.LogAppleIDFV) {
+            try {
+                String idfv = _swrveIDFV();
+                if (!string.IsNullOrEmpty(idfv)) {
+                    deviceInfo ["swrve.IDFV"] = idfv;
+                }
+            } catch (Exception e) {
+                SwrveLog.LogWarning("Couldn't get device IDFV, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
+            }
+        }
+        if (config.LogAppleIDFA) {
+            try {
+                String idfa = _swrveIDFA();
+                if (!string.IsNullOrEmpty(idfa)) {
+                    deviceInfo ["swrve.IDFA"] = idfa;
+                }
+            } catch (Exception e) {
+                SwrveLog.LogWarning("Couldn't get device IDFA, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
+            }
+        }
 #elif UNITY_ANDROID
         if (!string.IsNullOrEmpty(gcmDeviceToken)) {
             deviceInfo["swrve.gcm_token"] = gcmDeviceToken;
@@ -1054,6 +1084,20 @@ public partial class SwrveSDK
         string deviceRegion = AndroidGetRegion();
         if (!string.IsNullOrEmpty(deviceRegion)) {
             deviceInfo ["swrve.device_region"] = deviceRegion;
+        }
+        
+        if (config.LogAndroidId) {
+            try {
+                deviceInfo ["swrve.android_id"] = AndroidGetAndroidId();
+            } catch (Exception e) {
+                SwrveLog.LogWarning("Couldn't get device IDFA, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
+            }
+        }
+
+        if (config.LogGoogleAdvertisingId) {
+            if (!string.IsNullOrEmpty(googlePlayAdvertisingId)) {
+                deviceInfo ["swrve.GAID"] = googlePlayAdvertisingId;
+            }
         }
 #endif
 
@@ -1444,7 +1488,7 @@ public partial class SwrveSDK
         }
         TaskFinished ("ShowMessageForEvent");
 #else
-        yield return null; 
+        yield return null;
 #endif
     }
 
@@ -1482,7 +1526,8 @@ public partial class SwrveSDK
     /// <summary>
     ///  Used internally to obtain the configured default background for in-app messages.
     /// </summary>
-    public Color? DefaultBackgroundColor {
+    public Color? DefaultBackgroundColor
+    {
         get {
             return config.DefaultBackgroundColor;
         }
@@ -1571,7 +1616,7 @@ public partial class SwrveSDK
 
             if (sendDeviceInfo) {
                 this.gcmDeviceToken = registrationId;
-                storage.Save (GcmdeviceTokenSave, gcmDeviceToken);
+                storage.Save (GcmDeviceTokenSave, gcmDeviceToken);
                 if (qaUser != null) {
                     qaUser.UpdateDeviceInfo();
                 }
