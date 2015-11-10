@@ -126,12 +126,19 @@ public class SwrveGcmIntentService extends GcmListenerService {
 		int accentColor = prefs.getInt(SwrveGcmDeviceRegistration.PROPERTY_ACCENT_COLOR, -1);
 
 		PackageManager packageManager = context.getPackageManager();
-		ApplicationInfo app = packageManager.getApplicationInfo(getPackageName(), 0);
+		ApplicationInfo app = null;
+		try {
+			app = packageManager.getApplicationInfo(getPackageName(), 0);
+		} catch (Exception exp) {
+			exp.printStackTrace();
+		}
 
 		int iconId = 0;
 		if (isEmptyString(iconResourceName)) {
 			// Default to the application icon
-			iconId = app.icon;
+			if (app != null) {
+				iconId = app.icon;
+			}
 		} else {
 			iconId = res.getIdentifier(iconResourceName, "drawable", getPackageName());
 		}
@@ -147,11 +154,13 @@ public class SwrveGcmIntentService extends GcmListenerService {
 		}
 
 		if (isEmptyString(pushTitle)) {
-			// No configured push title
-			CharSequence appTitle = app.loadLabel(packageManager);
-			if (appTitle != null) {
-				// Default to the application title
-				pushTitle = appTitle.toString();
+			if (app != null) {
+				// No configured push title
+				CharSequence appTitle = app.loadLabel(packageManager);
+				if (appTitle != null) {
+					// Default to the application title
+					pushTitle = appTitle.toString();
+				}
 			}
 			if (isEmptyString(pushTitle)) {
 				pushTitle = "Configure your app title";
