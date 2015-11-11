@@ -10,6 +10,15 @@ using UnityEngine;
 
 namespace Swrve
 {
+
+  /// <summary>
+  /// Available stacks to choose from
+  /// </summary>
+  public enum Stack
+  {
+      US, EU
+  }
+
 /// <summary>
 /// Configuration for the Swrve SDK.
 /// </summary>
@@ -118,7 +127,7 @@ public class SwrveConfig
 #else
         false;
 #endif
-
+                           
     /// <summary>
     /// The SDK will send a session start on init and manage game pauses and resumes.
     /// </summary>
@@ -147,6 +156,11 @@ public class SwrveConfig
     /// </remarks>
     public bool StoreDataInPlayerPrefs = false;
 
+    /// <summary>
+    /// The SDK will send a session start on init and manage game pauses and resumes.
+    /// </summary>
+     public Stack currentStack = Stack.US;
+                
     /// <summary>
     /// Enable push notification on this game.
     /// </summary>
@@ -221,15 +235,30 @@ public class SwrveConfig
     /// </summary>
     public bool LogAppleIDFA = false;
 
+    public void setCurrentStack(Stack stack){
+            this.currentStack = stack;
+    }
+
+    public Stack getCurrentStack(){
+            return currentStack;
+    }
+        
     public void CalculateEndpoints (int appId)
     {
         // Default values are saved in the prefab or component instance.
         if (EventsServer == DefaultEventsServer) {
-            EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, "api.swrve.com");
+            EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, getCurrentStack(), "api.swrve.com");
         }
         if (ContentServer == DefaultContentServer) {
-            ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, "content.swrve.com");
+                ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, getCurrentStack(), "content.swrve.com");
         }
+    }
+           
+    private static string getStackPrefix(Stack stack){
+        if (stack == Stack.EU) {
+            return "eu.";
+        }
+        return "";
     }
 
     private static string HttpSchema(bool useHttps)
@@ -237,9 +266,9 @@ public class SwrveConfig
         return useHttps? "https" : "http";
     }
 
-    private static string CalculateEndpoint(bool useHttps, int appId, string suffix)
-    {
-        return HttpSchema(useHttps) + "://" + appId + "." + suffix;
-    }
+    private static string CalculateEndpoint(bool useHttps, int appId, Stack stack, string suffix)
+    {        
+        return HttpSchema(useHttps) + "://" + appId + "." + getStackPrefix(stack) + suffix;
+    }       
 }
 }
