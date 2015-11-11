@@ -1369,10 +1369,10 @@ public partial class SwrveSDK
                     if (nextMessage.SupportsOrientation(deviceOrientation)) {
                         availableMessages.Add(nextMessage);
                         if (nextMessage.Priority <= minPriority) {
-                            minPriority = nextMessage.Priority;
                             if (nextMessage.Priority < minPriority) {
                                 candidateMessages.Clear();
                             }
+                            minPriority = nextMessage.Priority;
                             candidateMessages.Add(nextMessage);
                         }
                     } else {
