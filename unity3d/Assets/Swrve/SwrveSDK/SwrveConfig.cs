@@ -237,7 +237,7 @@ public class SwrveConfig
     {
         // Default values are saved in the prefab or component instance.
         if (EventsServer == DefaultEventsServer) {
-        EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, UseEUStack, UseEUStack, "api.swrve.com");
+            EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, UseEUStack, "api.swrve.com");
         }
         if (ContentServer == DefaultContentServer) {
             ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, UseEUStack, "content.swrve.com");
@@ -256,3 +256,4 @@ public class SwrveConfig
     }
 }
 }
+
