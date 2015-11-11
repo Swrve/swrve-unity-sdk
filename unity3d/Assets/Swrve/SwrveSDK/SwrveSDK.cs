@@ -1370,6 +1370,8 @@ public partial class SwrveSDK
                         availableMessages.Add(nextMessage);
                         if (nextMessage.Priority <= minPriority) {
                             if (nextMessage.Priority < minPriority) {
+                                // If it is lower than any of the previous ones
+                                // remove those from being candidates
                                 candidateMessages.Clear();
                             }
                             minPriority = nextMessage.Priority;
