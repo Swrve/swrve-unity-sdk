@@ -119,6 +119,18 @@ public class SwrveConfig
         false;
 #endif
 
+
+    /// <summary>
+    /// Use EU stack instead of the default US stack.
+    /// </summary>
+    public bool UseEUStack =
+#if SWRVE_USE_EU_STACK
+        true;
+#else
+        false;
+#endif
+
+
     /// <summary>
     /// The SDK will send a session start on init and manage game pauses and resumes.
     /// </summary>
@@ -225,10 +237,10 @@ public class SwrveConfig
     {
         // Default values are saved in the prefab or component instance.
         if (EventsServer == DefaultEventsServer) {
-            EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, "api.swrve.com");
+        EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, UseEUStack, UseEUStack, "api.swrve.com");
         }
         if (ContentServer == DefaultContentServer) {
-            ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, "content.swrve.com");
+            ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, UseEUStack, "content.swrve.com");
         }
     }
 
@@ -237,9 +249,10 @@ public class SwrveConfig
         return useHttps? "https" : "http";
     }
 
-    private static string CalculateEndpoint(bool useHttps, int appId, string suffix)
+    private static string CalculateEndpoint(bool useHttps, int appId, bool useEU, string suffix)
     {
-        return HttpSchema(useHttps) + "://" + appId + "." + suffix;
+        string stackPrefix = useEU ? "eu." : "";           
+        return HttpSchema(useHttps) + "://" + appId + "." + stackPrefix + suffix;
     }
 }
 }
