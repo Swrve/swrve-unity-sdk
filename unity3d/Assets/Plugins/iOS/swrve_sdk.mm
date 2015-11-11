@@ -111,21 +111,28 @@ extern "C"
         UIApplication* app = [UIApplication sharedApplication];
 #ifdef __IPHONE_8_0
 #if __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_8_0
-    // Check if the new push API is not available
-    if (![app respondsToSelector:@selector(registerUserNotificationSettings:)])
-    {
-        // Use the old API
-        [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound];
-    }
-    else
+        // Check if the new push API is not available
+        if (![app respondsToSelector:@selector(registerUserNotificationSettings:)])
+        {
+            // Use the old API
+            [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound];
+        }
+        else
 #endif
-    {
-        [app registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:(UIUserNotificationTypeSound | UIUserNotificationTypeAlert | UIUserNotificationTypeBadge) categories:nil]];
-        [app registerForRemoteNotifications];
-    }
+        {
+            [app registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:(UIUserNotificationTypeSound | UIUserNotificationTypeAlert | UIUserNotificationTypeBadge) categories:nil]];
+            [app registerForRemoteNotifications];
+        }
 #else
-    // Not building with the latest XCode that contains iOS 8 definitions
-    [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound];
+        // Not building with the latest XCode that contains iOS 8 definitions
+        [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound];
 #endif
+    }
+
+    BOOL _swrveAppInBackground()
+    {
+        UIApplication* app = [UIApplication sharedApplication];
+        UIApplicationState appState = [app applicationState];
+        return (appState == UIApplicationStateInactive || appState == UIApplicationStateBackground);
     }
 }
