@@ -335,7 +335,7 @@ public partial class SwrveSDK
 
         if (string.IsNullOrEmpty(installTimeEpoch)) {
             // Its a new user
-            NamedEvent("Swrve.first_session");
+            NamedEventInternal("Swrve.first_session");
         }
 
 #if UNITY_ANDROID
@@ -432,7 +432,11 @@ public partial class SwrveSDK
     public virtual void NamedEvent (string name, Dictionary<string, string> payload = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        NamedEventInternal (name, payload);
+        if (name != null && !name.ToLower().StartsWith("swrve.")) {
+            NamedEventInternal (name, payload);
+        } else {
+            SwrveLog.LogError ("Event cannot begin with \"Swrve.\". The event " + name + " will not be sent");
+        }
 #endif
     }
 
