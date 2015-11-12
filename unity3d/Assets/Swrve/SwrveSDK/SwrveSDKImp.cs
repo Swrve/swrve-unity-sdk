@@ -128,7 +128,7 @@ public partial class SwrveSDK
         AppendEventToBuffer ("session_start", json);
     }
 
-    private void NamedEventInternal (string name, Dictionary<string, string> payload = null, bool allowShowMessage = true)
+    protected void NamedEventInternal (string name, Dictionary<string, string> payload = null, bool allowShowMessage = true)
     {
         if (payload == null) {
             payload = new Dictionary<string, string> ();
