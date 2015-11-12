@@ -256,7 +256,7 @@ public class SwrveConfig
            
     private static string getStackPrefix(Stack stack){
         if (stack == Stack.EU) {
-            return "eu.";
+            return "eu-";
         }
         return "";
     }
