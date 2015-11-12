@@ -379,11 +379,9 @@ public partial class SwrveSDK
     private string getNextSeqNum ()
     {
         string seqNum = storage.Load (SeqNumSave, userId);
-        if (string.IsNullOrEmpty (seqNum)) {
-            seqNum = "0";
-        }
         // increment value
-        seqNum = (int.Parse (seqNum) + 1).ToString ();
+        int value;
+        seqNum = int.TryParse (seqNum, out value) ? (++value).ToString () : "1";
         storage.Save (SeqNumSave, seqNum, userId);
         return seqNum;
     }
