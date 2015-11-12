@@ -1164,7 +1164,7 @@ public partial class SwrveSDK
                     Dictionary<int, string> campaignsDownloaded = null;
 
                     // QA
-                    bool wasQAUser = (qaUser != null);
+                    bool wasPreviouslyQAUser = (qaUser != null);
                     if (root.ContainsKey ("qa")) {
                         Dictionary<string, object> jsonQa = (Dictionary<string, object>)root ["qa"];
                         SwrveLog.Log ("You are a QA user!");
@@ -1197,7 +1197,7 @@ public partial class SwrveSDK
                         if (campaign.Messages.Count > 0) {
                             assetsQueue.AddRange (campaign.ListOfAssets ());
 
-                            if (campaignSettings != null && (wasQAUser || qaUser == null || !qaUser.ResetDevice)) {
+                            if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
                                 // Load next
                                 if (campaignSettings.ContainsKey ("Next" + campaign.Id)) {
                                     int next = MiniJsonHelper.GetInt (campaignSettings, "Next" + campaign.Id);
