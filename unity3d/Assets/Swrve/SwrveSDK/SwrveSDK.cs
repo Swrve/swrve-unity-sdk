@@ -63,9 +63,6 @@ public partial class SwrveSDK
 
     [DllImport ("__Internal")]
     private static extern string _swrveIDFV();
-
-    [DllImport ("__Internal")]
-    private static extern bool _swrveAppInBackground();
 #endif
 
     private int gameId;

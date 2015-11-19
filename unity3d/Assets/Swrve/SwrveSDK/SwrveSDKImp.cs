@@ -1502,23 +1502,13 @@ public partial class SwrveSDK
     {
         if(config.PushNotificationEnabled) {
             if (notification.userInfo != null && notification.userInfo.Contains("_p")) {
-                // It is a Swrve push, we need to check if it was received while the app was in the background
-                bool appInBackground = true;
-                try {
-                    appInBackground = _swrveAppInBackground();
-                } catch (Exception exp) {
-                    SwrveLog.LogWarning("Couldn't get the app state, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+                object rawId = notification.userInfo["_p"];
+                string pushId = rawId.ToString();
+                // SWRVE-5613 Hack
+                if (rawId is Int64) {
+                    pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
                 }
-
-                if (appInBackground) {
-                    object rawId = notification.userInfo["_p"];
-                    string pushId = rawId.ToString();
-                    // SWRVE-5613 Hack
-                    if (rawId is Int64) {
-                        pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
-                    }
-                    SendPushNotificationEngagedEvent(pushId);
-                }
+                SendPushNotificationEngagedEvent(pushId);
             } else {
                 SwrveLog.Log("Got unidentified notification");
             }
