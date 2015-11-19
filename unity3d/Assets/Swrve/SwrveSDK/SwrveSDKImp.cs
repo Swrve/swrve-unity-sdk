@@ -1502,13 +1502,19 @@ public partial class SwrveSDK
     {
         if(config.PushNotificationEnabled) {
             if (notification.userInfo != null && notification.userInfo.Contains("_p")) {
-                object rawId = notification.userInfo["_p"];
-                string pushId = rawId.ToString();
-                // SWRVE-5613 Hack
-                if (rawId is Int64) {
-                    pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
+                // It is a Swrve push, we need to check if it was sent while the app was in the background
+                bool whileInBackground = !notification.userInfo.Contains("_swrveForeground");
+                if (whileInBackground) {
+                    object rawId = notification.userInfo["_p"];
+                    string pushId = rawId.ToString();
+                    // SWRVE-5613 Hack
+                    if (rawId is Int64) {
+                        pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
+                    }
+                    SendPushNotificationEngagedEvent(pushId);
+                } else {
+                    SwrveLog.Log("Swrve remote notification received while in the foreground");
                 }
-                SendPushNotificationEngagedEvent(pushId);
             } else {
                 SwrveLog.Log("Got unidentified notification");
             }

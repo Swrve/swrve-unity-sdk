@@ -30,7 +30,7 @@ public class SwrveSDKPostProcess
             int hookPosition = contents.IndexOf ("didReceiveRemoteNotification");
             if (hookPosition > 0) {
                 // File contains notification hook
-                // Replace the first appaerance of UnitySendRemoteNotification
+                // Replace the first appearance of UnitySendRemoteNotification
                 // after the hook
                 string pattern = @"UnitySendRemoteNotification[\w\s]*\(userInfo\)[\w\s]*;";
                 Match closestInstance = null;
@@ -44,7 +44,11 @@ public class SwrveSDKPostProcess
                 }
 
                 if (closestInstance != null) {
-                    contents = contents.Substring (0, closestInstance.Index) + "UIApplicationState swrveState = [application applicationState]; if (swrveState == UIApplicationStateInactive || swrveState == UIApplicationStateBackground) { " + closestInstance.Value + " }" + contents.Substring (closestInstance.Index + closestInstance.Length);
+                    // Add a flag to the notification indicating if it was received while on the foreground
+                    contents = contents.Substring (0, closestInstance.Index) + "UIApplicationState swrveState = [application applicationState];"
+                                + "BOOL swrveInBackground = (swrveState == UIApplicationStateInactive || swrveState == UIApplicationStateBackground);"
+                                + "if (!swrveInBackground) { [userInfo setValue:@\"YES\" forKey:@\"_swrveForeground\"]; } "
+                                + closestInstance.Value + contents.Substring (closestInstance.Index + closestInstance.Length);
                     File.WriteAllText (filePath, contents);
                 }
             }
