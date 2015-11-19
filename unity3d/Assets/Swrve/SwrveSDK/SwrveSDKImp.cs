@@ -1448,7 +1448,7 @@ public partial class SwrveSDK
         if (pushId != lastPushEngagedId) {
             lastPushEngagedId = pushId;
             string eventName = "Swrve.Messages.Push-" + pushId + ".engaged";
-            NamedEvent (eventName);
+            NamedEventInternal (eventName);
             SwrveLog.Log ("Got Swrve notification with ID " + pushId);
         }
     }
