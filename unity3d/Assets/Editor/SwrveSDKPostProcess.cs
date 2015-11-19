@@ -47,7 +47,7 @@ public class SwrveSDKPostProcess
                     // Add a flag to the notification indicating if it was received while on the foreground
                     contents = contents.Substring (0, closestInstance.Index) + "UIApplicationState swrveState = [application applicationState];"
                                 + "BOOL swrveInBackground = (swrveState == UIApplicationStateInactive || swrveState == UIApplicationStateBackground);"
-                                + "if (!swrveInBackground) { [userInfo setValue:@\"YES\" forKey:@\"_swrveForeground\"]; } "
+                                + "if (!swrveInBackground) { NSMutableDictionary* mutableUserInfo = userInfo = [userInfo mutableCopy]; [mutableUserInfo setValue:@\"YES\" forKey:@\"_swrveForeground\"]; } "
                                 + closestInstance.Value + contents.Substring (closestInstance.Index + closestInstance.Length);
                     File.WriteAllText (filePath, contents);
                 }
