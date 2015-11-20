@@ -10,9 +10,11 @@ public static class SwrveLog
     /// Set to false to disable the logging produced
     /// by the Swrve SDK.
     /// </summary>
-    public static bool Verbose = true;
+
+    public static SwrveLogType LogLevel = SwrveLogType.Verbose; // Verbose by default
 
     public enum SwrveLogType {
+        Verbose,
         Info,
         Warning,
         Error
@@ -21,6 +23,10 @@ public static class SwrveLog
     public delegate void SwrveLogEventHandler (SwrveLog.SwrveLogType type,object message,string tag);
 
     public static event SwrveLogEventHandler OnLog;
+
+    public static void setLoggingLevel(SwrveLogType logType){
+        LogLevel = logType;
+    }
 
     // Default tag is "activity"
     public static void Log (object message)
@@ -40,7 +46,7 @@ public static class SwrveLog
 
     public static void Log (object message, string tag)
     {
-        if (Verbose) {
+        if (LogLevel == SwrveLogType.Verbose || LogLevel == SwrveLogType.Info || LogLevel == SwrveLogType.Warning || LogLevel == SwrveLogType.Error ) {
             Debug.Log (message);
             if (OnLog != null) {
                 OnLog (SwrveLogType.Info, message, tag);
@@ -50,7 +56,7 @@ public static class SwrveLog
 
     public static void LogWarning (object message, string tag)
     {
-        if (Verbose) {
+        if (LogLevel == SwrveLogType.Verbose || LogLevel == SwrveLogType.Warning || LogLevel == SwrveLogType.Error) {
             Debug.LogWarning (message);
             if (OnLog != null) {
                 OnLog (SwrveLogType.Warning, message, tag);
@@ -60,9 +66,11 @@ public static class SwrveLog
 
     public static void LogError (object message, string tag)
     {
-        Debug.LogError (message);
-        if (OnLog != null) {
-            OnLog (SwrveLogType.Error, message, tag);
+        if (LogLevel == SwrveLogType.Verbose || LogLevel == SwrveLogType.Error) {
+            Debug.LogError (message);
+            if (OnLog != null) {
+                OnLog (SwrveLogType.Error, message, tag);
+            }
         }
     }
 }

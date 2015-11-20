@@ -642,7 +642,8 @@ public partial class SwrveSDK
             }
 #endif
         } else {
-            Debug.LogError("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");
+            SwrveLog.LogError ("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");                
+
         }
 
         if (allowShowMessage && config.TalkEnabled) {
