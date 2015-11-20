@@ -17,7 +17,8 @@ public static class SwrveLog
         Verbose,
         Info,
         Warning,
-        Error
+        Error,
+        Disabled
     };
 
     public delegate void SwrveLogEventHandler (SwrveLog.SwrveLogType type,object message,string tag);
