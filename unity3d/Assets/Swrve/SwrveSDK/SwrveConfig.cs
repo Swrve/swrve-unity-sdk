@@ -159,7 +159,7 @@ public class SwrveConfig
     /// <summary>
     /// The SDK will send a session start on init and manage game pauses and resumes.
     /// </summary>
-     public Stack currentStack = Stack.US;
+    public Stack SelectedStack = Stack.US;
                 
     /// <summary>
     /// Enable push notification on this game.
@@ -235,26 +235,19 @@ public class SwrveConfig
     /// </summary>
     public bool LogAppleIDFA = false;
 
-    public void setCurrentStack(Stack stack){
-            this.currentStack = stack;
-    }
-
-    public Stack getCurrentStack(){
-            return currentStack;
-    }
-        
     public void CalculateEndpoints (int appId)
     {
         // Default values are saved in the prefab or component instance.
         if (EventsServer == DefaultEventsServer) {
-            EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, getCurrentStack(), "api.swrve.com");
+            EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, SelectedStack, "api.swrve.com");
         }
         if (ContentServer == DefaultContentServer) {
-                ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, getCurrentStack(), "content.swrve.com");
+            ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, SelectedStack, "content.swrve.com");
         }
     }
-           
-    private static string getStackPrefix(Stack stack){
+
+    private static string GetStackPrefix(Stack stack)
+    {
         if (stack == Stack.EU) {
             return "eu-";
         }
@@ -268,7 +261,7 @@ public class SwrveConfig
 
     private static string CalculateEndpoint(bool useHttps, int appId, Stack stack, string suffix)
     {        
-        return HttpSchema(useHttps) + "://" + appId + "." + getStackPrefix(stack) + suffix;
+        return HttpSchema(useHttps) + "://" + appId + "." + GetStackPrefix(stack) + suffix;
     }       
 }
 }
