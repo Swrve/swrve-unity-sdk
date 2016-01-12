@@ -50,7 +50,7 @@ public class SwrveComponent : MonoBehaviour
         get {
             if (!instance) {
                 // Obtain the first instance of the SwrveComponent in the scene
-                SwrveComponent[] instances = Resources.FindObjectsOfTypeAll (typeof(SwrveComponent)) as SwrveComponent[];
+                SwrveComponent[] instances = Object.FindObjectsOfType (typeof(SwrveComponent)) as SwrveComponent[];
                 if (instances != null && instances.Length > 0) {
                     instance = instances [0];
                 } else {
