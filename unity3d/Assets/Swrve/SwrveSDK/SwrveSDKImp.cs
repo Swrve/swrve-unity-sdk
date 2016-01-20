@@ -316,9 +316,8 @@ public partial class SwrveSDK
                 onError.Invoke (wwwException);
             }
         }
-
         // Launch listener
-        if (!string.IsNullOrEmpty (abTestCandidate)) {
+        else if (!string.IsNullOrEmpty (abTestCandidate)) {
             Dictionary<string, Dictionary<string, string>> userResourcesDiffNew = new Dictionary<string, Dictionary<string, string>> ();
             Dictionary<string, Dictionary<string, string>> userResourcesDiffOld = new Dictionary<string, Dictionary<string, string>> ();
             ProcessUserResourcesDiff (abTestCandidate, userResourcesDiffNew, userResourcesDiffOld);
