@@ -1650,7 +1650,11 @@ public partial class SwrveSDK
         }
 
         if (PushNotificationListener != null) {
-            PushNotificationListener.OnNotificationReceived(notification);
+            try {
+              PushNotificationListener.OnNotificationReceived(notification);
+            } catch (Exception exp) {
+                SwrveLog.LogError("Error processing the push notification: " + exp.Message);
+            }
         }
     }
 
@@ -1689,7 +1693,11 @@ public partial class SwrveSDK
         }
 
         if (PushNotificationListener != null) {
-            PushNotificationListener.OnOpenedFromPushNotification(notification);
+            try {
+              PushNotificationListener.OnOpenedFromPushNotification(notification);
+            } catch (Exception exp) {
+                SwrveLog.LogError("Error processing the push notification: " + exp.Message);
+            }
         }
     }
 #endif
