@@ -49,5 +49,4 @@ Global
 		$4.inheritsSet = null
 		$4.scope = text/x-unitytxt
 	EndGlobalSection
-
 EndGlobal

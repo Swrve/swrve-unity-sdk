@@ -1842,7 +1842,7 @@ public partial class SwrveSDK
             {
                 payload [kp.Key] = (string)kp.Value;
             }
-            NamedEventInternal (viewEvent, payload, true, true);
+            NamedEventInternal (viewEvent, payload, true);
         }
         SendQueuedEvents ();
     }
