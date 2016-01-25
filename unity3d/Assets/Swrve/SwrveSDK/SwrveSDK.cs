@@ -1163,6 +1163,7 @@ public partial class SwrveSDK
             }
             GenerateNewSessionInterval ();
 
+            ProcessConversationResult();
             StartCampaignsAndResourcesTimer();
             DisableAutoShowAfterDelay();
         }
@@ -1359,12 +1360,28 @@ public partial class SwrveSDK
                 campaignMessages = new Dictionary<int, int> ();
             }
 
+            IEnumerator<SwrveCampaign> itCampaign = campaigns.GetEnumerator ();
+            string conversation = null;
+            while(itCampaign.MoveNext() && (null == conversation)) {
+                conversation = itCampaign.Current.GetConversationForEvent(eventName, campaignReasons);
+                if(null != conversation)
+                {
+                    UnityEngine.Debug.Log("found conversation in campaign: " + itCampaign.Current.Id);
+                }
+            }
+
+            if(null != conversation)
+            {
+                ShowConversation(conversation);
+                return null;
+            }
+
             List<SwrveMessage> availableMessages = new List<SwrveMessage>();
             // Select messages with higher priority
             int minPriority = int.MaxValue;
             List<SwrveMessage> candidateMessages = new List<SwrveMessage>();
-            IEnumerator<SwrveCampaign> itCampaign = campaigns.GetEnumerator ();
             SwrveOrientation deviceOrientation = GetDeviceOrientation();
+            itCampaign.Reset();
             while (itCampaign.MoveNext() && result == null) {
                 SwrveCampaign nextCampaign = itCampaign.Current;
                 SwrveMessage nextMessage = nextCampaign.GetMessageForEvent (eventName, campaignReasons);

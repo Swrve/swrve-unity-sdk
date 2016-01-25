@@ -86,7 +86,7 @@ public partial class SwrveSDK
 
     // Talk related
     private static readonly int CampaignAPIVersion = 1;
-    private static readonly int CampaignEndpointVersion = 4;
+    private static readonly int CampaignEndpointVersion = 5;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
     protected static readonly string CampaignsSettingsSave = "Swrve_CampaignsData";
     private static readonly string WaitTimeFormat = @"HH\:mm\:ss zzz";
@@ -919,7 +919,28 @@ public partial class SwrveSDK
             return;
         }
 
+        bool haveConversation = false;
+        // Process only Conversation campaign types first
+        foreach(SwrveCampaign campaign in campaigns) {
+            if(SwrveCampaign.CampaignType.Messages == campaign.campaignType)
+            {
+                autoShowMessagesEnabled = false;
+
+                continue;
+            }
+        }
+
+        if(haveConversation)
+        {
+            return;
+        }
+
         foreach (SwrveCampaign campaign in campaigns) {
+            if(SwrveCampaign.CampaignType.Conversation == campaign.campaignType)
+            {
+                continue;
+            }
+
             if (campaign.HasMessageForEvent (DefaultAutoShowMessagesTrigger)) {
                 if (TriggeredMessageListener != null) {
                     // They are using a custom listener
@@ -959,6 +980,14 @@ public partial class SwrveSDK
             } else {
                 SwrveLog.LogError ("Could not get a format for the current orientation: " + currentOrientation.ToString ());
             }
+        }
+    }
+
+    private IEnumerator LaunchConversation(string conversation)
+    {
+        if (null != conversation) {
+            yield return null;
+            ShowConversation(conversation);
         }
     }
 
@@ -1194,7 +1223,8 @@ public partial class SwrveSDK
                     for (int i = 0, j = jsonCampaigns.Count; i < j; i++) {
                         Dictionary<string, object> campaignData = (Dictionary<string, object>)jsonCampaigns [i];
                         SwrveCampaign campaign = SwrveCampaign.LoadFromJSON (this, campaignData, initialisedTime, swrveTemporaryPath);
-                        if (campaign.Messages.Count > 0) {
+                        if (SwrveCampaign.CampaignType.Invalid != campaign.campaignType) {
+                            UnityEngine.Debug.Log( "added campaign id: " + campaign.Id + " type: " + Enum.GetName(typeof(SwrveCampaign.CampaignType), campaign.campaignType) );
                             assetsQueue.AddRange (campaign.ListOfAssets ());
 
                             if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
@@ -1263,6 +1293,9 @@ public partial class SwrveSDK
                     getRequest.AppendFormat ("&version={0}&orientation={1}&language={2}&app_store={3}&device_width={4}&device_height={5}&device_dpi={6}&os_version={7}&device_name={8}",
                                              CampaignEndpointVersion, config.Orientation.ToString ().ToLower (), Language, config.AppStore,
                                              deviceWidth, deviceHeight, dpi, WWW.EscapeURL (osVersion), WWW.EscapeURL (deviceName));
+                }
+                if (config.ConversationsEnabled) {
+                    getRequest.AppendFormat("&conversation_version={0}", 2);
                 }
 
                 if (!string.IsNullOrEmpty (lastETag)) {
@@ -1358,6 +1391,10 @@ public partial class SwrveSDK
                                 payload.Add ("ids", campaignIds.ToString ());
                                 payload.Add ("count", (campaigns == null)? "0" : campaigns.Count.ToString ());
                                 NamedEventInternal ("Swrve.Messages.campaigns_downloaded", payload);
+                            }
+
+                            if (config.ConversationsEnabled) {
+                                
                             }
                         }
                     }
@@ -1659,11 +1696,44 @@ public partial class SwrveSDK
                     _androidId = settingsSecure.CallStatic<string> ("getString", contentResolver, "android_id");
                 }
             } catch (Exception exp) {
-                SwrveLog.LogWarning("Couldn't get the device app version, make sure you are running on an Android device: " + exp.ToString());
+                SwrveLog.LogWarning("Couldn't get the \"android_id\" resource, make sure you are running on an Android device: " + exp.ToString());
             }
         }
         return _androidId;
     }
+
+    private AndroidJavaObject _androidConversations;
+
+    private AndroidJavaObject AndroidGetConversation()
+    {
+        if (_androidConversations == null)
+        {
+            _androidConversations = new AndroidJavaObject("com.swrve.conversationsunitybridge.SwrveUnityBridge");
+        }
+        return _androidConversations;
+    }
+
+    private string AndroidGetConversationResult()
+    {
+        string result = null;
+        try {
+            result = AndroidGetConversation().Call<string>("GetConversationResult");
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get conversations result from Android: " + exp.ToString());
+        }
+        return result;
+    }
+
+
+    public void AndroidShowConversation(string conversation)
+    {
+        try {
+            AndroidGetConversation().Call("ShowConversation", conversation);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
+        }
+    }
+
 #endif
 
     public string GetAppVersion ()
@@ -1681,6 +1751,28 @@ public partial class SwrveSDK
 #endif
         }
         return config.AppVersion;
+    }
+
+    private string GetConversationResult ()
+    {
+        string result = null;
+
+    #if UNITY_ANDROID
+        result = AndroidGetConversationResult();
+    #elif UNITY_IPHONE
+    result _swrveiOSGetConversationResult();
+    #endif
+        
+        return result ?? "[]";
+    }
+
+    private void ShowConversation (string conversation)
+    {
+    #if UNITY_ANDROID
+        AndroidShowConversation(conversation);
+    #elif UNITY_IPHONE
+        result _swrveiOSShowConversation(conversation);
+    #endif
     }
 
     private void SetInputManager (IInputManager inputManager)
@@ -1737,5 +1829,21 @@ public partial class SwrveSDK
     {
         yield return new WaitForSeconds(config.AutoShowMessagesMaxDelay);
         autoShowMessagesEnabled = false;
+    }
+    
+    protected void ProcessConversationResult()
+    {
+        foreach (object o in (List<object>)Json.Deserialize(GetConversationResult ()))
+        {
+            Dictionary<string, object> dict = (Dictionary<string, object>)o;
+            string viewEvent = (string)dict ["viewEvent"];
+            Dictionary<string, string> payload = new Dictionary<string, string> ();
+            foreach(KeyValuePair<string, object> kp in (Dictionary<string, object>)dict ["payload"])
+            {
+                payload [kp.Key] = (string)kp.Value;
+            }
+            NamedEventInternal (viewEvent, payload, true, true);
+        }
+        SendQueuedEvents ();
     }
 }

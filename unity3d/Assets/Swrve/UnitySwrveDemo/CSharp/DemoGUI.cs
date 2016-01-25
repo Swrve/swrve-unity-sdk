@@ -97,7 +97,7 @@ public class DemoGUI : BaseDemoGUI
             if (buttonPressed [(int)Buttons.TriggerMessage]) {
                 // Trigger an in-app message. You will need to setup the campaign
                 // in the In-App message section in the dashboard.
-                swrveComponent.SDK.NamedEvent ("campaign_trigger");
+                swrveComponent.SDK.NamedEvent ("se.testology");
             }
 
             if (buttonPressed [(int)Buttons.SaveToDisk]) {

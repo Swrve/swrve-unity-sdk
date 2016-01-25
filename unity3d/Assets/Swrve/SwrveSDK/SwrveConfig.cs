@@ -75,6 +75,11 @@ public class SwrveConfig
     /// Enable or disable Talk features for in-app campaigns/
     /// </summary>
     public bool TalkEnabled = true;
+    
+    /// <summary>
+    /// Enable or disable Conversations features for in-app campaigns/
+    /// </summary>
+    public bool ConversationsEnabled = true;
 
     /// <summary>
     /// Automatically download campaigns and user resources.
