@@ -1366,13 +1366,13 @@ public partial class SwrveSDK
                 conversation = itCampaign.Current.GetConversationForEvent(eventName, campaignReasons);
                 if(null != conversation)
                 {
-                    UnityEngine.Debug.Log("found conversation in campaign: " + itCampaign.Current.Id);
+                    SwrveLog.Log("found conversation in campaign: " + itCampaign.Current.Id);
                 }
             }
 
             if(null != conversation)
             {
-                ShowConversation(conversation);
+                LaunchConversation(conversation);
                 return null;
             }
 
@@ -1408,8 +1408,8 @@ public partial class SwrveSDK
             }
 
             // Select randomly from the highest messages
-            candidateMessages.Shuffle();
             if (candidateMessages.Count > 0) {
+                candidateMessages.Shuffle();
                 result = candidateMessages[0];
                 campaign = result.Campaign;
             }

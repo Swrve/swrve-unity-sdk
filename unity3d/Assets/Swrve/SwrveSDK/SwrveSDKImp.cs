@@ -924,8 +924,6 @@ public partial class SwrveSDK
         foreach(SwrveCampaign campaign in campaigns) {
             if(SwrveCampaign.CampaignType.Messages == campaign.campaignType)
             {
-                autoShowMessagesEnabled = false;
-
                 continue;
             }
         }
