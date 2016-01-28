@@ -386,6 +386,8 @@ public partial class SwrveSDK
 
         StartCampaignsAndResourcesTimer();
         DisableAutoShowAfterDelay();
+
+        InitLocation();
 #endif
     }
 

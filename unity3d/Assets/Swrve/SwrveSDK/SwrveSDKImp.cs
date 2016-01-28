@@ -1732,6 +1732,26 @@ public partial class SwrveSDK
         }
     }
 
+    private AndroidJavaObject _androidLocation;
+
+    private AndroidJavaObject AndroidGetLocation()
+    {
+        if (_androidLocation == null)
+        {
+            _androidLocation = new AndroidJavaObject("com.swrve.locationunitybridge.SwrveUnityBridge");
+        }
+        return _androidLocation;
+    }
+
+    private void AndroidInitLocation(string jsonString)
+    {
+        try {
+            AndroidGetLocation().Call("Init", jsonString);
+        } catch(Exception exp) {
+            SwrveLog.LogWarning("Couldn't init location from Android: " + exp.ToString());
+        }
+    }
+
 #endif
 
     public string GetAppVersion ()
@@ -1843,5 +1863,25 @@ public partial class SwrveSDK
             NamedEventInternal (viewEvent, payload, true);
         }
         SendQueuedEvents ();
+    }
+
+    protected void InitLocation()
+    {
+        Dictionary<string, object> currentDetails = new Dictionary<string, object> {
+            {"apiKey", apiKey},
+            {"appId", gameId},
+            {"userId", userId},
+            {"appVersion", GetAppVersion()},
+            {"uniqueKey", GetUniqueKey()},
+            {"batchEventsAction", "/1/batch"},
+            {"locationCampaignCategory", "LocationCampaign"},
+            {"httpTimeout", 60000},
+            {"maxEventsPerFlush", 50}
+        };
+        string jsonString = Json.Serialize (currentDetails);
+
+    #if UNITY_ANDROID
+        AndroidInitLocation(jsonString);
+    #endif
     }
 }
