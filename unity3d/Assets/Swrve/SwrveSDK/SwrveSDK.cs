@@ -1374,7 +1374,7 @@ public partial class SwrveSDK
 
             if(null != conversation)
             {
-                LaunchConversation(conversation);
+                StartTask("LaunchConversation", LaunchConversation(conversation));
                 return null;
             }
 
