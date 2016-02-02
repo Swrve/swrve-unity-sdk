@@ -202,6 +202,13 @@ public partial class SwrveSDK
 
     protected virtual SwrveOrientation GetDeviceOrientation ()
     {
+#if UNITY_EDITOR
+		// In the editor orientation is often reported incorrectly
+            if (Screen.height >= Screen.width) {
+                return SwrveOrientation.Portrait;
+            }
+            return SwrveOrientation.Landscape;
+#endif
         ScreenOrientation orientation = Screen.orientation;
         switch (orientation) {
         case ScreenOrientation.LandscapeLeft:
