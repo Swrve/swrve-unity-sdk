@@ -54,6 +54,7 @@ public partial class SwrveSDK
     private static bool androidPluginInitialized = false;
     private static bool androidPluginInitializedSuccessfully = false;
     private string googlePlayAdvertisingId;
+    private static bool startedPlot;
 #endif
     private int deviceWidth;
     private int deviceHeight;
@@ -89,6 +90,7 @@ public partial class SwrveSDK
     private static readonly int CampaignEndpointVersion = 5;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
     protected static readonly string CampaignsSettingsSave = "Swrve_CampaignsData";
+    protected static readonly string LocationSave = "loccc2"; // Saved securely
     private static readonly string WaitTimeFormat = @"HH\:mm\:ss zzz";
     protected static readonly string InstallTimeFormat = "yyyyMMdd";
     private string resourcesAndCampaignsUrl;
@@ -1261,6 +1263,11 @@ public partial class SwrveSDK
         campaigns = new List<SwrveCampaign> (newCampaigns);
     }
 
+    protected virtual void ProcessLocation (Dictionary<string, object> root)
+    {
+        
+    }
+
     private void LoadResourcesAndCampaigns ()
     {
         try {
@@ -1294,6 +1301,9 @@ public partial class SwrveSDK
                 }
                 if (config.ConversationsEnabled) {
                     getRequest.AppendFormat("&conversation_version={0}", 2);
+                }
+                if (config.LocationEnabled) {
+                    getRequest.AppendFormat("&location_version={0}", 1);
                 }
 
                 if (!string.IsNullOrEmpty (lastETag)) {
@@ -1390,9 +1400,16 @@ public partial class SwrveSDK
                                 payload.Add ("count", (campaigns == null)? "0" : campaigns.Count.ToString ());
                                 NamedEventInternal ("Swrve.Messages.campaigns_downloaded", payload);
                             }
+                        }
 
-                            if (config.ConversationsEnabled) {
-                                
+                        if (config.LocationEnabled) {
+                            if (root.ContainsKey("location_campaigns")) {
+                                Dictionary<string, object> locationData = (Dictionary<string, object>)root["location_campaigns"];
+                                string locationJson = SwrveMiniJSON.Json.Serialize(locationData);
+                                SaveLocationCache (locationJson);
+                                foreach(var kp in (Dictionary<string, object>)locationData["campaigns"]) {
+                                    UnityEngine.Debug.Log("location, " + kp.Key + ": " + kp.Value);
+                                }
                             }
                         }
                     }
@@ -1425,6 +1442,18 @@ public partial class SwrveSDK
                 cacheContent = string.Empty;
             }
             storage.SaveSecure (CampaignsSave, cacheContent, userId);
+        } catch (Exception e) {
+            SwrveLog.LogError ("Error while saving campaigns to the cache " + e);
+        }
+    }
+
+    private void SaveLocationCache(string cacheContent)
+    {
+        try {
+            if (cacheContent == null) {
+                cacheContent = string.Empty;
+            }
+            storage.SaveSecure(LocationSave, cacheContent, userId);
         } catch (Exception e) {
             SwrveLog.LogError ("Error while saving campaigns to the cache " + e);
         }
@@ -1474,6 +1503,28 @@ public partial class SwrveSDK
             }
         } catch (Exception e) {
             SwrveLog.LogWarning ("Could not read campaigns from cache, using default (" + e.ToString () + ")");
+            InvalidateETag ();
+        }
+    }
+
+    private void LoadLocationData() {
+        // Load location
+        try {
+            string loadedData = storage.LoadSecure (LocationSave, userId);
+            if (!string.IsNullOrEmpty (loadedData)) {
+                string locationCandidate = null;
+                if (ResponseBodyTester.TestUTF8 (loadedData, out locationCandidate)) {
+                    Dictionary<string, object> locationData = (Dictionary<string, object>)Json.Deserialize (locationCandidate);
+                    ProcessLocation (locationData);
+                } else {
+                    SwrveLog.Log ("Failed to parse location cache");
+                    InvalidateETag ();
+                }
+            } else {
+                InvalidateETag ();
+            }
+        } catch (Exception e) {
+            SwrveLog.LogWarning ("Could not read location from cache, using default (" + e.ToString () + ")");
             InvalidateETag ();
         }
     }
@@ -1732,13 +1783,12 @@ public partial class SwrveSDK
         }
     }
 
-    private AndroidJavaObject _androidLocation;
+    private AndroidJavaClass _androidLocation;
 
     private AndroidJavaObject AndroidGetLocation()
     {
-        if (_androidLocation == null)
-        {
-            _androidLocation = new AndroidJavaObject("com.swrve.locationunitybridge.SwrveUnityBridge");
+        if (_androidLocation == null) {
+            _androidLocation = new AndroidJavaClass ("com.swrve.locationunitybridge.SwrveUnityBridge");
         }
         return _androidLocation;
     }
@@ -1746,9 +1796,39 @@ public partial class SwrveSDK
     private void AndroidInitLocation(string jsonString)
     {
         try {
-            AndroidGetLocation().Call("Init", jsonString);
-        } catch(Exception exp) {
-            SwrveLog.LogWarning("Couldn't init location from Android: " + exp.ToString());
+            AndroidGetLocation ().CallStatic ("SetSwrveCommon", jsonString);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't init location from Android: " + exp.ToString ());
+        }
+    }
+
+    private void AndroidDoOther()
+    {
+        try {
+            AndroidGetLocation ().CallStatic ("DoOther");
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't DoOther from Android: " + exp.ToString ());
+        }
+    }
+
+    public void AndroidStartPlot()
+    {
+        try {
+            AndroidGetLocation ().CallStatic ("StartPlot");
+            startedPlot = true;
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
+        }
+    }
+
+    public void AndroidStartPlotAfterPermissions()
+    {
+        if (!startedPlot) {
+            try {
+                startedPlot = AndroidGetLocation ().CallStatic<bool> ("StartPlotAfterPermissions");
+            } catch (Exception exp) {
+                SwrveLog.LogWarning ("StartPlotAfterPermissions't DoOther from Android: " + exp.ToString ());
+            }
         }
     }
 
@@ -1865,7 +1945,7 @@ public partial class SwrveSDK
         SendQueuedEvents ();
     }
 
-    protected void InitLocation()
+    protected void InitLocationNative()
     {
         Dictionary<string, object> currentDetails = new Dictionary<string, object> {
             {"apiKey", apiKey},
@@ -1876,12 +1956,39 @@ public partial class SwrveSDK
             {"batchEventsAction", "/1/batch"},
             {"locationCampaignCategory", "LocationCampaign"},
             {"httpTimeout", 60000},
-            {"maxEventsPerFlush", 50}
+            {"maxEventsPerFlush", 50},
+            {"locTag", LocationSave},
+            {"swrvePath", swrvePath},
+            {"sigSuffix", SwrveFileStorage.SIGNATURE_SUFFIX}
         };
+
         string jsonString = Json.Serialize (currentDetails);
 
     #if UNITY_ANDROID
         AndroidInitLocation(jsonString);
+    #endif
+
+        if (config.LocationAutostart) {
+            StartPlot ();
+        }
+    }
+    
+    public void DoOther()
+    {
+    #if UNITY_ANDROID
+        AndroidDoOther();
+    #endif
+    }
+    
+    public void StartPlot() {
+    #if UNITY_ANDROID
+        AndroidStartPlot();
+    #endif
+    }
+
+    public void StartPlotAfterPermissions() {
+    #if UNITY_ANDROID
+        AndroidStartPlotAfterPermissions();
     #endif
     }
 }

@@ -9,7 +9,7 @@ namespace Swrve.Storage
 /// </summary>
 public class SwrveFileStorage : ISwrveStorage
 {
-    const string SIGNATURE_SUFFIX = "_SGT";
+    public const string SIGNATURE_SUFFIX = "_SGT";
     protected string swrvePath;
     protected string uniqueKey;
     protected Action callback;
@@ -51,6 +51,8 @@ public class SwrveFileStorage : ISwrveStorage
         bool saved = false;
 
         try {
+            data = data.Trim() + "\n"; // ensure newline at end of file
+
             string saveFileName = GetFileName (tag, userId);
             SwrveLog.Log ("Saving: " + saveFileName, "storage");
             CrossPlatformFile.SaveText (saveFileName, data);
@@ -58,6 +60,7 @@ public class SwrveFileStorage : ISwrveStorage
             string signature = SwrveHelper.CreateHMACMD5 (data, uniqueKey);
 
             CrossPlatformFile.SaveText (signatureFileName, signature);
+
             saved = true;
         } catch (Exception e) {
             SwrveLog.LogError (e.ToString (), "storage");

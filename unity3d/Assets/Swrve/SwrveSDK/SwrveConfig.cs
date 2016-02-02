@@ -80,6 +80,16 @@ public class SwrveConfig
     /// Enable or disable Conversations features for in-app campaigns/
     /// </summary>
     public bool ConversationsEnabled = true;
+    
+    /// <summary>
+    /// Enable or disable Location features for in-app campaigns/
+    /// </summary>
+    public bool LocationEnabled = true;
+    
+    /// <summary>
+    /// Set whether Location (plot) will autostart, or whether you want to enable it manually (after asking for permission)
+    /// </summary>
+    public bool LocationAutostart = true;
 
     /// <summary>
     /// Automatically download campaigns and user resources.
