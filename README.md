@@ -123,6 +123,52 @@ private class CustomButtonListener : ISwrveCustomButtonListener {
 SwrveComponent.Instance.SDK.GlobalCustomButtonListener = new CustomButtonListener();
 ```
 
+For example, if you have already implemented deeplinks for your app, it might make sense to use that for handling in-app messages custom actions
+
+```
+private class CustomButtonListener : MonoBehaviour, ISwrveCustomButtonListener
+{
+    private IEnumerator DelayedNamedEvent(string eventName, Dictionary<string, string> payload = null) {
+        yield return new WaitForEndOfFrame();
+        SwrveComponent.Instance.SDK.NamedEvent(eventName, payload);
+    }
+
+    private void HandleDeeplink(string deeplink) {
+        try {
+            Uri uri = new Uri (deeplink);
+            if (uri.Scheme == "swrve") {
+                NameValueCollection query = new NameValueCollection();
+                foreach (string vp in Regex.Split(uri.Query.TrimStart ('?'), "&")) {
+                    string[] singlePair = Regex.Split(vp, "=");
+                    if (singlePair.Length == 2) {
+                        query.Add(singlePair[0], singlePair[1]);
+                    }
+                    else {
+                        query.Add(singlePair[0], string.Empty);
+                    }
+                }
+
+                string eventString = query.Get("event");
+                if (!string.IsNullOrEmpty(eventString)) {
+                    StartCoroutine(DelayedNamedEvent(eventString));
+                }
+            }
+            else {
+                Application.OpenURL(deeplink);
+            }
+        }
+        catch(UriFormatException exception) {
+            // log bad uri
+        }
+    }
+
+    public void OnAction (string customAction) {
+        // Custom button logic
+        HandleDeeplink(customAction);
+    }
+}
+```
+
 iOS Push Notifications
 -
 
@@ -160,13 +206,35 @@ iOS Push Notifications
   ```
   using Swrve;
 
+
   public class CustomPushNotificationListener : ISwrvePushNotificationListener {
-    public void OnRemoteNotification(RemoteNotification notification) {
+  #if UNITY_IPHONE
+    public void OnRemoteNotification(UnityEngine.iOS.RemoteNotification notification) {
       // CUSTOM CODE HERE
     }
+  #endif // UNITY_IPHONE
   }
   SwrveComponent.Instance.SDK.PushNotificationListener = new CustomPushNotificationListener();
   ```
+
+  For example, if you have already implemented deeplinks for your app, it might make sense to that for handling Push Notification actions:
+
+  ```
+  public class CustomPushNotificationListener : ISwrvePushNotificationListener {
+  #if UNITY_IPHONE
+    public void OnRemoteNotification(UnityEngine.iOS.RemoteNotification notification)
+    {
+        if (notification.userInfo.Contains("deeplink"))
+        {
+            string deeplinkUrl = notification.userInfo["deeplink"] as string;
+            HandleDeeplink(deeplinkUrl);
+        }
+    }
+  #endif // UNITY_IPHONE
+  }
+  SwrveComponent.Instance.SDK.PushNotificationListener = new CustomPushNotificationListener();
+  ```
+
 
 ### Creating and uploading your iOS Cert ###
 
@@ -293,13 +361,35 @@ This section describes how to configure advanced options for Unity SDK push noti
 
   ```
   public class CustomPushNotificationListener : ISwrvePushNotificationListener {
+  #if UNITY_ANDROID
     public void OnNotificationReceived(Dictionary<string, object> notificationJson) {
-      // CODE TO PROCESS RECEIVED PUSH NOTIFICATIONS
+      // Code to process received push notifications
     }
 
     public void OnOpenedFromPushNotification(Dictionary<string, object> notificationJson) {
-      // CODE TO PROCESS OPENED PUSH NOTIFICATIONS
+      // Code to process opened push notifications
     }
+  #endif // UNITY_ANDROID
+  }
+  SwrveComponent.Instance.SDK.PushNotificationListener = new CustomPushNotificationListener();
+  ```
+
+  For example, if you have already implemented deeplinks for your app, it might make sense to that for handling Push Notification actions:
+
+  ```
+  public class CustomPushNotificationListener : ISwrvePushNotificationListener {
+  #if UNITY_ANDROID
+      public void OnNotificationReceived(Dictionary<string, object> notificationJson) {
+          // this *should* be called when the notification is received, whether the app be open or not
+      }
+
+      public void OnOpenedFromPushNotification(Dictionary<string, object> notificationJson) {
+          if (notificationJson.ContainsKey("deeplink")) {
+              string deeplinkUrl = notificationJson["deeplink"] as string;
+              HandleDeeplink(deeplinkUrl);
+          }
+      }
+  #endif // UNITY_ANDROID
   }
   SwrveComponent.Instance.SDK.PushNotificationListener = new CustomPushNotificationListener();
   ```
