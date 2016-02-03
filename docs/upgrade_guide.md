@@ -1,7 +1,7 @@
 Unity SDK Upgrade Guide
 =
 
-This guide provides information about how you can upgrade to the latest Swrve Unity SDK. For information about the changes that have been made in each Unity SDK release, see [Unity SDK Release Notes](http://docs.swrve.com/release-notes/sdk-release-notes/unity-sdk-release-notes/).
+This guide provides information about how you can upgrade to the latest Swrve Unity SDK. For information about the changes that have been made in each Unity SDK release, see [Unity SDK Release Notes](/docs/release_notes.md).
 
 Table of Contents
 =
