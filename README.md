@@ -12,12 +12,6 @@ Table of Contents
     - [Unity 4.0.0+](#unity-400)
     - [Unity 5+ Personal or Unity 4.0.0+ Pro](#unity-5-personal-or-unity-400-pro)
 - [Installation Instructions](#installation-instructions)
-    - [Sending Events](#sending-events)
-    - [Sending Events With Payloads](#sending-events-with-payloads)
-    - [Send User Properties](#send-user-properties)
-    - [Sending Virtual Economy Purchases](#sending-virtual-economy-purchases)
-    - [Sending Virtual Economy Currency Given](#sending-virtual-economy-currency-given)
-    - [Sending IAP Events and IAP Validation](#sending-iap-events-and-iap-validation)
   - [In-app Messaging](#in-app-messaging)
     - [In-app Messaging Deeplinks](#in-app-messaging-deeplinks)
   - [iOS Push Notifications](#ios-push-notifications)
@@ -27,8 +21,12 @@ Table of Contents
     - [Using a custom `GcmReceiver`](#using-a-custom-gcmreceiver)
     - [Custom `MainActivity`](#custom-mainactivity)
     - [No custom `MainActivity`](#no-custom-mainactivity)
-    - [Initializing the SDK](#initializing-the-sdk)
     - [Advanced Android Push](#advanced-android-push)
+  - [Sending Events](#sending-events)
+    - [Sending Named Events](#sending-named-events)
+    - [Send User Properties](#send-user-properties)
+    - [Sending Virtual Economy Events](#sending-virtual-economy-events)
+    - [Sending IAP Events and IAP Validation](#sending-iap-events-and-iap-validation)
   - [Integrating Resource A/B Testing](#integrating-resource-ab-testing)
   - [Testing your integration](#testing-your-integration)
 - [Upgrade Instructions](#upgrade-instructions)
@@ -36,6 +34,7 @@ Table of Contents
 - [How to build the SDK](#how-to-build-the-sdk)
 - [Contributing](#contributing)
 - [License](#license)
+
 
 Getting started
 =
@@ -62,7 +61,7 @@ Installation Instructions
 
 3. Initialize the Swrve Component
 
-  There are two methods to initialize the SDK component. Automatic initialization and manual initialization. In almost all cases, you should you manual initialization and ensure that the "initialise on start" property is not set in the Swrve prefab.
+  There are two methods to initialize the SDK component. Automatic initialization and manual initialization. In almost all cases, you should use manual initialization and ensure that the "initialise on start" property is not set in the Swrve prefab.
 
   Set the `app_id` and `api_key` fields of the component to your Swrve App ID and Swrve API Key.
 
@@ -70,128 +69,24 @@ Installation Instructions
   // By default, Swrve stores all customer data and content in our US data center. 
   //SwrveComponent.Instance.Config.SelectedStack = Swrve.Stack.EU;
 
-  SwrveComponent.Instance.Init(<app_id>, "<api_key>");
+  #if PRODUCTION_BUILD
+  SwrveComponent.Instance.Init(<production_app_id>, "<production_api_key>");
+  #else
+  SwrveComponent.Instance.Init(<sandbox_app_id>, "<sandbox_api_key>");
+  #endif //PRODUCTION BUILD
   ```
 
   You can now compile and run your project in Unity.
 
 
-4. Go to Edit > Project Settings > Script Execution Order and move `SwrveComponent` to a higher priority in the list. This prevents you from getting a `NullReferenceException` that can occur if Swrve is called before the SDK has finished initializing.
-
-### Sending Events ###
-
-```
-SwrveComponent.Instance.SDK.NamedEvent("my_first_event");
-```
-
-When creating custom events, do not use the `swrve.*` or `Swrve.*` namespace for your own events. This is reserved for Swrve use only. Custom event names beginning with `Swrve.` are restricted and cannot be sent.
-
-An event payload can be added and sent with every event. This allows for more detailed reporting around events and funnels. The associated payload should be a dictionary of key/value pairs; it is restricted to string and integer keys and values. There is a maximum cardinality of 500 key-value pairs for this payload per event. This parameter is optional.
-
-```
-Dictionary<string,string> payload = new Dictionary<string,string>() {
-  {"key1", "value1"},
-  {"key2", "value2"}
-};
-SwrveComponent.Instance.SDK.NamedEvent("my_first_event", payload);
-```
-
-### Send User Properties ###
-
-Assign user properties to send the status of the user. For example create a custom user property called `premium`, and then target non-premium users and premium users in the dashboard..
-
-```
-Dictionary<string, string> attributes = new Dictionary<string, string>();
-attributes.Add("premium", "true");
-attributes.Add("level", "12");
-attributes.Add("balance", "999");
-SwrveComponent.Instance.SDK.UserUpdate(attributes);
-```
-
-### Sending Virtual Economy Events ###
-
-If your app has a virtual economy, send the purchase event when users purchase in-app items with virtual currency.
-
-```
-string item = "some.item";
-string currency = "gold";
-int cost = 99;
-int quantity = 1;
-SwrveComponent.Instance.SDK.Purchase(item, currency, cost, quantity);
-```
-
-Send the currency given event when you give users virtual currency. Examples include initial currency balances, retention bonuses and level-complete rewards.
-
-```
-string givenCurrency = "gold";
-double givenAmount = 99;
-SwrveComponent.Instance.SDK.CurrencyGiven(givenCurrency, givenAmount);
-```
-
-To ensure virtual currency events are not ignored by the server, make sure the currency name configured in your app matches exactly the Currency Name you enter in the App Currencies section on the App Settings screen (including case-sensitive). If there is any difference, or if you haven’t added the currency in Swrve, the event will be ignored and return an error event called Swrve.error.invalid_currency. Additionally, the ignored events will not be included in your KPI reports. For more information, see [Add Your App](http://docs.swrve.com/getting-started/add-your-app/).
-
-### Sending IAP Events and IAP Validation ###
-
-If your app has in-app purchases, send the IAP event when a user purchases something with real money. The IAP event enables Swrve to build revenue reports for your app and to track the spending habits of your users.
-
-* **In iOS 7+** devices, Apple returns a receipt including multiple purchases. To identify what was  purchased, Swrve needs to be sent the `transactionID` of the item purchased (see `SKPaymentTransaction::transactionIdentifier`).
-
-* **In iOS 6 and lower**, Apple only returns one transaction per receipt, so the Swrve IAP method without the `transactionId` can be used.
-
-* If `paymentProvider` was Apple, use either `Base64EncodedReceipt` or `RawReceipt`, depending on whether the receipt is already encoded. Third party Unity IAP plugins can return the receipt already encoded (and this behavior may be different between iOS7+ receipts and iOS6 receipts).
-
-* For Google Play, the `receipt` and `receiptSignature` should be provided.
-
-* For other platforms (including Amazon) no receipt validation is available.
-
-
-```
-IapRewards rewards = new IapRewards(<rewardCurrency>, <rewardAmount>);
-
-#if UNITY_IPHONE
-if (iOS 7+) {
-  SwrveComponent.Instance.SDK.IapApple(quantity,
-                                       productId,
-                                       <localCost>,
-                                       <localCurrency>,
-                                       rewards,
-                                       Base64EncodedReceipt.FromString(base64Receipt),
-                                       transactionId);
-}
-else { // iOS 6
-  SwrveComponent.Instance.SDK.IapApple(quantity,
-                                       productId,
-                                       <localCost>,
-                                       <localCurrency>,
-                                       rewards,
-                                       Base64EncodedReceipt.FromString(base64Receipt));	
-}
-#elif UNITY_ANDROID
-SwrveComponent.Instance.SDK.IapGooglePlay(productId,
-                                          <localCost>,
-                                          <localCurrency>,
-                                          rewards,
-                                          receipt,
-                                          receiptSignature);
-#else
-// no receipt validation
-SwrveComponent.Instance.SDK.Iap(quantity,
-                                productId,
-                                <localCost>,
-                                <localCurrency>,
-                                rewards);
-#endif
-```
-
-If the purchase is of an item, and not a currency, you can omit the rewards argument:
-```
-SwrveComponent.Instance.SDK.Iap(1, "bird", 9.99, "USD");
-```
-
-The correct Apple bundle ID (iOS) or the Google Server Validation Key (Android) should be added to the integration settings page of the Swrve dashboard. This allows Swrve validate purchases made in the app.
+4. Go to Edit > Project Settings > Script Execution Order and move `SwrveComponent` to the highest priority in the list. This prevents you from getting a `NullReferenceException` that can occur if Swrve is called before the SDK has finished initializing.
 
 In-app Messaging
 -
+
+Integrate the in-app messaging functionality so you can use Swrve to send personalized messages to your app users while they’re using your app. If you’d like to find out more about in-app messaging, see [Intro to In-App Messages](http://docs.swrve.com/user-documentation/in-app-messaging/intro-to-in-app-messages/).
+
+Before you can test the in-app message feature in your game, you need to create an In App Message campaign in the Swrve Dashboard.
 
 Unity has no understanding of an active window state, therefore you **must** include code to pause the app when an in-app message is displayed and resume it as soon as it is closed.
 
@@ -285,8 +180,6 @@ Android Push Notifications
 -
 
 Unity Android uses a native Android plugin (provided as part of the Unity SDK), so you must include this plugin in your project as detailed below.
-
-To integrate Swrve’s push notification functionality for Unity Android, you must be using Unity SDK version 2.9 or later and Unity Android Pro 4.0.0+.
 
 1. Copy the JAR files located under `plugins/SwrveGooglePlayPushNotification` into `Assets/Plugins/Android`.
 
@@ -410,6 +303,139 @@ This section describes how to configure advanced options for Unity SDK push noti
   }
   SwrveComponent.Instance.SDK.PushNotificationListener = new CustomPushNotificationListener();
   ```
+
+Sending Events
+-
+
+### Sending Named Events ###
+
+```
+SwrveComponent.Instance.SDK.NamedEvent("custom.event_name");
+```
+
+Rules for sending events:
+
+* Do not send the same named event in differing case.
+
+* Use '.'s in your event name to organize their layout in the Swrve dashboard. Each '.' creates a new tree in the UI which groups your events so they are easy to locate.
+* Do not send more than 1000 unique named events.
+ * Do not add unique identifiers to event names. For example, Tutorial.Start.ServerID-ABDCEFG
+ * Do not add timestamps to event names. For example, Tutorial.Start.1454458885
+* When creating custom events, do not use the `swrve.*` or `Swrve.*` namespace for your own events. This is reserved for Swrve use only. Custom event names beginning with `Swrve.` are restricted and cannot be sent.
+
+### Event Payloads ###
+
+An event payload can be added and sent with every event. This allows for more detailed reporting around events and funnels. The associated payload should be a dictionary of key/value pairs; it is restricted to string and integer keys and values. There is a maximum cardinality of 500 key-value pairs for this payload per event. This parameter is optional.
+
+```
+Dictionary<string,string> payload = new Dictionary<string,string>() {
+  {"key1", "value1"},
+  {"key2", "value2"}
+};
+SwrveComponent.Instance.SDK.NamedEvent("custom.event_name", payload);
+```
+
+For example, if you want to track when a user starts the tutorial experience it might make sense to send an event `tutorial.start` and add a payload `time` which captures how long the user spent starting the tutorial.
+```
+Dictionary<string, string> payload = new Dictionary<string, string>();
+payload.Add("time", "100");
+SwrveComponent.Instance.SDK.NamedEvent("tutorial.start", payload);
+```
+
+
+### Send User Properties ###
+
+Assign user properties to send the status of the user. For example create a custom user property called `premium`, and then target non-premium users and premium users in the dashboard..
+
+```
+Dictionary<string, string> attributes = new Dictionary<string, string>();
+attributes.Add("premium", "true");
+attributes.Add("level", "12");
+attributes.Add("balance", "999");
+SwrveComponent.Instance.SDK.UserUpdate(attributes);
+```
+
+### Sending Virtual Economy Events ###
+
+If your app has a virtual economy, send the purchase event when users purchase in-app items with virtual currency.
+
+```
+string item = "some.item";
+string currency = "gold";
+int cost = 99;
+int quantity = 1;
+SwrveComponent.Instance.SDK.Purchase(item, currency, cost, quantity);
+```
+
+Send the currency given event when you give users virtual currency. Examples include initial currency balances, retention bonuses and level-complete rewards.
+
+```
+string givenCurrency = "gold";
+double givenAmount = 99;
+SwrveComponent.Instance.SDK.CurrencyGiven(givenCurrency, givenAmount);
+```
+
+To ensure virtual currency events are not ignored by the server, make sure the currency name configured in your app matches exactly the Currency Name you enter in the App Currencies section on the App Settings screen (including case-sensitive). If there is any difference, or if you haven’t added the currency in Swrve, the event will be ignored and return an error event called Swrve.error.invalid_currency. Additionally, the ignored events will not be included in your KPI reports. For more information, see [Add Your App](http://docs.swrve.com/getting-started/add-your-app/).
+
+### Sending IAP Events and IAP Validation ###
+
+If your app has in-app purchases, send the IAP event when a user purchases something with real money. The IAP event enables Swrve to build revenue reports for your app and to track the spending habits of your users.
+
+* **In iOS 7+** devices, Apple returns a receipt including multiple purchases. To identify what was  purchased, Swrve needs to be sent the `transactionID` of the item purchased (see `SKPaymentTransaction::transactionIdentifier`).
+
+* **In iOS 6 and lower**, Apple only returns one transaction per receipt, so the Swrve IAP method without the `transactionId` can be used.
+
+* If `paymentProvider` was Apple, use either `Base64EncodedReceipt` or `RawReceipt`, depending on whether the receipt is already encoded. Third party Unity IAP plugins can return the receipt already encoded (and this behavior may be different between iOS7+ receipts and iOS6 receipts).
+
+* For Google Play, the `receipt` and `receiptSignature` should be provided.
+
+* For other platforms (including Amazon) no receipt validation is available.
+
+
+```
+IapRewards rewards = new IapRewards(<rewardCurrency>, <rewardAmount>);
+
+#if UNITY_IPHONE
+if (iOS 7+) {
+  SwrveComponent.Instance.SDK.IapApple(quantity,
+                                       productId,
+                                       <localCost>,
+                                       <localCurrency>,
+                                       rewards,
+                                       Base64EncodedReceipt.FromString(base64Receipt),
+                                       transactionId);
+}
+else { // iOS 6
+  SwrveComponent.Instance.SDK.IapApple(quantity,
+                                       productId,
+                                       <localCost>,
+                                       <localCurrency>,
+                                       rewards,
+                                       Base64EncodedReceipt.FromString(base64Receipt));
+}
+#elif UNITY_ANDROID
+SwrveComponent.Instance.SDK.IapGooglePlay(productId,
+                                          <localCost>,
+                                          <localCurrency>,
+                                          rewards,
+                                          receipt,
+                                          receiptSignature);
+#else
+// no receipt validation
+SwrveComponent.Instance.SDK.Iap(quantity,
+                                productId,
+                                <localCost>,
+                                <localCurrency>,
+                                rewards);
+#endif
+```
+
+If the purchase is of an item, and not a currency, you can omit the rewards argument:
+```
+SwrveComponent.Instance.SDK.Iap(1, "bird", 9.99, "USD");
+```
+
+The correct Apple bundle ID (iOS) or the Google Server Validation Key (Android) should be added to the integration settings page of the Swrve dashboard. This allows Swrve validate purchases made in the app.
 
 Integrating Resource A/B Testing
 -
