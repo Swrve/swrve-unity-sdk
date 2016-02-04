@@ -12,8 +12,8 @@ Table of Contents
     - [Unity 4.0.0+](#unity-400)
     - [Unity 5+ Personal or Unity 4.0.0+ Pro](#unity-5-personal-or-unity-400-pro)
 - [Installation Instructions](#installation-instructions)
-  - [In-app Messaging](#in-app-messaging)
-    - [In-app Messaging Deeplinks](#in-app-messaging-deeplinks)
+  - [In-App Messaging](#in-app-messaging)
+    - [In-App Messaging Deeplinks](#in-app-messaging-deeplinks)
   - [iOS Push Notifications](#ios-push-notifications)
     - [Creating and uploading your iOS Cert](#creating-and-uploading-your-ios-cert)
     - [Provisioning your app](#provisioning-your-app)
@@ -47,11 +47,11 @@ Swrve supports Unity version 4.0.0 or later on Android and iOS only. **Swrve Uni
 The SDK needs a Unity version higher than 4.0.0 to be able to compile.
 
 ### Unity 5+ Personal or Unity 4.0.0+ Pro
-Some of the features like push notifications require the use of native plugins. Native plugins are now available in Unity Personal 5+ or previvous versions of Unity Pro.
+Some of the features like push notifications require the use of native plugins ([Android push](#android-push-notifications), [iOS push](#ios-push-notifications)). Native plugins are now available in Unity Personal 5+ or previous versions of Unity Pro.
 
 Installation Instructions
 =
-1. Download the [latest release](https://github.com/Swrve/swrve-unity-sdk/releases/latest)
+1. Download the [latest release](https://github.com/Swrve/swrve-unity-sdk/releases/latest).
 
 2. Unzip the Unity SDK, import the `Swrve.unityPackage` into your project and add the `SwrvePrefab` component to your scene.
 
@@ -81,7 +81,7 @@ Installation Instructions
 
 4. Go to Edit > Project Settings > Script Execution Order and move `SwrveComponent` to the highest priority in the list. This prevents you from getting a `NullReferenceException` that can occur if Swrve is called before the SDK has finished initializing.
 
-In-app Messaging
+In-App Messaging
 -
 
 Integrate the in-app messaging functionality so you can use Swrve to send personalized messages to your app users while they’re using your app. If you’d like to find out more about in-app messaging, see [Intro to In-App Messages](http://docs.swrve.com/user-documentation/in-app-messaging/intro-to-in-app-messages/).
@@ -108,7 +108,7 @@ class CustomMessageListener : ISwrveMessageListener {
 SwrveComponent.Instance.SDK.GlobalMessageListener = new CustomMessageListener ();
 ```
 
-### In-app Messaging Deeplinks ###
+### In-App Messaging Deeplinks ###
 
 When creating in-app messages in Swrve, you **must** configure message buttons to direct users to perform a custom action when clicked. For example, you might configure a button to direct the app user straight to your app store. To enable this feature, you must configure deeplinks by performing the actions outlined below.
 
@@ -123,7 +123,7 @@ private class CustomButtonListener : ISwrveCustomButtonListener {
 SwrveComponent.Instance.SDK.GlobalCustomButtonListener = new CustomButtonListener();
 ```
 
-For example, if you have already implemented deeplinks for your app, it might make sense to use that for handling in-app messages custom actions
+For example, if you have already implemented deeplinks for your app, it might make sense to use that for handling in-app messages custom actions.
 
 ```
 private class CustomButtonListener : MonoBehaviour, ISwrveCustomButtonListener
@@ -415,7 +415,12 @@ Rules for sending events:
 
 ### Event Payloads ###
 
-An event payload can be added and sent with every event. This allows for more detailed reporting around events and funnels. The associated payload should be a dictionary of key/value pairs; it is restricted to string and integer keys and values. There is a maximum cardinality of 500 key-value pairs for this payload per event. This parameter is optional.
+An event payload can be added and sent with every event. This allows for more detailed reporting around events and funnels. 
+
+Notes on associated payloads:
+* The associated payload should be a dictionary of key/value pairs; it is restricted to string and integer keys and values. 
+* There is a maximum cardinality of 500 key-value pairs for this payload per event. This parameter is optional, but only the first 500 payloads will be seen in the dashboard. The data is still available in raw event logs.
+* It is not currently possible to use payloads as triggers or for filters in the dashboard. Events should be used for these purposes. 
 
 ```
 Dictionary<string,string> payload = new Dictionary<string,string>() {
@@ -425,17 +430,17 @@ Dictionary<string,string> payload = new Dictionary<string,string>() {
 SwrveComponent.Instance.SDK.NamedEvent("custom.event_name", payload);
 ```
 
-For example, if you want to track when a user starts the tutorial experience it might make sense to send an event `tutorial.start` and add a payload `time` which captures how long the user spent starting the tutorial.
+For example, if you want to track how far a user progresses through the tutorial experience, it might make sense to send an event `tutorial.start` and add a payload `step` which captures how far the user got through the tutorial.
 ```
 Dictionary<string, string> payload = new Dictionary<string, string>();
-payload.Add("time", "100");
+payload.Add("step", "5");
 SwrveComponent.Instance.SDK.NamedEvent("tutorial.start", payload);
 ```
 
 
 ### Send User Properties ###
 
-Assign user properties to send the status of the user. For example create a custom user property called `premium`, and then target non-premium users and premium users in the dashboard..
+Assign user properties to send the status of the user. For example, create a custom user property called `premium`, and then target non-premium users and premium users in the dashboard. User properties are always strings in Swrve. 
 
 ```
 Dictionary<string, string> attributes = new Dictionary<string, string>();
@@ -465,13 +470,15 @@ double givenAmount = 99;
 SwrveComponent.Instance.SDK.CurrencyGiven(givenCurrency, givenAmount);
 ```
 
-To ensure virtual currency events are not ignored by the server, make sure the currency name configured in your app matches exactly the Currency Name you enter in the App Currencies section on the App Settings screen (including case-sensitive). If there is any difference, or if you haven’t added the currency in Swrve, the event will be ignored and return an error event called Swrve.error.invalid_currency. Additionally, the ignored events will not be included in your KPI reports. For more information, see [Add Your App](http://docs.swrve.com/getting-started/add-your-app/).
+To ensure virtual currency events are not ignored by the server, make sure the currency name configured in your app matches exactly the Currency Name you enter in the App Currencies section on the App Settings screen (including case-sensitive). 
+
+If there is any difference, or if you haven’t added the currency in Swrve, the event will be ignored and return an error event called Swrve.error.invalid_currency. Additionally, the ignored events will not be included in your KPI reports. For more information, see [Add Your App](http://docs.swrve.com/getting-started/add-your-app/).
 
 ### Sending IAP Events and IAP Validation ###
 
 If your app has in-app purchases, send the IAP event when a user purchases something with real money. The IAP event enables Swrve to build revenue reports for your app and to track the spending habits of your users.
 
-* **In iOS 7+** devices, Apple returns a receipt including multiple purchases. To identify what was  purchased, Swrve needs to be sent the `transactionID` of the item purchased (see `SKPaymentTransaction::transactionIdentifier`).
+* **In iOS 7+** devices, Apple returns a receipt including multiple purchases. To identify what was purchased, Swrve needs to be sent the `transactionID` of the item purchased (see `SKPaymentTransaction::transactionIdentifier`).
 
 * **In iOS 6 and lower**, Apple only returns one transaction per receipt, so the Swrve IAP method without the `transactionId` can be used.
 
