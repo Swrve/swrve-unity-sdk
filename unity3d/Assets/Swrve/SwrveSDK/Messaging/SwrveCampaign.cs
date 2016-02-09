@@ -62,28 +62,55 @@ public class SwrveCampaign
     /// Number of impressions of this campaign. Used to disable the campaign if
     /// it reaches total impressions.
     /// </summary>
-    public int Impressions;
+    public int Impressions {
+        get {
+            return this.State.Impressions;
+        }
+        set {
+            this.State.Impressions = value;
+        }
+    }
 
     /// <summary>
     /// Next message to be shown if round robin campaign.
     /// </summary>
-    public int Next;
+    public int Next  {
+        get {
+            return this.State.Next;
+        }
+        set {
+            this.State.Next = value;
+        }
+    }
 
     /// <summary>
     /// Indicates if the campaign serves messages randomly or using round robin.
     /// </summary>
     public bool RandomOrder = false;
 
+    /// <summary>
+    /// Used internally to save the state of the campaign.
+    /// </summary>
+    public SwrveCampaignState State;
+
     protected readonly DateTime swrveInitialisedTime;
     protected readonly string assetPath;
     protected DateTime showMessagesAfterLaunch;
-    protected DateTime showMessagesAfterDelay;
+    protected DateTime showMessagesAfterDelay {
+        get {
+            return this.State.ShowMessagesAfterDelay;
+        }
+        set {
+            this.State.ShowMessagesAfterDelay = value;
+        }
+    }
     protected int minDelayBetweenMessage;
     protected int delayFirstMessage = DefaultDelayFirstMessage;
     protected int maxImpressions;
 
     private SwrveCampaign (DateTime initialisedTime, string assetPath)
     {
+        this.State = new SwrveCampaignState();
         this.swrveInitialisedTime = initialisedTime;
         this.assetPath = assetPath;
         this.Messages = new List<SwrveMessage> ();
@@ -383,9 +410,8 @@ public class SwrveCampaign
     public void MessageWasShownToUser (SwrveMessageFormat messageFormat)
     {
         IncrementImpressions ();
-
+        SetMessageMinDelayThrottle ();
         if (Messages.Count > 0) {
-            SetMessageMinDelayThrottle();
             if (!RandomOrder) {
                 int nextMessage = (Next + 1) % Messages.Count;
                 Next = nextMessage;
