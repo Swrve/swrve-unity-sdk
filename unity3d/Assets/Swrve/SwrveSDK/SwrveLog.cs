@@ -11,7 +11,7 @@ public static class SwrveLog
     /// by the Swrve SDK.
     /// </summary>
 
-	public static LogLevel Level = LogLevel.Verbose; // Verbose by default
+    public static LogLevel Level = LogLevel.Verbose; // Verbose by default
 
     public enum LogLevel {
         Verbose,
@@ -48,40 +48,40 @@ public static class SwrveLog
 
     public static void Log (object message, string tag)
     {
-		if (Level == LogLevel.Verbose) {
+        if (Level == LogLevel.Verbose) {
             Debug.Log (message);
             if (OnLog != null) {
-				OnLog (LogLevel.Verbose, message, tag);
+                OnLog (LogLevel.Verbose, message, tag);
             }
         }
     }
 
     public static void LogInfo (object message, string tag)
     {
-		if (Level == LogLevel.Verbose || Level == LogLevel.Info) {
+        if (Level == LogLevel.Verbose || Level == LogLevel.Info) {
             Debug.Log (message);
             if (OnLog != null) {
-				OnLog (LogLevel.Info, message, tag);
+                OnLog (LogLevel.Info, message, tag);
             }
         }
     }
 
     public static void LogWarning (object message, string tag)
     {
-		if (Level == LogLevel.Verbose || Level == LogLevel.Info || Level == LogLevel.Warning) {
+        if (Level == LogLevel.Verbose || Level == LogLevel.Info || Level == LogLevel.Warning) {
             Debug.LogWarning (message);
             if (OnLog != null) {
-				OnLog (LogLevel.Warning, message, tag);
+                OnLog (LogLevel.Warning, message, tag);
             }
         }
     }
 
     public static void LogError (object message, string tag)
     {
-		if (Level == LogLevel.Verbose || Level == LogLevel.Info || Level == LogLevel.Warning || Level == LogLevel.Error) {
+        if (Level == LogLevel.Verbose || Level == LogLevel.Info || Level == LogLevel.Warning || Level == LogLevel.Error) {
             Debug.LogError (message);
             if (OnLog != null) {
-				OnLog (LogLevel.Error, message, tag);
+                OnLog (LogLevel.Error, message, tag);
             }
         }
     }
