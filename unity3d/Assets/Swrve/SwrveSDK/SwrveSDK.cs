@@ -50,19 +50,31 @@ public partial class SwrveSDK
     private static extern string _swrveiOSGetAppVersion();
 
     [DllImport ("__Internal")]
-    private static extern void _swrveRegisterForPushNotifications();
+    private static extern void _swrveiOSRegisterForPushNotifications();
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSUUID();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveLocaleCountry();
+    private static extern string _swrveiOSLocaleCountry();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveIDFA();
+    private static extern string _swrveiOSIDFA();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveIDFV();
+    private static extern string _swrveiOSIDFV();
+
+    [DllImport ("__Internal")]
+    private static extern void _swrveiOSStartPlot();
+
+    [DllImport ("__Internal")]
+    private static extern void _swrveiOSInitNative(string jsonConfig);
+
+    [DllImport ("__Internal")]
+    private static extern void _swrveiOSShowConversation(string conversation);
+
+    [DllImport ("__Internal")]
+    private static extern string _swrveiOSGetConversationResult();
 #endif
 
     private int gameId;
@@ -388,7 +400,7 @@ public partial class SwrveSDK
         StartCampaignsAndResourcesTimer();
         DisableAutoShowAfterDelay();
 
-        InitLocationNative();
+        InitNative();
 #endif
     }
 
@@ -1053,14 +1065,14 @@ public partial class SwrveSDK
         }
 
         try {
-            deviceInfo ["swrve.device_region"] = _swrveLocaleCountry();
+            deviceInfo ["swrve.device_region"] = _swrveiOSLocaleCountry();
         } catch (Exception e) {
             SwrveLog.LogWarning("Couldn't get device region on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
         }
 
         if (config.LogAppleIDFV) {
             try {
-                String idfv = _swrveIDFV();
+                String idfv = _swrveiOSIDFV();
                 if (!string.IsNullOrEmpty(idfv)) {
                     deviceInfo ["swrve.IDFV"] = idfv;
                 }
@@ -1070,7 +1082,7 @@ public partial class SwrveSDK
         }
         if (config.LogAppleIDFA) {
             try {
-                String idfa = _swrveIDFA();
+                String idfa = _swrveiOSIDFA();
                 if (!string.IsNullOrEmpty(idfa)) {
                     deviceInfo ["swrve.IDFA"] = idfa;
                 }

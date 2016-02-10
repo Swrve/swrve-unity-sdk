@@ -1564,7 +1564,7 @@ public partial class SwrveSDK
         // Use Swrve's native plugin to register for push on old Unity versions that did not support iOS8
 #if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
         try {
-            _swrveRegisterForPushNotifications();
+            _swrveiOSRegisterForPushNotifications();
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
             NotificationServices.RegisterForRemoteNotificationTypes(RemoteNotificationType.Alert | RemoteNotificationType.Badge | RemoteNotificationType.Sound);
@@ -1862,7 +1862,7 @@ public partial class SwrveSDK
     #if UNITY_ANDROID
         result = AndroidGetConversationResult();
     #elif UNITY_IPHONE
-    result _swrveiOSGetConversationResult();
+        result = _swrveiOSGetConversationResult();
     #endif
         
         return result ?? "[]";
@@ -1873,7 +1873,7 @@ public partial class SwrveSDK
     #if UNITY_ANDROID
         AndroidShowConversation(conversation);
     #elif UNITY_IPHONE
-        result _swrveiOSShowConversation(conversation);
+        _swrveiOSShowConversation(conversation);
     #endif
     }
 
@@ -1949,7 +1949,7 @@ public partial class SwrveSDK
         SendQueuedEvents ();
     }
 
-    protected void InitLocationNative()
+    protected void InitNative()
     {
         Dictionary<string, object> currentDetails = new Dictionary<string, object> {
             {"apiKey", apiKey},
@@ -1969,30 +1969,32 @@ public partial class SwrveSDK
         string jsonString = Json.Serialize (currentDetails);
 
     #if UNITY_ANDROID
-        AndroidInitLocation(jsonString);
+        AndroidInitNative(jsonString);
+    #elif UNITY_IOS
+        _swrveiOSInitNative(jsonString);
     #endif
+    }
 
+    protected void InitLocationNative()
+    {
         if (config.LocationAutostart) {
             StartPlot ();
         }
     }
     
-    public void DoOther()
-    {
-    #if UNITY_ANDROID
-        AndroidDoOther();
-    #endif
-    }
-    
     public void StartPlot() {
     #if UNITY_ANDROID
         AndroidStartPlot();
+    #elif UNITY_IOS
+        _swrveiOSStartPlot();
     #endif
     }
 
     public void StartPlotAfterPermissions() {
     #if UNITY_ANDROID
         AndroidStartPlotAfterPermissions();
+    #elif UNITY_IOS
+        _swrveiOSStartPlot();
     #endif
     }
 }
