@@ -11,9 +11,9 @@ public static class SwrveLog
     /// by the Swrve SDK.
     /// </summary>
 
-    public static SwrveLogType LogLevel = SwrveLogType.Verbose; // Verbose by default
+    public static LogLevel Level = LogLevel.Verbose; // Verbose by default
 
-    public enum SwrveLogType {
+    public enum LogLevel {
         Verbose,
         Info,
         Warning,
@@ -21,18 +21,19 @@ public static class SwrveLog
         Disabled
     };
 
-    public delegate void SwrveLogEventHandler (SwrveLog.SwrveLogType type,object message,string tag);
+    public delegate void SwrveLogEventHandler (LogLevel level, object message, string tag);
 
     public static event SwrveLogEventHandler OnLog;
-
-    public static void setLoggingLevel(SwrveLogType logType){
-        LogLevel = logType;
-    }
 
     // Default tag is "activity"
     public static void Log (object message)
     {
         Log (message, "activity");
+    }
+
+    public static void LogInfo (object message)
+    {
+        LogInfo (message, "activity");
     }
 
     public static void LogWarning (object message)
@@ -47,30 +48,40 @@ public static class SwrveLog
 
     public static void Log (object message, string tag)
     {
-        if (LogLevel == SwrveLogType.Verbose || LogLevel == SwrveLogType.Info || LogLevel == SwrveLogType.Warning || LogLevel == SwrveLogType.Error ) {
+        if (Level == LogLevel.Verbose) {
             Debug.Log (message);
             if (OnLog != null) {
-                OnLog (SwrveLogType.Info, message, tag);
+                OnLog (LogLevel.Verbose, message, tag);
+            }
+        }
+    }
+
+    public static void LogInfo (object message, string tag)
+    {
+        if (Level == LogLevel.Verbose || Level == LogLevel.Info) {
+            Debug.Log (message);
+            if (OnLog != null) {
+                OnLog (LogLevel.Info, message, tag);
             }
         }
     }
 
     public static void LogWarning (object message, string tag)
     {
-        if (LogLevel == SwrveLogType.Verbose || LogLevel == SwrveLogType.Warning || LogLevel == SwrveLogType.Error) {
+        if (Level == LogLevel.Verbose || Level == LogLevel.Info || Level == LogLevel.Warning) {
             Debug.LogWarning (message);
             if (OnLog != null) {
-                OnLog (SwrveLogType.Warning, message, tag);
+                OnLog (LogLevel.Warning, message, tag);
             }
         }
     }
 
     public static void LogError (object message, string tag)
     {
-        if (LogLevel == SwrveLogType.Verbose || LogLevel == SwrveLogType.Error) {
+        if (Level == LogLevel.Verbose || Level == LogLevel.Info || Level == LogLevel.Warning || Level == LogLevel.Error) {
             Debug.LogError (message);
             if (OnLog != null) {
-                OnLog (SwrveLogType.Error, message, tag);
+                OnLog (LogLevel.Error, message, tag);
             }
         }
     }
