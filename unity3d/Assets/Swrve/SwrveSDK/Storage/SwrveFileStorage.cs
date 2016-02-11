@@ -51,8 +51,6 @@ public class SwrveFileStorage : ISwrveStorage
         bool saved = false;
 
         try {
-            data = data.Trim() + "\n"; // ensure newline at end of file
-
             string saveFileName = GetFileName (tag, userId);
             SwrveLog.Log ("Saving: " + saveFileName, "storage");
             CrossPlatformFile.SaveText (saveFileName, data);

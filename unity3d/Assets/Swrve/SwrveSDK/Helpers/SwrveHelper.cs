@@ -82,7 +82,7 @@ public static class SwrveHelper
             byte[] bKey = System.Text.Encoding.UTF8.GetBytes (key);
             using (HMACMD5 hmac = new HMACMD5(bKey)) {
                 byte[] signature = hmac.ComputeHash (bData);
-                return System.Convert.ToBase64String (signature).Trim() + "\n";
+                return System.Convert.ToBase64String (signature);
             }
         }
         return null;
