@@ -3,10 +3,8 @@ Unity SDK Upgrade Guide
 
 This guide provides information about how you can upgrade to the latest Swrve Unity SDK. For information about the changes that have been made in each Unity SDK release, see [Unity SDK Release Notes](/docs/release_notes.md).
 
-Table of Contents
-=
-
-- [Unity SDK Upgrade Guide](#unity-sdk-upgrade-guide)
+- [Upgrading to Unity SDK v3.6](#upgrading-to-unity-sdk-v36)
+  - [SDK Shared Instance](#sdk-shared-instance)
 - [Upgrading to Unity SDK v3.5](#upgrading-to-unity-sdk-v35)
   - [Custom events starting with "Swrve."](#custom-events-starting-with-swrve)
   - [Google Push and material configuration](#google-push-and-material-configuration)
@@ -44,6 +42,16 @@ Table of Contents
   - [Deprecation of the old IAP function](#deprecation-of-the-old-iap-function)
 - [Upgrading to Unity SDK v2.4](#upgrading-to-unity-sdk-v24)
   - [Migration from Unity SDK 2.3 to Unity SDK 2.4](#migration-from-unity-sdk-23-to-unity-sdk-24)
+
+
+Upgrading to Unity SDK v3.6
+=
+
+This section provides information to enable you to upgrade to Swrve Unity SDK v3.6.
+
+SDK Shared Instance
+-
+* The SDK shared instance now uses Object.FindObjectsOfType instead of Resources.FindObjectsOfTypeAll. Ensure your prefab is in the scene and active.
 
 Upgrading to Unity SDK v3.5
 =

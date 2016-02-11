@@ -1,31 +1,44 @@
 Swrve Unity SDK Release Notes
 ==
 
-- [Swrve Unity SDK Release Notes](#unity-sdk-download)
-  - [Release 3.5](#release-35)
-  - [Release 3.4.3](#release-343)
-  - [Release 3.4.2](#release-342)
-  - [Release 3.4.1](#release-341)
-  - [Release 3.4](#release-34)
-  - [Release 3.3.2](#release-332)
-    - [WARNING](#warning)
-  - [Release 3.3.1](#release-331)
-  - [Release 3.3](#release-33)
-  - [Release 3.2](#release-32)
-  - [Release 3.1.3](#release-313)
-  - [Release 3.1.2 Beta](#release-312-beta)
-  - [Release 3.1.1 Beta](#release-311-beta)
-  - [Release 3.1](#release-31)
-  - [Release 3.0.1](#release-301)
-  - [Release 3.0](#release-30)
-  - [Release 2.10](#release-210)
-  - [Release 2.9](#release-29)
-  - [Release 2.8.2](#release-282)
-  - [Release 2.8.1](#release-281)
-  - [Release 2.8](#release-28)
-  - [Release 2.8 Push Beta](#release-28-push-beta)
-  - [Release 2.7](#release-27)
-  - [Previous Releases Summary](#previous-releases-summary)
+- [Release 3.6](#release-36)
+- [Release 3.5](#release-35)
+- [Release 3.4.3](#release-343)
+- [Release 3.4.2](#release-342)
+- [Release 3.4.1](#release-341)
+- [Release 3.4](#release-34)
+- [Release 3.3.2](#release-332)
+  - [WARNING](#warning)
+- [Release 3.3.1](#release-331)
+- [Release 3.3](#release-33)
+- [Release 3.2](#release-32)
+- [Release 3.1.3](#release-313)
+- [Release 3.1.2 Beta](#release-312-beta)
+- [Release 3.1.1 Beta](#release-311-beta)
+- [Release 3.1](#release-31)
+- [Release 3.0.1](#release-301)
+- [Release 3.0](#release-30)
+- [Release 2.10](#release-210)
+- [Release 2.9](#release-29)
+- [Release 2.8.2](#release-282)
+- [Release 2.8.1](#release-281)
+- [Release 2.8](#release-28)
+- [Release 2.8 Push Beta](#release-28-push-beta)
+- [Release 2.7](#release-27)
+- [Previous Releases Summary](#previous-releases-summary)
+
+Release 3.6
+-
+Release Date: February 11, 2016
+
+Unity SDK release 3.6 is focused on the following:
+
+* It is now possible to switch off logging in the SDK configuration. For more information, see [How Do I Disable SDK Device Logging?](http://docs.swrve.com/faqs/sdk-integration/disable-sdk-device-logging/)
+
+Unity SDK release 3.6 includes the following bug fixes:
+
+* Improvements to the campaign state of in-app messages so it doesn’t get overwritten when campaigns are refreshed from the server.
+* Fixed an issue with the method used to access the instance of the SwrveComponent in the SDK.
 
 Release 3.5
 -
