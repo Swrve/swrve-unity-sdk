@@ -96,7 +96,7 @@ Unity SDK release 3.3.2 is focused on the following:
 
 * Added support for Unity 5.
 
-### WARNING ###
+### WARNING
 
 * There is a bug in Unity 5.0.0 (iOS only) affecting all HTTPS requests. Any endpoints configured to use HTTPS will not work (that is, the SDK won't send events, get campaigns or user resources). Additionally, the image CDN can be set up with HTTPS for some apps, in which case the campaign metadata is downloaded but the images are not, so in-app messages won't be available. This issue is fixed in Unity version 5.0.1 or higher.
 

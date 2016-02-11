@@ -4,9 +4,6 @@ Swrve is a single integrated platform delivering everything you need to drive mo
 
 This Unity3D SDK will enable your app to use all of these features.
 
-Table of Contents
--
-
 - [Getting started](#getting-started)
   - [Requirements](#requirements)
     - [Unity 4.0.0+](#unity-400)
@@ -108,7 +105,7 @@ class CustomMessageListener : ISwrveMessageListener {
 SwrveComponent.Instance.SDK.GlobalMessageListener = new CustomMessageListener ();
 ```
 
-### In-App Messaging Deeplinks ###
+### In-App Messaging Deeplinks
 
 When creating in-app messages in Swrve, you **must** configure message buttons to direct users to perform a custom action when clicked. For example, you might configure a button to direct the app user straight to your app store. To enable this feature, you must configure deeplinks by performing the actions outlined below.
 
@@ -236,11 +233,11 @@ iOS Push Notifications
   ```
 
 
-### Creating and uploading your iOS Cert ###
+### Creating and uploading your iOS Cert
 
 To enable your app to send push notifications to Unity iOS devices, you require a push certificate. A push certificate authorizes an app to receive push notifications and authorizes a service to send push notifications to an app. For more information, see [How Do I Manage iOS Push Certificates?](http://docs.swrve.com/faqs/push-notifications/manage-ios-push-certificates-for-push-notifications/)
 
-### Provisioning your app ###
+### Provisioning your app
 
 Each time your app is published for distribution, you must provision it against the push certificate that has been created for the app.
 
@@ -267,7 +264,7 @@ Unity Android uses a native Android plugin (provided as part of the Unity SDK), 
 
   Changes to `SwrveComponent.Instance.Config` must occur before calling `SwrveComponent.Instance.Init`.
 
-### Using a custom `GcmReceiver` ###
+### Using a custom `GcmReceiver`
 
 If you are already using push notifications, follow the steps below to integrate Swrve’s push notification functionality:
 
@@ -297,7 +294,7 @@ If you are already using push notifications, follow the steps below to integrate
   }
   ```
 
-### Custom `MainActivity` ###
+### Custom `MainActivity`
 
 If you have a custom `MainActivity`, call the following functions `onCreate` and `onResume`:
 
@@ -317,7 +314,7 @@ public class CustomMainActivity extends UnityPlayerActivity {
 }
 ```
 
-### No custom `MainActivity` ###
+### No custom `MainActivity`
 
 If you don’t provide a custom `MainActivity`, point to Swrve’s `MainActivity` in your `AndroidManifest.xml`:
 
@@ -331,7 +328,7 @@ If you don’t provide a custom `MainActivity`, point to Swrve’s `MainActivity
 </activity>
 ```
 
-### Advanced Android Push ###
+### Advanced Android Push
 
 This section describes how to configure advanced options for Unity SDK push notification integration.
 
@@ -397,7 +394,7 @@ This section describes how to configure advanced options for Unity SDK push noti
 Sending Events
 -
 
-### Sending Named Events ###
+### Sending Named Events
 
 ```
 SwrveComponent.Instance.SDK.NamedEvent("custom.event_name");
@@ -413,7 +410,7 @@ Rules for sending events:
  * Do not add timestamps to event names. For example, Tutorial.Start.1454458885
 * When creating custom events, do not use the `swrve.*` or `Swrve.*` namespace for your own events. This is reserved for Swrve use only. Custom event names beginning with `Swrve.` are restricted and cannot be sent.
 
-### Event Payloads ###
+### Event Payloads
 
 An event payload can be added and sent with every event. This allows for more detailed reporting around events and funnels. 
 
@@ -439,7 +436,7 @@ SwrveComponent.Instance.SDK.NamedEvent("tutorial.start", payload);
 ```
 
 
-### Send User Properties ###
+### Send User Properties
 
 Assign user properties to send the status of the user. For example, create a custom user property called `premium`, and then target non-premium users and premium users in the dashboard.
 
@@ -451,7 +448,7 @@ attributes.Add("balance", "999");
 SwrveComponent.Instance.SDK.UserUpdate(attributes);
 ```
 
-### Sending Virtual Economy Events ###
+### Sending Virtual Economy Events
 
 If your app has a virtual economy, send the purchase event when users purchase in-app items with virtual currency.
 
@@ -475,7 +472,7 @@ To ensure virtual currency events are not ignored by the server, make sure the c
 
 If there is any difference, or if you haven’t added the currency in Swrve, the event will be ignored and return an error event called Swrve.error.invalid_currency. Additionally, the ignored events will not be included in your KPI reports. For more information, see [Add Your App](http://docs.swrve.com/getting-started/add-your-app/).
 
-### Sending IAP Events and IAP Validation ###
+### Sending IAP Events and IAP Validation
 
 If your app has in-app purchases, send the IAP event when a user purchases something with real money. The IAP event enables Swrve to build revenue reports for your app and to track the spending habits of your users.
 
