@@ -642,7 +642,8 @@ public partial class SwrveSDK
             }
 #endif
         } else {
-            Debug.LogError("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");
+            SwrveLog.LogError ("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");                
+
         }
 
         if (allowShowMessage && config.TalkEnabled) {
@@ -864,38 +865,42 @@ public partial class SwrveSDK
             SwrveLog.Log ("Clicked button " + clickedButton.ActionType);
             ButtonWasPressedByUser (clickedButton);
 
-            if (clickedButton.ActionType == SwrveActionType.Install) {
-                string gameId = clickedButton.GameId.ToString ();
-                if (gameStoreLinks.ContainsKey (gameId)) {
-                    string appStoreUrl = gameStoreLinks [gameId];
-                    if (!string.IsNullOrEmpty(appStoreUrl)) {
-                        bool normalFlow = true;
-                        if (currentMessage.InstallButtonListener != null) {
-                            // Launch custom button listener
-                            normalFlow = currentMessage.InstallButtonListener.OnAction (appStoreUrl);
-                        }
+            try {
+              if (clickedButton.ActionType == SwrveActionType.Install) {
+                  string gameId = clickedButton.GameId.ToString ();
+                  if (gameStoreLinks.ContainsKey (gameId)) {
+                      string appStoreUrl = gameStoreLinks [gameId];
+                      if (!string.IsNullOrEmpty(appStoreUrl)) {
+                          bool normalFlow = true;
+                          if (currentMessage.InstallButtonListener != null) {
+                              // Launch custom button listener
+                              normalFlow = currentMessage.InstallButtonListener.OnAction (appStoreUrl);
+                          }
 
-                        if (normalFlow) {
-                            // Open app store
-                            Application.OpenURL (appStoreUrl);
-                        }
-                    } else {
-                        SwrveLog.LogError("No app store url for game " + gameId);
-                    }
-                } else {
-                    SwrveLog.LogError("Install button app store url empty!");
-                }
-            } else if (clickedButton.ActionType == SwrveActionType.Custom) {
-                string buttonAction = clickedButton.Action;
-                if (currentMessage.CustomButtonListener != null) {
-                    // Launch custom button listener
-                    currentMessage.CustomButtonListener.OnAction (buttonAction);
-                } else {
-                    SwrveLog.Log("No custom button listener, treating action as URL");
-                    if (!string.IsNullOrEmpty(buttonAction)) {
-                        Application.OpenURL (buttonAction);
-                    }
-                }
+                          if (normalFlow) {
+                              // Open app store
+                              Application.OpenURL (appStoreUrl);
+                          }
+                      } else {
+                          SwrveLog.LogError("No app store url for game " + gameId);
+                      }
+                  } else {
+                      SwrveLog.LogError("Install button app store url empty!");
+                  }
+              } else if (clickedButton.ActionType == SwrveActionType.Custom) {
+                  string buttonAction = clickedButton.Action;
+                  if (currentMessage.CustomButtonListener != null) {
+                      // Launch custom button listener
+                      currentMessage.CustomButtonListener.OnAction (buttonAction);
+                  } else {
+                      SwrveLog.Log("No custom button listener, treating action as URL");
+                      if (!string.IsNullOrEmpty(buttonAction)) {
+                          Application.OpenURL (buttonAction);
+                      }
+                  }
+              }
+            } catch(Exception exp) {
+                SwrveLog.LogError("Error processing the clicked button: " + exp.Message);
             }
             clickedButton.Pressed = false;
             DismissMessage();

@@ -27,8 +27,9 @@ public class SwrveSDKPostProcess
         List<string> allMMFiles = GetAllFiles (path, "*.mm");
         foreach (string filePath in allMMFiles) {
             string contents = File.ReadAllText (filePath);
+            int alreadyApplied = contents.IndexOf("swrveState");
             int hookPosition = contents.IndexOf ("didReceiveRemoteNotification");
-            if (hookPosition > 0) {
+            if (hookPosition > 0 && alreadyApplied < 0) {
                 // File contains notification hook
                 // Replace the first appearance of UnitySendRemoteNotification
                 // after the hook
@@ -47,7 +48,7 @@ public class SwrveSDKPostProcess
                     // Add a flag to the notification indicating if it was received while on the foreground
                     contents = contents.Substring (0, closestInstance.Index) + "UIApplicationState swrveState = [application applicationState];"
                                 + "BOOL swrveInBackground = (swrveState == UIApplicationStateInactive || swrveState == UIApplicationStateBackground);"
-                                + "if (!swrveInBackground) { NSMutableDictionary* mutableUserInfo = userInfo = [userInfo mutableCopy]; [mutableUserInfo setValue:@\"YES\" forKey:@\"_swrveForeground\"]; } "
+                                + "if (!swrveInBackground) { NSMutableDictionary* mutableUserInfo = [userInfo mutableCopy]; userInfo = mutableUserInfo; [mutableUserInfo setValue:@\"YES\" forKey:@\"_swrveForeground\"]; } "
                                 + closestInstance.Value + contents.Substring (closestInstance.Index + closestInstance.Length);
                     File.WriteAllText (filePath, contents);
                 }
