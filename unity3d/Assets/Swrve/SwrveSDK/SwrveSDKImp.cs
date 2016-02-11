@@ -1797,7 +1797,7 @@ public partial class SwrveSDK
         return _androidLocation;
     }
 
-    private void AndroidInitLocation(string jsonString)
+    private void AndroidInitNative(string jsonString)
     {
         try {
             AndroidGetLocation ().CallStatic ("SetSwrveCommon", jsonString);
@@ -1973,10 +1973,7 @@ public partial class SwrveSDK
     #elif UNITY_IOS
         _swrveiOSInitNative(jsonString);
     #endif
-    }
-
-    protected void InitLocationNative()
-    {
+    
         if (config.LocationAutostart) {
             StartPlot ();
         }
