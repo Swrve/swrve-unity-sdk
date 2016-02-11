@@ -433,6 +433,7 @@ SwrveComponent.Instance.SDK.NamedEvent("custom.event_name", payload);
 For example, if you want to track how far a user progresses through the tutorial experience, it might make sense to send an event `tutorial.start` and add a payload `step` which captures how far the user got through the tutorial.
 ```
 Dictionary<string, string> payload = new Dictionary<string, string>();
+payload.Add("time", "100");
 payload.Add("step", "5");
 SwrveComponent.Instance.SDK.NamedEvent("tutorial.start", payload);
 ```
@@ -440,7 +441,7 @@ SwrveComponent.Instance.SDK.NamedEvent("tutorial.start", payload);
 
 ### Send User Properties ###
 
-Assign user properties to send the status of the user. For example, create a custom user property called `premium`, and then target non-premium users and premium users in the dashboard. User properties are always strings in Swrve. 
+Assign user properties to send the status of the user. For example, create a custom user property called `premium`, and then target non-premium users and premium users in the dashboard.
 
 ```
 Dictionary<string, string> attributes = new Dictionary<string, string>();
