@@ -384,7 +384,6 @@ public partial class SwrveSDK
             try {
                 swrveTemporaryPath = GetSwrveTemporaryCachePath();
                 LoadTalkData ();
-                LoadLocationData ();
 
 #if UNITY_IPHONE
                 // If we had a device token, keep asking for a new one

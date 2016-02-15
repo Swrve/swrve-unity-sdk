@@ -1266,11 +1266,6 @@ public partial class SwrveSDK
         campaigns = new List<SwrveCampaign> (newCampaigns);
     }
 
-    protected virtual void ProcessLocation (Dictionary<string, object> root)
-    {
-        
-    }
-
     private void LoadResourcesAndCampaigns ()
     {
         try {
@@ -1511,28 +1506,6 @@ public partial class SwrveSDK
         }
     }
 
-    private void LoadLocationData() {
-        // Load location
-        try {
-            string loadedData = storage.LoadSecure (LocationSave, userId);
-            if (!string.IsNullOrEmpty (loadedData)) {
-                string locationCandidate = null;
-                if (ResponseBodyTester.TestUTF8 (loadedData, out locationCandidate)) {
-                    Dictionary<string, object> locationData = (Dictionary<string, object>)Json.Deserialize (locationCandidate);
-                    ProcessLocation (locationData);
-                } else {
-                    SwrveLog.Log ("Failed to parse location cache");
-                    InvalidateETag ();
-                }
-            } else {
-                InvalidateETag ();
-            }
-        } catch (Exception e) {
-            SwrveLog.LogWarning ("Could not read location from cache, using default (" + e.ToString () + ")");
-            InvalidateETag ();
-        }
-    }
-
     private void SendPushNotificationEngagedEvent (string pushId)
     {
         if (pushId != lastPushEngagedId) {
@@ -1755,8 +1728,26 @@ public partial class SwrveSDK
         return _androidId;
     }
 
-    private AndroidJavaObject _androidConversations;
+    private AndroidJavaObject _androidBridge;
+    private AndroidJavaObject AndroidGetBridge()
+    {
+        if (_androidBridge == null)
+        {
+            _androidBridge = new AndroidJavaObject("com.swrve.sdk.SwrveUnityBridge");
+        }
+        return _androidBridge;
+    }
 
+    private void AndroidInitNative(string jsonString)
+    {
+        try {
+            AndroidGetBridge ().CallStatic ("SetSwrveCommon", jsonString);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't init common from Android: " + exp.ToString ());
+        }
+    }
+
+    private AndroidJavaObject _androidConversations;
     private AndroidJavaObject AndroidGetConversation()
     {
         if (_androidConversations == null)
@@ -1788,31 +1779,12 @@ public partial class SwrveSDK
     }
 
     private AndroidJavaClass _androidLocation;
-
     private AndroidJavaObject AndroidGetLocation()
     {
         if (_androidLocation == null) {
             _androidLocation = new AndroidJavaClass ("com.swrve.locationunitybridge.SwrveUnityBridge");
         }
         return _androidLocation;
-    }
-
-    private void AndroidInitNative(string jsonString)
-    {
-        try {
-            AndroidGetLocation ().CallStatic ("SetSwrveCommon", jsonString);
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't init location from Android: " + exp.ToString ());
-        }
-    }
-
-    private void AndroidDoOther()
-    {
-        try {
-            AndroidGetLocation ().CallStatic ("DoOther");
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't DoOther from Android: " + exp.ToString ());
-        }
     }
 
     public void AndroidStartPlot()
@@ -1957,7 +1929,9 @@ public partial class SwrveSDK
             {"userId", userId},
             {"appVersion", GetAppVersion()},
             {"uniqueKey", GetUniqueKey()},
-            {"batchEventsAction", "/1/batch"},
+            {"batchUrl", "/1/batch"},
+            {"eventsServer", config.EventsServer},
+            {"contentServer", config.ContentServer},
             {"locationCampaignCategory", "LocationCampaign"},
             {"httpTimeout", 60000},
             {"maxEventsPerFlush", 50},

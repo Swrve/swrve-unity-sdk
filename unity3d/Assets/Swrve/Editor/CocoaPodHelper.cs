@@ -19,14 +19,22 @@
     using System;
     using System.Diagnostics;
     using System.IO;
+    using System.Collections.Generic;
 
     public class CocoaPodHelper
     {
-        private const string podPath = "/usr/bin/pod";
+        private const List<string> podPaths = new List<string>("/usr/local/bin/pod", "/usr/bin/pod");
 
         public static bool Update(string projDir)
         {
-            if (!File.Exists(podPath))
+            string podPath = null;
+            for (int i = 0; i < podPaths.Count; i++) {
+                if(File.Exists(podPaths[i])) {
+                    podPath = podPaths[i];
+                }
+            }
+            
+            if (null == podPath)
             {
                 UnityEngine.Debug.LogError("pod executable not found: " + podPath);
                 return false;
