@@ -111,9 +111,11 @@ SwrveComponent.Instance.SDK.GlobalMessageListener = new CustomMessageListener ()
 
 ### In-App Messaging Deeplinks
 
-When creating in-app messages in Swrve, you **must** configure message buttons to direct users to perform a custom action when clicked. For example, you might configure a button to direct the app user straight to your app store. To enable this feature, you must configure deeplinks by performing the actions outlined below.
+When creating in-app messages in Swrve, you can configure message buttons to direct users to perform a custom action when clicked. For example, you might configure a button to direct the app user straight to your app store. For more information about creating in-app messages in Swrve, see [Creating In-App Messages](http://docs.swrve.com/user-documentation/in-app-messaging/creating-in-app-messages/).
 
-If you would like to process the custom action completely on your own, you must add a custom listener to the Swrve SDK before its initialization. There is no default action for deeplinks in the Unity SDK.
+Swrve's default deeplink behaviour is to treat custom actions as URLs and therefore use your existing custom URL scheme. Custom URL schemes need to be configured on a per platform basis.
+
+If you would like to process the custom action completely on your own, you must add a custom listener to the Swrve SDK before its initialization.
 
 ```
 private class CustomButtonListener : ISwrveCustomButtonListener {
@@ -124,7 +126,7 @@ private class CustomButtonListener : ISwrveCustomButtonListener {
 SwrveComponent.Instance.SDK.GlobalCustomButtonListener = new CustomButtonListener();
 ```
 
-For example, if you have already implemented deeplinks for your app, it might make sense to use that for handling in-app messages custom actions.
+For example, if you'd like to send Swrve events using custom actions, you could add a customButtonCallback like this:
 
 ```
 private class CustomButtonListener : MonoBehaviour, ISwrveCustomButtonListener
