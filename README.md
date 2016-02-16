@@ -198,12 +198,6 @@ iOS Push Notifications
   SwrveComponent.Instance.Config.PushNotificationEvents = pushNotificationEvents;
   ```
 
-  To manage the exact timing for requesting permission to send push notifications, use the following code:
-
-  ```
-  SwrveComponent.Instance.SDK.NamedEvent("Swrve.push_notification_permission");
-  ```
-
 3. If you want to perform custom processing of the push notification payload, create the following class and add this code to the SDK initialization:
 
   ```
