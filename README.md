@@ -62,6 +62,10 @@ Installation Instructions
 
   Set the `app_id` and `api_key` fields of the component to your Swrve App ID and Swrve API Key.
 
+  By default, Swrve stores all customer data and content in our US data center. If you require EU-only data storage, you must configure the SDK to point to Swrve’s EU-based URL endpoints.
+
+  For more information, see [How Do I Configure the Swrve SDK for EU Data Storage?](http://docs.swrve.com/faqs/sdk-integration/configure-sdk-for-eu-data-storage/) If you have any questions or need assistance configuring the SDK for EU data storage, please contact support@swrve.com.
+
   ```
   // By default, Swrve stores all customer data and content in our US data center. 
   //SwrveComponent.Instance.Config.SelectedStack = Swrve.Stack.EU;
