@@ -143,13 +143,13 @@ iOS IapApple
 You now have to specify what type of receipt your plugin provides: `Base64EncodedReceipt` or `RawReceipt`. For example:
 
 ```
-IapApple (1, “productId”, 0.99, “gold”, the_base_64_encoded_receipt);
+IapApple (1, "productId", 0.99, "gold", the_base_64_encoded_receipt);
 ```
 
 becomes
 
 ```
-IapApple (1, “productId”, 0.99, “gold”, Base64EncodedReceipt.FromString(the_base_64_encoded_receipt));
+IapApple (1, "productId", 0.99, "gold", Base64EncodedReceipt.FromString(the_base_64_encoded_receipt));
 ```
 
 Upgrading to Unity SDK v3.3.2
@@ -239,7 +239,7 @@ The GCM integration on Unity Android has been simplified. To integrate this simp
 
   ```
   SwrveConfig config = new SwrveConfig();
-  config.GCMPushNotificationTitle = “Awesome app”;
+  config.GCMPushNotificationTitle = "Awesome app";
   ```
 
 In-app Messages at session start
@@ -502,7 +502,7 @@ public void BuyIn (string rewardCurrency,
 
 This is now replaced by creating a IapRewards object with the in-app currency details, and a call to `Iap()` (where <...> matches one of the arguments to BuyIn):
 
-(if <paymentProvider> was “Apple”)
+(if <paymentProvider> was "Apple")
 
 
 ```
