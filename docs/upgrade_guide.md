@@ -294,8 +294,14 @@ Real-time refresh is enabled by default and, if you want to avail of it, you mus
 
   ```
   public void ReloadCampaigns ()
-  public void NamedEventWithoutMessage (string name, Dictionary<string, string> payload = null)
-  public void NamedEvent (string name, ISwrveInstallButtonListener installButtonListener, ISwrveCustomButtonListener customButtonListener, ISwrveMessageListener messageListener, SwrveOrientation orientation, Dictionary<string, string> payload = null)
+  public void NamedEventWithoutMessage (string name,
+                                        Dictionary<string, string> payload = null)
+  public void NamedEvent (string name,
+                          ISwrveInstallButtonListener installButtonListener,
+                          ISwrveCustomButtonListener customButtonListener,
+                          ISwrveMessageListener messageListener,
+                          SwrveOrientation orientation,
+                          Dictionary<string, string> payload = null)
   ```
 
   If you disable this new feature, you can reload campaigns manually at any point in your app:
@@ -382,7 +388,12 @@ Real-time refresh is enabled by default and, if you want to avail of it, you mus
   The function `public void NamedEvent` has been removed in this release:
 
   ```
-  public void NamedEvent (string name, ISwrveInstallButtonListener installButtonListener, ISwrveCustomButtonListener customButtonListener, ISwrveMessageListener messageListener, SwrveOrientation orientation, Dictionary<string, string> payload = null)
+  public void NamedEvent (string name,
+                          ISwrveInstallButtonListener installButtonListener,
+                          ISwrveCustomButtonListener customButtonListener,
+                          ISwrveMessageListener messageListener,
+                          SwrveOrientation orientation,
+                          Dictionary<string, string> payload = null)
   ```
 
   This function, which enabled you to specify your own specific listeners as callbacks for specific actions, is no longer required as the following global listeners are available:
@@ -417,10 +428,10 @@ You must transform your code from the following:
 ```
 private class CustomButtonListener : ISwrveButtonListener {
   public bool OnAction (SwrveMessageFormat format, SwrveActionType type, string action, int appId) {
-        // Custom button logic
-        return true;
-      }
-   }
+    // Custom button logic
+    return true;
+  }
+}
 SwrveComponent.Instance.SDK.GlobalButtonListener = new CustomButtonListener();
 ```
 
