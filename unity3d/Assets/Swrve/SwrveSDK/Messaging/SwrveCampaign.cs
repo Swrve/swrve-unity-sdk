@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections;
 using System;
+using System.Linq;
 using Swrve.Helpers;
 using SwrveMiniJSON;
 
@@ -33,6 +34,16 @@ public class SwrveCampaign
     /// </summary>
     public CampaignType campaignType = CampaignType.Invalid;
 
+    /// <summary>
+    // Flag indicating if it is a MessageCenter campaign
+    /// </summary>
+    protected bool messageCenter;
+
+    /// <summary>
+    // MessageCenter subject of the campaign
+    /// </summary>
+    protected string subject;
+    
     /// <summary>
     /// List of messages contained in the campaign.
     /// </summary>
@@ -81,6 +92,42 @@ public class SwrveCampaign
         set {
             this.State.Next = value;
         }
+    }
+     
+    /// <summary>
+    /// Get the status of the campaign.
+    /// </summary>
+    /// <returns>
+    /// Status of the campaign.
+    /// </returns>
+    public SwrveCampaignState.Status Status {
+        get {
+            return this.State.CurStatus;
+        }
+        set {
+            this.State.CurStatus = value;
+        }
+    }
+        
+    /**
+     * Used internally to identify campaigns that have been marked as MessageCenter campaigns on the dashboard.
+     *
+     * @return true if the campaign is an MessageCenter campaign.
+     */
+    public bool IsMessageCenter() {
+      return messageCenter;
+    }
+
+    protected void SetIsMessageCenter(bool isMessageCenter) {
+        this.messageCenter = isMessageCenter;
+    }
+
+    /**
+     * @return the name of the campaign.
+     */
+    public string Subject {
+        get { return subject; }
+        protected set { this.subject = value; }
     }
 
     /// <summary>
@@ -297,6 +344,9 @@ public class SwrveCampaign
         AssignCampaignRules (campaign, campaignData);
         AssignCampaignDates (campaign, campaignData);
 
+        campaign.SetIsMessageCenter (campaignData.ContainsKey ("message_center") && (bool)campaignData ["message_center"]);
+        campaign.Subject = campaignData.ContainsKey ("subject") ? (string)campaignData ["subject"] : "";
+
         if (campaignData.ContainsKey("conversation"))
         {
             campaign.Conversation = SwrveConversation.LoadFromJSON(campaign, (Dictionary<string, object>)campaignData["conversation"]);
@@ -318,7 +368,32 @@ public class SwrveCampaign
             }
         }
 
+        if (campaign.IsMessageCenter ()) {
+            UnityEngine.Debug.Log (string.Format ("message center campaign: {0}, {1}", campaign.campaignType.ToString (), campaign.subject));
+        }
+
         return campaign;
+    }
+
+    public bool AreAssetsReady()
+    {
+        if (this.campaignType == CampaignType.Messages) {
+            return this.Messages.All (m => m.isDownloaded (assetPath));
+        }
+        else if(this.campaignType == CampaignType.Conversation) {
+            return this.Conversation.isDownloaded (assetPath);
+        }
+        return false;
+    }
+
+    public bool SupportsOrientation(SwrveOrientation orientation) {
+        if (this.campaignType == CampaignType.Messages) {
+            return this.Messages.Any (m => m.SupportsOrientation (orientation));
+        }
+        else if(this.campaignType == CampaignType.Conversation) {
+            return orientation == SwrveOrientation.Portrait;
+        }
+        return false;
     }
 
     /// <summary>
@@ -409,6 +484,7 @@ public class SwrveCampaign
     /// </summary>
     public void MessageWasShownToUser (SwrveMessageFormat messageFormat)
     {
+        Status = SwrveCampaignState.Status.Seen;
         IncrementImpressions ();
         SetMessageMinDelayThrottle ();
         if (Messages.Count > 0) {

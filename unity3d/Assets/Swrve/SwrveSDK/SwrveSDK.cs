@@ -1462,6 +1462,28 @@ public partial class SwrveSDK
         return null;
 #endif
     }
+        
+    public List<SwrveCampaign> getMessageCenterCampaigns(SwrveOrientation orientation) {
+        List<SwrveCampaign> result = new List<SwrveCampaign>();
+        IEnumerator<SwrveCampaign> itCampaign = campaigns.GetEnumerator ();
+        while(itCampaign.MoveNext()) {
+            SwrveCampaign campaign = itCampaign.Current;
+            if (campaign.IsMessageCenter()
+                && campaign.Status != SwrveCampaignState.Status.Deleted
+//                && campaign.isActive(getNow())
+                && campaign.SupportsOrientation(orientation)
+                && campaign.AreAssetsReady()
+        ) {
+                result.Add(campaign);
+            }
+        }
+        return result;
+    }
+        
+    public void removeMessageCenterCampaign(SwrveCampaign campaign) {
+        campaign.Status = SwrveCampaignState.Status.Deleted;
+        SaveCampaignData(campaign);
+    }
 
     /// <summary>
     /// Obtain an in-app message for the given id.
