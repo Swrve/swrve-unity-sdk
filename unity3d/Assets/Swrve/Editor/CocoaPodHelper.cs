@@ -23,11 +23,11 @@
 
     public class CocoaPodHelper
     {
-        private const List<string> podPaths = new List<string>("/usr/local/bin/pod", "/usr/bin/pod");
+        private static List<string> podPaths = new List<string>{ "/usr/local/bin/pod", "/usr/bin/pod" };
+        private static string podPath;
 
         public static bool Update(string projDir)
         {
-            string podPath = null;
             for (int i = 0; i < podPaths.Count; i++) {
                 if(File.Exists(podPaths[i])) {
                     podPath = podPaths[i];
