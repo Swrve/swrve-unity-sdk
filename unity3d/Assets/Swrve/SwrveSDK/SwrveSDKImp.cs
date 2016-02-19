@@ -1537,9 +1537,7 @@ public partial class SwrveSDK
     protected void RegisterForPushNotificationsIOS()
     {
         try {
-            string jsonString = Json.Serialize(config.pushCategories.Select(a => a.toDict()).ToList());
-            UnityEngine.Debug.Log(string.Format("jsonString: {0}", jsonString));
-            _swrveiOSRegisterForPushNotifications(jsonString);
+            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.pushCategories.Select (a => a.toDict ()).ToList ()));
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
 #if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
@@ -1837,7 +1835,11 @@ public partial class SwrveSDK
     #if UNITY_ANDROID
         result = AndroidGetConversationResult();
     #elif UNITY_IPHONE
-        result = _swrveiOSGetConversationResult();
+        try {
+            result = _swrveiOSGetConversationResult();
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get the device conversation result, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
     #endif
         
         return result ?? "[]";
@@ -1848,7 +1850,11 @@ public partial class SwrveSDK
     #if UNITY_ANDROID
         AndroidShowConversation(conversation);
     #elif UNITY_IPHONE
-        _swrveiOSShowConversation(conversation);
+        try {
+          _swrveiOSShowConversation(conversation);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get show conversation correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
     #endif
     }
 
@@ -1948,7 +1954,11 @@ public partial class SwrveSDK
     #if UNITY_ANDROID
         AndroidInitNative(jsonString);
     #elif UNITY_IOS
-        _swrveiOSInitNative(jsonString);
+        try {
+          _swrveiOSInitNative(jsonString);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get init the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
     #endif
     
         if (config.LocationAutostart) {
@@ -1960,7 +1970,11 @@ public partial class SwrveSDK
     #if UNITY_ANDROID
         AndroidStartPlot();
     #elif UNITY_IOS
-        _swrveiOSStartPlot();
+        try {
+          _swrveiOSStartPlot();
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
     #endif
     }
 
