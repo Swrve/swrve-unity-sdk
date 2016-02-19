@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using Swrve;
 using System.Collections;
 using UnityEngine;
@@ -1534,17 +1535,18 @@ public partial class SwrveSDK
 
     protected void RegisterForPushNotificationsIOS()
     {
-        // Use Swrve's native plugin to register for push on old Unity versions that did not support iOS8
-#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
         try {
-            _swrveiOSRegisterForPushNotifications();
+            string jsonString = Json.Serialize(config.pushCategories.Select(a => a.toDict()).ToList());
+            UnityEngine.Debug.Log(string.Format("jsonString: {0}", jsonString));
+            _swrveiOSRegisterForPushNotifications(jsonString);
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
             NotificationServices.RegisterForRemoteNotificationTypes(RemoteNotificationType.Alert | RemoteNotificationType.Badge | RemoteNotificationType.Sound);
-        }
 #else
-        UnityEngine.iOS.NotificationServices.RegisterForNotifications(UnityEngine.iOS.NotificationType.Alert | UnityEngine.iOS.NotificationType.Badge | UnityEngine.iOS.NotificationType.Sound);
+            UnityEngine.iOS.NotificationServices.RegisterForNotifications(UnityEngine.iOS.NotificationType.Alert | UnityEngine.iOS.NotificationType.Badge | UnityEngine.iOS.NotificationType.Sound);
 #endif
+        }
     }
 
     protected string GetSavediOSDeviceToken()

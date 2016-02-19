@@ -50,7 +50,7 @@ public partial class SwrveSDK
     private static extern string _swrveiOSGetAppVersion();
 
     [DllImport ("__Internal")]
-    private static extern void _swrveiOSRegisterForPushNotifications();
+    private static extern void _swrveiOSRegisterForPushNotifications(string jsonCategory);
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSUUID();
