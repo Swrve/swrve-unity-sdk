@@ -401,7 +401,10 @@ public class SwrveCampaign
     }
 
     public bool SupportsOrientation(SwrveOrientation orientation) {
-        if (this.campaignType == CampaignType.Messages) {
+        if (SwrveOrientation.Either == orientation) {
+            return true;
+        }
+        else if (this.campaignType == CampaignType.Messages) {
             return this.Messages.Any (m => m.SupportsOrientation (orientation));
         }
         else if(this.campaignType == CampaignType.Conversation) {
