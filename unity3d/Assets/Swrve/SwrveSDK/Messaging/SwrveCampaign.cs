@@ -217,8 +217,6 @@ public class SwrveCampaign
 
     public bool checkCampaignLimits(string triggerEvent, Dictionary<int, string> campaignReasons)
     {
-        // Use UTC to compare to start/end dates from DB
-        DateTime utcNow = SwrveHelper.GetUtcNow ();
         // Use local time to track throttle limits (want to show local time in logs)
         DateTime localNow = SwrveHelper.GetNow ();
 
@@ -227,13 +225,7 @@ public class SwrveCampaign
             return false;
         }
 
-        if (StartDate > utcNow) {
-            LogAndAddReason (campaignReasons, "Campaign " + Id + " has not started yet");
-            return false;
-        }
-
-        if (EndDate < utcNow) {
-            LogAndAddReason (campaignReasons, "Campaign" + Id + " has finished");
+        if (!IsActive (campaignReasons)) {
             return false;
         }
 
@@ -249,6 +241,28 @@ public class SwrveCampaign
 
         if (IsTooSoonToShowMessageAfterDelay (localNow)) {
             LogAndAddReason (campaignReasons, "{Campaign throttle limit} Too soon after last message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool IsActive(Dictionary<int, string> campaignReasons=null) {
+
+        // Use UTC to compare to start/end dates from DB
+        DateTime utcNow = SwrveHelper.GetUtcNow ();
+
+        if (StartDate > utcNow) {
+            if(null != campaignReasons) {
+                LogAndAddReason (campaignReasons, "Campaign " + Id + " has not started yet");
+            }
+            return false;
+        }
+
+        if (EndDate < utcNow) {
+            if(null != campaignReasons) {
+                LogAndAddReason (campaignReasons, "Campaign " + Id + " has finished");
+            }
             return false;
         }
 
