@@ -13,8 +13,6 @@ using Swrve.IAP;
 public class DemoGUI : BaseDemoGUI
 {
 
-    /// Enable or disable the game UI.
-    public bool UIEnabled = true;
 
     void Start ()
     {
@@ -25,7 +23,7 @@ public class DemoGUI : BaseDemoGUI
 
     void Update ()
     {
-        if (UIEnabled) {
+        if (UIVisible) {
             if (buttonPressed [(int)Buttons.SendEvent]) {
                 // Trigger a custom event
                 SwrveComponent.SDK.NamedEvent (@"button pressed", new Dictionary<string, string> () {
@@ -131,7 +129,7 @@ public class DemoGUI : BaseDemoGUI
         public void OnShow (SwrveMessageFormat format)
         {
             // Pause game
-            container.UIEnabled = false;
+            container.UIVisible = false;
         }
 
         public void OnShowing (SwrveMessageFormat format)
@@ -141,7 +139,7 @@ public class DemoGUI : BaseDemoGUI
         public void OnDismiss (SwrveMessageFormat format)
         {
             // Resume game
-            container.UIEnabled = true;
+            container.UIVisible = true;
         }
     }
 }

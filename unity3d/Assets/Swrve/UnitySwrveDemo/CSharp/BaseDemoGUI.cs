@@ -8,6 +8,7 @@ public class BaseDemoGUI : MonoBehaviour
 {
     protected const int virtualWidth = 640;
     protected const int virtualHeight = 480;
+    public bool UIVisible = true;
 
     protected struct ButtonDef {
         public Rect VirtualRect
@@ -75,6 +76,9 @@ public class BaseDemoGUI : MonoBehaviour
 
     void OnGUI ()
     {
+        if (!UIVisible) {
+            return;
+        }
         for (int i = 0; i < ButtonDefs.Length; i++) {
             if (GUI.Button (ActualRect (ButtonDefs [i].VirtualRect), ButtonDefs [i].Name))
                 buttonPressed [i] = true;
