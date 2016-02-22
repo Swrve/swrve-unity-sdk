@@ -12,20 +12,15 @@ using Swrve.IAP;
 
 public class DemoGUI : BaseDemoGUI
 {
-    /// Reference to the Swrve Component in the scene.
-    private SwrveComponent swrveComponent;
 
     /// Enable or disable the game UI.
     public bool UIEnabled = true;
 
     void Start ()
     {
-        // Get the Swrve Component reference from the scene
-        swrveComponent = (SwrveComponent)FindObjectOfType (typeof(SwrveComponent));
-
         // In-app messaging setup
-        swrveComponent.SDK.GlobalMessageListener = new CustomMessageListener (this);
-        swrveComponent.SDK.GlobalCustomButtonListener = new CustomButtonListener ();
+        SwrveComponent.SDK.GlobalMessageListener = new CustomMessageListener (this);
+        SwrveComponent.SDK.GlobalCustomButtonListener = new CustomButtonListener ();
     }
 
     void Update ()
@@ -33,7 +28,7 @@ public class DemoGUI : BaseDemoGUI
         if (UIEnabled) {
             if (buttonPressed [(int)Buttons.SendEvent]) {
                 // Trigger a custom event
-                swrveComponent.SDK.NamedEvent (@"button pressed", new Dictionary<string, string> () {
+                SwrveComponent.SDK.NamedEvent (@"button pressed", new Dictionary<string, string> () {
                     { "foo", "bar"
                     }
                 });
@@ -41,25 +36,25 @@ public class DemoGUI : BaseDemoGUI
 
             if (buttonPressed [(int)Buttons.SendUserAttributes]) {
                 // Update a user property
-                swrveComponent.SDK.UserUpdate (new Dictionary<string, string> () {
+                SwrveComponent.SDK.UserUpdate (new Dictionary<string, string> () {
                     { "health", "100"}, { "gold", "20" }
                 });
             }
 
             if (buttonPressed [(int)Buttons.PurchaseItem]) {
                 // Notify of an item purchase
-                swrveComponent.SDK.Purchase (@"someItem", @"gold", 20, 1);
+                SwrveComponent.SDK.Purchase (@"someItem", @"gold", 20, 1);
             }
 
             if (buttonPressed [(int)Buttons.InAppItemPurchase]) {
                 // Notify of an in-app purchase
-                swrveComponent.SDK.Iap (1, @"productId", 1.99, @"USD");
+                SwrveComponent.SDK.Iap (1, @"productId", 1.99, @"USD");
             }
 
             if (buttonPressed [(int)Buttons.InAppCurrencyPurchase]) {
                 // Nofity of an in-app purchase with a some currency reward
                 IapRewards rewards = new IapRewards (@"gold", 200);
-                swrveComponent.SDK.Iap (1, @"productId", 0.99, @"USD", rewards);
+                SwrveComponent.SDK.Iap (1, @"productId", 0.99, @"USD", rewards);
             }
 
             if (buttonPressed [(int)Buttons.RealIap]) {
@@ -69,7 +64,7 @@ public class DemoGUI : BaseDemoGUI
 #if UNITY_IPHONE
                 // IAP validation happens on our servers. Provide if possible the receipt from Apple.
                 IapReceipt receipt = RawReceipt.FromString("receipt-from-apple");
-                swrveComponent.SDK.IapApple (1, @"productId", 4.99, @"EUR", rewards, receipt);
+                SwrveComponent.SDK.IapApple (1, @"productId", 4.99, @"EUR", rewards, receipt);
 #elif UNITY_ANDROID
                 // IAP validation happens on our servers. Provide if possible the purchase data from Google.
                 string purchaseData = "purchase-data-from-google-play";
@@ -80,18 +75,18 @@ public class DemoGUI : BaseDemoGUI
 
             if (buttonPressed [(int)Buttons.CurrencyGiven]) {
                 // Notify of currency given
-                swrveComponent.SDK.CurrencyGiven (@"gold", 20);
+                SwrveComponent.SDK.CurrencyGiven (@"gold", 20);
             }
 
             if (buttonPressed [(int)Buttons.UserResources]) {
                 // Obtain the latest value of the resource item01.attribute or its default value
-                int attributeValue = swrveComponent.SDK.ResourceManager.GetResourceAttribute<int> ("item01", "attribute", 99);
+                int attributeValue = SwrveComponent.SDK.ResourceManager.GetResourceAttribute<int> ("item01", "attribute", 99);
                 UnityEngine.Debug.Log ("User resource attribute: " + attributeValue);
             }
 
             if (buttonPressed [(int)Buttons.SendToSwrve]) {
                 // Send the queued events in the buffer to Swrve
-                swrveComponent.SDK.SendQueuedEvents ();
+                SwrveComponent.SDK.SendQueuedEvents ();
             }
 
             if (buttonPressed [(int)Buttons.TriggerMessage]) {
@@ -102,7 +97,7 @@ public class DemoGUI : BaseDemoGUI
 
             if (buttonPressed [(int)Buttons.SaveToDisk]) {
                 // Flush the queued events to disk
-                swrveComponent.SDK.FlushToDisk ();
+                SwrveComponent.SDK.FlushToDisk ();
             }
         }
 
