@@ -7,6 +7,7 @@ using System.Collections;
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Globalization;
 using Swrve;
@@ -1462,19 +1463,22 @@ public partial class SwrveSDK
         return null;
 #endif
     }
+
+    public void showMessageCenterCampaign(SwrveCampaign campaign, SwrveOrientation orientation=SwrveOrientation.Either) {
+        if (SwrveCampaign.CampaignType.Conversation == campaign.campaignType) {
+            ShowConversation (campaign.Conversation.Conversation);
+        } else {
+            Container.StartCoroutine(LaunchMessage(campaign.Messages[0], GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+        }
+    }
         
-    public List<SwrveCampaign> getMessageCenterCampaigns(SwrveOrientation orientation) {
+    public List<SwrveCampaign> getMessageCenterCampaigns(SwrveOrientation orientation=SwrveOrientation.Either) { 
         List<SwrveCampaign> result = new List<SwrveCampaign>();
         IEnumerator<SwrveCampaign> itCampaign = campaigns.GetEnumerator ();
         while(itCampaign.MoveNext()) {
             SwrveCampaign campaign = itCampaign.Current;
-            if (campaign.IsMessageCenter()
-                && campaign.Status != SwrveCampaignState.Status.Deleted
-//                && campaign.isActive(getNow())
-                && campaign.SupportsOrientation(orientation)
-                && campaign.AreAssetsReady()
-        ) {
-                result.Add(campaign);
+            if (isValidMessageCenter (campaign, orientation)) {
+                result.Add (campaign);
             }
         }
         return result;

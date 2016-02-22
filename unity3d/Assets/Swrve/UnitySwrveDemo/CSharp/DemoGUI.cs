@@ -8,17 +8,25 @@ using Swrve.Messaging;
 /// Swrve SDK demo.
 /// </summary>
 using Swrve.IAP;
+using UnityEngine.Events;
 
 
 public class DemoGUI : BaseDemoGUI
 {
+    private static GameObject _ModalQuestionPrefab;
+    private static DemoGUI _DemoGUI;
 
+    public GameObject MessageCenterPrefab;
+    public GameObject ModalQuestionPrefab;
 
     void Start ()
     {
         // In-app messaging setup
         SwrveComponent.SDK.GlobalMessageListener = new CustomMessageListener (this);
         SwrveComponent.SDK.GlobalCustomButtonListener = new CustomButtonListener ();
+
+        _ModalQuestionPrefab = ModalQuestionPrefab;
+        _DemoGUI = this;
     }
 
     void Update ()
@@ -90,7 +98,12 @@ public class DemoGUI : BaseDemoGUI
             if (buttonPressed [(int)Buttons.TriggerMessage]) {
                 // Trigger an in-app message. You will need to setup the campaign
                 // in the In-App message section in the dashboard.
-                swrveComponent.SDK.NamedEvent ("se.testology");
+                // swrveComponent.SDK.NamedEvent ("se.testology");
+
+                UIVisible = false;
+                GameObject messageCenter = Instantiate(MessageCenterPrefab);
+                messageCenter.transform.SetParent (transform, false);
+//                AskModalQuestion("asdf", () => { });
             }
 
             if (buttonPressed [(int)Buttons.SaveToDisk]) {
@@ -100,6 +113,33 @@ public class DemoGUI : BaseDemoGUI
         }
 
         base.ClearButtons ();
+    }
+
+    public static void AskModalQuestion(
+        string title, string text, UnityAction positiveCallback,
+        string positiveText="OK", string negativeText="Cancel",
+        UnityAction negativeCallback=null
+    ) {
+        ModalQuestionComponent modal = GameObject.Instantiate(_ModalQuestionPrefab).GetComponent<ModalQuestionComponent>();
+        bool flipUIVisible = _DemoGUI.UIVisible;
+        _DemoGUI.UIVisible = false;
+
+        modal.questionText.text = text;
+        Action<bool> afterClick = (positive) => {
+            if(flipUIVisible) {
+                _DemoGUI.UIVisible = true;
+            }
+            Destroy (modal.gameObject);
+            if(positive) {
+                positiveCallback.Invoke();
+            }
+            else if(null != negativeCallback) {
+                negativeCallback.Invoke();
+            }
+        };
+
+        modal.positiveButton.onClick.AddListener (() => afterClick(true));
+        modal.negativeButton.onClick.AddListener (() => afterClick(false));
     }
 
     /// <summary>

@@ -990,6 +990,14 @@ public partial class SwrveSDK
         }
     }
 
+    private bool isValidMessageCenter(SwrveCampaign campaign, SwrveOrientation orientation=SwrveOrientation.Either) {
+        return campaign.IsMessageCenter ()
+          && campaign.Status != SwrveCampaignState.Status.Deleted
+          && campaign.IsActive ()
+          && campaign.SupportsOrientation (orientation)
+          && campaign.AreAssetsReady ();
+    }
+
     private IEnumerator LaunchConversation(string conversation)
     {
         if (null != conversation) {
