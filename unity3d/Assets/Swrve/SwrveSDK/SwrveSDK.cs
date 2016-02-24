@@ -156,6 +156,10 @@ public partial class SwrveSDK
     /// </summary>
     public ISwrveTriggeredMessageListener TriggeredMessageListener = null;
 
+#if UNITY_EDITOR
+    public Action<string> ConversationEditorCallback;
+#endif
+
     /// <summary>
     /// A callback to get notified when user resources have been updated.
     /// If Config.AutoDownloadCampaignsAndResources is TRUE (default) user resources will be kept up to date automatically

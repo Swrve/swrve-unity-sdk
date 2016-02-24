@@ -1855,6 +1855,13 @@ public partial class SwrveSDK
 
     private void ShowConversation (string conversation)
     {
+    #if UNITY_EDITOR
+        if(null != ConversationEditorCallback) {
+            ConversationEditorCallback(conversation);
+            return;
+        }
+    #endif
+
     #if UNITY_ANDROID
         AndroidShowConversation(conversation);
     #elif UNITY_IPHONE
