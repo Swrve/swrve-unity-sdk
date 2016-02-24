@@ -83,9 +83,12 @@ public class UIUserNotificationCategory {
         if (0 < minimalContextActions.Count) {
             contextActions [UIUserNotificationActionContext.UIUserNotificationActionContextMinimal] = minimalContextActions;
         }
-        return new Dictionary<string, object> {
-            {IDENTIFIER_KEY, identifier},
-            {CONTEXT_ACTIONS_KEY, contextActions.ToDictionary(x => (int)x.Key, y => y.Value.Select(a => a.toDict()).ToList())}
-        };
+
+        Dictionary<string, object> retval = new Dictionary<string, object> ();
+        if(0 < contextActions.Keys.Count) {
+            retval [IDENTIFIER_KEY] = identifier;
+            retval [CONTEXT_ACTIONS_KEY] = contextActions.ToDictionary (x => (int)x.Key, y => y.Value.Select (a => a.toDict ()).ToList ());
+        }
+        return retval;
     }
 }
