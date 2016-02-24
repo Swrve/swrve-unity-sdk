@@ -1468,8 +1468,13 @@ public partial class SwrveSDK
         if (SwrveCampaign.CampaignType.Conversation == campaign.campaignType) {
             ShowConversation (campaign.Conversation.Conversation);
         } else {
-            Container.StartCoroutine(LaunchMessage(campaign.Messages[0], GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+            Container.StartCoroutine (LaunchMessage (
+                campaign.Messages.Where (a => a.SupportsOrientation (orientation)).First (),
+                GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
+            ));
         }
+        campaign.Status = SwrveCampaignState.Status.Seen;
+        SaveCampaignData(campaign);
     }
         
     public List<SwrveCampaign> getMessageCenterCampaigns(SwrveOrientation orientation=SwrveOrientation.Either) { 
