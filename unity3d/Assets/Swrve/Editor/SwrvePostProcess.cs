@@ -9,7 +9,11 @@ public class SwrvePostProcess : MonoBehaviour
 	[PostProcessBuild]
 	public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
 	{
+#if UNITY_5
 		if(target == BuildTarget.iOS)
+#else
+    if(target == BuildTarget.iPhone)
+#endif
 		{
 			//Copy the podfile into the project.
 			string podfile = "Assets/Swrve/Editor/Podfile.txt";

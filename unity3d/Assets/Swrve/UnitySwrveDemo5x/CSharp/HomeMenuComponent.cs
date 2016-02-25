@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#if UNITY_5
+
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
@@ -268,3 +270,5 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
         }
     }
 }
+
+#endif

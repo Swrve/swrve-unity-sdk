@@ -737,7 +737,7 @@ public partial class SwrveSDK
     private void StopCheckForCampaignAndResources()
     {
         if (campaignAndResourcesCoroutineInstance != null) {
-            Container.StopCoroutine (campaignAndResourcesCoroutineInstance);
+            Container.StopCoroutine ("campaignAndResourcesCoroutineInstance");
             campaignAndResourcesCoroutineInstance = null;
         }
         campaignAndResourcesCoroutineEnabled = false;

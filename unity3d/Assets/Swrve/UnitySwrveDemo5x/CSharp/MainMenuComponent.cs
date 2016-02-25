@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#if UNITY_5
+
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Events;
@@ -102,3 +104,5 @@ public class MainMenuComponent : MonoBehaviour {
         SwrveComponent.SDK.FlushToDisk ();
     }
 }
+
+#endif
