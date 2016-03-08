@@ -3,3 +3,4 @@
 /buildtemp/*
 *.log
 .DS_Store
+unity3d/UWP
