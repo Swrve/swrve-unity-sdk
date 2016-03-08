@@ -50,7 +50,7 @@ public class SwrveComponent : MonoBehaviour
         get {
             if (!instance) {
                 // Obtain the first instance of the SwrveComponent in the scene
-                SwrveComponent[] instances = Resources.FindObjectsOfTypeAll (typeof(SwrveComponent)) as SwrveComponent[];
+                SwrveComponent[] instances = Object.FindObjectsOfType (typeof(SwrveComponent)) as SwrveComponent[];
                 if (instances != null && instances.Length > 0) {
                     instance = instances [0];
                 } else {
@@ -128,7 +128,6 @@ public class SwrveComponent : MonoBehaviour
     /// of a device registration id.
     public virtual void OnDeviceRegistered(string registrationId)
     {
-        SwrveLog.LogError("Obtained registration id: " + registrationId);
         if (SDK != null && SDK.Initialised) {
             SDK.RegistrationIdReceived(registrationId);
         }
@@ -149,6 +148,15 @@ public class SwrveComponent : MonoBehaviour
     {
         if (SDK != null && SDK.Initialised) {
             SDK.OpenedFromPushNotification(notificationJson);
+        }
+    }
+
+    /// Called by the Google Cloud Messaging plugin to notify
+    /// of the Advertising Id.
+    public virtual void OnNewAdvertisingId(string advertisingId)
+    {
+        if (SDK != null && SDK.Initialised) {
+            SDK.SetGooglePlayAdvertisingId(advertisingId);
         }
     }
 #endif

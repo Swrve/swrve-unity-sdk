@@ -15,29 +15,39 @@ import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.gcm.GoogleCloudMessaging;
+import com.google.android.gms.iid.InstanceID;
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
 import com.unity3d.player.UnityPlayer;
 
 public class SwrveGcmDeviceRegistration {
-	private static final String LOG_TAG = "SwrveGcmDeviceRegistration";
-	private static final int VERSION = 3;
-	
-	public static final String EXTRA_MESSAGE = "message";
+	private static final String LOG_TAG = "SwrveGcmRegistration";
+	private static final int VERSION = 4;
+
     public static final String PROPERTY_REG_ID = "registration_id";
     public static final String PROPERTY_APP_VERSION = "appVersion";
     public static final String PROPERTY_ACTIVITY_NAME = "activity_name";
     public static final String PROPERTY_GAME_OBJECT_NAME = "game_object_name";
+
     public static final String PROPERTY_APP_TITLE = "app_title";
-    
+    public static final String PROPERTY_ICON_ID = "icon_id";
+    public static final String PROPERTY_MATERIAL_ICON_ID = "material_icon_id";
+    public static final String PROPERTY_LARGE_ICON_ID = "large_icon_id";
+    public static final String PROPERTY_ACCENT_COLOR = "accent_color";
+
+	public static String lastGameObjectRegistered;
+	public static String lastSenderIdUsed;
     public static List<SwrveNotification> receivedNotifications = new ArrayList<SwrveNotification>();
     public static List<SwrveNotification> openedNotifications = new ArrayList<SwrveNotification>();
     
     public static int getVersion() {
     	return VERSION;
     }
-    
-    public static boolean registerDevice(final String gameObject, final String senderId, final String appTitle) {
+
+    public static boolean registerDevice(final String gameObject, final String senderId, final String appTitle, final String iconId, final String materialIconId, final String largeIconId, final int accentColor) {
     	if (UnityPlayer.currentActivity != null) {
+			lastGameObjectRegistered = gameObject;
+			lastSenderIdUsed = senderId;
     		final Activity activity = UnityPlayer.currentActivity; 
 	    	// This code needs to be run from the UI thread. Do not trust Unity to run
 	    	// the JNI invoked code from that thread.
@@ -45,8 +55,8 @@ public class SwrveGcmDeviceRegistration {
 				@Override
 				public void run() {
 					try {
-			    		saveConfig(gameObject, activity, appTitle);
-						String registrationId = null;
+			    		saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
+						String registrationId;
 						if (checkPlayServices(activity)) {
 							Context context = activity.getApplicationContext();
 				            registrationId = getRegistrationId(context);
@@ -59,7 +69,7 @@ public class SwrveGcmDeviceRegistration {
 						
 						sdkIsReadyToReceivePushNotifications(activity);
 			    	} catch (Throwable ex) {
-			            Log.e(LOG_TAG, "Couldn't obtain the registration id for the device", ex);
+			            Log.e(LOG_TAG, "Couldn't obtain the GCM registration id for the device", ex);
 			        }
 				}
 			});
@@ -71,8 +81,29 @@ public class SwrveGcmDeviceRegistration {
     	
     	return false;
 	}
+
+	public static void onTokenRefreshed() {
+		if (UnityPlayer.currentActivity != null  && lastGameObjectRegistered != null && lastSenderIdUsed != null) {
+			final Activity activity = UnityPlayer.currentActivity;
+			// This code needs to be run from the UI thread. Do not trust Unity to run
+			// the JNI invoked code from that thread.
+			activity.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						Context context = activity.getApplicationContext();
+						registerInBackground(lastGameObjectRegistered, context, lastSenderIdUsed);
+					} catch (Throwable ex) {
+						Log.e(LOG_TAG, "Couldn't obtain the registration id for the device", ex);
+					}
+				}
+			});
+		} else {
+			Log.e(LOG_TAG, "UnityPlayer.currentActivity was null or the plugin was not initialized");
+		}
+	}
     
-    private static void saveConfig(String gameObject, Activity activity, String appTitle) {
+    private static void saveConfig(String gameObject, Activity activity, String appTitle, String iconId, String materialIconId, String largeIconId, int accentColor) {
     	Context context = activity.getApplicationContext();
     	final SharedPreferences prefs = getGCMPreferences(context);
     	
@@ -80,6 +111,10 @@ public class SwrveGcmDeviceRegistration {
 	    editor.putString(PROPERTY_ACTIVITY_NAME, activity.getLocalClassName());
 	    editor.putString(PROPERTY_GAME_OBJECT_NAME, gameObject);
 	    editor.putString(PROPERTY_APP_TITLE, appTitle);
+	    editor.putString(PROPERTY_ICON_ID, iconId);
+	    editor.putString(PROPERTY_MATERIAL_ICON_ID, materialIconId);
+	    editor.putString(PROPERTY_LARGE_ICON_ID, largeIconId);
+	    editor.putInt(PROPERTY_ACCENT_COLOR, accentColor);
 	    editor.commit();
     }
     
@@ -117,10 +152,7 @@ public class SwrveGcmDeviceRegistration {
 	 */
 	private static boolean checkPlayServices(Activity context) {
 	    int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
-	    if (resultCode != ConnectionResult.SUCCESS) {
-	        return false;
-	    }
-	    return true;
+	    return resultCode == ConnectionResult.SUCCESS;
 	}
 	
 	/**
@@ -134,31 +166,11 @@ public class SwrveGcmDeviceRegistration {
 
 	        	// Try to obtain the GCM registration id from Google Play
 	            try {
-	            	// Workaround: remove previous token if any
-	            	SwrveGcmBroadcastReceiver.clearWorkaroundRegistrationId();
-
-	            	GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(context);
-					gcmRegistrationId = gcm.register(senderId);
-	            } catch (IOException ex) {
+					InstanceID instanceID = InstanceID.getInstance(context);
+					gcmRegistrationId = instanceID.getToken(senderId, null);
+	            } catch (Exception ex) {
 	                Log.e(LOG_TAG, "Couldn't obtain the registration id for the device", ex);
 	            }
-
-	            // Workaround Google Play bug
- 				if (isEmptyString(gcmRegistrationId)) {
- 					try {
- 						// Start pulling from broadcast listener
- 						String workaroundGcmRegId = null;
- 						int retries = 10;
- 						do {
- 							Thread.sleep(1000);
- 							workaroundGcmRegId = SwrveGcmBroadcastReceiver.getWorkaroundRegistrationId();
- 							retries--;
- 						} while(retries > 0 && isEmptyString(workaroundGcmRegId));
- 						gcmRegistrationId = workaroundGcmRegId;
- 					} catch (Exception ex) {
- 						Log.e(LOG_TAG, "Couldn't obtain the GCM workaround registration id for the device", ex);
- 					}
-  	            }
 
   	            if (!isEmptyString(gcmRegistrationId)) {
   	            	try {
@@ -167,7 +179,7 @@ public class SwrveGcmDeviceRegistration {
 						// Notify the sdk of the new registration id
 						notifySDKOfRegistrationId(gameObject, gcmRegistrationId);
 					} catch (Exception ex) {
- 						Log.e(LOG_TAG, "Couldn't save the GCM registration id for the device", ex);
+ 						Log.e(LOG_TAG, "Couldn't save the registration id for the device", ex);
  					}
 				}
 
@@ -306,5 +318,37 @@ public class SwrveGcmDeviceRegistration {
 				}
 			}
 		}
+	}
+
+	public static boolean requestAdvertisingId(final String gameObject) {
+    	if (UnityPlayer.currentActivity != null) {
+    		final Activity activity = UnityPlayer.currentActivity;
+	    	new AsyncTask<Void, Integer, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    try {
+                        Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(activity);
+                        // Notify the SDK of the new advertising ID
+                        notifySDKOfAdvertisingId(gameObject, adInfo.getId());
+                    } catch (Exception ex) {
+                        Log.e(LOG_TAG, "Couldn't obtain Advertising Id", ex);
+                    }
+                    return null;
+                }
+
+                @Override
+                protected void onPostExecute(Void v) {
+                }
+            }.execute(null, null, null);
+    		return true;
+    	} else {
+    		Log.e(LOG_TAG, "UnityPlayer.currentActivity was null");
+    	}
+    	
+    	return false;
+	}
+
+	private static void notifySDKOfAdvertisingId(String gameObject, String advertisingId) {
+		UnityPlayer.UnitySendMessage(gameObject, "OnNewAdvertisingId", advertisingId);
 	}
 }

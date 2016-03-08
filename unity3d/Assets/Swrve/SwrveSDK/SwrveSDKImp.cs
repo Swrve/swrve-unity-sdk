@@ -25,7 +25,8 @@ public partial class SwrveSDK
     protected const string EventsSave = "Swrve_Events";
     protected const string InstallTimeEpochSave = "Swrve_JoinedDate";
     protected const string iOSdeviceTokenSave = "Swrve_iOSDeviceToken";
-    protected const string GcmdeviceTokenSave = "Swrve_gcmDeviceToken";
+    protected const string GcmDeviceTokenSave = "Swrve_gcmDeviceToken";
+    protected const string GoogleAdvertisingIdSave = "Swrve_googleAdvertisingId";
     protected const string AbTestUserResourcesSave = "srcngt2"; // Saved securely
     protected const string AbTestUserResourcesDiffSave = "rsdfngt2"; // Saved securely
     protected const string DeviceIdSave = "Swrve_DeviceId";
@@ -52,6 +53,7 @@ public partial class SwrveSDK
     private static AndroidJavaObject androidPlugin;
     private static bool androidPluginInitialized = false;
     private static bool androidPluginInitializedSuccessfully = false;
+    private string googlePlayAdvertisingId;
 #endif
     private int deviceWidth;
     private int deviceHeight;
@@ -95,6 +97,7 @@ public partial class SwrveSDK
     protected bool autoShowMessagesEnabled;
     protected bool assetsCurrentlyDownloading;
     protected HashSet<string> assetsOnDisk;
+    protected Dictionary<int, SwrveCampaignState> campaignsState = new Dictionary<int, SwrveCampaignState>();
     protected List<SwrveCampaign> campaigns = new List<SwrveCampaign> ();
     protected Dictionary<string, object> campaignSettings = new Dictionary<string, object> ();
     protected Dictionary<string, string> gameStoreLinks = new Dictionary<string, string> ();
@@ -126,7 +129,7 @@ public partial class SwrveSDK
         AppendEventToBuffer ("session_start", json);
     }
 
-    private void NamedEventInternal (string name, Dictionary<string, string> payload = null, bool allowShowMessage = true)
+    protected void NamedEventInternal (string name, Dictionary<string, string> payload = null, bool allowShowMessage = true)
     {
         if (payload == null) {
             payload = new Dictionary<string, string> ();
@@ -377,11 +380,9 @@ public partial class SwrveSDK
     private string getNextSeqNum ()
     {
         string seqNum = storage.Load (SeqNumSave, userId);
-        if (string.IsNullOrEmpty (seqNum)) {
-            seqNum = "0";
-        }
         // increment value
-        seqNum = (int.Parse (seqNum) + 1).ToString ();
+        int value;
+        seqNum = int.TryParse (seqNum, out value) ? (++value).ToString () : "1";
         storage.Save (SeqNumSave, seqNum, userId);
         return seqNum;
     }
@@ -642,7 +643,8 @@ public partial class SwrveSDK
             }
 #endif
         } else {
-            Debug.LogError("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");
+            SwrveLog.LogError ("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");                
+
         }
 
         if (allowShowMessage && config.TalkEnabled) {
@@ -864,38 +866,42 @@ public partial class SwrveSDK
             SwrveLog.Log ("Clicked button " + clickedButton.ActionType);
             ButtonWasPressedByUser (clickedButton);
 
-            if (clickedButton.ActionType == SwrveActionType.Install) {
-                string gameId = clickedButton.GameId.ToString ();
-                if (gameStoreLinks.ContainsKey (gameId)) {
-                    string appStoreUrl = gameStoreLinks [gameId];
-                    if (!string.IsNullOrEmpty(appStoreUrl)) {
-                        bool normalFlow = true;
-                        if (currentMessage.InstallButtonListener != null) {
-                            // Launch custom button listener
-                            normalFlow = currentMessage.InstallButtonListener.OnAction (appStoreUrl);
-                        }
+            try {
+              if (clickedButton.ActionType == SwrveActionType.Install) {
+                  string gameId = clickedButton.GameId.ToString ();
+                  if (gameStoreLinks.ContainsKey (gameId)) {
+                      string appStoreUrl = gameStoreLinks [gameId];
+                      if (!string.IsNullOrEmpty(appStoreUrl)) {
+                          bool normalFlow = true;
+                          if (currentMessage.InstallButtonListener != null) {
+                              // Launch custom button listener
+                              normalFlow = currentMessage.InstallButtonListener.OnAction (appStoreUrl);
+                          }
 
-                        if (normalFlow) {
-                            // Open app store
-                            Application.OpenURL (appStoreUrl);
-                        }
-                    } else {
-                        SwrveLog.LogError("No app store url for game " + gameId);
-                    }
-                } else {
-                    SwrveLog.LogError("Install button app store url empty!");
-                }
-            } else if (clickedButton.ActionType == SwrveActionType.Custom) {
-                string buttonAction = clickedButton.Action;
-                if (currentMessage.CustomButtonListener != null) {
-                    // Launch custom button listener
-                    currentMessage.CustomButtonListener.OnAction (buttonAction);
-                } else {
-                    SwrveLog.Log("No custom button listener, treating action as URL");
-                    if (!string.IsNullOrEmpty(buttonAction)) {
-                        Application.OpenURL (buttonAction);
-                    }
-                }
+                          if (normalFlow) {
+                              // Open app store
+                              Application.OpenURL (appStoreUrl);
+                          }
+                      } else {
+                          SwrveLog.LogError("No app store url for game " + gameId);
+                      }
+                  } else {
+                      SwrveLog.LogError("Install button app store url empty!");
+                  }
+              } else if (clickedButton.ActionType == SwrveActionType.Custom) {
+                  string buttonAction = clickedButton.Action;
+                  if (currentMessage.CustomButtonListener != null) {
+                      // Launch custom button listener
+                      currentMessage.CustomButtonListener.OnAction (buttonAction);
+                  } else {
+                      SwrveLog.Log("No custom button listener, treating action as URL");
+                      if (!string.IsNullOrEmpty(buttonAction)) {
+                          Application.OpenURL (buttonAction);
+                      }
+                  }
+              }
+            } catch(Exception exp) {
+                SwrveLog.LogError("Error processing the clicked button: " + exp.Message);
             }
             clickedButton.Pressed = false;
             DismissMessage();
@@ -1164,6 +1170,7 @@ public partial class SwrveSDK
                     Dictionary<int, string> campaignsDownloaded = null;
 
                     // QA
+                    bool wasPreviouslyQAUser = (qaUser != null);
                     if (root.ContainsKey ("qa")) {
                         Dictionary<string, object> jsonQa = (Dictionary<string, object>)root ["qa"];
                         SwrveLog.Log ("You are a QA user!");
@@ -1195,22 +1202,19 @@ public partial class SwrveSDK
                         SwrveCampaign campaign = SwrveCampaign.LoadFromJSON (this, campaignData, initialisedTime, swrveTemporaryPath);
                         if (campaign.Messages.Count > 0) {
                             assetsQueue.AddRange (campaign.ListOfAssets ());
-
-                            if (campaignSettings != null && (qaUser == null || !qaUser.ResetDevice)) {
-                                // Load next
-                                if (campaignSettings.ContainsKey ("Next" + campaign.Id)) {
-                                    int next = MiniJsonHelper.GetInt (campaignSettings, "Next" + campaign.Id);
-                                    campaign.Next = next;
-                                }
-                                // Load impressions
-                                if (campaignSettings.ContainsKey ("Impressions" + campaign.Id)) {
-                                    int impressions = MiniJsonHelper.GetInt (campaignSettings, "Impressions" + campaign.Id);
-                                    campaign.Impressions = impressions;
+                            // Do we have to make retrieve the previous state?
+                            if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
+                                SwrveCampaignState campaignState = null;
+                                campaignsState.TryGetValue(campaign.Id, out campaignState);
+                                if (campaignState != null) {
+                                    campaign.State = campaignState;
+                                } else {
+                                    campaign.State = new SwrveCampaignState(campaign.Id, campaignSettings);
                                 }
                             }
 
+                            campaignsState[campaign.Id] =  campaign.State;
                             newCampaigns.Add (campaign);
-
                             if (qaUser != null) {
                                 // Add campaign for QA purposes
                                 campaignsDownloaded.Add (campaign.Id, null);
@@ -1397,6 +1401,7 @@ public partial class SwrveSDK
     private void SaveCampaignData (SwrveCampaign campaign)
     {
         try {
+            // Move from SwrveCampaignState to the dictionary
             campaignSettings ["Next" + campaign.Id] = campaign.Next;
             campaignSettings ["Impressions" + campaign.Id] = campaign.Impressions;
 
@@ -1447,7 +1452,7 @@ public partial class SwrveSDK
         if (pushId != lastPushEngagedId) {
             lastPushEngagedId = pushId;
             string eventName = "Swrve.Messages.Push-" + pushId + ".engaged";
-            NamedEvent (eventName);
+            NamedEventInternal (eventName);
             SwrveLog.Log ("Got Swrve notification with ID " + pushId);
         }
     }
@@ -1501,13 +1506,19 @@ public partial class SwrveSDK
     {
         if(config.PushNotificationEnabled) {
             if (notification.userInfo != null && notification.userInfo.Contains("_p")) {
-                object rawId = notification.userInfo["_p"];
-                string pushId = rawId.ToString();
-                // SWRVE-5613 Hack
-                if (rawId is Int64) {
-                    pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
+                // It is a Swrve push, we need to check if it was sent while the app was in the background
+                bool whileInBackground = !notification.userInfo.Contains("_swrveForeground");
+                if (whileInBackground) {
+                    object rawId = notification.userInfo["_p"];
+                    string pushId = rawId.ToString();
+                    // SWRVE-5613 Hack
+                    if (rawId is Int64) {
+                        pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
+                    }
+                    SendPushNotificationEngagedEvent(pushId);
+                } else {
+                    SwrveLog.Log("Swrve remote notification received while in the foreground");
                 }
-                SendPushNotificationEngagedEvent(pushId);
             } else {
                 SwrveLog.Log("Got unidentified notification");
             }
@@ -1527,13 +1538,13 @@ public partial class SwrveSDK
 #endif
 
 #if UNITY_ANDROID
-    private const int GooglePlayPushPluginVersion = 3;
+    private const int GooglePlayPushPluginVersion = 4;
 
     private void GooglePlayRegisterForPushNotification(MonoBehaviour container, string senderId)
     {
         try {
             bool registered = false;
-            this.gcmDeviceToken = storage.Load (GcmdeviceTokenSave);
+            this.gcmDeviceToken = storage.Load (GcmDeviceTokenSave);
 
             if (!androidPluginInitialized) {
                 androidPluginInitialized = true;
@@ -1561,11 +1572,36 @@ public partial class SwrveSDK
             }
 
             if (androidPluginInitializedSuccessfully) {
-                registered = androidPlugin.CallStatic<bool>("registerDevice", container.name, senderId, config.GCMPushNotificationTitle);
+                registered = androidPlugin.CallStatic<bool>("registerDevice", container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
             }
 
             if (!registered) {
                 SwrveLog.LogError("Could not communicate with the Swrve Android Push plugin. Have you copied all the jars to the directory?");
+            }
+        } catch (Exception exp) {
+            SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
+        }
+    }
+
+    public void SetGooglePlayAdvertisingId(string advertisingId)
+    {
+        this.googlePlayAdvertisingId = advertisingId;
+        storage.Save(GoogleAdvertisingIdSave, advertisingId);
+    }
+
+    private void RequestGooglePlayAdvertisingId(MonoBehaviour container)
+    {
+        try {
+            this.googlePlayAdvertisingId = storage.Load(GoogleAdvertisingIdSave);
+            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
+                string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
+
+                if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
+                    androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
+                    if (androidPlugin != null) {
+                        androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
+                    }
+                }
             }
         } catch (Exception exp) {
             SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
@@ -1584,6 +1620,20 @@ public partial class SwrveSDK
         return null;
     }
 
+    private string AndroidGetRegion()
+    {
+        try {
+            using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
+                AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
+                return defaultLocale.Call<string>("getISO3Country");
+            }
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get the device region, make sure you are running on an Android device: " + exp.ToString());
+        }
+        
+        return null;
+    }
+
     private string AndroidGetAppVersion()
     {
         try {
@@ -1599,6 +1649,24 @@ public partial class SwrveSDK
         }
 
         return null;
+    }
+
+    private string _androidId;
+    private string AndroidGetAndroidId()
+    {
+        if (_androidId == null) {
+            try {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
+                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
+                    AndroidJavaObject contentResolver = context.Call<AndroidJavaObject> ("getContentResolver");
+                    AndroidJavaClass settingsSecure = new AndroidJavaClass ("android.provider.Settings$Secure");
+                    _androidId = settingsSecure.CallStatic<string> ("getString", contentResolver, "android_id");
+                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't get the device app version, make sure you are running on an Android device: " + exp.ToString());
+            }
+        }
+        return _androidId;
     }
 #endif
 

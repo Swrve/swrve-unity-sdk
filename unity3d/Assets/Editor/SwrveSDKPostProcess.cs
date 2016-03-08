@@ -27,10 +27,11 @@ public class SwrveSDKPostProcess
         List<string> allMMFiles = GetAllFiles (path, "*.mm");
         foreach (string filePath in allMMFiles) {
             string contents = File.ReadAllText (filePath);
+            int alreadyApplied = contents.IndexOf("swrveState");
             int hookPosition = contents.IndexOf ("didReceiveRemoteNotification");
-            if (hookPosition > 0) {
+            if (hookPosition > 0 && alreadyApplied < 0) {
                 // File contains notification hook
-                // Replace the first appaerance of UnitySendRemoteNotification
+                // Replace the first appearance of UnitySendRemoteNotification
                 // after the hook
                 string pattern = @"UnitySendRemoteNotification[\w\s]*\(userInfo\)[\w\s]*;";
                 Match closestInstance = null;
@@ -44,7 +45,11 @@ public class SwrveSDKPostProcess
                 }
 
                 if (closestInstance != null) {
-                    contents = contents.Substring (0, closestInstance.Index) + "UIApplicationState swrveState = [application applicationState]; if (swrveState == UIApplicationStateInactive || swrveState == UIApplicationStateBackground) { " + closestInstance.Value + " }" + contents.Substring (closestInstance.Index + closestInstance.Length);
+                    // Add a flag to the notification indicating if it was received while on the foreground
+                    contents = contents.Substring (0, closestInstance.Index) + "UIApplicationState swrveState = [application applicationState];"
+                                + "BOOL swrveInBackground = (swrveState == UIApplicationStateInactive || swrveState == UIApplicationStateBackground);"
+                                + "if (!swrveInBackground) { NSMutableDictionary* mutableUserInfo = [userInfo mutableCopy]; userInfo = mutableUserInfo; [mutableUserInfo setValue:@\"YES\" forKey:@\"_swrveForeground\"]; } "
+                                + closestInstance.Value + contents.Substring (closestInstance.Index + closestInstance.Length);
                     File.WriteAllText (filePath, contents);
                 }
             }

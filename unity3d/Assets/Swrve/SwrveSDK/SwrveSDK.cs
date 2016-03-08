@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const String SdkVersion = "3.4.1";
+    public const String SdkVersion = "3.7";
 
 #if UNITY_IPHONE
     [DllImport ("__Internal")]
@@ -54,6 +54,15 @@ public partial class SwrveSDK
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSUUID();
+
+    [DllImport ("__Internal")]
+    private static extern string _swrveLocaleCountry();
+
+    [DllImport ("__Internal")]
+    private static extern string _swrveIDFA();
+
+    [DllImport ("__Internal")]
+    private static extern string _swrveIDFV();
 #endif
 
     private int gameId;
@@ -326,13 +335,17 @@ public partial class SwrveSDK
 
         if (string.IsNullOrEmpty(installTimeEpoch)) {
             // Its a new user
-            NamedEvent("Swrve.first_session");
+            NamedEventInternal("Swrve.first_session");
         }
 
 #if UNITY_ANDROID
         // Ask for Android registration id
         if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
             GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
+        }
+
+        if (config.LogGoogleAdvertisingId) {
+            RequestGooglePlayAdvertisingId(Container);
         }
 #endif
         QueueDeviceInfo ();
@@ -421,7 +434,11 @@ public partial class SwrveSDK
     public virtual void NamedEvent (string name, Dictionary<string, string> payload = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        NamedEventInternal (name, payload);
+        if (name != null && !name.ToLower().StartsWith("swrve.")) {
+            NamedEventInternal (name, payload);
+        } else {
+            SwrveLog.LogError ("Event cannot begin with \"Swrve.\". The event " + name + " will not be sent");
+        }
 #endif
     }
 
@@ -1033,6 +1050,33 @@ public partial class SwrveSDK
         } catch (Exception e) {
             SwrveLog.LogWarning("Couldn't get device timezone on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
         }
+
+        try {
+            deviceInfo ["swrve.device_region"] = _swrveLocaleCountry();
+        } catch (Exception e) {
+            SwrveLog.LogWarning("Couldn't get device region on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
+        }
+
+        if (config.LogAppleIDFV) {
+            try {
+                String idfv = _swrveIDFV();
+                if (!string.IsNullOrEmpty(idfv)) {
+                    deviceInfo ["swrve.IDFV"] = idfv;
+                }
+            } catch (Exception e) {
+                SwrveLog.LogWarning("Couldn't get device IDFV, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
+            }
+        }
+        if (config.LogAppleIDFA) {
+            try {
+                String idfa = _swrveIDFA();
+                if (!string.IsNullOrEmpty(idfa)) {
+                    deviceInfo ["swrve.IDFA"] = idfa;
+                }
+            } catch (Exception e) {
+                SwrveLog.LogWarning("Couldn't get device IDFA, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
+            }
+        }
 #elif UNITY_ANDROID
         if (!string.IsNullOrEmpty(gcmDeviceToken)) {
             deviceInfo["swrve.gcm_token"] = gcmDeviceToken;
@@ -1041,6 +1085,25 @@ public partial class SwrveSDK
         string timezone = AndroidGetTimezone();
         if (!string.IsNullOrEmpty(timezone)) {
             deviceInfo ["swrve.timezone_name"] = timezone;
+        }
+
+        string deviceRegion = AndroidGetRegion();
+        if (!string.IsNullOrEmpty(deviceRegion)) {
+            deviceInfo ["swrve.device_region"] = deviceRegion;
+        }
+        
+        if (config.LogAndroidId) {
+            try {
+                deviceInfo ["swrve.android_id"] = AndroidGetAndroidId();
+            } catch (Exception e) {
+                SwrveLog.LogWarning("Couldn't get device IDFA, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
+            }
+        }
+
+        if (config.LogGoogleAdvertisingId) {
+            if (!string.IsNullOrEmpty(googlePlayAdvertisingId)) {
+                deviceInfo ["swrve.GAID"] = googlePlayAdvertisingId;
+            }
         }
 #endif
 
@@ -1312,10 +1375,12 @@ public partial class SwrveSDK
                     if (nextMessage.SupportsOrientation(deviceOrientation)) {
                         availableMessages.Add(nextMessage);
                         if (nextMessage.Priority <= minPriority) {
-                            minPriority = nextMessage.Priority;
                             if (nextMessage.Priority < minPriority) {
+                                // If it is lower than any of the previous ones
+                                // remove those from being candidates
                                 candidateMessages.Clear();
                             }
+                            minPriority = nextMessage.Priority;
                             candidateMessages.Add(nextMessage);
                         }
                     } else {
@@ -1431,7 +1496,7 @@ public partial class SwrveSDK
         }
         TaskFinished ("ShowMessageForEvent");
 #else
-        yield return null; 
+        yield return null;
 #endif
     }
 
@@ -1469,7 +1534,8 @@ public partial class SwrveSDK
     /// <summary>
     ///  Used internally to obtain the configured default background for in-app messages.
     /// </summary>
-    public Color? DefaultBackgroundColor {
+    public Color? DefaultBackgroundColor
+    {
         get {
             return config.DefaultBackgroundColor;
         }
@@ -1558,7 +1624,7 @@ public partial class SwrveSDK
 
             if (sendDeviceInfo) {
                 this.gcmDeviceToken = registrationId;
-                storage.Save (GcmdeviceTokenSave, gcmDeviceToken);
+                storage.Save (GcmDeviceTokenSave, gcmDeviceToken);
                 if (qaUser != null) {
                     qaUser.UpdateDeviceInfo();
                 }
@@ -1586,7 +1652,11 @@ public partial class SwrveSDK
         }
 
         if (PushNotificationListener != null) {
-            PushNotificationListener.OnNotificationReceived(notification);
+            try {
+              PushNotificationListener.OnNotificationReceived(notification);
+            } catch (Exception exp) {
+                SwrveLog.LogError("Error processing the push notification: " + exp.Message);
+            }
         }
     }
 
@@ -1625,7 +1695,11 @@ public partial class SwrveSDK
         }
 
         if (PushNotificationListener != null) {
-            PushNotificationListener.OnOpenedFromPushNotification(notification);
+            try {
+              PushNotificationListener.OnOpenedFromPushNotification(notification);
+            } catch (Exception exp) {
+                SwrveLog.LogError("Error processing the push notification: " + exp.Message);
+            }
         }
     }
 #endif

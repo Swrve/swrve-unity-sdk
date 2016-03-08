@@ -465,14 +465,23 @@ PlayerSettings:
   iOS::Architecture: 2
   iOS::ScriptingBackend: 0
   boolPropertyNames:
+  - WebGL::analyzeBuildSize
   - WebGL::dataCaching
+  - WebGL::useEmbeddedResources
+  WebGL::analyzeBuildSize: 0
   WebGL::dataCaching: 0
+  WebGL::useEmbeddedResources: 0
   stringPropertyNames:
   - WebGL::emscriptenArgs
   - WebGL::template
+  - additionalIl2CppArgs::additionalIl2CppArgs
   WebGL::emscriptenArgs: 
   WebGL::template: APPLICATION:Default
   cloudProjectId: 
+  additionalIl2CppArgs::additionalIl2CppArgs: 
+  firstStreamedSceneWithResources: 0
+  cloudProjectId: 
+  projectId: 
   projectName: 
   organizationId: 
   cloudEnabled: 0

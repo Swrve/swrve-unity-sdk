@@ -1,5 +1,5 @@
-#include <CoreTelephony/CTTelephonyNetworkInfo.h>
-#include <CoreTelephony/CTCarrier.h>
+#import <CoreTelephony/CTTelephonyNetworkInfo.h>
+#import <CoreTelephony/CTCarrier.h>
 
 char* swrveCStringCopy(const char* string)
 {
@@ -23,8 +23,7 @@ extern "C"
     {
         NSTimeZone* tz = [NSTimeZone localTimeZone];
         NSString* timezone_name = [tz name];
-  
-        return swrveCStringCopy([timezone_name UTF8String]);    
+        return swrveCStringCopy([timezone_name UTF8String]);
     }
 
     char * _swrveiOSGetAppVersion()
@@ -42,7 +41,7 @@ extern "C"
     char* _swrveiOSUUID()
     {
         NSString* swrveUUID = [[NSUUID UUID] UUIDString];
-        return swrveCStringCopy([swrveUUID UTF8String]);    
+        return swrveCStringCopy([swrveUUID UTF8String]);
     }
 
     char* _swrveCarrierName()
@@ -90,7 +89,24 @@ extern "C"
         return NULL;
     }
 
-    void _swrveRegisterForPushNotifications() 
+    char* _swrveLocaleCountry()
+    {
+        NSString* localeCountry = [[NSLocale currentLocale] objectForKey: NSLocaleCountryCode];
+        return swrveCStringCopy([localeCountry UTF8String]);
+    }
+
+    char* _swrveIDFA()
+    {
+        return swrveCStringCopy(UnityAdvertisingIdentifier());
+    }
+
+    char* _swrveIDFV()
+    {
+        NSString *idfv = [[[UIDevice currentDevice] identifierForVendor] UUIDString];
+        return swrveCStringCopy([idfv UTF8String]);
+    }
+
+    void _swrveRegisterForPushNotifications()
     {
         UIApplication* app = [UIApplication sharedApplication];
 #ifdef __IPHONE_8_0

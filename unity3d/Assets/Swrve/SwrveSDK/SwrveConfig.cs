@@ -1,3 +1,7 @@
+#if UNITY_IPHONE && !UNITY_5_0_0
+#define SWRVE_USE_HTTPS_DEFAULTS
+#endif
+
 using System;
 using Swrve.Messaging;
 using System.Collections.Generic;
@@ -6,6 +10,15 @@ using UnityEngine;
 
 namespace Swrve
 {
+
+  /// <summary>
+  /// Available stacks to choose from
+  /// </summary>
+  public enum Stack
+  {
+      US, EU
+  }
+
 /// <summary>
 /// Configuration for the Swrve SDK.
 /// </summary>
@@ -77,24 +90,44 @@ public class SwrveConfig
     /// The URL of the server to send events to.
     /// </summary>
     public string EventsServer = DefaultEventsServer;
-    public const string DefaultEventsServer = "http://api.swrve.com";
+    public const string DefaultEventsServer =
+#if SWRVE_USE_HTTPS_DEFAULTS
+        "https://api.swrve.com";
+#else
+        "http://api.swrve.com";
+#endif
 
     /// <summary>
     /// Use HTTPS for the event server.
     /// </summary>
-    public bool UseHttpsForEventsServer = false;
+    public bool UseHttpsForEventsServer =
+#if SWRVE_USE_HTTPS_DEFAULTS
+        true;
+#else
+        false;
+#endif
 
     /// <summary>
     /// The URL of the server to request campaign and resources data from.
     /// </summary>
     public string ContentServer = DefaultContentServer;
-    public const string DefaultContentServer = "http://content.swrve.com";
+    public const string DefaultContentServer =
+#if SWRVE_USE_HTTPS_DEFAULTS
+        "https://content.swrve.com";
+#else
+        "http://content.swrve.com";
+#endif
 
     /// <summary>
     /// Use HTTPS for the in-app message and resources server.
     /// </summary>
-    public bool UseHttpsForContentServer = false;
-
+    public bool UseHttpsForContentServer =
+#if SWRVE_USE_HTTPS_DEFAULTS
+        true;
+#else
+        false;
+#endif
+                           
     /// <summary>
     /// The SDK will send a session start on init and manage game pauses and resumes.
     /// </summary>
@@ -124,6 +157,11 @@ public class SwrveConfig
     public bool StoreDataInPlayerPrefs = false;
 
     /// <summary>
+    /// The SDK will send a session start on init and manage game pauses and resumes.
+    /// </summary>
+    public Stack SelectedStack = Stack.US;
+                
+    /// <summary>
     /// Enable push notification on this game.
     /// </summary>
     public bool PushNotificationEnabled = false;
@@ -146,6 +184,28 @@ public class SwrveConfig
     public string GCMPushNotificationTitle = "#Your App Title";
 
     /// <summary>
+    /// The resource identifier for the icon that will be displayed on your GCM notifications.
+    /// </summary>
+    public string GCMPushNotificationIconId = null;
+
+    /// <summary>
+    /// The resource identifier for the Material icon that will be displayed on your GCM notifications
+    /// on Android L+.
+    /// https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorNotifications
+    /// </summary>
+    public string GCMPushNotificationMaterialIconId = null;
+
+    /// <summary>
+    /// The resource identifier for the large icon that will be displayed on your GCM notifications.
+    /// </summary>
+    public string GCMPushNotificationLargeIconId = null;
+
+    /// <summary>
+    /// The color (argb) that will be used as accent color for your GCM notifications.
+    /// </summary>
+    public int GCMPushNotificationAccentColor = -1;
+
+    /// <summary>
     /// Maximum delay in seconds for in-app messages to appear after initialization.
     /// </summary>
     public float AutoShowMessagesMaxDelay = 5;
@@ -155,15 +215,43 @@ public class SwrveConfig
     /// </summary>
     public Color? DefaultBackgroundColor = null;
 
+    /// <summary>
+    /// Log Google's Advertising ID as "swrve.GAID". Requires the use of the native Android plugin.
+    /// </summary>
+    public bool LogGoogleAdvertisingId = false;
+
+    /// <summary>
+    /// Log Android ID as "swrve.android_id"
+    /// </summary>
+    public bool LogAndroidId = false;
+
+    /// <summary>
+    /// Log iOS IDFV as "swrve.IDFV"
+    /// </summary>
+    public bool LogAppleIDFV = false;
+
+    /// <summary>
+    /// Log iOS IDFV as "swrve.IDFA"
+    /// </summary>
+    public bool LogAppleIDFA = false;
+
     public void CalculateEndpoints (int appId)
     {
         // Default values are saved in the prefab or component instance.
         if (EventsServer == DefaultEventsServer) {
-            EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, "api.swrve.com");
+            EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, SelectedStack, "api.swrve.com");
         }
         if (ContentServer == DefaultContentServer) {
-            ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, "content.swrve.com");
+            ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, SelectedStack, "content.swrve.com");
         }
+    }
+
+    private static string GetStackPrefix(Stack stack)
+    {
+        if (stack == Stack.EU) {
+            return "eu-";
+        }
+        return "";
     }
 
     private static string HttpSchema(bool useHttps)
@@ -171,9 +259,9 @@ public class SwrveConfig
         return useHttps? "https" : "http";
     }
 
-    private static string CalculateEndpoint(bool useHttps, int appId, string suffix)
-    {
-        return HttpSchema(useHttps) + "://" + appId + "." + suffix;
-    }
+    private static string CalculateEndpoint(bool useHttps, int appId, Stack stack, string suffix)
+    {        
+        return HttpSchema(useHttps) + "://" + appId + "." + GetStackPrefix(stack) + suffix;
+    }       
 }
 }

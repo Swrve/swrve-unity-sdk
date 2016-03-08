@@ -153,7 +153,8 @@ public static class SwrveHelper
         return epoch.AddMilliseconds (epochTime).ToString (format);
     }
 
-    public static string FilterNonAlphanumeric(string str) {
+    public static string FilterNonAlphanumeric(string str)
+    {
         return rgxNonAlphanumeric.Replace(str, string.Empty);
     }
 }
