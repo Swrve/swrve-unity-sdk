@@ -9,10 +9,11 @@ using System.Text.RegularExpressions;
 namespace AssemblyCSharpEditor
 {
 public class SwrveSDKPostProcess
-{
+{	
     [PostProcessBuild]
     public static void OnPostprocessBuild (BuildTarget target, string pathToBuiltProject)
     {
+#if UNITY_IPHONE
 #if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
         if (target == BuildTarget.iPhone && pathToBuiltProject != null) {
 #else
@@ -20,8 +21,10 @@ public class SwrveSDKPostProcess
 #endif
             iOSOnlySendRemoteNotificationsIfInBackground (pathToBuiltProject);
         }
+#endif
     }
 
+#if UNITY_IPHONE
     public static void iOSOnlySendRemoteNotificationsIfInBackground (string path)
     {
         List<string> allMMFiles = GetAllFiles (path, "*.mm");
@@ -55,6 +58,7 @@ public class SwrveSDKPostProcess
             }
         }
     }
+#endif
 
     static List<string> GetAllFiles (string path, string fileExtension)
     {

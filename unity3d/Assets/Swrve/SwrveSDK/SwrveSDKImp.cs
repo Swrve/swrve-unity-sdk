@@ -413,6 +413,11 @@ public partial class SwrveSDK
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get the device language, make sure you are running on an Android device: " + exp.ToString());
         }
+#elif UNITY_WINRT && UNITY_WINRT_10_0
+        /*if (Windows.Globalization.ApplicationLanguages.Languages.Count > 0)
+        {
+            language = Windows.Globalization.ApplicationLanguages.Languages[0];
+        }*/
 #endif
         if (string.IsNullOrEmpty (language)) {
             CultureInfo info = CultureInfo.CurrentUICulture;

@@ -21,7 +21,7 @@ using Swrve.IAP;
 using System.Runtime.InteropServices;
 #endif
 
-#if UNITY_WP8 || UNITY_METRO && !UNITY_WINRT_10_0
+#if (UNITY_WP8 || UNITY_METRO) && !UNITY_WINRT_10_0
 #error "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk."
 + "It is not covered by any performance warranty otherwise offered by Swrve"
 #endif
@@ -696,7 +696,7 @@ public partial class SwrveSDK
     /// </param>
     public void IapApple (int quantity, string productId, double productPrice, string currency, IapRewards rewards, IapReceipt receipt, string transactionId)
     {
-        if (config.AppStore != "apple") {
+        if (config.AppStore != SwrveAppStore.Apple) {
             throw new Exception("This function can only be called to validate IAP events from Apple");
         } else {
             string encodedReceipt = null;
@@ -778,7 +778,7 @@ public partial class SwrveSDK
     /// </param>
     public void IapGooglePlay (string productId, double productPrice, string currency, IapRewards rewards, string purchaseData, string dataSignature)
     {
-        if (config.AppStore != "google") {
+        if (config.AppStore != SwrveAppStore.Google) {
             throw new Exception("This function can only be called to validate IAP events from Google");
         } else {
             if (String.IsNullOrEmpty(purchaseData)) {
@@ -791,6 +791,73 @@ public partial class SwrveSDK
             }
             // Google IAP is always of quantity 1
             _Iap (1, productId, productPrice, currency, rewards, purchaseData, dataSignature, string.Empty, config.AppStore);
+        }
+    }
+#endif
+
+#if UNITY_WINRT_10_0
+    /// <summary>
+    /// Buffer the event of a purchase using real currency, where a single item
+    /// (that isn't an in-app currency) was purchased.
+    /// The receipt provided will be validated against the Windows Store.
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "iap" event.
+    /// Note that this method is currently only supported for the Windows Store,
+    /// and a valid receipt needs to be provided for verification.
+    /// </remarks>
+    /// <param name="receipt">
+    /// The receipt sent back from the Windows Store upon successful purchase - this receipt will be verified by Swrve
+    /// </param>
+    public void IapWindows (IapReceipt receipt)
+    {
+        IapRewards no_rewards = new IapRewards();
+        IapWindows(receipt, no_rewards);
+    }
+
+    /// <summary>
+    /// Buffer the event of a purchase using real currency, where a single item
+    /// (that isn't an in-app currency) was purchased.
+    /// The receipt provided will be validated against the Windows Store.
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "iap" event.
+    /// Note that this method is currently only supported for the Windows Store,
+    /// and a valid receipt needs to be provided for verification.
+    /// </remarks>
+    /// <param name="receipt">
+    /// The receipt sent back from the Windows Store upon successful purchase - this receipt will be verified by Swrve
+    /// </param>
+    /// <param name="rewards">
+    /// SwrveIAPRewards object containing any in-app currency and/or additional items
+    /// included in this purchase that need to be recorded.
+    /// This parameter is optional.
+    /// </param>
+    public void IapWindows(IapReceipt receipt, IapRewards rewards)
+    {
+        if (config.AppStore != SwrveAppStore.Windows) {
+            throw new Exception("This function can only be called to validate IAP events from Windows Store");
+        } else {
+            string encodedReceipt = (receipt != null)? receipt.GetBase64EncodedReceipt() : null;
+            if (receipt != null && String.IsNullOrEmpty(encodedReceipt)) {
+                SwrveLog.LogError("IAP event not sent: receipt cannot be empty for Windows Store verification");
+                return;
+            }
+            // Windows Store IAP is always of quantity 1
+            Dictionary<string, object> json = new Dictionary<string, object>();
+            json.Add("app_store", config.AppStore);
+            if (!string.IsNullOrEmpty(GetAppVersion()))
+            {
+                json.Add("app_version", GetAppVersion());
+            }
+            json.Add("receipt", encodedReceipt);
+            AppendEventToBuffer("iap", json);
+
+            if (config.AutoDownloadCampaignsAndResources)
+            {
+                // Send events automatically and check for changes
+                CheckForCampaignsAndResourcesUpdates(false);
+            }
         }
     }
 #endif
