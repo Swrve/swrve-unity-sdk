@@ -3,8 +3,29 @@
 // You can setup the SWRVE_NO_IDFA flag in the Unity Editor by selecting the file and adding the
 // custom flag in the settings panel.
 #ifndef SWRVE_NO_IDFA
-#import <AdSupport/ASIdentifierManager.h>
+#include <AdSupport/ASIdentifierManager.h>
 #endif
+
+static id QueryASIdentifierManager()
+{
+    NSBundle* bundle = [NSBundle bundleWithPath:@"/System/Library/Frameworks/AdSupport.framework"];
+    if (bundle)
+    {
+        [bundle load];
+        Class retClass = [bundle classNamed:@"ASIdentifierManager"];
+        if (
+            retClass
+            && [retClass respondsToSelector:@selector(sharedManager)]
+            && [retClass instancesRespondToSelector:@selector(advertisingIdentifier)]
+            && [retClass instancesRespondToSelector:@selector(isAdvertisingTrackingEnabled)]
+        )
+        {
+            return [retClass performSelector:@selector(sharedManager)];
+        }
+    }
+
+    return nil;
+}
 
 char* swrveCStringCopy(const char* string)
 {
@@ -103,10 +124,15 @@ extern "C"
     char* _swrveIDFA()
     {
 #ifndef SWRVE_NO_IDFA
-        if([[ASIdentifierManager sharedManager] isAdvertisingTrackingEnabled])
+        static const char* _ADID = NULL;
+        static const NSString* _ADIDNSString = nil;
+
+        // ad id can be reset during app lifetime
+        id manager = QueryASIdentifierManager();
+        if (manager)
         {
-            NSString *idfa = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
-            return swrveCStringCopy([idfa UTF8String]);
+            NSString* adid = [[manager performSelector:@selector(advertisingIdentifier)] UUIDString];
+            return swrveCStringCopy([adid UTF8String]);
         }
 #endif
         return NULL;
