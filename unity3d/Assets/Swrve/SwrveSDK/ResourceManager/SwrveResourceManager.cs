@@ -59,7 +59,8 @@ public class SwrveResourceManager
     public void SetResourcesFromJSON (Dictionary<string, Dictionary<string, string>> userResources)
     {
         Dictionary<string, SwrveResource> newUserResources = new Dictionary<string, SwrveResource> ();
-        foreach (string uuid in userResources.Keys) {
+        for(int ui = 0; ui < userResources.Keys.Count; ui++) {
+            string uuid = userResources.Keys[ui];
             newUserResources [uuid] = new SwrveResource (userResources [uuid]);
         }
         UserResources = newUserResources;

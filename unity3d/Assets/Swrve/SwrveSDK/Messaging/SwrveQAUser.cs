@@ -79,7 +79,8 @@ public class SwrveQAUser
                 String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/device_info";
                 Dictionary<string, object> deviceJson = new Dictionary<string, object> ();
                 Dictionary<string, string> deviceData = swrve.GetDeviceInfo ();
-                foreach (String key in deviceData.Keys) {
+                for(int di = 0; di < deviceData.Keys.Count; di++) {
+                    string key = deviceData.Keys[di];
                     deviceJson.Add (key, deviceData [key]);
                 }
                 MakeRequest (endpoint, deviceJson);

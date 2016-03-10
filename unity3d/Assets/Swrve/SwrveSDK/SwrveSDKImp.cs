@@ -265,7 +265,8 @@ public partial class SwrveSDK
     private Dictionary<string, string> NormalizeJson (Dictionary<string, object> json)
     {
         Dictionary<string, string> normalized = new Dictionary<string, string> ();
-        foreach (string key in json.Keys) {
+        for(int ki = 0; ki < json.Keys.Count; ki++) {
+            string key = json.Keys[ki];
             object val = json [key];
             if (val != null) {
                 normalized.Add (key, val.ToString ());
@@ -841,7 +842,8 @@ public partial class SwrveSDK
     private void ProcessButtonDown ()
     {
         Vector3 mousePosition = inputManager.GetMousePosition ();
-        foreach (SwrveButton button in currentMessage.Buttons) {
+        for(int bi = 0; bi < currentMessage.Buttons.Count; bi++) {
+            SwrveButton button = currentMessage.Buttons[bi];
             if (button.Rect.Contains (mousePosition)) {
                 button.Pressed = true;
             }
@@ -924,8 +926,8 @@ public partial class SwrveSDK
         if (!campaignsAndResourcesInitialized || campaigns == null || campaigns.Count == 0) {
             return;
         }
-
-        foreach (SwrveCampaign campaign in campaigns) {
+        for(int ci = 0; ci < campaigns.Count; ci++) {
+            SwrveCampaign campaign = campaigns[ci];
             if (campaign.HasMessageForEvent (DefaultAutoShowMessagesTrigger)) {
                 if (TriggeredMessageListener != null) {
                     // They are using a custom listener
@@ -980,7 +982,8 @@ public partial class SwrveSDK
     {
         SwrveLog.Log ("Preloading format");
         bool allLoaded = true;
-        foreach (SwrveImage image in format.Images) {
+        for(int ii = 0; ii < format.Images.Count; ii++) {
+            SwrveImage image = format.Images[ii];
             if (image.Texture == null && !string.IsNullOrEmpty (image.File)) {
                 SwrveLog.Log ("Preloading image file " + image.File);
                 CoroutineReference<Texture2D> result = new CoroutineReference<Texture2D> ();
@@ -993,7 +996,8 @@ public partial class SwrveSDK
             }
         }
 
-        foreach (SwrveButton button in format.Buttons) {
+        for(int bi = 0; bi < format.Buttons.Count; bi++) {
+            SwrveButton button = format.Buttons[bi];
             if (button.Texture == null && !string.IsNullOrEmpty (button.Image)) {
                 SwrveLog.Log ("Preloading button image " + button.Image);
                 CoroutineReference<Texture2D> result = new CoroutineReference<Texture2D> ();
@@ -1104,8 +1108,8 @@ public partial class SwrveSDK
     protected IEnumerator DownloadAssets (List<string> assetsQueue)
     {
         assetsCurrentlyDownloading = true;
-
-        foreach (string asset in assetsQueue) {
+        for(int ai = 0; ai < assetsQueue.Count; ai++) {
+            string asset = assetsQueue[ai];
             if (!CheckAsset (asset)) {
                 CoroutineReference<Texture2D> resultTexture = new CoroutineReference<Texture2D> ();
                 yield return StartTask ("DownloadAsset", DownloadAsset (asset, resultTexture));
@@ -1140,7 +1144,8 @@ public partial class SwrveSDK
 
                     // Game data
                     Dictionary<string, object> gameData = (Dictionary<string, object>)root ["game_data"];
-                    foreach (String game_id in gameData.Keys) {
+                    for(int gi = 0; gi < gameData.Keys.Count; gi++) {
+                        String game_id = gameData.Keys[gi];
                         if (gameStoreLinks.ContainsKey (game_id)) {
                             gameStoreLinks.Remove (game_id);
                         }

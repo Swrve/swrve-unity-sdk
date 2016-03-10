@@ -98,7 +98,8 @@ public class RESTClient : IRESTClient
 
                 string contentEncodingHeader = null;
                 if (www.responseHeaders != null) {
-                    foreach (string headerKey in www.responseHeaders.Keys) {
+                    for(int hi = 0; hi < www.responseHeaders.Keys.Count; hi++) {
+                        string headerKey = www.responseHeaders.Keys[hi];
                         if (string.Equals (headerKey, "Content-Encoding", StringComparison.OrdinalIgnoreCase)) {
                             www.responseHeaders.TryGetValue (headerKey, out contentEncodingHeader);
                             break;

@@ -33,7 +33,8 @@ public class UnityWwwHelper
         if (request.responseHeaders.Count > 0) {
             string errorKey = null;
 
-            foreach (string headerKey in request.responseHeaders.Keys) {
+            for(int hi = 0; hi < request.responseHeaders.Keys.Count; hi++) {
+                string headerKey = request.responseHeaders.Keys[hi];
                 if (string.Equals (headerKey, "X-Swrve-Error", StringComparison.OrdinalIgnoreCase)) {
                     request.responseHeaders.TryGetValue (headerKey, out errorKey);
                     break;
