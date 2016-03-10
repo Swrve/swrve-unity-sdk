@@ -1,6 +1,8 @@
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #import <CoreTelephony/CTCarrier.h>
+#if !defined(SWRVE_NO_IDFA)
 #import <AdSupport/ASIdentifierManager.h>
+#endif
 
 char* swrveCStringCopy(const char* string)
 {
@@ -98,11 +100,13 @@ extern "C"
 
     char* _swrveIDFA()
     {
+#if !defined(SWRVE_NO_IDFA)
         if([[ASIdentifierManager sharedManager] isAdvertisingTrackingEnabled])
         {
             NSString *idfa = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
             return swrveCStringCopy(idfa);
         }
+#endif
         return NULL;
     }
 
