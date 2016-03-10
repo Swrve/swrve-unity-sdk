@@ -265,11 +265,11 @@ public partial class SwrveSDK
     private Dictionary<string, string> NormalizeJson (Dictionary<string, object> json)
     {
         Dictionary<string, string> normalized = new Dictionary<string, string> ();
-        for(int ki = 0; ki < json.Keys.Count; ki++) {
-            string key = json.Keys[ki];
-            object val = json [key];
-            if (val != null) {
-                normalized.Add (key, val.ToString ());
+        Dictionary<string, object>.Enumerator enumerator = json.GetEnumerator();
+        while(enumerator.MoveNext()) {
+            KeyValuePair<string, object> item = enumerator.Current;
+            if (item.Value != null) {
+                normalized.Add (item.Key, item.Value.ToString ());
             }
         }
 
@@ -1144,16 +1144,17 @@ public partial class SwrveSDK
 
                     // Game data
                     Dictionary<string, object> gameData = (Dictionary<string, object>)root ["game_data"];
-                    for(int gi = 0; gi < gameData.Keys.Count; gi++) {
-                        String game_id = gameData.Keys[gi];
-                        if (gameStoreLinks.ContainsKey (game_id)) {
-                            gameStoreLinks.Remove (game_id);
+                    Dictionary<string, object>.Enumerator gameDataEnumerator = gameData.GetEnumerator();
+                    while (gameDataEnumerator.MoveNext()) {
+                        string appId = gameDataEnumerator.Current.Key;
+                        if (gameStoreLinks.ContainsKey (appId)) {
+                            gameStoreLinks.Remove (appId);
                         }
-                        Dictionary<string, object> gameAppStore = (Dictionary<string, object>)gameData [game_id];
+                        Dictionary<string, object> gameAppStore = (Dictionary<string, object>)gameData [appId];
                         if (gameAppStore != null && gameAppStore.ContainsKey ("app_store_url")) {
                             object appStoreLink = gameAppStore ["app_store_url"];
                             if (appStoreLink != null && appStoreLink is string) {
-                                gameStoreLinks.Add (game_id, (string)appStoreLink);
+                                gameStoreLinks.Add (appId, (string)appStoreLink);
                             }
                         }
                     }

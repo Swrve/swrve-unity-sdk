@@ -79,9 +79,9 @@ public class SwrveQAUser
                 String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/device_info";
                 Dictionary<string, object> deviceJson = new Dictionary<string, object> ();
                 Dictionary<string, string> deviceData = swrve.GetDeviceInfo ();
-                for(int di = 0; di < deviceData.Keys.Count; di++) {
-                    string key = deviceData.Keys[di];
-                    deviceJson.Add (key, deviceData [key]);
+                Dictionary<string, string>.Enumerator deviceDataEnum = deviceData.GetEnumerator();
+                while(deviceDataEnum.MoveNext()) {
+                    deviceJson.Add (deviceDataEnum.Current.Key, deviceDataEnum.Current.Value);
                 }
                 MakeRequest (endpoint, deviceJson);
             }

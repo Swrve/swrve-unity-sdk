@@ -56,12 +56,13 @@ public class SwrveResourceManager
     /// <param name="userResources">
     /// JSON response coming from the Swrve servers.
     /// </param>
-    public void SetResourcesFromJSON (Dictionary<string, Dictionary<string, string>> userResources)
+    public void SetResourcesFromJSON (Dictionary<string, Dictionary<string, string>> userResourcesJson)
     {
         Dictionary<string, SwrveResource> newUserResources = new Dictionary<string, SwrveResource> ();
-        for(int ui = 0; ui < userResources.Keys.Count; ui++) {
-            string uuid = userResources.Keys[ui];
-            newUserResources [uuid] = new SwrveResource (userResources [uuid]);
+        Dictionary<string, Dictionary<string, string>>.Enumerator enumerator = userResourcesJson.GetEnumerator();
+        while(enumerator.MoveNext()) {
+            KeyValuePair<string, Dictionary<string, string>> userResource = enumerator.Current;
+            newUserResources [userResource.Key] = new SwrveResource (userResource.Value);
         }
         UserResources = newUserResources;
     }

@@ -137,7 +137,7 @@ public class SwrveMessage
     public List<string> ListOfAssets ()
     {
         List<string> messageAssets = new List<string> ();
-        for(int fi = 0; fi < Messages.Count; fi++) {
+        for(int fi = 0; fi < Formats.Count; fi++) {
             SwrveMessageFormat format = Formats[fi];
             for(int ii = 0; ii < format.Images.Count; ii++) {
                 SwrveImage image = format.Images[ii];

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 namespace Swrve.Helpers
 {
@@ -33,8 +34,9 @@ public class UnityWwwHelper
         if (request.responseHeaders.Count > 0) {
             string errorKey = null;
 
-            for(int hi = 0; hi < request.responseHeaders.Keys.Count; hi++) {
-                string headerKey = request.responseHeaders.Keys[hi];
+            Dictionary<string, string>.Enumerator enumerator = request.responseHeaders.GetEnumerator();
+            while(enumerator.MoveNext()) {
+                string headerKey = enumerator.Current.Key;
                 if (string.Equals (headerKey, "X-Swrve-Error", StringComparison.OrdinalIgnoreCase)) {
                     request.responseHeaders.TryGetValue (headerKey, out errorKey);
                     break;

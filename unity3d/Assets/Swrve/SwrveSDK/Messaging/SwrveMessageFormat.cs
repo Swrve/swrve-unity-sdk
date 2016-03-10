@@ -264,7 +264,7 @@ public class SwrveMessageFormat
         }
 
         for(int bi = 0; bi < Buttons.Count; bi++) {
-            SwrveButton button = Buttons[ii];
+            SwrveButton button = Buttons[bi];
             Texture2D.Destroy (button.Texture);
             button.Texture = null;
         }
