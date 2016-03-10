@@ -1,6 +1,8 @@
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #import <CoreTelephony/CTCarrier.h>
-#if !defined(SWRVE_NO_IDFA)
+// You can setup the SWRVE_NO_IDFA flag in the Unity Editor by selecting the file and adding the
+// custom flag in the settings panel.
+#ifndef SWRVE_NO_IDFA
 #import <AdSupport/ASIdentifierManager.h>
 #endif
 
@@ -100,7 +102,7 @@ extern "C"
 
     char* _swrveIDFA()
     {
-#if !defined(SWRVE_NO_IDFA)
+#ifndef SWRVE_NO_IDFA
         if([[ASIdentifierManager sharedManager] isAdvertisingTrackingEnabled])
         {
             NSString *idfa = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
