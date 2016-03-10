@@ -106,7 +106,7 @@ extern "C"
         if([[ASIdentifierManager sharedManager] isAdvertisingTrackingEnabled])
         {
             NSString *idfa = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
-            return swrveCStringCopy(idfa);
+            return swrveCStringCopy([idfa UTF8String]);
         }
 #endif
         return NULL;
