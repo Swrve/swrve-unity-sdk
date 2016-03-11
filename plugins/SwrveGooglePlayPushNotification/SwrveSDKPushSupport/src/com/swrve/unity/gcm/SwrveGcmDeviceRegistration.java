@@ -14,7 +14,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.iid.InstanceID;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
@@ -57,7 +57,7 @@ public class SwrveGcmDeviceRegistration {
 					try {
 			    		saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
 						String registrationId;
-						if (checkPlayServices(activity)) {
+						if (isGooglePlayServicesAvailable(activity)) {
 							Context context = activity.getApplicationContext();
 				            registrationId = getRegistrationId(context);
 				            if (isEmptyString(registrationId)) {
@@ -150,8 +150,9 @@ public class SwrveGcmDeviceRegistration {
 	 * it doesn't, display a dialog that allows users to download the APK from
 	 * the Google Play Store or enable it in the device's system settings.
 	 */
-	private static boolean checkPlayServices(Activity context) {
-	    int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
+	private static boolean isGooglePlayServicesAvailable(Activity context) {
+	    GoogleApiAvailability googleAPI = GoogleApiAvailability.getInstance();
+        int resultCode = googleAPI.isGooglePlayServicesAvailable(context);
 	    return resultCode == ConnectionResult.SUCCESS;
 	}
 	
@@ -327,9 +328,11 @@ public class SwrveGcmDeviceRegistration {
                 @Override
                 protected Void doInBackground(Void... params) {
                     try {
-                        Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(activity);
-                        // Notify the SDK of the new advertising ID
-                        notifySDKOfAdvertisingId(gameObject, adInfo.getId());
+                    	if (isGooglePlayServicesAvailable(activity)) {
+	                        Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(activity);
+	                        // Notify the SDK of the new advertising ID
+	                        notifySDKOfAdvertisingId(gameObject, adInfo.getId());
+	                    }
                     } catch (Exception ex) {
                         Log.e(LOG_TAG, "Couldn't obtain Advertising Id", ex);
                     }
