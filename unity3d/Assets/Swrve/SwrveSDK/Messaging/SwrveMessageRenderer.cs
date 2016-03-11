@@ -73,7 +73,8 @@ public class SwrveMessageRenderer
         float scale = format.Scale * format.Message.AnimationScale;
         GUI.color = Color.white;
         // Draw images
-        foreach (SwrveImage image in format.Images) {
+        for(int ii = 0; ii < format.Images.Count; ii++) {
+            SwrveImage image = format.Images[ii];
             if (image.Texture != null) {
                 float computedSize = scale * image.AnimationScale;
                 Point centerPoint = image.GetCenteredPosition (image.Texture.width, image.Texture.height, computedSize, scale);
@@ -91,7 +92,8 @@ public class SwrveMessageRenderer
         }
 
         // Draw buttons
-        foreach (SwrveButton button in format.Buttons) {
+        for(int bi = 0; bi < format.Buttons.Count; bi++) {
+            SwrveButton button = format.Buttons[bi];
             if (button.Texture != null) {
                 float computedSize = scale * button.AnimationScale;
                 Point centerPoint = button.GetCenteredPosition (button.Texture.width, button.Texture.height, computedSize, scale);

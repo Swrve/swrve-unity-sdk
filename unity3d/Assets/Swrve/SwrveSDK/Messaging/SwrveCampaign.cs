@@ -198,7 +198,8 @@ public class SwrveCampaign
     /// </returns>
     public SwrveMessage GetMessageForId (int id)
     {
-        foreach (SwrveMessage message in Messages) {
+        for(int mi = 0; mi < Messages.Count; mi++) {
+            SwrveMessage message = Messages[mi];
             if (message.Id == id) {
                 return message;
             }
@@ -212,14 +213,15 @@ public class SwrveCampaign
         if (RandomOrder) {
             List<SwrveMessage> randomMessages = new List<SwrveMessage> (Messages);
             randomMessages.Shuffle ();
-            foreach (SwrveMessage message in randomMessages) {
-                if (message.isDownloaded (assetPath)) {
+            for(int mi = 0; mi < randomMessages.Count; mi++) {
+                SwrveMessage message = randomMessages[mi];
+                if (message.IsDownloaded (assetPath)) {
                     return message;
                 }
             }
         } else if (Next < messagesCount) {
             SwrveMessage message = Messages [Next];
-            if (message.isDownloaded (assetPath)) {
+            if (message.IsDownloaded (assetPath)) {
                 return message;
             }
         }
@@ -278,8 +280,8 @@ public class SwrveCampaign
     public List<string> ListOfAssets ()
     {
         List<string> allAssets = new List<string> ();
-
-        foreach (SwrveMessage message in this.Messages) {
+        for(int mi = 0; mi < Messages.Count; mi++) {
+            SwrveMessage message = Messages[mi];
             allAssets.AddRange (message.ListOfAssets ());
         }
 

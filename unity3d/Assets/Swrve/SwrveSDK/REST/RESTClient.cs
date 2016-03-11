@@ -98,12 +98,14 @@ public class RESTClient : IRESTClient
 
                 string contentEncodingHeader = null;
                 if (www.responseHeaders != null) {
-                    foreach (string headerKey in www.responseHeaders.Keys) {
-                        if (string.Equals (headerKey, "Content-Encoding", StringComparison.OrdinalIgnoreCase)) {
-                            www.responseHeaders.TryGetValue (headerKey, out contentEncodingHeader);
+                    Dictionary<string, string>.Enumerator headersEnum = www.responseHeaders.GetEnumerator();
+                    while(headersEnum.MoveNext()) {
+                            KeyValuePair<string, string> header = headersEnum.Current;
+                        if (string.Equals (header.Key, "Content-Encoding", StringComparison.OrdinalIgnoreCase)) {
+                            www.responseHeaders.TryGetValue (header.Key, out contentEncodingHeader);
                             break;
                         }
-                        headers.Add (headerKey.ToUpper (), www.responseHeaders [headerKey]);
+                        headers.Add (header.Key.ToUpper (), header.Value);
                     }
                 }
 

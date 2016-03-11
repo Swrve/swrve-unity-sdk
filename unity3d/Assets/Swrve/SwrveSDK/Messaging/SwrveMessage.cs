@@ -137,14 +137,17 @@ public class SwrveMessage
     public List<string> ListOfAssets ()
     {
         List<string> messageAssets = new List<string> ();
-        foreach (SwrveMessageFormat format in Formats) {
-            foreach (SwrveImage image in format.Images) {
+        for(int fi = 0; fi < Formats.Count; fi++) {
+            SwrveMessageFormat format = Formats[fi];
+            for(int ii = 0; ii < format.Images.Count; ii++) {
+                SwrveImage image = format.Images[ii];
                 if (!string.IsNullOrEmpty (image.File)) {
                     messageAssets.Add (image.File);
                 }
             }
 
-            foreach (SwrveButton button in format.Buttons) {
+            for(int bi = 0; bi < format.Buttons.Count; bi++) {
+                SwrveButton button = format.Buttons[bi];
                 if (!string.IsNullOrEmpty (button.Image)) {
                     messageAssets.Add (button.Image);
                 }
@@ -159,10 +162,11 @@ public class SwrveMessage
     /// <returns>
     /// True if the campaign assets have been downloaded.
     /// </returns>
-    public bool isDownloaded (string assetPath)
+    public bool IsDownloaded (string assetPath)
     {
         List<string> assets = this.ListOfAssets ();
-        foreach (string asset in assets) {
+        for(int ai = 0; ai < assets.Count; ai++) {
+            string asset = assets[ai];
             if (!CrossPlatformFile.Exists (assetPath + "/" + asset)) {
                 return false;
             }

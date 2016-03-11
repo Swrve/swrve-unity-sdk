@@ -257,12 +257,14 @@ public class SwrveMessageFormat
     /// </summary>
     public void UnloadAssets ()
     {
-        foreach (SwrveImage image in Images) {
+        for(int ii = 0; ii < Images.Count; ii++) {
+            SwrveImage image = Images[ii];
             Texture2D.Destroy (image.Texture);
             image.Texture = null;
         }
 
-        foreach (SwrveButton button in Buttons) {
+        for(int bi = 0; bi < Buttons.Count; bi++) {
+            SwrveButton button = Buttons[bi];
             Texture2D.Destroy (button.Texture);
             button.Texture = null;
         }
