@@ -16,16 +16,16 @@ public class SwrveCommonBuildComponent
 
     protected static void BuildIOS (string fileName, BuildOptions opt, string[] mainScenes, string bundleIdentifier)
     {
-#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
-        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);
-#else
+#if (UNITY_5)
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
+#else
+        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);
 #endif
         PlayerSettings.bundleIdentifier = bundleIdentifier;
-#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
-        string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iPhone, opt);
-#else
+#if (UNITY_5)
         string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt);
+#else
+        string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iPhone, opt);
 #endif
         if (error != null && !error.Equals (string.Empty)) {
             throw new Exception (error);

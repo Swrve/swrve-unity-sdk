@@ -1550,10 +1550,10 @@ public partial class SwrveSDK
     public bool ObtainIOSDeviceToken()
     {
         if (config.PushNotificationEnabled) {
-#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
-            byte[] token = NotificationServices.deviceToken;
-#else
+#if (UNITY_5)
             byte[] token = UnityEngine.iOS.NotificationServices.deviceToken;
+#else
+            byte[] token = NotificationServices.deviceToken;
 #endif
             if (token != null) {
                 // Send token as user update and to Babble if QA user
@@ -1584,24 +1584,24 @@ public partial class SwrveSDK
     {
         if (config.PushNotificationEnabled) {
             // Process push notifications
-#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
-            int notificationCount = NotificationServices.remoteNotificationCount;
-#else
+#if (UNITY_5)
             int notificationCount = UnityEngine.iOS.NotificationServices.remoteNotificationCount;
+#else
+            int notificationCount = NotificationServices.remoteNotificationCount;
 #endif
             if(notificationCount > 0) {
                 SwrveLog.Log("Got " + notificationCount + " remote notifications");
 
-#if (UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6)
-                for(int i = 0; i < notificationCount; i++) {
-                    ProcessRemoteNotification(NotificationServices.remoteNotifications[i]);
-                }
-                NotificationServices.ClearRemoteNotifications();
-#else
+#if (UNITY_5)
                 for(int i = 0; i < notificationCount; i++) {
                     ProcessRemoteNotification(UnityEngine.iOS.NotificationServices.remoteNotifications[i]);
                 }
                 UnityEngine.iOS.NotificationServices.ClearRemoteNotifications();
+#else
+                for(int i = 0; i < notificationCount; i++) {
+                    ProcessRemoteNotification(NotificationServices.remoteNotifications[i]);
+                }
+                NotificationServices.ClearRemoteNotifications();
 #endif
             }
         }
