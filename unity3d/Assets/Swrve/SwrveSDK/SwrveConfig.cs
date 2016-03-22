@@ -127,7 +127,7 @@ public class SwrveConfig
 #else
         false;
 #endif
-                           
+
     /// <summary>
     /// The SDK will send a session start on init and manage game pauses and resumes.
     /// </summary>
@@ -157,10 +157,10 @@ public class SwrveConfig
     public bool StoreDataInPlayerPrefs = false;
 
     /// <summary>
-    /// The SDK will send a session start on init and manage game pauses and resumes.
+    /// Selected Swrve stack.
     /// </summary>
     public Stack SelectedStack = Stack.US;
-                
+
     /// <summary>
     /// Enable push notification on this game.
     /// </summary>
@@ -260,8 +260,8 @@ public class SwrveConfig
     }
 
     private static string CalculateEndpoint(bool useHttps, int appId, Stack stack, string suffix)
-    {        
+    {
         return HttpSchema(useHttps) + "://" + appId + "." + GetStackPrefix(stack) + suffix;
-    }       
+    }
 }
 }
