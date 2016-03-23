@@ -13,7 +13,7 @@ public class SwrveSDKPostProcess
     [PostProcessBuild]
     public static void OnPostprocessBuild (BuildTarget target, string pathToBuiltProject)
     {
-#if (UNITY_5)
+#if UNITY_5
         if (target == BuildTarget.iOS && pathToBuiltProject != null) {
 #else
         if (target == BuildTarget.iPhone && pathToBuiltProject != null) {

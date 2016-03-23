@@ -1550,7 +1550,7 @@ public partial class SwrveSDK
     public bool ObtainIOSDeviceToken()
     {
         if (config.PushNotificationEnabled) {
-#if (UNITY_5)
+#if UNITY_5
             byte[] token = UnityEngine.iOS.NotificationServices.deviceToken;
 #else
             byte[] token = NotificationServices.deviceToken;
@@ -1584,7 +1584,7 @@ public partial class SwrveSDK
     {
         if (config.PushNotificationEnabled) {
             // Process push notifications
-#if (UNITY_5)
+#if UNITY_5
             int notificationCount = UnityEngine.iOS.NotificationServices.remoteNotificationCount;
 #else
             int notificationCount = NotificationServices.remoteNotificationCount;
@@ -1592,7 +1592,7 @@ public partial class SwrveSDK
             if(notificationCount > 0) {
                 SwrveLog.Log("Got " + notificationCount + " remote notifications");
 
-#if (UNITY_5)
+#if UNITY_5
                 for(int i = 0; i < notificationCount; i++) {
                     ProcessRemoteNotification(UnityEngine.iOS.NotificationServices.remoteNotifications[i]);
                 }

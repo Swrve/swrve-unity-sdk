@@ -1482,7 +1482,7 @@ public partial class SwrveSDK
     protected void RegisterForPushNotificationsIOS()
     {
         // Use Swrve's native plugin to register for push on old Unity versions that did not support iOS8
-#if (UNITY_5)
+#if UNITY_5
         UnityEngine.iOS.NotificationServices.RegisterForNotifications(UnityEngine.iOS.NotificationType.Alert | UnityEngine.iOS.NotificationType.Badge | UnityEngine.iOS.NotificationType.Sound);
 #else
         try {
@@ -1504,7 +1504,7 @@ public partial class SwrveSDK
         return null;
     }
 
-#if (UNITY_5)
+#if UNITY_5
     private void ProcessRemoteNotification (UnityEngine.iOS.RemoteNotification notification)
 #else
     private void ProcessRemoteNotification (RemoteNotification notification)
@@ -1533,7 +1533,7 @@ public partial class SwrveSDK
                 PushNotificationListener.OnRemoteNotification(notification);
             }
             if(qaUser != null) {
-#if (UNITY_5)
+#if UNITY_5
                 qaUser.PushNotification(UnityEngine.iOS.NotificationServices.remoteNotifications, UnityEngine.iOS.NotificationServices.remoteNotificationCount);
 #else
                 qaUser.PushNotification(NotificationServices.remoteNotifications, NotificationServices.remoteNotificationCount);

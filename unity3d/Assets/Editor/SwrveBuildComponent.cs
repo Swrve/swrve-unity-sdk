@@ -21,7 +21,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     [MenuItem ("Swrve Demo/Export unityPackage")]
     public static void ExportUnityPackage ()
     {
-#if (UNITY_5)
+#if UNITY_5
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
 #else
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);

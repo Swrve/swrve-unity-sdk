@@ -203,7 +203,7 @@ public class SwrveQAUser
     }
 
 #if UNITY_IPHONE
-#if (UNITY_5)
+#if UNITY_5
     public void PushNotification (UnityEngine.iOS.RemoteNotification[] notifications, int count)
 #else
     public void PushNotification (RemoteNotification[] notifications, int count)
@@ -215,7 +215,7 @@ public class SwrveQAUser
             for(int i = 0; i < count; i++) {
                 if (CanMakePushNotificationRequest()) {
                     Dictionary<string, object> pushJson = new Dictionary<string, object>();
-#if (UNITY_5)
+#if UNITY_5
                     UnityEngine.iOS.RemoteNotification notification = notifications[i];
 #else
                     RemoteNotification notification = notifications[i];
