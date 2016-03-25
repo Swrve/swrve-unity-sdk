@@ -956,6 +956,9 @@ public partial class SwrveSDK
             SwrveOrientation currentOrientation = GetDeviceOrientation ();
             SwrveMessageFormat selectedFormat = message.GetFormat (currentOrientation);
             if (selectedFormat != null) {
+                // Temporarily set this as the message that will be shown
+                // if everything goes well
+                currentMessage = selectedFormat;
                 CoroutineReference<bool> wereAllLoaded = new CoroutineReference<bool> (false);
                 yield return StartTask("PreloadFormatAssets", PreloadFormatAssets(selectedFormat, wereAllLoaded));
                 if (wereAllLoaded.Value ()) {
@@ -963,6 +966,7 @@ public partial class SwrveSDK
                     ShowMessageFormat (selectedFormat, installButtonListener, customButtonListener, messageListener);
                 } else {
                     SwrveLog.LogError ("Could not preload all the assets for message " + message.Id);
+                    currentMessage = null;
                 }
             } else {
                 SwrveLog.LogError ("Could not get a format for the current orientation: " + currentOrientation.ToString ());
