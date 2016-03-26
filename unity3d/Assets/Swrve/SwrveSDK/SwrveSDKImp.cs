@@ -40,6 +40,9 @@ public partial class SwrveSDK
     private const float DefaultCampaignResourcesFlushRefreshDelay = 5;
     public const string DefaultAutoShowMessagesTrigger = "Swrve.Messages.showAtSessionStart";
 
+    private const string PushTrackingKey = "_p";
+    private const string PushDeeplinkKey = "_sd";
+
     private string escapedUserId;
     private long installTimeEpoch;
     private string installTimeFormatted;
@@ -882,7 +885,7 @@ public partial class SwrveSDK
 
                           if (normalFlow) {
                               // Open app store
-                              Application.OpenURL (appStoreUrl);
+                              OpenURL(appStoreUrl);
                           }
                       } else {
                           SwrveLog.LogError("No app store url for game " + gameId);
@@ -898,7 +901,7 @@ public partial class SwrveSDK
                   } else {
                       SwrveLog.Log("No custom button listener, treating action as URL");
                       if (!string.IsNullOrEmpty(buttonAction)) {
-                          Application.OpenURL (buttonAction);
+                          OpenURL (buttonAction);
                       }
                   }
               }
@@ -908,6 +911,11 @@ public partial class SwrveSDK
             clickedButton.Pressed = false;
             DismissMessage();
         }
+    }
+
+    protected virtual void OpenURL(string url)
+    {
+        Application.OpenURL (url);
     }
 
     protected void SetMessageMinDelayThrottle()
@@ -1509,39 +1517,46 @@ public partial class SwrveSDK
     }
 
 #if UNITY_5
-    private void ProcessRemoteNotification (UnityEngine.iOS.RemoteNotification notification)
+    protected void ProcessRemoteNotification (UnityEngine.iOS.RemoteNotification notification)
 #else
-    private void ProcessRemoteNotification (RemoteNotification notification)
+    protected void ProcessRemoteNotification (RemoteNotification notification)
 #endif
     {
         if(config.PushNotificationEnabled) {
-            if (notification.userInfo != null && notification.userInfo.Contains("_p")) {
-                // It is a Swrve push, we need to check if it was sent while the app was in the background
-                bool whileInBackground = !notification.userInfo.Contains("_swrveForeground");
-                if (whileInBackground) {
-                    object rawId = notification.userInfo["_p"];
-                    string pushId = rawId.ToString();
-                    // SWRVE-5613 Hack
-                    if (rawId is Int64) {
-                        pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
-                    }
-                    SendPushNotificationEngagedEvent(pushId);
-                } else {
-                    SwrveLog.Log("Swrve remote notification received while in the foreground");
-                }
-            } else {
-                SwrveLog.Log("Got unidentified notification");
-            }
-
+            ProcessRemoteNotificationUserInfo(notification.userInfo);
             if(PushNotificationListener != null) {
                 PushNotificationListener.OnRemoteNotification(notification);
             }
             if(qaUser != null) {
-#if UNITY_5
-                qaUser.PushNotification(UnityEngine.iOS.NotificationServices.remoteNotifications, UnityEngine.iOS.NotificationServices.remoteNotificationCount);
-#else
-                qaUser.PushNotification(NotificationServices.remoteNotifications, NotificationServices.remoteNotificationCount);
-#endif
+                qaUser.PushNotification(notification);
+            }
+        }
+    }
+
+    protected void ProcessRemoteNotificationUserInfo(IDictionary userInfo) {
+        if (userInfo != null && userInfo.Contains(PushTrackingKey)) {
+            // It is a Swrve push, we need to check if it was sent while the app was in the background
+            bool whileInBackground = !userInfo.Contains("_swrveForeground");
+            if (whileInBackground) {
+                object rawId = userInfo[PushTrackingKey];
+                string pushId = rawId.ToString();
+                // SWRVE-5613 Hack
+                if (rawId is Int64) {
+                    pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
+                }
+                SendPushNotificationEngagedEvent(pushId);
+            } else {
+                SwrveLog.Log("Swrve remote notification received while in the foreground");
+            }
+        } else {
+            SwrveLog.Log("Got unidentified notification");
+        }
+        
+        // Process push deeplink
+        if (userInfo != null && userInfo.Contains (PushDeeplinkKey)) {
+            object deeplinkUrl = userInfo[PushDeeplinkKey];
+            if (deeplinkUrl != null) {
+                OpenURL(deeplinkUrl.ToString());
             }
         }
     }
