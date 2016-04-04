@@ -541,7 +541,7 @@ public partial class SwrveSDK
 
     private string GetRandomUUID ()
     {
-#if UNITY_IPHONE
+#if UNITY_IPHONE && !UNITY_EDITOR
         try {
             return _swrveiOSUUID();
         } catch (Exception exp) {
