@@ -317,14 +317,14 @@ public partial class SwrveSDK
                 SwrveLog.LogWarning ("Could not read user resources diff from cache (" + e.ToString () + ")");
                 onError.Invoke (wwwException);
             }
-        }
-
-        // Launch listener
-        if (!string.IsNullOrEmpty (abTestCandidate)) {
-            Dictionary<string, Dictionary<string, string>> userResourcesDiffNew = new Dictionary<string, Dictionary<string, string>> ();
-            Dictionary<string, Dictionary<string, string>> userResourcesDiffOld = new Dictionary<string, Dictionary<string, string>> ();
-            ProcessUserResourcesDiff (abTestCandidate, userResourcesDiffNew, userResourcesDiffOld);
-            onResult.Invoke (userResourcesDiffNew, userResourcesDiffOld, abTestCandidate);
+        } else {
+            // Launch listener
+            if (!string.IsNullOrEmpty (abTestCandidate)) {
+                Dictionary<string, Dictionary<string, string>> userResourcesDiffNew = new Dictionary<string, Dictionary<string, string>> ();
+                Dictionary<string, Dictionary<string, string>> userResourcesDiffOld = new Dictionary<string, Dictionary<string, string>> ();
+                ProcessUserResourcesDiff (abTestCandidate, userResourcesDiffNew, userResourcesDiffOld);
+                onResult.Invoke (userResourcesDiffNew, userResourcesDiffOld, abTestCandidate);
+            }
         }
     }
 
