@@ -31,7 +31,7 @@ char* swrveCStringCopy(const char* string)
 {
     if (string == NULL)
         return NULL;
-    
+
     char* res = (char*)malloc(strlen(string) + 1);
     strcpy(res, string);
     return res;
@@ -124,10 +124,6 @@ extern "C"
     char* _swrveIDFA()
     {
 #ifndef SWRVE_NO_IDFA
-        static const char* _ADID = NULL;
-        static const NSString* _ADIDNSString = nil;
-
-        // ad id can be reset during app lifetime
         id manager = QueryASIdentifierManager();
         if (manager)
         {
