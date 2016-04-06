@@ -18,6 +18,7 @@ public class SwrveQAUser
     private const long SessionInterval = 1000;
     private const long TriggerInterval = 500;
     private const long PushNotificationInterval = 1000;
+    private const string PushTrackingKey = "_p";
 
     private readonly SwrveSDK swrve;
     private readonly IRESTClient restClient;
@@ -204,33 +205,26 @@ public class SwrveQAUser
 
 #if UNITY_IPHONE
 #if UNITY_5
-    public void PushNotification (UnityEngine.iOS.RemoteNotification[] notifications, int count)
+    public void PushNotification (UnityEngine.iOS.RemoteNotification notification)
 #else
-    public void PushNotification (RemoteNotification[] notifications, int count)
+    public void PushNotification (RemoteNotification notification)
 #endif
     {
         try {
             String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/push";
 
-            for(int i = 0; i < count; i++) {
-                if (CanMakePushNotificationRequest()) {
-                    Dictionary<string, object> pushJson = new Dictionary<string, object>();
-#if UNITY_5
-                    UnityEngine.iOS.RemoteNotification notification = notifications[i];
-#else
-                    RemoteNotification notification = notifications[i];
-#endif
-                    pushJson.Add("alert", notification.alertBody);
-                    pushJson.Add("sound", notification.soundName);
-                    pushJson.Add("badge", notification.applicationIconBadgeNumber);
+            if (CanMakePushNotificationRequest()) {
+                Dictionary<string, object> pushJson = new Dictionary<string, object>();
+                pushJson.Add("alert", notification.alertBody);
+                pushJson.Add("sound", notification.soundName);
+                pushJson.Add("badge", notification.applicationIconBadgeNumber);
 
-                    if (notification.userInfo != null && notification.userInfo.Contains("_p")) {
-                        string pushId = notification.userInfo["_p"].ToString();
-                        pushJson.Add("id", pushId);
-                    }
-
-                    MakeRequest(endpoint, pushJson);
+                if (notification.userInfo != null && notification.userInfo.Contains(PushTrackingKey)) {
+                    string pushId = notification.userInfo[PushTrackingKey].ToString();
+                    pushJson.Add("id", pushId);
                 }
+
+                MakeRequest(endpoint, pushJson);
             }
         } catch(Exception exp) {
             SwrveLog.LogError("QA request talk session failed: " + exp.ToString());
