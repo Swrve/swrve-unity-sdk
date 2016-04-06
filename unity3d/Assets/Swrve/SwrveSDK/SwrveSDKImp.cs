@@ -639,12 +639,12 @@ public partial class SwrveSDK
 
 #if UNITY_IPHONE
             // Ask for push notification permission dialog
-            if (config.PushNotificationEnabled && (eventName.Equals("Swrve.push_notification_permission") || (config.PushNotificationEvents != null && config.PushNotificationEvents.Contains(eventName)))) {
+            if (config.PushNotificationEnabled && config.PushNotificationEvents != null && config.PushNotificationEvents.Contains(eventName)) {
                 RegisterForPushNotificationsIOS();
             }
 #endif
         } else {
-            SwrveLog.LogError ("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");                
+            SwrveLog.LogError ("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");
 
         }
 
@@ -1640,7 +1640,7 @@ public partial class SwrveSDK
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get the device region, make sure you are running on an Android device: " + exp.ToString());
         }
-        
+
         return null;
     }
 
