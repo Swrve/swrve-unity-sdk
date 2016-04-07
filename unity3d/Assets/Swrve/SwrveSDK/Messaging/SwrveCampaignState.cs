@@ -26,6 +26,13 @@ public class SwrveCampaignState
         if (savedStatesJson.ContainsKey ("Impressions" + campaignId)) {
             Impressions = MiniJsonHelper.GetInt (savedStatesJson, "Impressions" + campaignId);
         }
+        // Load ShowMessagesAfterDelay
+        if (savedStatesJson.ContainsKey ("ShowMessagesAfterDelay" + campaignId)) {
+            // Saved as number UnixEpoch Milliseconds
+            DateTime initDate = SwrveHelper.UnixEpoch;
+            ShowMessagesAfterDelay = initDate.AddMilliseconds (MiniJsonHelper.GetLong (savedStatesJson, "ShowMessagesAfterDelay" + campaignId));
+        }
+                
     }
 }
 }
