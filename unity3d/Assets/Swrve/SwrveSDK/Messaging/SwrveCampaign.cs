@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Collections;
 using System;
+using System.Linq;
 using Swrve.Helpers;
+using SwrveMiniJSON;
 
 namespace Swrve.Messaging
 {
@@ -10,6 +12,12 @@ namespace Swrve.Messaging
 /// </summary>
 public class SwrveCampaign
 {
+    public enum CampaignType {
+        Conversation,
+        Messages,
+        Invalid
+    }
+
     protected readonly Random rnd = new Random ();
     protected const string WaitTimeFormat = @"HH\:mm\:ss zzz";
     protected const int DefaultDelayFirstMessage = 180;
@@ -22,9 +30,29 @@ public class SwrveCampaign
     public int Id;
 
     /// <summary>
+    /// Identifies the campaign type, conversation or messages.
+    /// </summary>
+    public CampaignType campaignType = CampaignType.Invalid;
+
+    /// <summary>
+    // Flag indicating if it is a MessageCenter campaign
+    /// </summary>
+    protected bool messageCenter;
+
+    /// <summary>
+    // MessageCenter subject of the campaign
+    /// </summary>
+    protected string subject;
+    
+    /// <summary>
     /// List of messages contained in the campaign.
     /// </summary>
     public List<SwrveMessage> Messages;
+
+    /// <summary>
+    /// The Swrve Conversation associated with this campaign.
+    /// </summary>
+    public SwrveConversation Conversation;
 
     /// <summary>
     /// List of triggers for the campaign.
@@ -64,6 +92,42 @@ public class SwrveCampaign
         set {
             this.State.Next = value;
         }
+    }
+     
+    /// <summary>
+    /// Get the status of the campaign.
+    /// </summary>
+    /// <returns>
+    /// Status of the campaign.
+    /// </returns>
+    public SwrveCampaignState.Status Status {
+        get {
+            return this.State.CurStatus;
+        }
+        set {
+            this.State.CurStatus = value;
+        }
+    }
+        
+    /**
+     * Used internally to identify campaigns that have been marked as MessageCenter campaigns on the dashboard.
+     *
+     * @return true if the campaign is an MessageCenter campaign.
+     */
+    public bool IsMessageCenter() {
+      return messageCenter;
+    }
+
+    protected void SetIsMessageCenter(bool isMessageCenter) {
+        this.messageCenter = isMessageCenter;
+    }
+
+    /**
+     * @return the name of the campaign.
+     */
+    public string Subject {
+        get { return subject; }
+        protected set { this.subject = value; }
     }
 
     /// <summary>
@@ -121,51 +185,88 @@ public class SwrveCampaign
     /// </returns>
     public SwrveMessage GetMessageForEvent (string triggerEvent, Dictionary<int, string> campaignReasons)
     {
-        // Use UTC to compare to start/end dates from DB
-        DateTime utcNow = SwrveHelper.GetUtcNow ();
-        // Use local time to track throttle limits (want to show local time in logs)
-        DateTime localNow = SwrveHelper.GetNow ();
-
         int messagesCount = Messages.Count;
-
-        if (!HasMessageForEvent (triggerEvent)) {
-            SwrveLog.Log ("There is no trigger in " + Id + " that matches " + triggerEvent);
-            return null;
-        }
 
         if (messagesCount == 0) {
             LogAndAddReason (campaignReasons, "No messages in campaign " + Id);
             return null;
         }
 
-        if (StartDate > utcNow) {
-            LogAndAddReason (campaignReasons, "Campaign " + Id + " has not started yet");
+        if (checkCampaignLimits (triggerEvent, campaignReasons)) {
+            SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
+
+            return GetNextMessage (messagesCount, campaignReasons);
+        }
+        return null;
+    }
+
+    public string GetConversationForEvent(string triggerEvent, Dictionary<int, string> campaignReasons)
+    {
+        if (null == Conversation) {
+            LogAndAddReason (campaignReasons, "No conversation in campaign " + Id);
             return null;
         }
 
-        if (EndDate < utcNow) {
-            LogAndAddReason (campaignReasons, "Campaign" + Id + " has finished");
-            return null;
+        if (checkCampaignLimits (triggerEvent, campaignReasons)) {
+            SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
+
+            return Conversation.Conversation;
+        }
+        return null;
+    }
+
+    public bool checkCampaignLimits(string triggerEvent, Dictionary<int, string> campaignReasons)
+    {
+        // Use local time to track throttle limits (want to show local time in logs)
+        DateTime localNow = SwrveHelper.GetNow ();
+
+        if (!HasMessageForEvent (triggerEvent)) {
+            SwrveLog.Log ("There is no trigger in " + Id + " that matches " + triggerEvent);
+            return false;
+        }
+
+        if (!IsActive (campaignReasons)) {
+            return false;
         }
 
         if (Impressions >= maxImpressions) {
             LogAndAddReason (campaignReasons, "{Campaign throttle limit} Campaign " + Id + " has been shown " + maxImpressions + " times already");
-            return null;
+            return false;
         }
 
         if (!string.Equals (triggerEvent, SwrveSDK.DefaultAutoShowMessagesTrigger, StringComparison.OrdinalIgnoreCase) && IsTooSoonToShowMessageAfterLaunch (localNow)) {
             LogAndAddReason (campaignReasons, "{Campaign throttle limit} Too soon after launch. Wait until " + showMessagesAfterLaunch.ToString (WaitTimeFormat));
-            return null;
+            return false;
         }
 
         if (IsTooSoonToShowMessageAfterDelay (localNow)) {
             LogAndAddReason (campaignReasons, "{Campaign throttle limit} Too soon after last message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
-            return null;
+            return false;
         }
 
-        SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
+        return true;
+    }
 
-        return GetNextMessage (messagesCount, campaignReasons);
+    public bool IsActive(Dictionary<int, string> campaignReasons=null) {
+
+        // Use UTC to compare to start/end dates from DB
+        DateTime utcNow = SwrveHelper.GetUtcNow ();
+
+        if (StartDate > utcNow) {
+            if(null != campaignReasons) {
+                LogAndAddReason (campaignReasons, "Campaign " + Id + " has not started yet");
+            }
+            return false;
+        }
+
+        if (EndDate < utcNow) {
+            if(null != campaignReasons) {
+                LogAndAddReason (campaignReasons, "Campaign " + Id + " has finished");
+            }
+            return false;
+        }
+
+        return true;
     }
 
     protected void LogAndAddReason (Dictionary<int, string> campaignReasons, string reason)
@@ -187,7 +288,7 @@ public class SwrveCampaign
     public bool HasMessageForEvent (string eventName)
     {
         string lowercaseEventName = eventName.ToLower ();
-        return Triggers != null && Triggers.Contains (lowercaseEventName);
+            return Triggers != null && Triggers.Contains (lowercaseEventName);
     }
 
     /// <summary>
@@ -259,16 +360,59 @@ public class SwrveCampaign
         AssignCampaignRules (campaign, campaignData);
         AssignCampaignDates (campaign, campaignData);
 
-        IList<object> jsonMessages = (IList<object>)campaignData ["messages"];
-        for (int k = 0, t = jsonMessages.Count; k < t; k++) {
-            Dictionary<string, object> messageData = (Dictionary<string, object>)jsonMessages [k];
-            SwrveMessage message = SwrveMessage.LoadFromJSON (sdk, campaign, messageData);
-            if (message.Formats.Count > 0) {
-                campaign.AddMessage (message);
+        campaign.SetIsMessageCenter (campaignData.ContainsKey ("message_center") && (bool)campaignData ["message_center"]);
+        campaign.Subject = campaignData.ContainsKey ("subject") ? (string)campaignData ["subject"] : "";
+
+        if (campaignData.ContainsKey("conversation"))
+        {
+            campaign.Conversation = SwrveConversation.LoadFromJSON(campaign, (Dictionary<string, object>)campaignData["conversation"]);
+            campaign.campaignType = CampaignType.Conversation;
+        }
+        else if (campaignData.ContainsKey("messages"))
+        {
+            IList<object> jsonMessages = (IList<object>)campaignData ["messages"];
+            for (int k = 0, t = jsonMessages.Count; k < t; k++) {
+                Dictionary<string, object> messageData = (Dictionary<string, object>)jsonMessages [k];
+                SwrveMessage message = SwrveMessage.LoadFromJSON (sdk, campaign, messageData);
+                if (message.Formats.Count > 0) {
+                    campaign.AddMessage (message);
+                }
+            }
+
+            if (0 < campaign.Messages.Count) {
+                campaign.campaignType = CampaignType.Messages;
             }
         }
 
+        if (campaign.IsMessageCenter ()) {
+            UnityEngine.Debug.Log (string.Format ("message center campaign: {0}, {1}", campaign.campaignType.ToString (), campaign.subject));
+        }
+
         return campaign;
+    }
+
+    public bool AreAssetsReady()
+    {
+        if (this.campaignType == CampaignType.Messages) {
+            return this.Messages.All (m => m.IsDownloaded (assetPath));
+        }
+        else if(this.campaignType == CampaignType.Conversation) {
+            return this.Conversation.isDownloaded (assetPath);
+        }
+        return false;
+    }
+
+    public bool SupportsOrientation(SwrveOrientation orientation) {
+        if (SwrveOrientation.Either == orientation) {
+            return true;
+        }
+        else if (this.campaignType == CampaignType.Messages) {
+            return this.Messages.Any (m => m.SupportsOrientation (orientation));
+        }
+        else if(this.campaignType == CampaignType.Conversation) {
+            return orientation == SwrveOrientation.Portrait;
+        }
+        return false;
     }
 
     /// <summary>
@@ -283,6 +427,10 @@ public class SwrveCampaign
         for(int mi = 0; mi < Messages.Count; mi++) {
             SwrveMessage message = Messages[mi];
             allAssets.AddRange (message.ListOfAssets ());
+        }
+
+        if (this.campaignType == CampaignType.Conversation) {
+            allAssets.AddRange (Conversation.ListOfAssets ());
         }
 
         return allAssets;
@@ -355,6 +503,7 @@ public class SwrveCampaign
     /// </summary>
     public void MessageWasShownToUser (SwrveMessageFormat messageFormat)
     {
+        Status = SwrveCampaignState.Status.Seen;
         IncrementImpressions ();
         SetMessageMinDelayThrottle ();
         if (Messages.Count > 0) {

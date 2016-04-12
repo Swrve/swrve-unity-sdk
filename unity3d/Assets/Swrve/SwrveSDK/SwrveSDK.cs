@@ -7,6 +7,7 @@ using System.Collections;
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Globalization;
 using Swrve;
@@ -50,19 +51,31 @@ public partial class SwrveSDK
     private static extern string _swrveiOSGetAppVersion();
 
     [DllImport ("__Internal")]
-    private static extern void _swrveRegisterForPushNotifications();
+    private static extern void _swrveiOSRegisterForPushNotifications(string jsonCategory);
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSUUID();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveLocaleCountry();
+    private static extern string _swrveiOSLocaleCountry();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveIDFA();
+    private static extern string _swrveiOSIDFA();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveIDFV();
+    private static extern string _swrveiOSIDFV();
+
+    [DllImport ("__Internal")]
+    private static extern void _swrveiOSStartPlot();
+
+    [DllImport ("__Internal")]
+    private static extern void _swrveiOSInitNative(string jsonConfig);
+
+    [DllImport ("__Internal")]
+    private static extern void _swrveiOSShowConversation(string conversation);
+
+    [DllImport ("__Internal")]
+    private static extern string _swrveiOSGetConversationResult();
 #endif
 
     private int gameId;
@@ -142,6 +155,10 @@ public partial class SwrveSDK
     /// Disable default renderer and manage messages manually.
     /// </summary>
     public ISwrveTriggeredMessageListener TriggeredMessageListener = null;
+
+#if UNITY_EDITOR
+    public Action<string> ConversationEditorCallback;
+#endif
 
     /// <summary>
     /// A callback to get notified when user resources have been updated.
@@ -386,6 +403,8 @@ public partial class SwrveSDK
 
         StartCampaignsAndResourcesTimer();
         DisableAutoShowAfterDelay();
+
+        InitNative();
 #endif
     }
 
@@ -1050,14 +1069,14 @@ public partial class SwrveSDK
         }
 
         try {
-            deviceInfo ["swrve.device_region"] = _swrveLocaleCountry();
+            deviceInfo ["swrve.device_region"] = _swrveiOSLocaleCountry();
         } catch (Exception e) {
             SwrveLog.LogWarning("Couldn't get device region on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
         }
 
         if (config.LogAppleIDFV) {
             try {
-                String idfv = _swrveIDFV();
+                String idfv = _swrveiOSIDFV();
                 if (!string.IsNullOrEmpty(idfv)) {
                     deviceInfo ["swrve.IDFV"] = idfv;
                 }
@@ -1067,7 +1086,7 @@ public partial class SwrveSDK
         }
         if (config.LogAppleIDFA) {
             try {
-                String idfa = _swrveIDFA();
+                String idfa = _swrveiOSIDFA();
                 if (!string.IsNullOrEmpty(idfa)) {
                     deviceInfo ["swrve.IDFA"] = idfa;
                 }
@@ -1163,6 +1182,7 @@ public partial class SwrveSDK
             }
             GenerateNewSessionInterval ();
 
+            ProcessConversationResult();
             StartCampaignsAndResourcesTimer();
             DisableAutoShowAfterDelay();
         }
@@ -1359,12 +1379,28 @@ public partial class SwrveSDK
                 campaignMessages = new Dictionary<int, int> ();
             }
 
+            IEnumerator<SwrveCampaign> itCampaign = campaigns.GetEnumerator ();
+            string conversation = null;
+            while(itCampaign.MoveNext() && (null == conversation)) {
+                conversation = itCampaign.Current.GetConversationForEvent(eventName, campaignReasons);
+                if(null != conversation)
+                {
+                    SwrveLog.Log("found conversation in campaign: " + itCampaign.Current.Id);
+                }
+            }
+
+            if(null != conversation)
+            {
+                StartTask("LaunchConversation", LaunchConversation(conversation));
+                return null;
+            }
+
             List<SwrveMessage> availableMessages = new List<SwrveMessage>();
             // Select messages with higher priority
             int minPriority = int.MaxValue;
             List<SwrveMessage> candidateMessages = new List<SwrveMessage>();
-            IEnumerator<SwrveCampaign> itCampaign = campaigns.GetEnumerator ();
             SwrveOrientation deviceOrientation = GetDeviceOrientation();
+            itCampaign.Reset();
             while (itCampaign.MoveNext() && result == null) {
                 SwrveCampaign nextCampaign = itCampaign.Current;
                 SwrveMessage nextMessage = nextCampaign.GetMessageForEvent (eventName, campaignReasons);
@@ -1391,8 +1427,8 @@ public partial class SwrveSDK
             }
 
             // Select randomly from the highest messages
-            candidateMessages.Shuffle();
             if (candidateMessages.Count > 0) {
+                candidateMessages.Shuffle();
                 result = candidateMessages[0];
                 campaign = result.Campaign;
             }
@@ -1430,6 +1466,36 @@ public partial class SwrveSDK
 #else
         return null;
 #endif
+    }
+
+    public void showMessageCenterCampaign(SwrveCampaign campaign, SwrveOrientation orientation=SwrveOrientation.Either) {
+        if (SwrveCampaign.CampaignType.Conversation == campaign.campaignType) {
+            ShowConversation (campaign.Conversation.Conversation);
+        } else {
+            Container.StartCoroutine (LaunchMessage (
+                campaign.Messages.Where (a => a.SupportsOrientation (orientation)).First (),
+                GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
+            ));
+        }
+        campaign.Status = SwrveCampaignState.Status.Seen;
+        SaveCampaignData(campaign);
+    }
+        
+    public List<SwrveCampaign> getMessageCenterCampaigns(SwrveOrientation orientation=SwrveOrientation.Either) { 
+        List<SwrveCampaign> result = new List<SwrveCampaign>();
+        IEnumerator<SwrveCampaign> itCampaign = campaigns.GetEnumerator ();
+        while(itCampaign.MoveNext()) {
+            SwrveCampaign campaign = itCampaign.Current;
+            if (isValidMessageCenter (campaign, orientation)) {
+                result.Add (campaign);
+            }
+        }
+        return result;
+    }
+        
+    public void removeMessageCenterCampaign(SwrveCampaign campaign) {
+        campaign.Status = SwrveCampaignState.Status.Deleted;
+        SaveCampaignData(campaign);
     }
 
     /// <summary>

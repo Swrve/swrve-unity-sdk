@@ -8,7 +8,8 @@ namespace Swrve.Messaging
 public enum SwrveOrientation {
     Portrait,
     Landscape,
-    Both
+    Both,
+    Either
 }
 
 public static class SwrveOrientationHelper
@@ -25,10 +26,12 @@ public static class SwrveOrientationHelper
     public static SwrveOrientation Parse (string orientation)
     {
         if (orientation.ToLower ().Equals ("portrait")) {
-            return SwrveOrientation.Portrait;
-        } else if (orientation.ToLower ().Equals ("both")) {
-            return SwrveOrientation.Both;
-        }
+                return SwrveOrientation.Portrait;
+            } else if (orientation.ToLower ().Equals ("both")) {
+                return SwrveOrientation.Both;
+            } else if (orientation.ToLower ().Equals ("either")) {
+                return SwrveOrientation.Either;
+            }
 
         return SwrveOrientation.Landscape;
     }

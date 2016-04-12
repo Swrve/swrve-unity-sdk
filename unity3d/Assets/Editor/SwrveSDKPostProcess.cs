@@ -10,7 +10,7 @@ namespace AssemblyCSharpEditor
 {
 public class SwrveSDKPostProcess
 {
-    [PostProcessBuild]
+//    [PostProcessBuild]
     public static void OnPostprocessBuild (BuildTarget target, string pathToBuiltProject)
     {
 #if UNITY_5
