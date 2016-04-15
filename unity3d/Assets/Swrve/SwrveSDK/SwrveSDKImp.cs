@@ -1748,7 +1748,7 @@ public partial class SwrveSDK
     {
         if (_androidBridge == null)
         {
-            _androidBridge = new AndroidJavaObject("com.swrve.sdk.SwrveUnityBridge");
+			_androidBridge = new AndroidJavaObject("com.swrve.sdk.SwrveUnityCommon");
         }
         return _androidBridge;
     }
@@ -1756,38 +1756,16 @@ public partial class SwrveSDK
     private void AndroidInitNative(string jsonString)
     {
         try {
-            AndroidGetBridge ().CallStatic ("SetSwrveCommon", jsonString);
+            AndroidGetBridge ().Call ("init", jsonString);
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't init common from Android: " + exp.ToString ());
         }
     }
 
-    private AndroidJavaObject _androidConversations;
-    private AndroidJavaObject AndroidGetConversation()
-    {
-        if (_androidConversations == null)
-        {
-            _androidConversations = new AndroidJavaObject("com.swrve.conversationsunitybridge.SwrveUnityBridge");
-        }
-        return _androidConversations;
-    }
-
-    private string AndroidGetConversationResult()
-    {
-        string result = null;
-        try {
-            result = AndroidGetConversation().Call<string>("GetConversationResult");
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get conversations result from Android: " + exp.ToString());
-        }
-        return result;
-    }
-
-
     public void AndroidShowConversation(string conversation)
     {
         try {
-            AndroidGetConversation().Call("ShowConversation", conversation);
+            AndroidGetBridge().Call("ShowConversation", conversation);
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
         }
@@ -1797,7 +1775,7 @@ public partial class SwrveSDK
     private AndroidJavaObject AndroidGetLocation()
     {
         if (_androidLocation == null) {
-            _androidLocation = new AndroidJavaClass ("com.swrve.locationunitybridge.SwrveUnityBridge");
+			_androidLocation = new AndroidJavaClass ("com.swrve.sdk.SwrveLocationUnityBridge");
         }
         return _androidLocation;
     }
@@ -1840,23 +1818,6 @@ public partial class SwrveSDK
 #endif
         }
         return config.AppVersion;
-    }
-
-    private string GetConversationResult ()
-    {
-        string result = null;
-
-    #if UNITY_ANDROID
-        result = AndroidGetConversationResult();
-    #elif UNITY_IPHONE
-        try {
-            result = _swrveiOSGetConversationResult();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device conversation result, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-    #endif
-        
-        return result ?? "[]";
     }
 
     private void ShowConversation (string conversation)
@@ -1934,22 +1895,6 @@ public partial class SwrveSDK
         yield return new WaitForSeconds(config.AutoShowMessagesMaxDelay);
         autoShowMessagesEnabled = false;
     }
-    
-    protected void ProcessConversationResult()
-    {
-        foreach (object o in (List<object>)Json.Deserialize(GetConversationResult ()))
-        {
-            Dictionary<string, object> dict = (Dictionary<string, object>)o;
-            string viewEvent = (string)dict ["viewEvent"];
-            Dictionary<string, string> payload = new Dictionary<string, string> ();
-            foreach(KeyValuePair<string, object> kp in (Dictionary<string, object>)dict ["payload"])
-            {
-                payload [kp.Key] = (string)kp.Value;
-            }
-            NamedEventInternal (viewEvent, payload, true);
-        }
-        SendQueuedEvents ();
-    }
 
     protected void InitNative()
     {
@@ -1967,6 +1912,7 @@ public partial class SwrveSDK
             {"maxEventsPerFlush", 50},
             {"locTag", LocationSave},
             {"swrvePath", swrvePath},
+            {"swrveTemporaryPath", swrveTemporaryPath},
             {"sigSuffix", SwrveFileStorage.SIGNATURE_SUFFIX}
         };
 

@@ -71,7 +71,7 @@ public class MainMenuComponent : MonoBehaviour {
         // IAP validation happens on our servers. Provide if possible the purchase data from Google.
         string purchaseData = "purchase-data-from-google-play";
         string dataSignature = "data-signature-from-google-play";
-        swrveComponent.SDK.IapGooglePlay (@"productId", 4.99, @"EUR", rewards, purchaseData, dataSignature);
+        SwrveComponent.SDK.IapGooglePlay (@"productId", 4.99, @"EUR", rewards, purchaseData, dataSignature);
 #endif
     }
 

@@ -1182,7 +1182,6 @@ public partial class SwrveSDK
             }
             GenerateNewSessionInterval ();
 
-            ProcessConversationResult();
             StartCampaignsAndResourcesTimer();
             DisableAutoShowAfterDelay();
         }
