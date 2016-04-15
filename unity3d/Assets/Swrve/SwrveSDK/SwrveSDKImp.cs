@@ -164,6 +164,17 @@ public partial class SwrveSDK
         if (path == null || path.Length == 0) {
             path = Application.persistentDataPath;
         }
+    #if UNITY_IPHONE
+        path = path + "/com.ngt.msgs";
+    #endif
+        bool exists = File.Exists (path);
+        SwrveLog.Log (string.Format ("exists: {1} - {0}", path, exists));
+        if (!exists)
+        {
+            SwrveLog.Log ("creating");
+            Directory.CreateDirectory (path);
+        }
+        SwrveLog.Log (string.Format ("exists: {1} - {0}", path, File.Exists (path)));
         return path;
     }
 

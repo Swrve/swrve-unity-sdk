@@ -1,6 +1,6 @@
 target 'Unity-iPhone' do
-  pod 'SwrveSDKCommon', :path => '../../../ios/public/'
-  pod 'SwrveLocationSDK', :path => '../../../ios/public/'
-  pod 'SwrveConversationSDK', :path => '../../../ios/public/'
-  pod 'SwrveUnitySDK', :path => '../SwrveUnitySDK'
+  pod 'SwrveSDKCommon', :path => '../../../ios/public'
+  pod 'SwrveLocationSDK', :path => '../../../ios/SwrveLocationSDK'
+  pod 'SwrveConversationSDK', :path => '../../../ios/public'
+  pod 'SwrveUnitySDK', :path => '../../../ios/public'
 end
