@@ -1732,8 +1732,8 @@ public partial class SwrveSDK
     /// </param>
     private string GetPushId(Dictionary<string, object> notification)
     {
-        if  (notification != null && notification.ContainsKey("_p")) {
-            return notification["_p"].ToString();
+        if  (notification != null && notification.ContainsKey(PushTrackingKey)) {
+            return notification[PushTrackingKey].ToString();
         } else {
             SwrveLog.Log("Got unidentified notification");
         }
@@ -1756,6 +1756,14 @@ public partial class SwrveSDK
         if (pushId != null && androidPlugin != null) {
             // Acknowledge the received notification
             androidPlugin.CallStatic("sdkAcknowledgeOpenedNotification", pushId);
+        }
+
+        // Process push deeplink
+        if (notification != null && notification.ContainsKey (PushDeeplinkKey)) {
+            object deeplinkUrl = notification[PushDeeplinkKey];
+            if (deeplinkUrl != null) {
+                OpenURL(deeplinkUrl.ToString());
+            }
         }
 
         if (PushNotificationListener != null) {
