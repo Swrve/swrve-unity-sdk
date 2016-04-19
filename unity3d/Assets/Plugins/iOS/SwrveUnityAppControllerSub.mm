@@ -1,5 +1,10 @@
-#import "SwrvePlot.h"
 #import "UnityAppController.h"
+#define WITH_UNITY
+#import "UnitySwrveCommon.h"
+
+#ifdef SWRVE_LOCATION_SDK
+#import "SwrvePlot.h"
+#endif
 
 @interface SwrveUnityAppControllerSub : UnityAppController
 
@@ -9,6 +14,9 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+#ifdef SWRVE_LOCATION_SDK
+    [SwrvePlot initializeWithLaunchOptions:launchOptions delegate:[UnitySwrveCommonDelegate sharedInstance]];
+#endif
     return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
@@ -27,7 +35,7 @@
 #if !UNITY_TVOS
 - (void)application:(UIApplication*)application didReceiveLocalNotification:(UILocalNotification*)notification
 {
-#if SWRVE_LOCATION_SDK
+#ifdef SWRVE_LOCATION_SDK
     [SwrvePlot handleNotification:notification forApplication:application];
 #endif
 }

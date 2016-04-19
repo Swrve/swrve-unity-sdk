@@ -13,7 +13,7 @@ public class MessageCenterComponent : MonoBehaviour
 
     // Use this for initialization
     void Start () {
-        foreach (SwrveCampaign campaign in SwrveComponent.SDK.getMessageCenterCampaigns()) {
+        foreach (SwrveBaseCampaign campaign in SwrveComponent.SDK.getMessageCenterCampaigns()) {
             GameObject newButton = Instantiate (MessageCenterMessagePrefab) as GameObject;
             MessageCenterMessage message = newButton.GetComponent<MessageCenterMessage> ();
             message.setCampaign (campaign);

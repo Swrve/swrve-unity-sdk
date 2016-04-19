@@ -29,7 +29,7 @@ public class SwrveMessage
     /// <summary>
     /// Parent in-app campaign.
     /// </summary>
-    public SwrveCampaign Campaign;
+    public SwrveMessagesCampaign Campaign;
 
     /// <summary>
     /// List of formats available for the device.
@@ -56,7 +56,7 @@ public class SwrveMessage
     /// </summary>
     public float AnimationScale = 1f;
 
-    private SwrveMessage (SwrveCampaign campaign)
+    private SwrveMessage (SwrveMessagesCampaign campaign)
     {
         this.Campaign = campaign;
         this.Formats = new List<SwrveMessageFormat> ();
@@ -95,7 +95,7 @@ public class SwrveMessage
     /// <returns>
     /// Parsed in-app message.
     /// </returns>
-    public static SwrveMessage LoadFromJSON (SwrveSDK sdk, SwrveCampaign campaign, Dictionary<string, object> messageData)
+    public static SwrveMessage LoadFromJSON (SwrveSDK sdk, SwrveMessagesCampaign campaign, Dictionary<string, object> messageData)
     {
         SwrveMessage message = new SwrveMessage (campaign);
         message.Id = MiniJsonHelper.GetInt (messageData, "id");

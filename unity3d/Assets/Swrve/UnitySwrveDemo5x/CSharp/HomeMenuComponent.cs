@@ -66,7 +66,6 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
     }
 
     public static void SetButton(KeyValuePair<string, UnityAction> kvp, Transform transform) {
-        UnityEngine.Debug.Log (string.Format ("Setting button {0} onto {1}", kvp.Key, transform.gameObject.name));
         CustomButtonComponent button = GameObject.Instantiate (ButtonPrefab).GetComponent<CustomButtonComponent> ();
         button.label.text = kvp.Key;
         button.GetComponent<Button> ().onClick.AddListener (kvp.Value);
@@ -95,13 +94,10 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
             position = target.transform.position;
             originalX = position.x;
             if(shift) {
-                // string s = string.Format("shifting {0} from {1} to ", target.name, position.x);
                 position.x = position.x + ((left ? 1 : -1) * UnityEngine.Screen.width);
-                // UnityEngine.Debug.Log(s + position.x);
                 target.transform.position = position;
             }
             stepTarget = position.x + ((left ? -1 : 1) * UnityEngine.Screen.width);
-            // UnityEngine.Debug.Log(string.Format("we're going to move {0} from {1} to {2}", target.name, position.x, stepTarget));
             this.target = target;
         }
     }
@@ -164,7 +160,6 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
                 foreach (MoveInfo info in toDelete) {
                     moves.Remove (info);
                     if (info.target == nextInactive) {
-                        // UnityEngine.Debug.Log (string.Format ("we're moving {0} back to {1} from {2}", info.target.name, info.originalX, info.position.x));
                         info.position.x = info.originalX;
                         info.target.transform.position = info.position;
                         info.target.SetActive (false);

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections;
 using System;
+using System.Linq;
 using UnityEngine;
 using Swrve.Helpers;
 using SwrveMiniJSON;
@@ -18,20 +19,25 @@ public class SwrveConversation
     public string Conversation;
     
     public List<string> ConversationAssets;
+        
+    /// <summary>
+    /// Identifies the conversation in a campaign.
+    /// </summary>
+    public int Id;
 
     /// <summary>
     /// Parent in-app campaign.
     /// </summary>
-    public SwrveCampaign Campaign;
+    public SwrveConversationCampaign Campaign;
 
-    private SwrveConversation (SwrveCampaign campaign)
+    private SwrveConversation (SwrveConversationCampaign campaign)
     {
         this.Campaign = campaign;
         this.ConversationAssets = new List<string> ();
     }
 
     /// <summary>
-    /// Load an in-app message from a JSON response.
+    /// Load a conversation from a JSON response.
     /// </summary>
     /// <param name="campaign">
     /// Parent in-app campaign.
@@ -42,19 +48,24 @@ public class SwrveConversation
     /// <returns>
     /// Parsed conversation wrapper for native layer.
     /// </returns>
-    public static SwrveConversation LoadFromJSON (SwrveCampaign campaign, Dictionary<string, object> conversationData)
+    public static SwrveConversation LoadFromJSON (SwrveConversationCampaign campaign, Dictionary<string, object> conversationData)
     {
-            SwrveConversation conversation = new SwrveConversation (campaign);
-            foreach(object page in (List<object>)conversationData["pages"]) {
-                foreach (object _content in (List<object>)((Dictionary<string, object>)page)["content"]) {
-                    Dictionary<string, object> content = (Dictionary<string, object>)_content;
-                    if ("image" == (string)content ["type"]) {
-                        conversation.ConversationAssets.Add ((string)content ["value"]);
-                    }
+        SwrveConversation conversation = new SwrveConversation (campaign);
+        conversation.Id = MiniJsonHelper.GetInt (conversationData, "id");
+        List<object> pages = (List<object>)conversationData ["pages"];
+        for(int i = 0; i < pages.Count; i++) {
+            Dictionary<string, object> page = (Dictionary<string, object>)pages [i];
+            List<object> contents = (List<object>)page ["content"];
+            for(int j = 0; j < contents.Count; j++) {
+                Dictionary<string, object> content = (Dictionary<string, object>)contents[j];
+                if ("image" == (string)content ["type"]) {
+                    conversation.ConversationAssets.Add ((string)content ["value"]);
                 }
             }
-            conversation.Conversation = Json.Serialize (conversationData);
-            return conversation;
+        }
+        conversation.Conversation = Json.Serialize (conversationData);
+        
+        return conversation;
     }
 
     /// <summary>

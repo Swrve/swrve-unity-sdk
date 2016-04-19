@@ -14,9 +14,9 @@ public class MessageCenterMessage : MonoBehaviour
     public Text leftText;
     public Text middleText;
     public Button deleteButton;
-    public SwrveCampaign campaign;
+    public SwrveBaseCampaign campaign;
 
-    public void setCampaign(SwrveCampaign campaign) {
+    public void setCampaign(SwrveBaseCampaign campaign) {
         this.campaign = campaign;
         updateCampaignInfo ();
     }

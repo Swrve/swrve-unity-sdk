@@ -32,8 +32,7 @@ public class MainMenuComponent : MonoBehaviour {
     void SendEvent() {
         // Trigger a custom event
         SwrveComponent.SDK.NamedEvent (@"button pressed", new Dictionary<string, string> () {
-            { "foo", "bar"
-            }
+            { "foo", "bar" }
         });
     }
     void SendUserAttributes() {

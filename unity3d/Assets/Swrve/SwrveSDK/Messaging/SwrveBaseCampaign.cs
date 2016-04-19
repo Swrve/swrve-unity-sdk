@@ -10,14 +10,8 @@ namespace Swrve.Messaging
 /// <summary>
 /// Swrve Talk campaign.
 /// </summary>
-public class SwrveCampaign
+public abstract class SwrveBaseCampaign
 {
-    public enum CampaignType {
-        Conversation,
-        Messages,
-        Invalid
-    }
-
     protected readonly Random rnd = new Random ();
     protected const string WaitTimeFormat = @"HH\:mm\:ss zzz";
     protected const int DefaultDelayFirstMessage = 180;
@@ -30,11 +24,6 @@ public class SwrveCampaign
     public int Id;
 
     /// <summary>
-    /// Identifies the campaign type, conversation or messages.
-    /// </summary>
-    public CampaignType campaignType = CampaignType.Invalid;
-
-    /// <summary>
     // Flag indicating if it is a MessageCenter campaign
     /// </summary>
     protected bool messageCenter;
@@ -43,16 +32,6 @@ public class SwrveCampaign
     // MessageCenter subject of the campaign
     /// </summary>
     protected string subject;
-    
-    /// <summary>
-    /// List of messages contained in the campaign.
-    /// </summary>
-    public List<SwrveMessage> Messages;
-
-    /// <summary>
-    /// The Swrve Conversation associated with this campaign.
-    /// </summary>
-    public SwrveConversation Conversation;
 
     /// <summary>
     /// List of triggers for the campaign.
@@ -155,64 +134,14 @@ public class SwrveCampaign
     protected int delayFirstMessage = DefaultDelayFirstMessage;
     protected int maxImpressions;
 
-    private SwrveCampaign (DateTime initialisedTime, string assetPath)
+    protected SwrveBaseCampaign (DateTime initialisedTime, string assetPath)
     {
         this.State = new SwrveCampaignState();
         this.swrveInitialisedTime = initialisedTime;
         this.assetPath = assetPath;
-        this.Messages = new List<SwrveMessage> ();
         this.Triggers = new HashSet<string> ();
         this.minDelayBetweenMessage = DefaultMinDelay;
         this.showMessagesAfterLaunch = swrveInitialisedTime + TimeSpan.FromSeconds (DefaultDelayFirstMessage);
-    }
-
-    /// <summary>
-    /// Search for a message related to the given trigger event at the given
-    /// time. This function will return null if too many messages were dismissed,
-    /// the campaign start is in the future, the campaign end is in the past or
-    /// the given event is not contained in the trigger set.
-    /// </summary>
-    /// <param name="triggerEvent">
-    /// Event triggered. Must be a trigger for the campaign.
-    /// </param>
-    /// <param name="campaignReasons">
-    /// At the exit of the function will include the reasons why a campaign the campaigns
-    /// in memory were not shown or chosen.
-    /// </param>
-    /// <returns>
-    /// In-app message that contains the given event in its trigger list and satisfies all the
-    /// rules.
-    /// </returns>
-    public SwrveMessage GetMessageForEvent (string triggerEvent, Dictionary<int, string> campaignReasons)
-    {
-        int messagesCount = Messages.Count;
-
-        if (messagesCount == 0) {
-            LogAndAddReason (campaignReasons, "No messages in campaign " + Id);
-            return null;
-        }
-
-        if (checkCampaignLimits (triggerEvent, campaignReasons)) {
-            SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
-
-            return GetNextMessage (messagesCount, campaignReasons);
-        }
-        return null;
-    }
-
-    public string GetConversationForEvent(string triggerEvent, Dictionary<int, string> campaignReasons)
-    {
-        if (null == Conversation) {
-            LogAndAddReason (campaignReasons, "No conversation in campaign " + Id);
-            return null;
-        }
-
-        if (checkCampaignLimits (triggerEvent, campaignReasons)) {
-            SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
-
-            return Conversation.Conversation;
-        }
-        return null;
     }
 
     public bool checkCampaignLimits(string triggerEvent, Dictionary<int, string> campaignReasons)
@@ -220,8 +149,8 @@ public class SwrveCampaign
         // Use local time to track throttle limits (want to show local time in logs)
         DateTime localNow = SwrveHelper.GetNow ();
 
-        if (!HasMessageForEvent (triggerEvent)) {
-            SwrveLog.Log ("There is no trigger in " + Id + " that matches " + triggerEvent);
+        if (!WillTriggerForEvent (triggerEvent)) {
+            LogAndAddReason (campaignReasons, "There is no trigger in " + Id + " that matches " + triggerEvent);
             return false;
         }
 
@@ -274,66 +203,20 @@ public class SwrveCampaign
         if (campaignReasons != null) {
             campaignReasons.Add (Id, reason);
         }
-        SwrveLog.Log (reason);
+        // SwrveLog.Log (reason);
     }
 
     /// <summary>
-    /// Check if this campaign contains any message configured for the
-    /// given event trigger.
+    /// Check if this campaign will trigger for the given event.
     /// </summary>
     /// <returns>
     /// True if this campaign contains a message with the given trigger event.
     /// False otherwise.
     /// </returns>
-    public bool HasMessageForEvent (string eventName)
+    public bool WillTriggerForEvent (string eventName)
     {
         string lowercaseEventName = eventName.ToLower ();
-            return Triggers != null && Triggers.Contains (lowercaseEventName);
-    }
-
-    /// <summary>
-    /// Get a message by its identifier.
-    /// </summary>
-    /// <returns>
-    /// The message with the given identifier if it could be found.
-    /// </returns>
-    public SwrveMessage GetMessageForId (int id)
-    {
-        for(int mi = 0; mi < Messages.Count; mi++) {
-            SwrveMessage message = Messages[mi];
-            if (message.Id == id) {
-                return message;
-            }
-        }
-
-        return null;
-    }
-
-    protected SwrveMessage GetNextMessage (int messagesCount, Dictionary<int, string> campaignReasons)
-    {
-        if (RandomOrder) {
-            List<SwrveMessage> randomMessages = new List<SwrveMessage> (Messages);
-            randomMessages.Shuffle ();
-            for(int mi = 0; mi < randomMessages.Count; mi++) {
-                SwrveMessage message = randomMessages[mi];
-                if (message.IsDownloaded (assetPath)) {
-                    return message;
-                }
-            }
-        } else if (Next < messagesCount) {
-            SwrveMessage message = Messages [Next];
-            if (message.IsDownloaded (assetPath)) {
-                return message;
-            }
-        }
-
-        LogAndAddReason (campaignReasons, "Campaign " + this.Id + " hasn't finished downloading.");
-        return null;
-    }
-
-    protected void AddMessage (SwrveMessage message)
-    {
-        this.Messages.Add (message);
+        return Triggers != null && Triggers.Contains (lowercaseEventName);
     }
 
     /// <summary>
@@ -351,9 +234,18 @@ public class SwrveCampaign
     /// <returns>
     /// Parsed in-app campaign.
     /// </returns>
-    public static SwrveCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath)
+    public static SwrveBaseCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath)
     {
-        SwrveCampaign campaign = new SwrveCampaign (initialisedTime, assetPath);
+        SwrveBaseCampaign campaign = null;
+
+        if (campaignData.ContainsKey("conversation"))
+        {
+            campaign = SwrveConversationCampaign.LoadFromJSON (sdk, campaignData, initialisedTime, assetPath);
+        }
+        else if (campaignData.ContainsKey("messages"))
+        {
+            campaign = SwrveMessagesCampaign.LoadFromJSON (sdk, campaignData, initialisedTime, assetPath);
+        }
         campaign.Id = MiniJsonHelper.GetInt (campaignData, "id");
 
         AssignCampaignTriggers (campaign, campaignData);
@@ -363,57 +255,16 @@ public class SwrveCampaign
         campaign.SetIsMessageCenter (campaignData.ContainsKey ("message_center") && (bool)campaignData ["message_center"]);
         campaign.Subject = campaignData.ContainsKey ("subject") ? (string)campaignData ["subject"] : "";
 
-        if (campaignData.ContainsKey("conversation"))
-        {
-            campaign.Conversation = SwrveConversation.LoadFromJSON(campaign, (Dictionary<string, object>)campaignData["conversation"]);
-            campaign.campaignType = CampaignType.Conversation;
-        }
-        else if (campaignData.ContainsKey("messages"))
-        {
-            IList<object> jsonMessages = (IList<object>)campaignData ["messages"];
-            for (int k = 0, t = jsonMessages.Count; k < t; k++) {
-                Dictionary<string, object> messageData = (Dictionary<string, object>)jsonMessages [k];
-                SwrveMessage message = SwrveMessage.LoadFromJSON (sdk, campaign, messageData);
-                if (message.Formats.Count > 0) {
-                    campaign.AddMessage (message);
-                }
-            }
-
-            if (0 < campaign.Messages.Count) {
-                campaign.campaignType = CampaignType.Messages;
-            }
-        }
-
         if (campaign.IsMessageCenter ()) {
-            UnityEngine.Debug.Log (string.Format ("message center campaign: {0}, {1}", campaign.campaignType.ToString (), campaign.subject));
+            UnityEngine.Debug.Log (string.Format ("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
         }
 
         return campaign;
     }
 
-    public bool AreAssetsReady()
-    {
-        if (this.campaignType == CampaignType.Messages) {
-            return this.Messages.All (m => m.IsDownloaded (assetPath));
-        }
-        else if(this.campaignType == CampaignType.Conversation) {
-            return this.Conversation.isDownloaded (assetPath);
-        }
-        return false;
-    }
+    public abstract bool AreAssetsReady ();
 
-    public bool SupportsOrientation(SwrveOrientation orientation) {
-        if (SwrveOrientation.Either == orientation) {
-            return true;
-        }
-        else if (this.campaignType == CampaignType.Messages) {
-            return this.Messages.Any (m => m.SupportsOrientation (orientation));
-        }
-        else if(this.campaignType == CampaignType.Conversation) {
-            return orientation == SwrveOrientation.Portrait;
-        }
-        return false;
-    }
+    public abstract bool SupportsOrientation(SwrveOrientation orientation);
 
     /// <summary>
     /// Get all the assets in the in-app campaign messages.
@@ -421,22 +272,9 @@ public class SwrveCampaign
     /// <returns>
     /// All the assets in the in-app campaign.
     /// </returns>
-    public List<string> ListOfAssets ()
-    {
-        List<string> allAssets = new List<string> ();
-        for(int mi = 0; mi < Messages.Count; mi++) {
-            SwrveMessage message = Messages[mi];
-            allAssets.AddRange (message.ListOfAssets ());
-        }
+    public abstract List<string> ListOfAssets ();
 
-        if (this.campaignType == CampaignType.Conversation) {
-            allAssets.AddRange (Conversation.ListOfAssets ());
-        }
-
-        return allAssets;
-    }
-
-    protected static void AssignCampaignTriggers (SwrveCampaign campaign, Dictionary<string, object> campaignData)
+    protected static void AssignCampaignTriggers (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
         IList<object> jsonTriggers = (IList<object>)campaignData ["triggers"];
         for (int i = 0, j = jsonTriggers.Count; i < j; i++) {
@@ -445,7 +283,7 @@ public class SwrveCampaign
         }
     }
 
-    protected static void AssignCampaignRules (SwrveCampaign campaign, Dictionary<string, object> campaignData)
+    protected static void AssignCampaignRules (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
         Dictionary<string, object> rules = (Dictionary<string, object>)campaignData ["rules"];
         campaign.RandomOrder = ((string)rules ["display_order"]).Equals ("random");
@@ -466,7 +304,7 @@ public class SwrveCampaign
         }
     }
 
-    protected static void AssignCampaignDates (SwrveCampaign campaign, Dictionary<string, object> campaignData)
+    protected static void AssignCampaignDates (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
         DateTime initDate = SwrveHelper.UnixEpoch;
         campaign.StartDate = initDate.AddMilliseconds (MiniJsonHelper.GetLong (campaignData, "start_date"));
@@ -494,30 +332,6 @@ public class SwrveCampaign
     }
 
     /// <summary>
-    /// Notify that the message was shown to the user. This function
-    /// has to be called only once when the message is displayed to
-    /// the user.
-    /// This is automatically called by the SDK and will only need
-    /// to be manually called if you are implementing your own
-    /// in-app message rendering code.
-    /// </summary>
-    public void MessageWasShownToUser (SwrveMessageFormat messageFormat)
-    {
-        Status = SwrveCampaignState.Status.Seen;
-        IncrementImpressions ();
-        SetMessageMinDelayThrottle ();
-        if (Messages.Count > 0) {
-            if (!RandomOrder) {
-                int nextMessage = (Next + 1) % Messages.Count;
-                Next = nextMessage;
-                SwrveLog.Log ("Round Robin: Next message in campaign " + Id + " is " + nextMessage);
-            } else {
-                SwrveLog.Log ("Next message in campaign " + Id + " is random");
-            }
-        }
-    }
-
-    /// <summary>
     /// Notify that the a message was dismissed.
     /// This is automatically called by the SDK and will only need
     /// to be manually called if you are implementing your own
@@ -526,6 +340,10 @@ public class SwrveCampaign
     public void MessageDismissed ()
     {
         SetMessageMinDelayThrottle();
+    }
+
+    public bool IsA<T>() where T : SwrveBaseCampaign {
+            return GetType () == typeof(T);
     }
 }
 }

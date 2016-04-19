@@ -145,5 +145,30 @@ public static class SwrveHelper
     {
         return rgxNonAlphanumeric.Replace(str, string.Empty);
     }
+
+    public static bool IsNotOnDevice()
+    {
+        return !IsOnDevice();
+    }
+
+    public static bool IsOnDevice()
+    {
+    #if UNITY_IOS
+        return IsAvailableOn(UnityEngine.RuntimePlatform.IPhonePlayer);
+
+    #elif UNITY_ANDROID
+        return IsAvailableOn(UnityEngine.RuntimePlatform.Android);
+
+        #endif
+    }
+
+    public static bool IsAvailableOn(UnityEngine.RuntimePlatform platform)
+    {
+        bool available = false;
+
+        available = UnityEngine.Application.platform == platform;
+        
+        return available;
+    }
 }
 }
