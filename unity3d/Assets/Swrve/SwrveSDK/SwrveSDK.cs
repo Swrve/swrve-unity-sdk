@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "3.7";
+    public const string SdkVersion = "3.7.1";
 
 #if UNITY_IPHONE
     [DllImport ("__Internal")]
@@ -1089,7 +1089,7 @@ public partial class SwrveSDK
         if (!string.IsNullOrEmpty(deviceRegion)) {
             deviceInfo ["swrve.device_region"] = deviceRegion;
         }
-        
+
         if (config.LogAndroidId) {
             try {
                 deviceInfo ["swrve.android_id"] = AndroidGetAndroidId();

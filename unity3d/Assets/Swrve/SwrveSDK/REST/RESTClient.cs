@@ -25,7 +25,7 @@ namespace Swrve.REST
 /// </summary>
 public class RESTClient : IRESTClient
 {
-
+    private const string CONTENT_ENCODING_HEADER_KEY = "CONTENT-ENCODING";
     private List<string> metrics = new List<string> ();
 
     public virtual IEnumerator Get (string url, Action<RESTResponse> listener)
@@ -100,12 +100,12 @@ public class RESTClient : IRESTClient
                 if (www.responseHeaders != null) {
                     Dictionary<string, string>.Enumerator headersEnum = www.responseHeaders.GetEnumerator();
                     while(headersEnum.MoveNext()) {
-                            KeyValuePair<string, string> header = headersEnum.Current;
-                        if (string.Equals (header.Key, "Content-Encoding", StringComparison.OrdinalIgnoreCase)) {
-                            www.responseHeaders.TryGetValue (header.Key, out contentEncodingHeader);
-                            break;
-                        }
+                        KeyValuePair<string, string> header = headersEnum.Current;
                         headers.Add (header.Key.ToUpper (), header.Value);
+                    }
+                    // Get the content encoding header, if present
+                    if (headers.ContainsKey(CONTENT_ENCODING_HEADER_KEY)) {
+                        contentEncodingHeader = headers[CONTENT_ENCODING_HEADER_KEY];
                     }
                 }
 
