@@ -39,19 +39,19 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
     /// In-app message that contains the given event in its trigger list and satisfies all the
     /// rules.
     /// </returns>
-    public SwrveMessage GetMessageForEvent (string triggerEvent, Dictionary<int, string> campaignReasons)
+    public SwrveMessage GetMessageForEvent (string triggerEvent, SwrveQAUser qaUser)
     {
         int messagesCount = Messages.Count;
 
         if (messagesCount == 0) {
-            LogAndAddReason (campaignReasons, "No messages in campaign " + Id);
+            LogAndAddReason ("No messages in campaign " + Id, qaUser);
             return null;
         }
 
-        if (checkCampaignLimits (triggerEvent, campaignReasons)) {
-            SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
+        if (checkCampaignLimits (triggerEvent, qaUser)) {
+            // SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
 
-            return GetNextMessage (messagesCount, campaignReasons);
+            return GetNextMessage (messagesCount, qaUser);
         }
         return null;
     }
@@ -74,7 +74,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         return null;
     }
 
-    protected SwrveMessage GetNextMessage (int messagesCount, Dictionary<int, string> campaignReasons)
+    protected SwrveMessage GetNextMessage (int messagesCount, SwrveQAUser qaUser)
     {
         if (RandomOrder) {
             List<SwrveMessage> randomMessages = new List<SwrveMessage> (Messages);
@@ -92,7 +92,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
             }
         }
 
-        LogAndAddReason (campaignReasons, "Campaign " + this.Id + " hasn't finished downloading.");
+        LogAndAddReason ("Campaign " + this.Id + " hasn't finished downloading.", qaUser);
         return null;
     }
 

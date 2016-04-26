@@ -1285,7 +1285,7 @@ public partial class SwrveSDK
             this.messagesLeftToShow = this.messagesLeftToShow - 1;
 
             // Update next for round robin
-            SwrveMessagesCampaign campaign = messageFormat.Message.Campaign;
+            SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)messageFormat.Message.Campaign;
             if (campaign != null) {
                 campaign.MessageWasShownToUser (messageFormat);
                 SaveCampaignData (campaign);
@@ -1394,22 +1394,10 @@ public partial class SwrveSDK
 #if SWRVE_SUPPORTED_PLATFORM
         SwrveMessage result = null;
         SwrveBaseCampaign campaign = null;
-        DateTime now = SwrveHelper.GetNow();
-        Dictionary<int, string> campaignReasons = null;
-        Dictionary<int, int> campaignMessages = null;
 
         // SwrveLog.Log("Trying to get message for: " + eventName);
 
         if (campaigns != null) {
-            if(!checkCampaignRules(eventName, "message", now)) {
-                return null;
-            }
-
-            if (qaUser != null) {
-                campaignReasons = new Dictionary<int, string> ();
-                campaignMessages = new Dictionary<int, int> ();
-            }
-
             IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
             List<SwrveMessage> availableMessages = new List<SwrveMessage>();
             // Select messages with higher priority
@@ -1422,7 +1410,7 @@ public partial class SwrveSDK
                 }
 
                 SwrveMessagesCampaign nextCampaign = (SwrveMessagesCampaign)itCampaign.Current;
-                SwrveMessage nextMessage = nextCampaign.GetMessageForEvent (eventName, campaignReasons);
+                SwrveMessage nextMessage = nextCampaign.GetMessageForEvent (eventName, qaUser);
                 // Check if the message supports the current orientation
                 if (nextMessage != null) {
                     if (nextMessage.SupportsOrientation(deviceOrientation)) {
@@ -1438,8 +1426,8 @@ public partial class SwrveSDK
                         }
                     } else {
                         if (qaUser != null) {
-                            campaignMessages.Add (nextCampaign.Id, nextMessage.Id);
-                            campaignReasons.Add (nextCampaign.Id, "Message didn't support the current device orientation: " + deviceOrientation);
+                            qaUser.campaignMessages.Add (nextCampaign.Id, nextMessage);
+                            qaUser.campaignReasons.Add (nextCampaign.Id, "Message didn't support the current device orientation: " + deviceOrientation);
                         }
                     }
                 }
@@ -1459,26 +1447,13 @@ public partial class SwrveSDK
                     SwrveMessage otherMessage = itOtherMessage.Current;
                     if (otherMessage != result) {
                         int otherCampaignId = otherMessage.Campaign.Id;
-                        if (!campaignMessages.ContainsKey(otherCampaignId)) {
-                            campaignMessages.Add (otherCampaignId, otherMessage.Id);
-                            campaignReasons.Add (otherCampaignId, "Campaign " + campaign.Id + " was selected for display ahead of this campaign");
+                        if((qaUser != null) && !qaUser.campaignMessages.ContainsKey(otherCampaignId)) {
+                            qaUser.campaignMessages.Add (otherCampaignId, otherMessage);
+                            qaUser.campaignReasons.Add (otherCampaignId, "Campaign " + campaign.Id + " was selected for display ahead of this campaign");
                         }
                     }
                 }
             }
-        }
-
-        if (qaUser != null) {
-            qaUser.Trigger (eventName, result, campaignReasons, campaignMessages);
-        }
-
-        if (result == null) {
-            SwrveLog.LogWarning ("Not showing message: no candidate messages for " + eventName);
-        } else {
-            // Notify message has been returned
-            Dictionary<string, string> payload = new Dictionary<string, string> ();
-            payload.Add ("id", result.Id.ToString ());
-            NamedEventInternal ("Swrve.Messages.message_returned", payload, false);
         }
 
         return result;
@@ -1492,22 +1467,10 @@ public partial class SwrveSDK
 #if SWRVE_SUPPORTED_PLATFORM
         SwrveConversation result = null;
         SwrveBaseCampaign campaign = null;
-        DateTime now = SwrveHelper.GetNow();
-        Dictionary<int, string> campaignReasons = null;
-        Dictionary<int, int> campaignMessages = null;
 
         // SwrveLog.Log("Trying to get conversation for: " + eventName);
 
         if (campaigns != null) {
-            if(!checkCampaignRules(eventName, "conversation", now)) {
-                return null;
-            }
-
-            if (qaUser != null) {
-                campaignReasons = new Dictionary<int, string> ();
-                campaignMessages = new Dictionary<int, int> ();
-            }
-
             IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
             List<SwrveConversation> availableConversations = new List<SwrveConversation>();
             while (itCampaign.MoveNext() && result == null) {
@@ -1516,7 +1479,7 @@ public partial class SwrveSDK
                 }
 
                 SwrveConversationCampaign nextCampaign = (SwrveConversationCampaign)itCampaign.Current;
-                SwrveConversation nextConversation = nextCampaign.GetConversationForEvent (eventName, campaignReasons);
+                SwrveConversation nextConversation = nextCampaign.GetConversationForEvent (eventName, qaUser);
                 // Check if the message supports the current orientation
                 if (nextConversation != null) {
                     availableConversations.Add(nextConversation);
@@ -1535,26 +1498,13 @@ public partial class SwrveSDK
                     SwrveConversation otherMessage = itOtherConversations.Current;
                     if (otherMessage != result) {
                         int otherCampaignId = otherMessage.Campaign.Id;
-                        if (!campaignMessages.ContainsKey(otherCampaignId)) {
-                            campaignMessages.Add (otherCampaignId, otherMessage.Campaign.Id);
-                            campaignReasons.Add (otherCampaignId, "Campaign " + campaign.Id + " was selected for display ahead of this campaign");
+                        if ((qaUser != null) && !qaUser.campaignMessages.ContainsKey(otherCampaignId)) {
+                            qaUser.campaignMessages.Add (otherCampaignId, otherMessage);
+                            qaUser.campaignReasons.Add (otherCampaignId, "Campaign " + campaign.Id + " was selected for display ahead of this campaign");
                         }
                     }
                 }
             }
-        }
-
-        if (qaUser != null) {
-            qaUser.Trigger (eventName, result, campaignReasons, campaignMessages);
-        }
-
-        if (result == null) {
-            // SwrveLog.LogWarning ("Not showing conversation: no candidate messages for " + eventName);
-        } else {
-            // Notify message has been returned
-            Dictionary<string, string> payload = new Dictionary<string, string> ();
-            payload.Add ("id", result.Id.ToString ());
-            NamedEventInternal ("Swrve.Conversations.conversation_returned", payload, false);
         }
 
         return result;
@@ -1563,7 +1513,7 @@ public partial class SwrveSDK
 #endif
     }
 
-    private bool checkCampaignRules(string eventName, string elementName, DateTime now) {
+    private bool checkCampaignRules(string eventName, DateTime now) {
         if (campaigns.Count == 0) {
             NoMessagesWereShown (eventName, "No campaigns available");
             return false;
@@ -1575,12 +1525,12 @@ public partial class SwrveSDK
         }
         
         if (IsTooSoonToShowMessageAfterDelay (now)) {
-            NoMessagesWereShown(eventName, "{App throttle limit} Too soon after last " + elementName + ". Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
+            NoMessagesWereShown(eventName, "{App throttle limit} Too soon after last base message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
             return false;
         }
         
         if (HasShowTooManyMessagesAlready ()) {
-            NoMessagesWereShown(eventName, "{App throttle limit} Too many " + elementName + "s shown");
+            NoMessagesWereShown(eventName, "{App throttle limit} Too many base messages shown");
             return false;
         }
         
@@ -1666,18 +1616,16 @@ public partial class SwrveSDK
     /// <param name="messageListener">
     /// Message listener to recieve message events. If null, the global message listener will be used.
     /// </param>
-    public IEnumerator ShowMessageForEvent (string eventName, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null)
+    public IEnumerator ShowMessageForEvent (string eventName, SwrveMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         if (TriggeredMessageListener != null) {
             // They are using a custom listener
-            SwrveMessage message = GetMessageForEvent (eventName);
             if (message != null) {
                 TriggeredMessageListener.OnMessageTriggered (message);
             }
         } else {
             if (currentMessage == null) {
-                SwrveMessage message = GetMessageForEvent (eventName);
                 yield return Container.StartCoroutine(LaunchMessage(message, installButtonListener, customButtonListener, messageListener));
             }
         }
@@ -1696,10 +1644,9 @@ public partial class SwrveSDK
     /// <param name="eventName">
     /// The name of the event that was triggered
     /// </param>
-    public IEnumerator ShowConversationForEvent (string eventName)
+    public IEnumerator ShowConversationForEvent (string eventName, SwrveConversation conversation)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        SwrveConversation conversation = GetConversationForEvent(eventName);
         yield return Container.StartCoroutine(LaunchConversation(conversation));
         TaskFinished ("ShowConversationForEvent");
 #else

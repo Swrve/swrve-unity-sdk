@@ -11,7 +11,7 @@ namespace Swrve.Messaging
 /// <summary>
 /// In-app message.
 /// </summary>
-public class SwrveConversation
+public class SwrveConversation : SwrveBaseMessage
 {
     /// <summary>
     /// Identifies the message in a campaign.
@@ -19,16 +19,6 @@ public class SwrveConversation
     public string Conversation;
     
     public List<string> ConversationAssets;
-        
-    /// <summary>
-    /// Identifies the conversation in a campaign.
-    /// </summary>
-    public int Id;
-
-    /// <summary>
-    /// Parent in-app campaign.
-    /// </summary>
-    public SwrveConversationCampaign Campaign;
 
     private SwrveConversation (SwrveConversationCampaign campaign)
     {
@@ -96,5 +86,9 @@ public class SwrveConversation
 
         return true;
     }
+
+  	override public string getBaseFormattedMessageType() {
+  		  return "Conversation";
+  	}
 }
 }

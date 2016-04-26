@@ -9,13 +9,8 @@ namespace Swrve.Messaging
 /// <summary>
 /// In-app message.
 /// </summary>
-public class SwrveMessage
+public class SwrveMessage : SwrveBaseMessage
 {
-    /// <summary>
-    /// Identifies the message in a campaign.
-    /// </summary>
-    public int Id;
-
     /// <summary>
     /// Name of the message.
     /// </summary>
@@ -25,11 +20,6 @@ public class SwrveMessage
     /// Priority of the message.
     /// </summary>
     public int Priority = 9999;
-
-    /// <summary>
-    /// Parent in-app campaign.
-    /// </summary>
-    public SwrveMessagesCampaign Campaign;
 
     /// <summary>
     /// List of formats available for the device.
@@ -173,6 +163,10 @@ public class SwrveMessage
         }
 
         return true;
+    }
+
+    override public string getBaseFormattedMessageType() {
+        return "Message";
     }
 }
 }

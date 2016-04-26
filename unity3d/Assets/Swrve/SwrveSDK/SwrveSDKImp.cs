@@ -661,21 +661,17 @@ public partial class SwrveSDK
 #endif
         } else {
             SwrveLog.LogError ("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");
-
         }
 
-        if (allowShowMessage && config.ConversationsEnabled) {
-            StartTask ("ShowConversationForEvent", ShowConversationForEvent (eventName));
+        if (allowShowMessage) {
+            ShowBaseMessage (eventName);
         }
-        if (allowShowMessage && config.TalkEnabled) {
-            StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
-        }
-    }
+  	}
 
-    protected virtual void AppendEventToBuffer (string eventJson)
-    {
-        eventBufferStringBuilder.Append (eventJson);
-    }
+  	protected virtual void AppendEventToBuffer (string eventJson)
+  	{
+      	eventBufferStringBuilder.Append (eventJson);
+  	}
     #endregion
 
     protected virtual Coroutine StartTask (string tag, IEnumerator task)
@@ -685,6 +681,40 @@ public partial class SwrveSDK
 
     protected virtual void TaskFinished (string tag)
     {
+    }
+
+    protected void ShowBaseMessage (string eventName)
+    {
+        if (!checkCampaignRules (eventName, DateTime.Now)) {
+            return;
+        }
+
+        SwrveBaseMessage baseMessage = null;
+        if (config.ConversationsEnabled) {
+            SwrveConversation conversation = GetConversationForEvent (eventName);
+            StartTask ("ShowConversationForEvent", ShowConversationForEvent (eventName, conversation));
+            baseMessage = conversation;
+        }
+
+        if (config.TalkEnabled) {
+            SwrveMessage message = GetMessageForEvent (eventName);
+            StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+            baseMessage = message;
+        }
+
+        if (qaUser != null) {
+            qaUser.Trigger (eventName, baseMessage);
+        }
+
+        if (baseMessage == null) {
+            SwrveLog.Log ("Not showing message: no candidate for " + eventName);
+        } else {
+            NamedEventInternal (
+                baseMessage.GetEventPrefix () + "_returned",
+                new Dictionary<string, string> { { "id", baseMessage.Id.ToString () } },
+                false
+            );
+        }
     }
 
     private bool IsAlive ()
@@ -1029,7 +1059,7 @@ public partial class SwrveSDK
     private bool isValidMessageCenter(SwrveBaseCampaign campaign, SwrveOrientation orientation=SwrveOrientation.Either) {
         return campaign.IsMessageCenter ()
           && campaign.Status != SwrveCampaignState.Status.Deleted
-          && campaign.IsActive ()
+          && campaign.IsActive (qaUser)
           && campaign.SupportsOrientation (orientation)
           && campaign.AreAssetsReady ();
     }

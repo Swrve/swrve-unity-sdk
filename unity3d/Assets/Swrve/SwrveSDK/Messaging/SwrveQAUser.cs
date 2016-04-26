@@ -29,6 +29,9 @@ public class SwrveQAUser
     public readonly bool ResetDevice;
     public readonly bool Logging;
 
+    public Dictionary<int, string> campaignReasons = new Dictionary<int, string> ();
+    public Dictionary<int, SwrveBaseMessage> campaignMessages = new Dictionary<int, SwrveBaseMessage> ();
+
     public SwrveQAUser (SwrveSDK swrve, Dictionary<string, object> jsonQa)
     {
         this.swrve = swrve;
@@ -38,12 +41,16 @@ public class SwrveQAUser
             restClient = new RESTClient ();
             this.loggingUrl = MiniJsonHelper.GetString (jsonQa, "logging_url", null);
         }
+
+        campaignReasons = new Dictionary<int, string> ();
+        campaignMessages = new Dictionary<int, SwrveBaseMessage> ();
     }
 
     public void TalkSession (Dictionary<int, string> campaignsDownloaded)
     {
         try {
             if (CanMakeSessionRequest ()) {
+                lastSessionRequestTime = SwrveHelper.GetMilliseconds;
                 String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/session";
                 Dictionary<string, object> talkSessionJson = new Dictionary<string, object> ();
 
@@ -123,43 +130,50 @@ public class SwrveQAUser
         }
     }
 
-    public void Trigger (string eventName, SwrveMessage messageShown, Dictionary<int, string> campaignReasons, Dictionary<int, int> campaignMessages)
+    public void Trigger (string eventName, SwrveBaseMessage baseMessage)
     {
         try {
             if (CanMakeTriggerRequest ()) {
+                lastTriggerRequestTime = SwrveHelper.GetMilliseconds ();
+                
+                Dictionary<int, string> _reasons = campaignReasons;
+                Dictionary<int, SwrveBaseMessage> _messages = campaignMessages;
+                campaignReasons = new Dictionary<int, string>();
+                campaignMessages = new Dictionary<int, SwrveBaseMessage>();
+
                 String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/trigger";
                 Dictionary<string, object> triggerJson = new Dictionary<string, object> ();
                 triggerJson.Add ("trigger_name", eventName);
-                triggerJson.Add ("displayed", (messageShown != null));
-                triggerJson.Add ("reason", (messageShown == null) ? "The loaded campaigns returned no message" : string.Empty);
+                triggerJson.Add ("displayed", baseMessage != null);
+                triggerJson.Add ("reason", baseMessage == null ? "The loaded campaigns returned no conversation or message" : string.Empty);
 
                 // Add campaigns that were not displayed
                 IList<object> campaignsJson = new List<object> ();
-                Dictionary<int, string>.Enumerator campaignIt = campaignReasons.GetEnumerator ();
+                Dictionary<int, string>.Enumerator campaignIt = _reasons.GetEnumerator ();
                 while (campaignIt.MoveNext()) {
                     int campaignId = campaignIt.Current.Key;
                     String reason = campaignIt.Current.Value;
 
-                    int? messageId = null;
-                    if (campaignMessages.ContainsKey (campaignId)) {
-                        messageId = campaignMessages [campaignId];
-                    }
-
                     Dictionary<string, object> campaignInfo = new Dictionary<string, object> ();
                     campaignInfo.Add ("id", campaignId);
                     campaignInfo.Add ("displayed", false);
-                    campaignInfo.Add ("message_id", (messageId == null) ? -1 : messageId);
                     campaignInfo.Add ("reason", (reason == null) ? string.Empty : reason);
+
+                    if (_messages.ContainsKey (campaignId)) {
+                        SwrveBaseMessage _baseMessage = _messages [campaignId];
+                        campaignInfo.Add (_baseMessage.getBaseMessageType() + "_id", _baseMessage.Id);
+                    }
                     campaignsJson.Add (campaignInfo);
                 }
 
                 // Add campaign that was shown, if available
-                if (messageShown != null) {
+                if(baseMessage != null) {
                     Dictionary<string, object> campaignInfo = new Dictionary<string, object> ();
-                    campaignInfo.Add ("id", messageShown.Campaign.Id);
+                    campaignInfo.Add ("id", baseMessage.Campaign.Id);
                     campaignInfo.Add ("displayed", true);
-                    campaignInfo.Add ("message_id", messageShown.Id);
+                    campaignInfo.Add (baseMessage.getBaseMessageType() + "_id", baseMessage.Id);
                     campaignInfo.Add ("reason", string.Empty);
+                    
                     campaignsJson.Add (campaignInfo);
                 }
                 triggerJson.Add ("campaigns", campaignsJson);
@@ -169,116 +183,32 @@ public class SwrveQAUser
         } catch (Exception exp) {
             SwrveLog.LogError ("QA request talk session failed: " + exp.ToString ());
         }
-    }
-
-    public void Trigger (string eventName, SwrveConversation conversationShown, Dictionary<int, string> campaignReasons, Dictionary<int, int> campaignMessages)
-    {
-        try {
-            if (CanMakeTriggerRequest ()) {
-                String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/trigger";
-                Dictionary<string, object> triggerJson = new Dictionary<string, object> ();
-                triggerJson.Add ("trigger_name", eventName);
-                triggerJson.Add ("displayed", (conversationShown != null));
-                triggerJson.Add ("reason", (conversationShown == null) ? "The loaded campaigns returned no conversation" : string.Empty);
-
-                // Add campaigns that were not displayed
-                IList<object> campaignsJson = new List<object> ();
-                Dictionary<int, string>.Enumerator campaignIt = campaignReasons.GetEnumerator ();
-                while (campaignIt.MoveNext()) {
-                    int campaignId = campaignIt.Current.Key;
-                    String reason = campaignIt.Current.Value;
-
-                    int? conversationId = null;
-                    if (campaignMessages.ContainsKey (campaignId)) {
-                        conversationId = campaignMessages [campaignId];
-                    }
-
-                    Dictionary<string, object> campaignInfo = new Dictionary<string, object> ();
-                    campaignInfo.Add ("id", campaignId);
-                    campaignInfo.Add ("displayed", false);
-                    campaignInfo.Add ("conversation_id", (conversationId == null) ? -1 : conversationId);
-                    campaignInfo.Add ("reason", (reason == null) ? string.Empty : reason);
-                    campaignsJson.Add (campaignInfo);
-                }
-
-                // Add campaign that was shown, if available
-                if (conversationShown != null) {
-                    Dictionary<string, object> campaignInfo = new Dictionary<string, object> ();
-                    campaignInfo.Add ("id", conversationShown.Id);
-                    campaignInfo.Add ("displayed", true);
-                    campaignInfo.Add ("conversation_id", conversationShown.Id);
-                    campaignInfo.Add ("reason", string.Empty);
-                    campaignsJson.Add (campaignInfo);
-                }
-                triggerJson.Add ("campaigns", campaignsJson);
-
-                MakeRequest (endpoint, triggerJson);
-            }
-        } catch (Exception exp) {
-            SwrveLog.LogError ("QA request talk session failed: " + exp.ToString ());
-        }
-    }
-
-    private bool CanMakeRequest ()
-    {
-        return (swrve != null && Logging);
-    }
-
-    private bool CanMakeSessionRequest ()
-    {
-        if (CanMakeRequest ()) {
-            long currentTime = SwrveHelper.GetMilliseconds ();
-            if (lastSessionRequestTime == 0 || (currentTime - lastSessionRequestTime) > SessionInterval) {
-                lastSessionRequestTime = currentTime;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private bool CanMakeTriggerRequest ()
-    {
-        if (CanMakeRequest ()) {
-            long currentTime = SwrveHelper.GetMilliseconds ();
-            if (lastTriggerRequestTime == 0 || (currentTime - lastTriggerRequestTime) > TriggerInterval) {
-                lastTriggerRequestTime = currentTime;
-                return true;
-            }
-        }
-
-        return false;
     }
 
 #if UNITY_IPHONE
 #if UNITY_5
-    public void PushNotification (UnityEngine.iOS.RemoteNotification[] notifications, int count)
+    public void PushNotification (UnityEngine.iOS.RemoteNotification notification)
 #else
-    public void PushNotification (RemoteNotification[] notifications, int count)
+    public void PushNotification (RemoteNotification notification)
 #endif
     {
         try {
             String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/push";
 
-            for(int i = 0; i < count; i++) {
-                if (CanMakePushNotificationRequest()) {
-                    Dictionary<string, object> pushJson = new Dictionary<string, object>();
-#if UNITY_5
-                    UnityEngine.iOS.RemoteNotification notification = notifications[i];
-#else
-                    RemoteNotification notification = notifications[i];
-#endif
-                    pushJson.Add("alert", notification.alertBody);
-                    pushJson.Add("sound", notification.soundName);
-                    pushJson.Add("badge", notification.applicationIconBadgeNumber);
+            if (CanMakePushNotificationRequest()) {
+                lastPushNotificationRequestTime = SwrveHelper.GetMilliseconds ();
 
-                    if (notification.userInfo != null && notification.userInfo.Contains("_p")) {
-                        string pushId = notification.userInfo["_p"].ToString();
-                        pushJson.Add("id", pushId);
-                    }
+                Dictionary<string, object> pushJson = new Dictionary<string, object>();
+                pushJson.Add("alert", notification.alertBody);
+                pushJson.Add("sound", notification.soundName);
+                pushJson.Add("badge", notification.applicationIconBadgeNumber);
 
-                    MakeRequest(endpoint, pushJson);
+                if (notification.userInfo != null && notification.userInfo.Contains("_p")) {
+                    string pushId = notification.userInfo["_p"].ToString();
+                    pushJson.Add("id", pushId);
                 }
+
+                MakeRequest(endpoint, pushJson);
             }
         } catch(Exception exp) {
             SwrveLog.LogError("QA request talk session failed: " + exp.ToString());
@@ -286,17 +216,34 @@ public class SwrveQAUser
     }
 #endif
 
-    private bool CanMakePushNotificationRequest ()
+    private bool CanMakeRequest ()
     {
-        if (swrve != null && Logging) {
-            long currentTime = SwrveHelper.GetMilliseconds ();
-            if (lastPushNotificationRequestTime == 0 || (currentTime - lastPushNotificationRequestTime) > PushNotificationInterval) {
-                lastPushNotificationRequestTime = currentTime;
+        return (swrve != null && Logging);
+    }
+
+    private bool CanMakeTimedRequest(long lastTime, long intervalTime) {
+        if (CanMakeRequest ()) {
+            if (lastTime == 0 || (SwrveHelper.GetMilliseconds () - lastTime) > SessionInterval) {
                 return true;
             }
         }
-
+    
         return false;
+    }
+
+    private bool CanMakeSessionRequest ()
+    {
+        return CanMakeTimedRequest (lastSessionRequestTime, SessionInterval);
+    }
+
+    private bool CanMakeTriggerRequest ()
+    {
+        return CanMakeTimedRequest (lastTriggerRequestTime, TriggerInterval);
+    }
+
+    private bool CanMakePushNotificationRequest ()
+    {
+        return CanMakeTimedRequest (lastPushNotificationRequestTime, PushNotificationInterval);
     }
 
     private void RestListener (RESTResponse response)

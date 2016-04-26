@@ -144,64 +144,60 @@ public abstract class SwrveBaseCampaign
         this.showMessagesAfterLaunch = swrveInitialisedTime + TimeSpan.FromSeconds (DefaultDelayFirstMessage);
     }
 
-    public bool checkCampaignLimits(string triggerEvent, Dictionary<int, string> campaignReasons)
+    public bool checkCampaignLimits(string triggerEvent, SwrveQAUser qaUser)
     {
         // Use local time to track throttle limits (want to show local time in logs)
         DateTime localNow = SwrveHelper.GetNow ();
 
         if (!WillTriggerForEvent (triggerEvent)) {
-            LogAndAddReason (campaignReasons, "There is no trigger in " + Id + " that matches " + triggerEvent);
+            LogAndAddReason ("There is no trigger in " + Id + " that matches " + triggerEvent, qaUser);
             return false;
         }
 
-        if (!IsActive (campaignReasons)) {
+        if (!IsActive (qaUser)) {
             return false;
         }
 
         if (Impressions >= maxImpressions) {
-            LogAndAddReason (campaignReasons, "{Campaign throttle limit} Campaign " + Id + " has been shown " + maxImpressions + " times already");
+            LogAndAddReason ("{Campaign throttle limit} Campaign " + Id + " has been shown " + maxImpressions + " times already", qaUser);
             return false;
         }
 
         if (!string.Equals (triggerEvent, SwrveSDK.DefaultAutoShowMessagesTrigger, StringComparison.OrdinalIgnoreCase) && IsTooSoonToShowMessageAfterLaunch (localNow)) {
-            LogAndAddReason (campaignReasons, "{Campaign throttle limit} Too soon after launch. Wait until " + showMessagesAfterLaunch.ToString (WaitTimeFormat));
+            LogAndAddReason ("{Campaign throttle limit} Too soon after launch. Wait until " + showMessagesAfterLaunch.ToString (WaitTimeFormat), qaUser);
             return false;
         }
 
         if (IsTooSoonToShowMessageAfterDelay (localNow)) {
-            LogAndAddReason (campaignReasons, "{Campaign throttle limit} Too soon after last message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
+            LogAndAddReason ("{Campaign throttle limit} Too soon after last message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat), qaUser);
             return false;
         }
 
         return true;
     }
 
-    public bool IsActive(Dictionary<int, string> campaignReasons=null) {
+    public bool IsActive(SwrveQAUser qaUser) {
 
         // Use UTC to compare to start/end dates from DB
         DateTime utcNow = SwrveHelper.GetUtcNow ();
 
         if (StartDate > utcNow) {
-            if(null != campaignReasons) {
-                LogAndAddReason (campaignReasons, "Campaign " + Id + " has not started yet");
-            }
+            LogAndAddReason ("Campaign " + Id + " has not started yet", qaUser);
             return false;
         }
 
         if (EndDate < utcNow) {
-            if(null != campaignReasons) {
-                LogAndAddReason (campaignReasons, "Campaign " + Id + " has finished");
-            }
+            LogAndAddReason ("Campaign " + Id + " has finished", qaUser);
             return false;
         }
 
         return true;
     }
 
-    protected void LogAndAddReason (Dictionary<int, string> campaignReasons, string reason)
+    protected void LogAndAddReason (string reason, SwrveQAUser qaUser)
     {
-        if (campaignReasons != null) {
-            campaignReasons.Add (Id, reason);
+	    if (qaUser != null && !qaUser.campaignReasons.ContainsKey(Id)) {
+            qaUser.campaignReasons.Add (Id, reason);
         }
         // SwrveLog.Log (reason);
     }
@@ -256,7 +252,7 @@ public abstract class SwrveBaseCampaign
         campaign.Subject = campaignData.ContainsKey ("subject") ? (string)campaignData ["subject"] : "";
 
         if (campaign.IsMessageCenter ()) {
-            UnityEngine.Debug.Log (string.Format ("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
+            SwrveLog.Log (string.Format ("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
         }
 
         return campaign;

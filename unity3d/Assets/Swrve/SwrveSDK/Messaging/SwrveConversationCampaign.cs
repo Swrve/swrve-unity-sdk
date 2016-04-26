@@ -37,14 +37,14 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
     /// SwrveConversation that contains the given event in its trigger list and satisfies all the
     /// rules.
     /// </returns>
-    public SwrveConversation GetConversationForEvent(string triggerEvent, Dictionary<int, string> campaignReasons)
+    public SwrveConversation GetConversationForEvent(string triggerEvent, SwrveQAUser qaUser)
     {
         if (null == Conversation) {
-            LogAndAddReason (campaignReasons, "No conversation in campaign " + Id);
+            LogAndAddReason ("No conversation in campaign " + Id, qaUser);
             return null;
         }
 
-        if (checkCampaignLimits (triggerEvent, campaignReasons)) {
+        if (checkCampaignLimits (triggerEvent, qaUser)) {
             SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
 
             return Conversation;
