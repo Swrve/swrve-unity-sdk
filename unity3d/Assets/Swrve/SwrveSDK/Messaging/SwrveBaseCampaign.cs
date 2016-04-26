@@ -1,14 +1,16 @@
 using System.Collections.Generic;
 using System.Collections;
 using System;
+using System.Linq;
 using Swrve.Helpers;
+using SwrveMiniJSON;
 
 namespace Swrve.Messaging
 {
 /// <summary>
 /// Swrve Talk campaign.
 /// </summary>
-public class SwrveCampaign
+public abstract class SwrveBaseCampaign
 {
     protected readonly Random rnd = new Random ();
     protected const string WaitTimeFormat = @"HH\:mm\:ss zzz";
@@ -22,9 +24,14 @@ public class SwrveCampaign
     public int Id;
 
     /// <summary>
-    /// List of messages contained in the campaign.
+    // Flag indicating if it is a MessageCenter campaign
     /// </summary>
-    public List<SwrveMessage> Messages;
+    protected bool messageCenter;
+
+    /// <summary>
+    // MessageCenter subject of the campaign
+    /// </summary>
+    protected string subject;
 
     /// <summary>
     /// List of triggers for the campaign.
@@ -65,6 +72,42 @@ public class SwrveCampaign
             this.State.Next = value;
         }
     }
+     
+    /// <summary>
+    /// Get the status of the campaign.
+    /// </summary>
+    /// <returns>
+    /// Status of the campaign.
+    /// </returns>
+    public SwrveCampaignState.Status Status {
+        get {
+            return this.State.CurStatus;
+        }
+        set {
+            this.State.CurStatus = value;
+        }
+    }
+        
+    /**
+     * Used internally to identify campaigns that have been marked as MessageCenter campaigns on the dashboard.
+     *
+     * @return true if the campaign is an MessageCenter campaign.
+     */
+    public bool IsMessageCenter() {
+      return messageCenter;
+    }
+
+    protected void SetIsMessageCenter(bool isMessageCenter) {
+        this.messageCenter = isMessageCenter;
+    }
+
+    /**
+     * @return the name of the campaign.
+     */
+    public string Subject {
+        get { return subject; }
+        protected set { this.subject = value; }
+    }
 
     /// <summary>
     /// Indicates if the campaign serves messages randomly or using round robin.
@@ -91,148 +134,85 @@ public class SwrveCampaign
     protected int delayFirstMessage = DefaultDelayFirstMessage;
     protected int maxImpressions;
 
-    private SwrveCampaign (DateTime initialisedTime, string assetPath)
+    protected SwrveBaseCampaign (DateTime initialisedTime, string assetPath)
     {
         this.State = new SwrveCampaignState();
         this.swrveInitialisedTime = initialisedTime;
         this.assetPath = assetPath;
-        this.Messages = new List<SwrveMessage> ();
         this.Triggers = new HashSet<string> ();
         this.minDelayBetweenMessage = DefaultMinDelay;
         this.showMessagesAfterLaunch = swrveInitialisedTime + TimeSpan.FromSeconds (DefaultDelayFirstMessage);
     }
 
-    /// <summary>
-    /// Search for a message related to the given trigger event at the given
-    /// time. This function will return null if too many messages were dismissed,
-    /// the campaign start is in the future, the campaign end is in the past or
-    /// the given event is not contained in the trigger set.
-    /// </summary>
-    /// <param name="triggerEvent">
-    /// Event triggered. Must be a trigger for the campaign.
-    /// </param>
-    /// <param name="campaignReasons">
-    /// At the exit of the function will include the reasons why a campaign the campaigns
-    /// in memory were not shown or chosen.
-    /// </param>
-    /// <returns>
-    /// In-app message that contains the given event in its trigger list and satisfies all the
-    /// rules.
-    /// </returns>
-    public SwrveMessage GetMessageForEvent (string triggerEvent, Dictionary<int, string> campaignReasons)
+    public bool checkCampaignLimits(string triggerEvent, SwrveQAUser qaUser)
     {
-        // Use UTC to compare to start/end dates from DB
-        DateTime utcNow = SwrveHelper.GetUtcNow ();
         // Use local time to track throttle limits (want to show local time in logs)
         DateTime localNow = SwrveHelper.GetNow ();
 
-        int messagesCount = Messages.Count;
-
-        if (!HasMessageForEvent (triggerEvent)) {
-            SwrveLog.Log ("There is no trigger in " + Id + " that matches " + triggerEvent);
-            return null;
+        if (!WillTriggerForEvent (triggerEvent)) {
+            LogAndAddReason ("There is no trigger in " + Id + " that matches " + triggerEvent, qaUser);
+            return false;
         }
 
-        if (messagesCount == 0) {
-            LogAndAddReason (campaignReasons, "No messages in campaign " + Id);
-            return null;
-        }
-
-        if (StartDate > utcNow) {
-            LogAndAddReason (campaignReasons, "Campaign " + Id + " has not started yet");
-            return null;
-        }
-
-        if (EndDate < utcNow) {
-            LogAndAddReason (campaignReasons, "Campaign" + Id + " has finished");
-            return null;
+        if (!IsActive (qaUser)) {
+            return false;
         }
 
         if (Impressions >= maxImpressions) {
-            LogAndAddReason (campaignReasons, "{Campaign throttle limit} Campaign " + Id + " has been shown " + maxImpressions + " times already");
-            return null;
+            LogAndAddReason ("{Campaign throttle limit} Campaign " + Id + " has been shown " + maxImpressions + " times already", qaUser);
+            return false;
         }
 
         if (!string.Equals (triggerEvent, SwrveSDK.DefaultAutoShowMessagesTrigger, StringComparison.OrdinalIgnoreCase) && IsTooSoonToShowMessageAfterLaunch (localNow)) {
-            LogAndAddReason (campaignReasons, "{Campaign throttle limit} Too soon after launch. Wait until " + showMessagesAfterLaunch.ToString (WaitTimeFormat));
-            return null;
+            LogAndAddReason ("{Campaign throttle limit} Too soon after launch. Wait until " + showMessagesAfterLaunch.ToString (WaitTimeFormat), qaUser);
+            return false;
         }
 
         if (IsTooSoonToShowMessageAfterDelay (localNow)) {
-            LogAndAddReason (campaignReasons, "{Campaign throttle limit} Too soon after last message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
-            return null;
+            LogAndAddReason ("{Campaign throttle limit} Too soon after last message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat), qaUser);
+            return false;
         }
 
-        SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
-
-        return GetNextMessage (messagesCount, campaignReasons);
+        return true;
     }
 
-    protected void LogAndAddReason (Dictionary<int, string> campaignReasons, string reason)
-    {
-        if (campaignReasons != null) {
-            campaignReasons.Add (Id, reason);
+    public bool IsActive(SwrveQAUser qaUser) {
+
+        // Use UTC to compare to start/end dates from DB
+        DateTime utcNow = SwrveHelper.GetUtcNow ();
+
+        if (StartDate > utcNow) {
+            LogAndAddReason ("Campaign " + Id + " has not started yet", qaUser);
+            return false;
         }
-        SwrveLog.Log (reason);
+
+        if (EndDate < utcNow) {
+            LogAndAddReason ("Campaign " + Id + " has finished", qaUser);
+            return false;
+        }
+
+        return true;
+    }
+
+    protected void LogAndAddReason (string reason, SwrveQAUser qaUser)
+    {
+	    if (qaUser != null && !qaUser.campaignReasons.ContainsKey(Id)) {
+            qaUser.campaignReasons.Add (Id, reason);
+        }
+        // SwrveLog.Log (reason);
     }
 
     /// <summary>
-    /// Check if this campaign contains any message configured for the
-    /// given event trigger.
+    /// Check if this campaign will trigger for the given event.
     /// </summary>
     /// <returns>
     /// True if this campaign contains a message with the given trigger event.
     /// False otherwise.
     /// </returns>
-    public bool HasMessageForEvent (string eventName)
+    public bool WillTriggerForEvent (string eventName)
     {
         string lowercaseEventName = eventName.ToLower ();
         return Triggers != null && Triggers.Contains (lowercaseEventName);
-    }
-
-    /// <summary>
-    /// Get a message by its identifier.
-    /// </summary>
-    /// <returns>
-    /// The message with the given identifier if it could be found.
-    /// </returns>
-    public SwrveMessage GetMessageForId (int id)
-    {
-        for(int mi = 0; mi < Messages.Count; mi++) {
-            SwrveMessage message = Messages[mi];
-            if (message.Id == id) {
-                return message;
-            }
-        }
-
-        return null;
-    }
-
-    protected SwrveMessage GetNextMessage (int messagesCount, Dictionary<int, string> campaignReasons)
-    {
-        if (RandomOrder) {
-            List<SwrveMessage> randomMessages = new List<SwrveMessage> (Messages);
-            randomMessages.Shuffle ();
-            for(int mi = 0; mi < randomMessages.Count; mi++) {
-                SwrveMessage message = randomMessages[mi];
-                if (message.IsDownloaded (assetPath)) {
-                    return message;
-                }
-            }
-        } else if (Next < messagesCount) {
-            SwrveMessage message = Messages [Next];
-            if (message.IsDownloaded (assetPath)) {
-                return message;
-            }
-        }
-
-        LogAndAddReason (campaignReasons, "Campaign " + this.Id + " hasn't finished downloading.");
-        return null;
-    }
-
-    protected void AddMessage (SwrveMessage message)
-    {
-        this.Messages.Add (message);
     }
 
     /// <summary>
@@ -250,26 +230,28 @@ public class SwrveCampaign
     /// <returns>
     /// Parsed in-app campaign.
     /// </returns>
-    public static SwrveCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath)
+    public static SwrveBaseCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath)
     {
-        SwrveCampaign campaign = new SwrveCampaign (initialisedTime, assetPath);
+        SwrveBaseCampaign campaign = SwrveMessagesCampaign.LoadFromJSON (sdk, campaignData, initialisedTime, assetPath);
         campaign.Id = MiniJsonHelper.GetInt (campaignData, "id");
 
         AssignCampaignTriggers (campaign, campaignData);
         AssignCampaignRules (campaign, campaignData);
         AssignCampaignDates (campaign, campaignData);
 
-        IList<object> jsonMessages = (IList<object>)campaignData ["messages"];
-        for (int k = 0, t = jsonMessages.Count; k < t; k++) {
-            Dictionary<string, object> messageData = (Dictionary<string, object>)jsonMessages [k];
-            SwrveMessage message = SwrveMessage.LoadFromJSON (sdk, campaign, messageData);
-            if (message.Formats.Count > 0) {
-                campaign.AddMessage (message);
-            }
+        campaign.SetIsMessageCenter (campaignData.ContainsKey ("message_center") && (bool)campaignData ["message_center"]);
+        campaign.Subject = campaignData.ContainsKey ("subject") ? (string)campaignData ["subject"] : "";
+
+        if (campaign.IsMessageCenter ()) {
+            SwrveLog.Log (string.Format ("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
         }
 
         return campaign;
     }
+
+    public abstract bool AreAssetsReady ();
+
+    public abstract bool SupportsOrientation(SwrveOrientation orientation);
 
     /// <summary>
     /// Get all the assets in the in-app campaign messages.
@@ -277,18 +259,9 @@ public class SwrveCampaign
     /// <returns>
     /// All the assets in the in-app campaign.
     /// </returns>
-    public List<string> ListOfAssets ()
-    {
-        List<string> allAssets = new List<string> ();
-        for(int mi = 0; mi < Messages.Count; mi++) {
-            SwrveMessage message = Messages[mi];
-            allAssets.AddRange (message.ListOfAssets ());
-        }
+    public abstract List<string> ListOfAssets ();
 
-        return allAssets;
-    }
-
-    protected static void AssignCampaignTriggers (SwrveCampaign campaign, Dictionary<string, object> campaignData)
+    protected static void AssignCampaignTriggers (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
         IList<object> jsonTriggers = (IList<object>)campaignData ["triggers"];
         for (int i = 0, j = jsonTriggers.Count; i < j; i++) {
@@ -297,7 +270,7 @@ public class SwrveCampaign
         }
     }
 
-    protected static void AssignCampaignRules (SwrveCampaign campaign, Dictionary<string, object> campaignData)
+    protected static void AssignCampaignRules (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
         Dictionary<string, object> rules = (Dictionary<string, object>)campaignData ["rules"];
         campaign.RandomOrder = ((string)rules ["display_order"]).Equals ("random");
@@ -318,7 +291,7 @@ public class SwrveCampaign
         }
     }
 
-    protected static void AssignCampaignDates (SwrveCampaign campaign, Dictionary<string, object> campaignData)
+    protected static void AssignCampaignDates (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
         DateTime initDate = SwrveHelper.UnixEpoch;
         campaign.StartDate = initDate.AddMilliseconds (MiniJsonHelper.GetLong (campaignData, "start_date"));
@@ -346,29 +319,6 @@ public class SwrveCampaign
     }
 
     /// <summary>
-    /// Notify that the message was shown to the user. This function
-    /// has to be called only once when the message is displayed to
-    /// the user.
-    /// This is automatically called by the SDK and will only need
-    /// to be manually called if you are implementing your own
-    /// in-app message rendering code.
-    /// </summary>
-    public void MessageWasShownToUser (SwrveMessageFormat messageFormat)
-    {
-        IncrementImpressions ();
-        SetMessageMinDelayThrottle ();
-        if (Messages.Count > 0) {
-            if (!RandomOrder) {
-                int nextMessage = (Next + 1) % Messages.Count;
-                Next = nextMessage;
-                SwrveLog.Log ("Round Robin: Next message in campaign " + Id + " is " + nextMessage);
-            } else {
-                SwrveLog.Log ("Next message in campaign " + Id + " is random");
-            }
-        }
-    }
-
-    /// <summary>
     /// Notify that the a message was dismissed.
     /// This is automatically called by the SDK and will only need
     /// to be manually called if you are implementing your own
@@ -377,6 +327,10 @@ public class SwrveCampaign
     public void MessageDismissed ()
     {
         SetMessageMinDelayThrottle();
+    }
+
+    public bool IsA<T>() where T : SwrveBaseCampaign {
+            return GetType () == typeof(T);
     }
 }
 }

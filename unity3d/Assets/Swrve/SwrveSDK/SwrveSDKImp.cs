@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Swrve;
+using System.Linq;
 using System.Collections;
 using UnityEngine;
 using SwrveMiniJSON;
@@ -101,7 +102,7 @@ public partial class SwrveSDK
     protected bool assetsCurrentlyDownloading;
     protected HashSet<string> assetsOnDisk;
     protected Dictionary<int, SwrveCampaignState> campaignsState = new Dictionary<int, SwrveCampaignState>();
-    protected List<SwrveCampaign> campaigns = new List<SwrveCampaign> ();
+    protected List<SwrveBaseCampaign> campaigns = new List<SwrveBaseCampaign> ();
     protected Dictionary<string, object> campaignSettings = new Dictionary<string, object> ();
     protected Dictionary<string, string> gameStoreLinks = new Dictionary<string, string> ();
     protected SwrveMessageFormat currentMessage = null;
@@ -648,18 +649,17 @@ public partial class SwrveSDK
 #endif
         } else {
             SwrveLog.LogError ("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");
-
         }
 
-        if (allowShowMessage && config.TalkEnabled) {
-            StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+        if (allowShowMessage) {
+            ShowBaseMessage (eventName);
         }
-    }
+  	}
 
-    protected virtual void AppendEventToBuffer (string eventJson)
-    {
-        eventBufferStringBuilder.Append (eventJson);
-    }
+  	protected virtual void AppendEventToBuffer (string eventJson)
+  	{
+      	eventBufferStringBuilder.Append (eventJson);
+  	}
     #endregion
 
     protected virtual Coroutine StartTask (string tag, IEnumerator task)
@@ -669,6 +669,34 @@ public partial class SwrveSDK
 
     protected virtual void TaskFinished (string tag)
     {
+    }
+
+    protected void ShowBaseMessage (string eventName)
+    {
+        if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
+            return;
+        }
+
+        SwrveBaseMessage baseMessage = null;
+        if (config.TalkEnabled) {
+            SwrveMessage message = GetMessageForEvent (eventName);
+            StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+            baseMessage = message;
+        }
+
+        if (qaUser != null) {
+            qaUser.Trigger (eventName, baseMessage);
+        }
+
+        if (baseMessage == null) {
+            SwrveLog.Log ("Not showing message: no candidate for " + eventName);
+        } else {
+            NamedEventInternal (
+                baseMessage.GetEventPrefix () + "returned",
+                new Dictionary<string, string> { { "id", baseMessage.Id.ToString () } },
+                false
+            );
+        }
     }
 
     private bool IsAlive ()
@@ -935,8 +963,8 @@ public partial class SwrveSDK
             return;
         }
         for(int ci = 0; ci < campaigns.Count; ci++) {
-            SwrveCampaign campaign = campaigns[ci];
-            if (campaign.HasMessageForEvent (DefaultAutoShowMessagesTrigger)) {
+            SwrveBaseCampaign campaign = campaigns[ci];
+            if (campaign.WillTriggerForEvent (DefaultAutoShowMessagesTrigger)) {
                 if (TriggeredMessageListener != null) {
                     // They are using a custom listener
                     SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
@@ -980,6 +1008,14 @@ public partial class SwrveSDK
                 SwrveLog.LogError ("Could not get a format for the current orientation: " + currentOrientation.ToString ());
             }
         }
+    }
+
+    private bool isValidMessageCenter(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
+        return campaign.IsMessageCenter ()
+          && campaign.Status != SwrveCampaignState.Status.Deleted
+          && campaign.IsActive (qaUser)
+          && campaign.SupportsOrientation (orientation)
+          && campaign.AreAssetsReady ();
     }
 
     private void NoMessagesWereShown (string eventName, string reason)
@@ -1144,7 +1180,7 @@ public partial class SwrveSDK
 
     protected virtual void ProcessCampaigns (Dictionary<string, object> root)
     {
-        List<SwrveCampaign> newCampaigns = new List<SwrveCampaign> ();
+        List<SwrveBaseCampaign> newCampaigns = new List<SwrveBaseCampaign> ();
         List<string> assetsQueue = new List<string> ();
 
         try {
@@ -1217,26 +1253,25 @@ public partial class SwrveSDK
 
                     for (int i = 0, j = jsonCampaigns.Count; i < j; i++) {
                         Dictionary<string, object> campaignData = (Dictionary<string, object>)jsonCampaigns [i];
-                        SwrveCampaign campaign = SwrveCampaign.LoadFromJSON (this, campaignData, initialisedTime, swrveTemporaryPath);
-                        if (campaign.Messages.Count > 0) {
-                            assetsQueue.AddRange (campaign.ListOfAssets ());
-                            // Do we have to make retrieve the previous state?
-                            if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
-                                SwrveCampaignState campaignState = null;
-                                campaignsState.TryGetValue(campaign.Id, out campaignState);
-                                if (campaignState != null) {
-                                    campaign.State = campaignState;
-                                } else {
-                                    campaign.State = new SwrveCampaignState(campaign.Id, campaignSettings);
-                                }
+                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (this, campaignData, initialisedTime, swrveTemporaryPath);
+                        SwrveLog.Log( "added campaign id: " + campaign.Id + " type: " + campaign.GetType() + " triggers: " + string.Join(", ", campaign.Triggers.ToArray()) );
+                        assetsQueue.AddRange (campaign.ListOfAssets ());
+                        // Do we have to make retrieve the previous state?
+                        if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
+                            SwrveCampaignState campaignState = null;
+                            campaignsState.TryGetValue(campaign.Id, out campaignState);
+                            if (campaignState != null) {
+                                campaign.State = campaignState;
+                            } else {
+                                campaign.State = new SwrveCampaignState(campaign.Id, campaignSettings);
                             }
+                        }
 
-                            campaignsState[campaign.Id] =  campaign.State;
-                            newCampaigns.Add (campaign);
-                            if (qaUser != null) {
-                                // Add campaign for QA purposes
-                                campaignsDownloaded.Add (campaign.Id, null);
-                            }
+                        campaignsState[campaign.Id] =  campaign.State;
+                        newCampaigns.Add (campaign);
+                        if (qaUser != null) {
+                            // Add campaign for QA purposes
+                            campaignsDownloaded.Add (campaign.Id, null);
                         }
                     }
 
@@ -1251,7 +1286,7 @@ public partial class SwrveSDK
         }
 
         StartTask ("DownloadAssets", DownloadAssets (assetsQueue));
-        campaigns = new List<SwrveCampaign> (newCampaigns);
+        campaigns = new List<SwrveBaseCampaign> (newCampaigns);
     }
 
     private void LoadResourcesAndCampaigns ()
@@ -1369,7 +1404,7 @@ public partial class SwrveSDK
                                 // Construct debug event
                                 StringBuilder campaignIds = new StringBuilder ();
                                 for (int i = 0, j = campaigns.Count; i < j; i++) {
-                                    SwrveCampaign campaign = campaigns [i];
+                                    SwrveBaseCampaign campaign = campaigns [i];
                                     if (i != 0) {
                                         campaignIds.Append (',');
                                     }
@@ -1416,12 +1451,13 @@ public partial class SwrveSDK
         }
     }
 
-    private void SaveCampaignData (SwrveCampaign campaign)
+    private void SaveCampaignData (SwrveBaseCampaign campaign)
     {
         try {
             // Move from SwrveCampaignState to the dictionary
             campaignSettings ["Next" + campaign.Id] = campaign.Next;
             campaignSettings ["Impressions" + campaign.Id] = campaign.Impressions;
+            campaignSettings ["Status" + campaign.Id] = campaign.Status.ToString();
 
             string serializedCampaignSettings = Json.Serialize (campaignSettings);
             storage.Save (CampaignsSettingsSave, serializedCampaignSettings, userId);
@@ -1688,7 +1724,7 @@ public partial class SwrveSDK
                     _androidId = settingsSecure.CallStatic<string> ("getString", contentResolver, "android_id");
                 }
             } catch (Exception exp) {
-                SwrveLog.LogWarning("Couldn't get the device app version, make sure you are running on an Android device: " + exp.ToString());
+                SwrveLog.LogWarning("Couldn't get the \"android_id\" resource, make sure you are running on an Android device: " + exp.ToString());
             }
         }
         return _androidId;
