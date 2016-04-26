@@ -1246,24 +1246,25 @@ public partial class SwrveSDK
                     for (int i = 0, j = jsonCampaigns.Count; i < j; i++) {
                         Dictionary<string, object> campaignData = (Dictionary<string, object>)jsonCampaigns [i];
                         SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (this, campaignData, initialisedTime, swrveTemporaryPath);
-                        SwrveLog.Log( "added campaign id: " + campaign.Id + " type: " + campaign.GetType() + " triggers: " + string.Join(", ", campaign.Triggers.ToArray()) );
-                        assetsQueue.AddRange (campaign.ListOfAssets ());
-                        // Do we have to make retrieve the previous state?
-                        if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
-                            SwrveCampaignState campaignState = null;
-                            campaignsState.TryGetValue(campaign.Id, out campaignState);
-                            if (campaignState != null) {
-                                campaign.State = campaignState;
-                            } else {
-                                campaign.State = new SwrveCampaignState(campaign.Id, campaignSettings);
+                        if (campaign.IsA<SwrveMessagesCampaign>() && ((SwrveMessagesCampaign)campaign).Messages.Count > 0) {
+                            assetsQueue.AddRange (campaign.ListOfAssets ());
+                            // Do we have to make retrieve the previous state?
+                            if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
+                                SwrveCampaignState campaignState = null;
+                                campaignsState.TryGetValue(campaign.Id, out campaignState);
+                                if (campaignState != null) {
+                                    campaign.State = campaignState;
+                                } else {
+                                    campaign.State = new SwrveCampaignState(campaign.Id, campaignSettings);
+                                }
                             }
-                        }
 
-                        campaignsState[campaign.Id] =  campaign.State;
-                        newCampaigns.Add (campaign);
-                        if (qaUser != null) {
-                            // Add campaign for QA purposes
-                            campaignsDownloaded.Add (campaign.Id, null);
+                            campaignsState[campaign.Id] =  campaign.State;
+                            newCampaigns.Add (campaign);
+                            if (qaUser != null) {
+                                // Add campaign for QA purposes
+                                campaignsDownloaded.Add (campaign.Id, null);
+                            }
                         }
                     }
 
