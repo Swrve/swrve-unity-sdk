@@ -238,10 +238,10 @@ public class SwrveConfig
     public void CalculateEndpoints (int appId)
     {
         // Default values are saved in the prefab or component instance.
-        if (EventsServer == DefaultEventsServer) {
+        if (string.IsNullOrEmpty(EventsServer) || EventsServer == DefaultEventsServer) {
             EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, SelectedStack, "api.swrve.com");
         }
-        if (ContentServer == DefaultContentServer) {
+        if (string.IsNullOrEmpty(ContentServer) || ContentServer == DefaultContentServer) {
             ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, SelectedStack, "content.swrve.com");
         }
     }
