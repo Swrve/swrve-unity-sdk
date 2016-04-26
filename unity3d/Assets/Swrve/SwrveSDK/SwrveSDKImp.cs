@@ -1010,14 +1010,6 @@ public partial class SwrveSDK
         }
     }
 
-    private bool isValidMessageCenter(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
-        return campaign.IsMessageCenter ()
-          && campaign.Status != SwrveCampaignState.Status.Deleted
-          && campaign.IsActive (qaUser)
-          && campaign.SupportsOrientation (orientation)
-          && campaign.AreAssetsReady ();
-    }
-
     private void NoMessagesWereShown (string eventName, string reason)
     {
         SwrveLog.Log ("Not showing message for " + eventName + ": " + reason);
@@ -1457,7 +1449,6 @@ public partial class SwrveSDK
             // Move from SwrveCampaignState to the dictionary
             campaignSettings ["Next" + campaign.Id] = campaign.Next;
             campaignSettings ["Impressions" + campaign.Id] = campaign.Impressions;
-            campaignSettings ["Status" + campaign.Id] = campaign.Status.ToString();
 
             string serializedCampaignSettings = Json.Serialize (campaignSettings);
             storage.Save (CampaignsSettingsSave, serializedCampaignSettings, userId);

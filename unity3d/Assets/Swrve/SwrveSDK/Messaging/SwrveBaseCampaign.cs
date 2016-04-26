@@ -24,14 +24,7 @@ public abstract class SwrveBaseCampaign
     public int Id;
 
     /// <summary>
-    // Flag indicating if it is a MessageCenter campaign
     /// </summary>
-    protected bool messageCenter;
-
-    /// <summary>
-    // MessageCenter subject of the campaign
-    /// </summary>
-    protected string subject;
 
     /// <summary>
     /// List of triggers for the campaign.
@@ -71,42 +64,6 @@ public abstract class SwrveBaseCampaign
         set {
             this.State.Next = value;
         }
-    }
-     
-    /// <summary>
-    /// Get the status of the campaign.
-    /// </summary>
-    /// <returns>
-    /// Status of the campaign.
-    /// </returns>
-    public SwrveCampaignState.Status Status {
-        get {
-            return this.State.CurStatus;
-        }
-        set {
-            this.State.CurStatus = value;
-        }
-    }
-        
-    /**
-     * Used internally to identify campaigns that have been marked as MessageCenter campaigns on the dashboard.
-     *
-     * @return true if the campaign is an MessageCenter campaign.
-     */
-    public bool IsMessageCenter() {
-      return messageCenter;
-    }
-
-    protected void SetIsMessageCenter(bool isMessageCenter) {
-        this.messageCenter = isMessageCenter;
-    }
-
-    /**
-     * @return the name of the campaign.
-     */
-    public string Subject {
-        get { return subject; }
-        protected set { this.subject = value; }
     }
 
     /// <summary>
@@ -238,13 +195,6 @@ public abstract class SwrveBaseCampaign
         AssignCampaignTriggers (campaign, campaignData);
         AssignCampaignRules (campaign, campaignData);
         AssignCampaignDates (campaign, campaignData);
-
-        campaign.SetIsMessageCenter (campaignData.ContainsKey ("message_center") && (bool)campaignData ["message_center"]);
-        campaign.Subject = campaignData.ContainsKey ("subject") ? (string)campaignData ["subject"] : "";
-
-        if (campaign.IsMessageCenter ()) {
-            SwrveLog.Log (string.Format ("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
-        }
 
         return campaign;
     }

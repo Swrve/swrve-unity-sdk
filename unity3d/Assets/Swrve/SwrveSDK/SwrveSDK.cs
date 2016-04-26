@@ -1342,7 +1342,7 @@ public partial class SwrveSDK
         SwrveMessage result = null;
         SwrveBaseCampaign campaign = null;
 
-        // SwrveLog.Log("Trying to get message for: " + eventName);
+        SwrveLog.Log("Trying to get message for: " + eventName);
 
         if (campaigns != null) {
             IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
@@ -1434,33 +1434,6 @@ public partial class SwrveSDK
         return true;
     }
     
-        public void showMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
-        Container.StartCoroutine (LaunchMessage (
-            ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
-            GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
-        ));
-
-        campaign.Status = SwrveCampaignState.Status.Seen;
-        SaveCampaignData(campaign);
-    }
-        
-    public List<SwrveBaseCampaign> getMessageCenterCampaigns(SwrveOrientation orientation) { 
-        List<SwrveBaseCampaign> result = new List<SwrveBaseCampaign>();
-        IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
-        while(itCampaign.MoveNext()) {
-            SwrveBaseCampaign campaign = itCampaign.Current;
-            if (isValidMessageCenter (campaign, orientation)) {
-                result.Add (campaign);
-            }
-        }
-        return result;
-    }
-        
-    public void removeMessageCenterCampaign(SwrveBaseCampaign campaign) {
-        campaign.Status = SwrveCampaignState.Status.Deleted;
-        SaveCampaignData(campaign);
-    }
-
     /// <summary>
     /// Obtain an in-app message for the given id.
     /// </summary>

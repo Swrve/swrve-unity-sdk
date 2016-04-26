@@ -137,7 +137,6 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
     /// </summary>
     public void MessageWasShownToUser (SwrveMessageFormat messageFormat)
     {
-        Status = SwrveCampaignState.Status.Seen;
         IncrementImpressions ();
         SetMessageMinDelayThrottle ();
         if (Messages.Count > 0) {
