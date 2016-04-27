@@ -165,7 +165,7 @@ public class SwrveMessage : SwrveBaseMessage
         return true;
     }
 
-    override public string getBaseFormattedMessageType() {
+    override public string GetBaseFormattedMessageType() {
         return "Message";
     }
 }

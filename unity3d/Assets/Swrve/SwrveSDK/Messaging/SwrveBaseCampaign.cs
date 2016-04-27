@@ -156,7 +156,7 @@ public abstract class SwrveBaseCampaign
 	    if (qaUser != null && !qaUser.campaignReasons.ContainsKey(Id)) {
             qaUser.campaignReasons.Add (Id, reason);
         }
-        // SwrveLog.Log (reason);
+        SwrveLog.Log (reason);
     }
 
     /// <summary>

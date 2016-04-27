@@ -18,14 +18,14 @@ public abstract class SwrveBaseMessage {
     /// </summary>
     public SwrveBaseCampaign Campaign;
 
-    public string getBaseMessageType() {
-        return getBaseFormattedMessageType().ToLower();
+    public string GetBaseMessageType() {
+        return GetBaseFormattedMessageType().ToLower();
     }
 
-    public abstract string getBaseFormattedMessageType();
+    public abstract string GetBaseFormattedMessageType();
 
   	public string GetEventPrefix() {
-        return "Swrve." + getBaseFormattedMessageType() + "s." + getBaseMessageType() + "_";
+        return "Swrve." + GetBaseFormattedMessageType() + "s." + GetBaseMessageType() + "_";
   	}
 }
 }

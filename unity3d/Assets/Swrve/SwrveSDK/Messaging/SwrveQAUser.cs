@@ -162,7 +162,7 @@ public class SwrveQAUser
 
                     if (_messages.ContainsKey (campaignId)) {
                         SwrveBaseMessage _baseMessage = _messages [campaignId];
-                        campaignInfo.Add (_baseMessage.getBaseMessageType() + "_id", _baseMessage.Id);
+                        campaignInfo.Add (_baseMessage.GetBaseMessageType() + "_id", _baseMessage.Id);
                     }
                     campaignsJson.Add (campaignInfo);
                 }
@@ -172,7 +172,7 @@ public class SwrveQAUser
                     Dictionary<string, object> campaignInfo = new Dictionary<string, object> ();
                     campaignInfo.Add ("id", baseMessage.Campaign.Id);
                     campaignInfo.Add ("displayed", true);
-                    campaignInfo.Add (baseMessage.getBaseMessageType() + "_id", baseMessage.Id);
+                    campaignInfo.Add (baseMessage.GetBaseMessageType() + "_id", baseMessage.Id);
                     campaignInfo.Add ("reason", string.Empty);
                     
                     campaignsJson.Add (campaignInfo);
