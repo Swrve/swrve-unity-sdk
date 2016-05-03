@@ -652,7 +652,9 @@ public partial class SwrveSDK
         }
 
         if (allowShowMessage) {
-            ShowBaseMessage (eventName);
+            object payload;
+            eventParameters.TryGetValue("payload", out payload);
+            ShowBaseMessage (eventName, (IDictionary<string, string>)payload);
         }
   	}
 
@@ -671,7 +673,7 @@ public partial class SwrveSDK
     {
     }
 
-    protected void ShowBaseMessage (string eventName)
+    protected void ShowBaseMessage (string eventName, IDictionary<string, string> payload)
     {
         if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
             return;
@@ -679,7 +681,7 @@ public partial class SwrveSDK
 
         SwrveBaseMessage baseMessage = null;
         if (config.TalkEnabled) {
-            SwrveMessage message = GetMessageForEvent (eventName);
+            SwrveMessage message = GetMessageForEvent (eventName, payload);
             StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
             baseMessage = message;
         }
@@ -964,7 +966,7 @@ public partial class SwrveSDK
         }
         for(int ci = 0; ci < campaigns.Count; ci++) {
             SwrveBaseCampaign campaign = campaigns[ci];
-            if (campaign.WillTriggerForEvent (DefaultAutoShowMessagesTrigger)) {
+            if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger, null, qaUser)) {
                 if (TriggeredMessageListener != null) {
                     // They are using a custom listener
                     SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
@@ -1245,7 +1247,10 @@ public partial class SwrveSDK
 
                     for (int i = 0, j = jsonCampaigns.Count; i < j; i++) {
                         Dictionary<string, object> campaignData = (Dictionary<string, object>)jsonCampaigns [i];
-                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (this, campaignData, initialisedTime, swrveTemporaryPath);
+                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (this, campaignData, initialisedTime, swrveTemporaryPath, qaUser);
+                        if(campaign == null) {
+                            continue;
+                        }
                         if (campaign.IsA<SwrveMessagesCampaign>() && ((SwrveMessagesCampaign)campaign).Messages.Count > 0) {
                             assetsQueue.AddRange (campaign.ListOfAssets ());
                             // Do we have to make retrieve the previous state?

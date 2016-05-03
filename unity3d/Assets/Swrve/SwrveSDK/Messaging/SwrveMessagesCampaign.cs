@@ -39,7 +39,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
     /// In-app message that contains the given event in its trigger list and satisfies all the
     /// rules.
     /// </returns>
-    public SwrveMessage GetMessageForEvent (string triggerEvent, SwrveQAUser qaUser)
+    public SwrveMessage GetMessageForEvent (string triggerEvent, IDictionary<string, string> payload, SwrveQAUser qaUser)
     {
         int messagesCount = Messages.Count;
 
@@ -48,7 +48,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
             return null;
         }
 
-        if (checkCampaignLimits (triggerEvent, qaUser)) {
+        if (checkCampaignLimits (triggerEvent, payload, qaUser)) {
             // SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
 
             return GetNextMessage (messagesCount, qaUser);
