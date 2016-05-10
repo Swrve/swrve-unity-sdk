@@ -78,7 +78,7 @@ public class SwrveConditions
 
     public bool Matches (IDictionary<string, string> payload)
     {
-        return isEmpty () || matchesEquals (payload) || matchesAny (payload);
+        return isEmpty () || ((payload != null) && (matchesEquals (payload) || matchesAny (payload)));
     }
 
     public static SwrveConditions LoadFromJson (IDictionary<string, object> json, bool isRoot)
