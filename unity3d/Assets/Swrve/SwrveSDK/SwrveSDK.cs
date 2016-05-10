@@ -1323,20 +1323,20 @@ public partial class SwrveSDK
     /// <returns>
     /// In-app message for the given event.
     /// </returns>
-	public SwrveMessage GetMessageForEvent (string eventName) {
-		if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
-			return null;
-		}
+	  public SwrveMessage GetMessageForEvent (string eventName, IDictionary<string, string> payload=null) {
+    		if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
+    			return null;
+    		}
 
         try {
-            return _getMessageForEvent(eventName);
+            return _getMessageForEvent(eventName, payload);
         } catch (Exception e) {
             SwrveLog.LogError (e.ToString (), "message");
         }
         return null;
     }
 
-    private SwrveMessage _getMessageForEvent (string eventName)
+    private SwrveMessage _getMessageForEvent (string eventName, IDictionary<string, string> payload)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         SwrveMessage result = null;
@@ -1357,7 +1357,7 @@ public partial class SwrveSDK
                 }
 
                 SwrveMessagesCampaign nextCampaign = (SwrveMessagesCampaign)itCampaign.Current;
-                SwrveMessage nextMessage = nextCampaign.GetMessageForEvent (eventName, qaUser);
+                SwrveMessage nextMessage = nextCampaign.GetMessageForEvent (eventName, payload, qaUser);
                 // Check if the message supports the current orientation
                 if (nextMessage != null) {
                     if (nextMessage.SupportsOrientation(deviceOrientation)) {

@@ -29,7 +29,7 @@ public abstract class SwrveBaseCampaign
     /// <summary>
     /// List of triggers for the campaign.
     /// </summary>
-    public HashSet<string> Triggers;
+    protected List<SwrveTrigger> triggers;
 
     /// <summary>
     /// The start date of the campaign.
@@ -57,7 +57,7 @@ public abstract class SwrveBaseCampaign
     /// <summary>
     /// Next message to be shown if round robin campaign.
     /// </summary>
-    public int Next  {
+    public int Next {
         get {
             return this.State.Next;
         }
@@ -79,6 +79,7 @@ public abstract class SwrveBaseCampaign
     protected readonly DateTime swrveInitialisedTime;
     protected readonly string assetPath;
     protected DateTime showMessagesAfterLaunch;
+
     protected DateTime showMessagesAfterDelay {
         get {
             return this.State.ShowMessagesAfterDelay;
@@ -87,26 +88,27 @@ public abstract class SwrveBaseCampaign
             this.State.ShowMessagesAfterDelay = value;
         }
     }
+
     protected int minDelayBetweenMessage;
     protected int delayFirstMessage = DefaultDelayFirstMessage;
     protected int maxImpressions;
 
     protected SwrveBaseCampaign (DateTime initialisedTime, string assetPath)
     {
-        this.State = new SwrveCampaignState();
+        this.State = new SwrveCampaignState ();
         this.swrveInitialisedTime = initialisedTime;
         this.assetPath = assetPath;
-        this.Triggers = new HashSet<string> ();
+        this.triggers = new List<SwrveTrigger> ();
         this.minDelayBetweenMessage = DefaultMinDelay;
         this.showMessagesAfterLaunch = swrveInitialisedTime + TimeSpan.FromSeconds (DefaultDelayFirstMessage);
     }
 
-    public bool checkCampaignLimits(string triggerEvent, SwrveQAUser qaUser)
+    public bool checkCampaignLimits (string triggerEvent, IDictionary<string, string> payload, SwrveQAUser qaUser)
     {
         // Use local time to track throttle limits (want to show local time in logs)
         DateTime localNow = SwrveHelper.GetNow ();
 
-        if (!WillTriggerForEvent (triggerEvent)) {
+        if (!CanTrigger (triggerEvent, payload, qaUser)) {
             LogAndAddReason ("There is no trigger in " + Id + " that matches " + triggerEvent, qaUser);
             return false;
         }
@@ -133,7 +135,8 @@ public abstract class SwrveBaseCampaign
         return true;
     }
 
-    public bool IsActive(SwrveQAUser qaUser) {
+    public bool IsActive (SwrveQAUser qaUser)
+    {
 
         // Use UTC to compare to start/end dates from DB
         DateTime utcNow = SwrveHelper.GetUtcNow ();
@@ -153,23 +156,20 @@ public abstract class SwrveBaseCampaign
 
     protected void LogAndAddReason (string reason, SwrveQAUser qaUser)
     {
-	    if (qaUser != null && !qaUser.campaignReasons.ContainsKey(Id)) {
+        if (qaUser != null && !qaUser.campaignReasons.ContainsKey (Id)) {
             qaUser.campaignReasons.Add (Id, reason);
         }
         SwrveLog.Log (reason);
     }
 
-    /// <summary>
-    /// Check if this campaign will trigger for the given event.
-    /// </summary>
-    /// <returns>
-    /// True if this campaign contains a message with the given trigger event.
-    /// False otherwise.
-    /// </returns>
-    public bool WillTriggerForEvent (string eventName)
+    protected void LogAndAddReason (int ident, string reason, SwrveQAUser qaUser)
     {
-        string lowercaseEventName = eventName.ToLower ();
-        return Triggers != null && Triggers.Contains (lowercaseEventName);
+        LogAndAddReason (reason, qaUser);
+    }
+
+    public List<SwrveTrigger> GetTriggers ()
+    {
+        return triggers;
     }
 
     /// <summary>
@@ -187,12 +187,18 @@ public abstract class SwrveBaseCampaign
     /// <returns>
     /// Parsed in-app campaign.
     /// </returns>
-    public static SwrveBaseCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath)
+    public static SwrveBaseCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath, SwrveQAUser qaUser)
     {
         SwrveBaseCampaign campaign = SwrveMessagesCampaign.LoadFromJSON (sdk, campaignData, initialisedTime, assetPath);
         campaign.Id = MiniJsonHelper.GetInt (campaignData, "id");
 
         AssignCampaignTriggers (campaign, campaignData);
+        if (0 == campaign.GetTriggers ().Count) {
+            string resultText = "Campaign [" + campaign.Id + "], invalid triggers. Skipping this campaign.";
+            campaign.LogAndAddReason (resultText, qaUser);
+            
+            return null;
+        }
         AssignCampaignRules (campaign, campaignData);
         AssignCampaignDates (campaign, campaignData);
 
@@ -201,7 +207,7 @@ public abstract class SwrveBaseCampaign
 
     public abstract bool AreAssetsReady ();
 
-    public abstract bool SupportsOrientation(SwrveOrientation orientation);
+    public abstract bool SupportsOrientation (SwrveOrientation orientation);
 
     /// <summary>
     /// Get all the assets in the in-app campaign messages.
@@ -215,8 +221,13 @@ public abstract class SwrveBaseCampaign
     {
         IList<object> jsonTriggers = (IList<object>)campaignData ["triggers"];
         for (int i = 0, j = jsonTriggers.Count; i < j; i++) {
-            string trigger = (string)jsonTriggers [i];
-            campaign.Triggers.Add (trigger.ToLower ());
+            object jsonTrigger = jsonTriggers [i];
+            try {
+                SwrveTrigger trigger = SwrveTrigger.LoadFromJson ((IDictionary<string, object>)jsonTrigger);
+                campaign.GetTriggers ().Add (trigger);
+            } catch (Exception e) {
+                SwrveLog.LogError ("Unable to parse SwrveTrigger from json " + Json.Serialize (jsonTrigger) + ", " + e);
+            }
         }
     }
 
@@ -263,7 +274,7 @@ public abstract class SwrveBaseCampaign
         return now < showMessagesAfterDelay;
     }
 
-    protected void SetMessageMinDelayThrottle()
+    protected void SetMessageMinDelayThrottle ()
     {
         this.showMessagesAfterDelay = SwrveHelper.GetNow () + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
     }
@@ -276,11 +287,25 @@ public abstract class SwrveBaseCampaign
     /// </summary>
     public void MessageDismissed ()
     {
-        SetMessageMinDelayThrottle();
+        SetMessageMinDelayThrottle ();
     }
 
-    public bool IsA<T>() where T : SwrveBaseCampaign {
-            return GetType () == typeof(T);
+    public bool IsA<T> () where T : SwrveBaseCampaign
+    {
+        return GetType () == typeof(T);
     }
+
+    /// <summary>
+    /// Check if this campaign will trigger for the given event and payload
+    /// </summary>
+    /// <returns>
+    /// True if this campaign contains a message with the given trigger event.
+    /// False otherwise.
+    /// </returns>
+    public bool CanTrigger (string eventName, IDictionary<string, string> payload, SwrveQAUser qaUser)
+    {
+        return GetTriggers ().Any (trig => trig.CanTrigger (eventName, payload));
+    }
+
 }
 }
