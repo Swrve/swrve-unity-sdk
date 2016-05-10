@@ -26,7 +26,7 @@ public class SwrveTrigger
     public bool CanTrigger (string eventName, IDictionary<string, string> payload)
     {
         return string.Equals (this.eventName, eventName, StringComparison.OrdinalIgnoreCase) &&
-        (conditions == null || conditions.Matches (payload));
+            (conditions == null || conditions.Matches (payload));
     }
 
     public static SwrveTrigger LoadFromJson (object json)

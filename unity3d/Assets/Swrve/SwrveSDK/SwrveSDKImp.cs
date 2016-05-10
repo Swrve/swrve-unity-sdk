@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Swrve;
 using System.Linq;
+using Swrve;
 using System.Collections;
 using UnityEngine;
 using SwrveMiniJSON;
@@ -58,6 +58,7 @@ public partial class SwrveSDK
     private static bool androidPluginInitialized = false;
     private static bool androidPluginInitializedSuccessfully = false;
     private string googlePlayAdvertisingId;
+    private static bool startedPlot;
 #endif
     private int deviceWidth;
     private int deviceHeight;
@@ -90,9 +91,10 @@ public partial class SwrveSDK
 
     // Talk related
     private static readonly int CampaignAPIVersion = 1;
-    private static readonly int CampaignEndpointVersion = 4;
+    private static readonly int CampaignEndpointVersion = 5;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
     protected static readonly string CampaignsSettingsSave = "Swrve_CampaignsData";
+    protected static readonly string LocationSave = "loccc2"; // Saved securely
     private static readonly string WaitTimeFormat = @"HH\:mm\:ss zzz";
     protected static readonly string InstallTimeFormat = "yyyyMMdd";
     private string resourcesAndCampaignsUrl;
@@ -126,6 +128,9 @@ public partial class SwrveSDK
 
     private bool campaignAndResourcesCoroutineEnabled = true;
     private IEnumerator campaignAndResourcesCoroutineInstance;
+
+    private int locationVersion;
+    private int conversationVersion;
 
     private void QueueSessionStart ()
     {
@@ -162,6 +167,13 @@ public partial class SwrveSDK
         if (path == null || path.Length == 0) {
             path = Application.persistentDataPath;
         }
+    #if UNITY_IPHONE
+        path = path + "/com.ngt.msgs";
+    #endif
+		if (!File.Exists (path))
+		{
+			Directory.CreateDirectory (path);
+		}
         return path;
     }
 
@@ -680,6 +692,12 @@ public partial class SwrveSDK
         }
 
         SwrveBaseMessage baseMessage = null;
+        if (config.ConversationsEnabled) {
+            SwrveConversation conversation = GetConversationForEvent (eventName);
+            StartTask ("ShowConversationForEvent", ShowConversationForEvent (eventName, conversation));
+            baseMessage = conversation;
+        }
+        
         if (config.TalkEnabled) {
             SwrveMessage message = GetMessageForEvent (eventName, payload);
             StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
@@ -768,7 +786,7 @@ public partial class SwrveSDK
     private void StopCheckForCampaignAndResources()
     {
         if (campaignAndResourcesCoroutineInstance != null) {
-            Container.StopCoroutine (campaignAndResourcesCoroutineInstance);
+            Container.StopCoroutine ("campaignAndResourcesCoroutineInstance");
             campaignAndResourcesCoroutineInstance = null;
         }
         campaignAndResourcesCoroutineEnabled = false;
@@ -964,9 +982,37 @@ public partial class SwrveSDK
         if (!campaignsAndResourcesInitialized || campaigns == null || campaigns.Count == 0) {
             return;
         }
+
+        bool conversationShown = false;
+        // Process only Conversation campaign types first
+
         for(int ci = 0; ci < campaigns.Count; ci++) {
-            SwrveBaseCampaign campaign = campaigns[ci];
-            if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger, null, qaUser)) {
+            if(!campaigns[ci].IsA<SwrveConversationCampaign>()) {
+                continue;
+            }
+
+            SwrveConversationCampaign campaign = (SwrveConversationCampaign)campaigns[ci];
+
+            if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
+                Container.StartCoroutine (LaunchConversation (campaign.Conversation));
+                conversationShown = true;
+                break;
+            }
+        }
+
+        if(conversationShown)
+        {
+            return;
+        }
+
+        for(int ci = 0; ci < campaigns.Count; ci++) {
+            if(!campaigns[ci].IsA<SwrveMessagesCampaign>()) {
+                continue;
+            }
+
+            SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)campaigns[ci];
+
+            if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
                 if (TriggeredMessageListener != null) {
                     // They are using a custom listener
                     SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
@@ -1009,6 +1055,22 @@ public partial class SwrveSDK
             } else {
                 SwrveLog.LogError ("Could not get a format for the current orientation: " + currentOrientation.ToString ());
             }
+        }
+    }
+
+    private bool isValidMessageCenter(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
+        return campaign.IsMessageCenter ()
+          && campaign.Status != SwrveCampaignState.Status.Deleted
+          && campaign.IsActive (qaUser)
+          && campaign.SupportsOrientation (orientation)
+          && campaign.AreAssetsReady ();
+    }
+
+    private IEnumerator LaunchConversation(SwrveConversation conversation)
+    {
+        if (null != conversation) {
+            yield return null;
+            ShowConversation(conversation.Conversation);
         }
     }
 
@@ -1251,25 +1313,24 @@ public partial class SwrveSDK
                         if(campaign == null) {
                             continue;
                         }
-                        if (campaign.IsA<SwrveMessagesCampaign>() && ((SwrveMessagesCampaign)campaign).Messages.Count > 0) {
-                            assetsQueue.AddRange (campaign.ListOfAssets ());
-                            // Do we have to make retrieve the previous state?
-                            if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
-                                SwrveCampaignState campaignState = null;
-                                campaignsState.TryGetValue(campaign.Id, out campaignState);
-                                if (campaignState != null) {
-                                    campaign.State = campaignState;
-                                } else {
-                                    campaign.State = new SwrveCampaignState(campaign.Id, campaignSettings);
-                                }
+                        SwrveLog.Log( "added campaign id: " + campaign.Id + " type: " + campaign.GetType() + " triggers: " + campaign.GetTriggers() );
+                        assetsQueue.AddRange (campaign.ListOfAssets ());
+                        // Do we have to make retrieve the previous state?
+                        if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
+                            SwrveCampaignState campaignState = null;
+                            campaignsState.TryGetValue(campaign.Id, out campaignState);
+                            if (campaignState != null) {
+                                campaign.State = campaignState;
+                            } else {
+                                campaign.State = new SwrveCampaignState(campaign.Id, campaignSettings);
                             }
+                        }
 
-                            campaignsState[campaign.Id] =  campaign.State;
-                            newCampaigns.Add (campaign);
-                            if (qaUser != null) {
-                                // Add campaign for QA purposes
-                                campaignsDownloaded.Add (campaign.Id, null);
-                            }
+                        campaignsState[campaign.Id] =  campaign.State;
+                        newCampaigns.Add (campaign);
+                        if (qaUser != null) {
+                            // Add campaign for QA purposes
+                            campaignsDownloaded.Add (campaign.Id, null);
                         }
                     }
 
@@ -1317,6 +1378,12 @@ public partial class SwrveSDK
                     getRequest.AppendFormat ("&version={0}&orientation={1}&language={2}&app_store={3}&device_width={4}&device_height={5}&device_dpi={6}&os_version={7}&device_name={8}",
                                              CampaignEndpointVersion, config.Orientation.ToString ().ToLower (), Language, config.AppStore,
                                              deviceWidth, deviceHeight, dpi, WWW.EscapeURL (osVersion), WWW.EscapeURL (deviceName));
+                }
+                if (config.ConversationsEnabled) {
+                    getRequest.AppendFormat("&conversation_version={0}", this.conversationVersion);
+                }
+                if (config.LocationEnabled) {
+                    getRequest.AppendFormat("&location_version={0}", this.locationVersion);
                 }
 
                 if (!string.IsNullOrEmpty (lastETag)) {
@@ -1414,6 +1481,14 @@ public partial class SwrveSDK
                                 NamedEventInternal ("Swrve.Messages.campaigns_downloaded", payload);
                             }
                         }
+
+                        if (config.LocationEnabled) {
+                            if (root.ContainsKey("location_campaigns")) {
+                                Dictionary<string, object> locationData = (Dictionary<string, object>)root["location_campaigns"];
+                                string locationJson = SwrveMiniJSON.Json.Serialize(locationData);
+                                SaveLocationCache (locationJson);
+                            }
+                        }
                     }
                 }
             } else {
@@ -1449,12 +1524,25 @@ public partial class SwrveSDK
         }
     }
 
+    private void SaveLocationCache(string cacheContent)
+    {
+        try {
+            if (cacheContent == null) {
+                cacheContent = string.Empty;
+            }
+            storage.SaveSecure(LocationSave, cacheContent, userId);
+        } catch (Exception e) {
+            SwrveLog.LogError ("Error while saving campaigns to the cache " + e);
+        }
+    }
+
     private void SaveCampaignData (SwrveBaseCampaign campaign)
     {
         try {
             // Move from SwrveCampaignState to the dictionary
             campaignSettings ["Next" + campaign.Id] = campaign.Next;
             campaignSettings ["Impressions" + campaign.Id] = campaign.Impressions;
+            campaignSettings ["Status" + campaign.Id] = campaign.Status.ToString();
 
             string serializedCampaignSettings = Json.Serialize (campaignSettings);
             storage.Save (CampaignsSettingsSave, serializedCampaignSettings, userId);
@@ -1526,17 +1614,16 @@ public partial class SwrveSDK
 
     protected void RegisterForPushNotificationsIOS()
     {
-        // Use Swrve's native plugin to register for push on old Unity versions that did not support iOS8
-#if UNITY_5
-        UnityEngine.iOS.NotificationServices.RegisterForNotifications(UnityEngine.iOS.NotificationType.Alert | UnityEngine.iOS.NotificationType.Badge | UnityEngine.iOS.NotificationType.Sound);
-#else
         try {
-            _swrveRegisterForPushNotifications();
+            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.pushCategories.Select (a => a.toDict ()).ToList ()));
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+#if UNITY_5
+            UnityEngine.iOS.NotificationServices.RegisterForNotifications(UnityEngine.iOS.NotificationType.Alert | UnityEngine.iOS.NotificationType.Badge | UnityEngine.iOS.NotificationType.Sound);
+#else
             NotificationServices.RegisterForRemoteNotificationTypes(RemoteNotificationType.Alert | RemoteNotificationType.Badge | RemoteNotificationType.Sound);
-        }
 #endif
+        }
     }
 
     protected string GetSavediOSDeviceToken()
@@ -1726,6 +1813,76 @@ public partial class SwrveSDK
         }
         return _androidId;
     }
+
+    private AndroidJavaObject _androidBridge;
+    private AndroidJavaObject AndroidGetBridge()
+    {
+        if (_androidBridge == null && SwrveHelper.IsOnDevice())
+        {
+            _androidBridge = new AndroidJavaObject("com.swrve.sdk.SwrveUnityCommon");
+        }
+        return _androidBridge;
+    }
+
+    private void AndroidInitNative(string jsonString)
+    {
+        try {
+            AndroidGetBridge ().Call ("init", jsonString);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't init common from Android: " + exp.ToString ());
+        }
+    }
+
+    private void AndroidShowConversation(string conversation)
+    {
+        try {
+            AndroidGetBridge().Call("ShowConversation", conversation);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
+        }
+    }
+
+    private int AndroidConversationVersion()
+    {
+        int result = 0;
+        try {
+            result = AndroidGetBridge().Call<int>("ConversationVersion");
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get conversations version from Android: " + exp.ToString());
+        }
+        return result;
+    }
+
+    private AndroidJavaClass _androidLocation;
+    private AndroidJavaClass AndroidGetLocation()
+    {
+        if (_androidLocation == null && SwrveHelper.IsOnDevice()) {
+            _androidLocation = new AndroidJavaClass ("com.swrve.sdk.SwrveLocationUnityBridge");
+        }
+        return _androidLocation;
+    }
+
+    private void AndroidStartPlot()
+    {
+        try {
+            AndroidGetLocation ().CallStatic ("StartPlot");
+            startedPlot = true;
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
+        }
+    }
+
+    private void AndroidStartPlotAfterPermissions()
+    {
+        if (!startedPlot) {
+            try {
+                startedPlot = AndroidGetLocation ().CallStatic<bool> ("StartPlotAfterPermissions");
+            } catch (Exception exp) {
+                SwrveLog.LogWarning ("StartPlotAfterPermissions't DoOther from Android: " + exp.ToString ());
+            }
+        }
+    }
+
 #endif
 
     public string GetAppVersion ()
@@ -1743,6 +1900,26 @@ public partial class SwrveSDK
 #endif
         }
         return config.AppVersion;
+    }
+
+    private void ShowConversation (string conversation)
+    {
+    #if UNITY_EDITOR
+        if(null != ConversationEditorCallback) {
+            ConversationEditorCallback(conversation);
+            return;
+        }
+    #endif
+
+    #if UNITY_ANDROID
+        AndroidShowConversation(conversation);
+    #elif UNITY_IPHONE
+        try {
+          _swrveiOSShowConversation(conversation);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get show conversation correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
+    #endif
     }
 
     private void SetInputManager (IInputManager inputManager)
@@ -1799,5 +1976,79 @@ public partial class SwrveSDK
     {
         yield return new WaitForSeconds(config.AutoShowMessagesMaxDelay);
         autoShowMessagesEnabled = false;
+    }
+
+    private void InitNative()
+    {
+        Dictionary<string, object> currentDetails = new Dictionary<string, object> {
+            {"apiKey", apiKey},
+            {"appId", gameId},
+            {"userId", userId},
+            {"appVersion", GetAppVersion()},
+            {"uniqueKey", GetUniqueKey()},
+            {"batchUrl", "/1/batch"},
+            {"eventsServer", config.EventsServer},
+            {"contentServer", config.ContentServer},
+            {"locationCampaignCategory", "LocationCampaign"},
+            {"httpTimeout", 60000},
+            {"maxEventsPerFlush", 50},
+            {"locTag", LocationSave},
+            {"swrvePath", swrvePath},
+            {"swrveTemporaryPath", swrveTemporaryPath},
+            {"sigSuffix", SwrveFileStorage.SIGNATURE_SUFFIX}
+        };
+
+        string jsonString = Json.Serialize (currentDetails);
+
+    #if UNITY_ANDROID
+        AndroidInitNative(jsonString);
+    #elif UNITY_IOS
+        try {
+            _swrveiOSInitNative(jsonString);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get init the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
+    #endif
+        setConversationVersion();
+    
+        if (config.LocationAutostart) {
+            startPlot ();
+        }
+    }
+    
+    private void startPlot() {
+    #if UNITY_ANDROID
+        AndroidStartPlot();
+    #elif UNITY_IOS
+        try {
+          _swrveiOSStartPlot();
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
+    #endif
+    }
+
+    private void startPlotAfterPermissions() {
+    #if UNITY_ANDROID
+        AndroidStartPlotAfterPermissions();
+    #elif UNITY_IOS
+        try {
+            _swrveiOSStartPlot();
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
+    #endif
+    }
+
+    private void setConversationVersion() {
+    #if UNITY_ANDROID
+        conversationVersion = AndroidConversationVersion();
+    #elif UNITY_IOS
+        try {
+            conversationVersion = _swrveiOSConversationVersion();
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
+    #endif
     }
 }

@@ -8,13 +8,13 @@ public class DeviceCarrierInfo : ICarrierInfo
 {
 #if UNITY_IPHONE
     [DllImport ("__Internal")]
-    private static extern string _swrveCarrierName();
+    private static extern string _swrveiOSCarrierName();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveCarrierIsoCountryCode();
+    private static extern string _swrveiOSCarrierIsoCountryCode();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveCarrierCode();
+    private static extern string _swrveiOSCarrierCode();
 
     private static readonly string PluginError = "Couldn't invoke native code to get carrier information, make sure you have the iOS plugin inside your project and you are running on a iOS device: ";
 #endif
@@ -54,7 +54,7 @@ public class DeviceCarrierInfo : ICarrierInfo
     {
 #if UNITY_IPHONE
         try {
-            return _swrveCarrierName();
+            return _swrveiOSCarrierName();
         } catch(Exception exp) {
             SwrveLog.LogWarning(PluginError + exp.ToString());
             return null;
@@ -70,7 +70,7 @@ public class DeviceCarrierInfo : ICarrierInfo
     {
 #if UNITY_IPHONE
         try {
-            return _swrveCarrierIsoCountryCode();
+            return _swrveiOSCarrierIsoCountryCode();
         } catch(Exception exp) {
             SwrveLog.LogWarning(PluginError + exp.ToString());
             return null;
@@ -86,7 +86,7 @@ public class DeviceCarrierInfo : ICarrierInfo
     {
 #if UNITY_IPHONE
         try {
-            return _swrveCarrierCode();
+            return _swrveiOSCarrierCode();
         } catch(Exception exp) {
             SwrveLog.LogWarning(PluginError + exp.ToString());
             return null;

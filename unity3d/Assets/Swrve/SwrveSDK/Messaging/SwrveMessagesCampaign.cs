@@ -49,7 +49,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         }
 
         if (checkCampaignLimits (triggerEvent, payload, qaUser)) {
-            // SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
+            SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
 
             return GetNextMessage (messagesCount, qaUser);
         }
@@ -137,6 +137,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
     /// </summary>
     public void MessageWasShownToUser (SwrveMessageFormat messageFormat)
     {
+        Status = SwrveCampaignState.Status.Seen;
         IncrementImpressions ();
         SetMessageMinDelayThrottle ();
         if (Messages.Count > 0) {

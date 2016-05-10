@@ -130,5 +130,19 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
             throw new Exception (error);
         }
     }
+
+    [MenuItem ("Swrve Demo/Correct ${applicationId} in AndroidManifests")]
+    public static void EnableScenesForBuild()
+    {
+        string androidDir = Path.Combine (Directory.GetCurrentDirectory (), "Assets/Plugins/Android");
+        foreach (string project in Directory.GetDirectories (androidDir)) {
+            string amFile = Path.Combine(project, "_AndroidManifest.xml");
+            if (File.Exists (amFile)) {
+                File.WriteAllText (Path.Combine (project, "AndroidManifest.xml"),
+                    File.ReadAllText (amFile).Replace ("${applicationId}", PlayerSettings.bundleIdentifier)
+                );
+            }
+        }
+    }
 }
 

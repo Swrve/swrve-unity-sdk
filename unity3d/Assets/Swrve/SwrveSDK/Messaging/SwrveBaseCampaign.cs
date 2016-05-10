@@ -24,7 +24,14 @@ public abstract class SwrveBaseCampaign
     public int Id;
 
     /// <summary>
+    // Flag indicating if it is a MessageCenter campaign
     /// </summary>
+    protected bool messageCenter;
+
+    /// <summary>
+    // MessageCenter subject of the campaign
+    /// </summary>
+    protected string subject;
 
     /// <summary>
     /// List of triggers for the campaign.
@@ -65,6 +72,42 @@ public abstract class SwrveBaseCampaign
             this.State.Next = value;
         }
     }
+     
+    /// <summary>
+    /// Get the status of the campaign.
+    /// </summary>
+    /// <returns>
+    /// Status of the campaign.
+    /// </returns>
+    public SwrveCampaignState.Status Status {
+        get {
+            return this.State.CurStatus;
+        }
+        set {
+            this.State.CurStatus = value;
+        }
+    }
+        
+    /**
+     * Used internally to identify campaigns that have been marked as MessageCenter campaigns on the dashboard.
+     *
+     * @return true if the campaign is an MessageCenter campaign.
+     */
+    public bool IsMessageCenter() {
+      return messageCenter;
+    }
+
+    protected void SetIsMessageCenter(bool isMessageCenter) {
+        this.messageCenter = isMessageCenter;
+    }
+
+    /**
+     * @return the name of the campaign.
+     */
+    public string Subject {
+        get { return subject; }
+        protected set { this.subject = value; }
+    }
 
     /// <summary>
     /// Indicates if the campaign serves messages randomly or using round robin.
@@ -79,7 +122,6 @@ public abstract class SwrveBaseCampaign
     protected readonly DateTime swrveInitialisedTime;
     protected readonly string assetPath;
     protected DateTime showMessagesAfterLaunch;
-
     protected DateTime showMessagesAfterDelay {
         get {
             return this.State.ShowMessagesAfterDelay;
@@ -88,14 +130,13 @@ public abstract class SwrveBaseCampaign
             this.State.ShowMessagesAfterDelay = value;
         }
     }
-
     protected int minDelayBetweenMessage;
     protected int delayFirstMessage = DefaultDelayFirstMessage;
     protected int maxImpressions;
 
     protected SwrveBaseCampaign (DateTime initialisedTime, string assetPath)
     {
-        this.State = new SwrveCampaignState ();
+        this.State = new SwrveCampaignState();
         this.swrveInitialisedTime = initialisedTime;
         this.assetPath = assetPath;
         this.triggers = new List<SwrveTrigger> ();
@@ -189,7 +230,16 @@ public abstract class SwrveBaseCampaign
     /// </returns>
     public static SwrveBaseCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath, SwrveQAUser qaUser)
     {
-        SwrveBaseCampaign campaign = SwrveMessagesCampaign.LoadFromJSON (sdk, campaignData, initialisedTime, assetPath);
+        SwrveBaseCampaign campaign = null;
+
+        if (campaignData.ContainsKey("conversation"))
+        {
+            campaign = SwrveConversationCampaign.LoadFromJSON (sdk, campaignData, initialisedTime, assetPath);
+        }
+        else if (campaignData.ContainsKey("messages"))
+        {
+            campaign = SwrveMessagesCampaign.LoadFromJSON (sdk, campaignData, initialisedTime, assetPath);
+        }
         campaign.Id = MiniJsonHelper.GetInt (campaignData, "id");
 
         AssignCampaignTriggers (campaign, campaignData);
@@ -201,6 +251,13 @@ public abstract class SwrveBaseCampaign
         }
         AssignCampaignRules (campaign, campaignData);
         AssignCampaignDates (campaign, campaignData);
+
+        campaign.SetIsMessageCenter (campaignData.ContainsKey ("message_center") && (bool)campaignData ["message_center"]);
+        campaign.Subject = campaignData.ContainsKey ("subject") ? (string)campaignData ["subject"] : "";
+
+        if (campaign.IsMessageCenter ()) {
+            SwrveLog.Log (string.Format ("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
+        }
 
         return campaign;
     }
@@ -222,6 +279,13 @@ public abstract class SwrveBaseCampaign
         IList<object> jsonTriggers = (IList<object>)campaignData ["triggers"];
         for (int i = 0, j = jsonTriggers.Count; i < j; i++) {
             object jsonTrigger = jsonTriggers [i];
+            if (jsonTrigger.GetType () == typeof(string)) {
+                jsonTrigger = new Dictionary<string, object> {
+                    { "event_name", jsonTrigger },
+                    { "conditions", new Dictionary<string, object>() }
+                };
+            }
+
             try {
                 SwrveTrigger trigger = SwrveTrigger.LoadFromJson ((IDictionary<string, object>)jsonTrigger);
                 campaign.GetTriggers ().Add (trigger);
@@ -302,10 +366,9 @@ public abstract class SwrveBaseCampaign
     /// True if this campaign contains a message with the given trigger event.
     /// False otherwise.
     /// </returns>
-    public bool CanTrigger (string eventName, IDictionary<string, string> payload, SwrveQAUser qaUser)
+    public bool CanTrigger (string eventName, IDictionary<string, string> payload=null, SwrveQAUser qaUser=null)
     {
         return GetTriggers ().Any (trig => trig.CanTrigger (eventName, payload));
     }
-
 }
 }
