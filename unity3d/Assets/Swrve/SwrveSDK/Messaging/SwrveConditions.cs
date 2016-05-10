@@ -101,7 +101,7 @@ public class SwrveConditions
         } else if (isRoot && (op == OP_AND_KEY)) {
             IList<object> jsonArgs = (IList<object>)json [ARGS_KEY];
             List<SwrveConditions> args = new List<SwrveConditions> ();
-            var it = jsonArgs.GetEnumerator ();
+            IEnumerator<object> it = jsonArgs.GetEnumerator ();
             while (it.MoveNext ()) {
                 SwrveConditions condition = LoadFromJson ((Dictionary<string, object>)it.Current, false);
                 if (condition == null) {
