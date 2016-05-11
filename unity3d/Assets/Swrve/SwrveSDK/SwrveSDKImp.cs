@@ -90,8 +90,8 @@ public partial class SwrveSDK
     protected bool campaignsAndResourcesInitialized;
 
     // Talk related
-    private static readonly int CampaignAPIVersion = 1;
-    private static readonly int CampaignEndpointVersion = 5;
+    private static readonly int CampaignEndpointVersion = 6;
+    private static readonly int CampaignResponseVersion = 2;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
     protected static readonly string CampaignsSettingsSave = "Swrve_CampaignsData";
     protected static readonly string LocationSave = "loccc2"; // Saved securely
@@ -1243,7 +1243,7 @@ public partial class SwrveSDK
             // Stop if we got an empty json
             if (root != null && root.ContainsKey ("version")) {
                 int version = MiniJsonHelper.GetInt (root, "version");
-                if (version == CampaignAPIVersion) {
+                if (version == CampaignResponseVersion) {
                     cdn = (string)root ["cdn_root"];
 
                     // Game data
