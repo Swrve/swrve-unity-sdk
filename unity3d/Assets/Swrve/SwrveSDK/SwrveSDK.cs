@@ -1361,12 +1361,12 @@ public partial class SwrveSDK
     /// In-app message for the given event.
     /// </returns>
     public SwrveMessage GetMessageForEvent (string eventName, IDictionary<string, string> payload=null) {
-		if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
-			return null;
-		}
+        if (!checkCampaignRules (eventName, SwrveHelper.GetNow ())) {
+            return null;
+        }
 
         try {
-            return _getMessageForEvent(eventName, payload);
+            return _getMessageForEvent (eventName, payload);
         } catch (Exception e) {
             SwrveLog.LogError (e.ToString (), "message");
         }

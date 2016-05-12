@@ -73,7 +73,7 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
         return new List<string> ( Conversation.ListOfAssets() );
     }
 
-    new public static SwrveConversationCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath)
+    new public static SwrveConversationCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int campaignId, DateTime initialisedTime, string assetPath)
     {
         SwrveConversationCampaign campaign = new SwrveConversationCampaign (initialisedTime, assetPath);
         campaign.Conversation = SwrveConversation.LoadFromJSON (campaign, (Dictionary<string, object>)campaignData ["conversation"]);

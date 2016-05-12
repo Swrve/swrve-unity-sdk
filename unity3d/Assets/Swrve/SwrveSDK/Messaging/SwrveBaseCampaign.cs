@@ -12,6 +12,27 @@ namespace Swrve.Messaging
 /// </summary>
 public abstract class SwrveBaseCampaign
 {
+    const string ID_KEY = "id";
+    const string CONVERSATION_KEY = "conversation";
+    const string MESSAGES_KEY = "messages";
+    const string SUBJECT_KEY = "subject";
+    const string MESSAGE_CENTER_KEY = "message_center";
+
+    const string TRIGGERS_KEY = "triggers";
+    const string EVENT_NAME_KEY = "event_name";
+    const string CONDITIONS_KEY = "conditions";
+    const string DISPLAY_ORDER_KEY = "display_order";
+    const string RULES_KEY = "rules";
+    const string RANDOM_KEY = "random";
+
+    const string DISMISS_AFTER_VIEWS_KEY = "dismiss_after_views";
+    const string DELAY_FIRST_MESSAGE_KEY = "delay_first_message";
+    const string MIN_DELAY_BETWEEN_MESSAGES_KEY = "min_delay_between_messages";
+
+    const string START_DATE_KEY = "start_date";
+
+    const string END_DATE_KEY = "end_date";
+
     protected readonly Random rnd = new Random ();
     protected const string WaitTimeFormat = @"HH\:mm\:ss zzz";
     protected const int DefaultDelayFirstMessage = 180;
@@ -228,35 +249,42 @@ public abstract class SwrveBaseCampaign
     /// <returns>
     /// Parsed in-app campaign.
     /// </returns>
-    public static SwrveBaseCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath, SwrveQAUser qaUser)
+    public static SwrveBaseCampaign LoadFromJSON(SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath, SwrveQAUser qaUser)
     {
+        int id = MiniJsonHelper.GetInt(campaignData, ID_KEY);
         SwrveBaseCampaign campaign = null;
 
-        if (campaignData.ContainsKey("conversation"))
+        if(campaignData.ContainsKey(CONVERSATION_KEY))
         {
-            campaign = SwrveConversationCampaign.LoadFromJSON (sdk, campaignData, initialisedTime, assetPath);
+            campaign = SwrveConversationCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime, assetPath);
         }
-        else if (campaignData.ContainsKey("messages"))
+        else if(campaignData.ContainsKey(MESSAGES_KEY))
         {
-            campaign = SwrveMessagesCampaign.LoadFromJSON (sdk, campaignData, initialisedTime, assetPath);
+            campaign = SwrveMessagesCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime, assetPath, qaUser);
         }
-        campaign.Id = MiniJsonHelper.GetInt (campaignData, "id");
 
-        AssignCampaignTriggers (campaign, campaignData);
-        if (0 == campaign.GetTriggers ().Count) {
-            string resultText = "Campaign [" + campaign.Id + "], invalid triggers. Skipping this campaign.";
-            campaign.LogAndAddReason (resultText, qaUser);
-            
+        if(campaign == null)
+        {
             return null;
         }
-        AssignCampaignRules (campaign, campaignData);
-        AssignCampaignDates (campaign, campaignData);
+        campaign.Id = id;
+		
+        AssignCampaignTriggers(campaign, campaignData);
+        if(campaign.GetTriggers().Count == 0)
+        {
+            campaign.LogAndAddReason("Campaign [" + campaign.Id + "], has no triggers. Skipping this campaign.", qaUser);
+            return null;
+        }
 
-        campaign.SetIsMessageCenter (campaignData.ContainsKey ("message_center") && (bool)campaignData ["message_center"]);
-        campaign.Subject = campaignData.ContainsKey ("subject") ? (string)campaignData ["subject"] : "";
+        AssignCampaignRules(campaign, campaignData);
+        AssignCampaignDates(campaign, campaignData);
 
-        if (campaign.IsMessageCenter ()) {
-            SwrveLog.Log (string.Format ("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
+        campaign.SetIsMessageCenter(campaignData.ContainsKey(MESSAGE_CENTER_KEY) && (bool)campaignData[MESSAGE_CENTER_KEY]);
+        campaign.Subject = campaignData.ContainsKey(SUBJECT_KEY) ? (string)campaignData[SUBJECT_KEY] : "";
+
+        if(campaign.IsMessageCenter())
+        {
+            SwrveLog.Log(string.Format("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
         }
 
         return campaign;
@@ -276,13 +304,13 @@ public abstract class SwrveBaseCampaign
 
     protected static void AssignCampaignTriggers (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
-        IList<object> jsonTriggers = (IList<object>)campaignData ["triggers"];
+        IList<object> jsonTriggers = (IList<object>)campaignData [TRIGGERS_KEY];
         for (int i = 0, j = jsonTriggers.Count; i < j; i++) {
             object jsonTrigger = jsonTriggers [i];
             if (jsonTrigger.GetType () == typeof(string)) {
                 jsonTrigger = new Dictionary<string, object> {
-                    { "event_name", jsonTrigger },
-                    { "conditions", new Dictionary<string, object>() }
+                    { EVENT_NAME_KEY, jsonTrigger },
+                    { CONDITIONS_KEY, new Dictionary<string, object>() }
                 };
             }
 
@@ -297,21 +325,21 @@ public abstract class SwrveBaseCampaign
 
     protected static void AssignCampaignRules (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
-        Dictionary<string, object> rules = (Dictionary<string, object>)campaignData ["rules"];
-        campaign.RandomOrder = ((string)rules ["display_order"]).Equals ("random");
+        Dictionary<string, object> rules = (Dictionary<string, object>)campaignData [RULES_KEY];
+        campaign.RandomOrder = ((string)rules [DISPLAY_ORDER_KEY]).Equals (RANDOM_KEY);
 
-        if (rules.ContainsKey ("dismiss_after_views")) {
-            int totalImpressions = MiniJsonHelper.GetInt (rules, "dismiss_after_views");
+        if (rules.ContainsKey (DISMISS_AFTER_VIEWS_KEY)) {
+            int totalImpressions = MiniJsonHelper.GetInt (rules, DISMISS_AFTER_VIEWS_KEY);
             campaign.maxImpressions = totalImpressions;
         }
 
-        if (rules.ContainsKey ("delay_first_message")) {
-            campaign.delayFirstMessage = MiniJsonHelper.GetInt (rules, "delay_first_message");
+        if (rules.ContainsKey (DELAY_FIRST_MESSAGE_KEY)) {
+            campaign.delayFirstMessage = MiniJsonHelper.GetInt (rules, DELAY_FIRST_MESSAGE_KEY);
             campaign.showMessagesAfterLaunch = campaign.swrveInitialisedTime + TimeSpan.FromSeconds (campaign.delayFirstMessage);
         }
 
-        if (rules.ContainsKey ("min_delay_between_messages")) {
-            int minDelay = MiniJsonHelper.GetInt (rules, "min_delay_between_messages");
+        if (rules.ContainsKey (MIN_DELAY_BETWEEN_MESSAGES_KEY)) {
+            int minDelay = MiniJsonHelper.GetInt (rules, MIN_DELAY_BETWEEN_MESSAGES_KEY);
             campaign.minDelayBetweenMessage = minDelay;
         }
     }
@@ -319,8 +347,8 @@ public abstract class SwrveBaseCampaign
     protected static void AssignCampaignDates (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
         DateTime initDate = SwrveHelper.UnixEpoch;
-        campaign.StartDate = initDate.AddMilliseconds (MiniJsonHelper.GetLong (campaignData, "start_date"));
-        campaign.EndDate = initDate.AddMilliseconds (MiniJsonHelper.GetLong (campaignData, "end_date"));
+        campaign.StartDate = initDate.AddMilliseconds (MiniJsonHelper.GetLong (campaignData, START_DATE_KEY));
+        campaign.EndDate = initDate.AddMilliseconds (MiniJsonHelper.GetLong (campaignData, END_DATE_KEY));
     }
 
     public void IncrementImpressions ()

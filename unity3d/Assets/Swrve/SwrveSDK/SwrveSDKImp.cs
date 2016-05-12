@@ -1313,6 +1313,7 @@ public partial class SwrveSDK
                         if(campaign == null) {
                             continue;
                         }
+
                         SwrveLog.Log( "added campaign id: " + campaign.Id + " type: " + campaign.GetType() + " triggers: " + campaign.GetTriggers() );
                         assetsQueue.AddRange (campaign.ListOfAssets ());
                         // Do we have to make retrieve the previous state?
@@ -1326,7 +1327,7 @@ public partial class SwrveSDK
                             }
                         }
 
-                        campaignsState[campaign.Id] =  campaign.State;
+                        campaignsState[campaign.Id] = campaign.State;
                         newCampaigns.Add (campaign);
                         if (qaUser != null) {
                             // Add campaign for QA purposes

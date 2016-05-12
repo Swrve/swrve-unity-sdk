@@ -151,17 +151,36 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         }
     }
 
-    new public static SwrveMessagesCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath)
+    new public static SwrveMessagesCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, string assetPath, SwrveQAUser qaUser)
     {
         SwrveMessagesCampaign campaign = new SwrveMessagesCampaign (initialisedTime, assetPath);
-        IList<object> jsonMessages = (IList<object>)campaignData ["messages"];
-        for (int k = 0, t = jsonMessages.Count; k < t; k++) {
-            Dictionary<string, object> messageData = (Dictionary<string, object>)jsonMessages [k];
+
+        object _messages = null;
+        campaignData.TryGetValue ("messages", out _messages);
+        IList<object> messages = null;
+        try {
+            messages = (IList<object>)_messages;
+        }
+        catch(Exception e) {
+            campaign.LogAndAddReason ("Campaign [" + id + "] invalid messages found, skipping.  Error: " + e, qaUser);
+        }
+
+        if (messages == null) {
+            campaign.LogAndAddReason ("Campaign [" + id + "] JSON messages are null, skipping.", qaUser);
+            return null;
+        }
+
+        for (int k = 0, t = messages.Count; k < t; k++) {
+            Dictionary<string, object> messageData = (Dictionary<string, object>)messages [k];
             SwrveMessage message = SwrveMessage.LoadFromJSON (sdk, campaign, messageData);
             if (message.Formats.Count > 0) {
                 campaign.AddMessage (message);
             }
         }
+        if (campaign.Messages.Count == 0) {
+            campaign.LogAndAddReason ("Campaign [" + id + "] no messages found, skipping.", qaUser);
+        }
+
         return campaign;
     }
 }
