@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.swrve.sdk.locationcampaigns" >
+
+    <uses-sdk
+        android:minSdkVersion="10"
+        android:targetSdkVersion="23" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name" >
+
+        <!-- Plot projects -->
+        <receiver android:name="com.plotprojects.retail.android.PlotBootReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+
+                <category android:name="android.intent.category.HOME" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name="com.plotprojects.retail.android.PlotBackgroundService" >
+            <meta-data
+                android:name="debug"
+                android:value="true" />
+        </service>
+
+        <provider
+            android:name="com.plotprojects.retail.android.DebugLogProvider"
+            android:authorities="${applicationId}.plot.debuglogprovider"
+            android:exported="true" />
+
+        <activity
+            android:name="com.plotprojects.retail.android.LandingPageActivity"
+            android:configChanges="orientation|screenSize" />
+
+        <receiver
+            android:name="com.swrve.sdk.LocationCampaignEngageReceiver"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="${applicationId}.plot.OpenNotification" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name="com.swrve.sdk.LocationCampaignFilter" />
+        <!-- Plot projects -->
+
+    </application>
+
+</manifest>

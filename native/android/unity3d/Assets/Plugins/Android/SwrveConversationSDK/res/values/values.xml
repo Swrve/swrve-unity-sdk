@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="swrve__is_sw600">false</bool>
+    <color name="swrve__window_background">#80000000</color>
+    <declare-styleable name="Theme.Conversations"><attr format="reference" name="conversationControlTrayStyle"/><attr format="dimension" name="conversationContentTrayBottomMargin"/><attr format="dimension" name="conversationControlTrayTopMargin"/><attr format="dimension" name="conversationControlLayoutMargin"/><attr format="reference" name="conversationContentStyle"/><attr format="reference" name="conversationControlButtonStyle"/><attr format="reference" name="conversationTextContentDefaultStyle"/><attr format="reference" name="conversationInputTextBoxDefaultStyle"/><attr format="reference" name="conversationDialogContentDefaultStyle"/><attr format="reference" name="conversationDialogButtonDefaultStyle"/><attr format="reference" name="conversationMVSpinner"/><attr format="reference" name="conversationInputMultiValueItemStyle"/><attr format="reference" name="conversationInputMultiValueDescriptionStyle"/><attr format="reference" name="conversationContentDescriptionStyle"/><attr format="reference" name="conversationContentRatingBarStyle"/><attr format="reference" name="conversationContentRatingBarContainerStyle"/></declare-styleable>
+    <dimen name="swrve__content_tray_bottom_margin">10dp</dimen>
+    <dimen name="swrve__control_tray_item_margin">5dp</dimen>
+    <dimen name="swrve__control_tray_top_margin">0dp</dimen>
+    <dimen name="swrve__conversation_fragment_height">@dimen/swrve__custom_match_parent</dimen>
+    <dimen name="swrve__conversation_fragment_width">@dimen/swrve__custom_match_parent</dimen>
+    <item name="swrve__custom_match_parent" type="dimen">-1</item>
+    <string name="swrve__indexTag"/>
+    <style name="SwrveDialogTheme" parent="@android:style/Theme.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+    <style name="Theme.BaseConversations" parent="Theme.AppCompat.Light">
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    <style name="Theme.Conversations" parent="Theme.BaseConversations">
+        <item name="conversationControlTrayStyle">@style/cio__button_tray</item>
+        <item name="conversationControlTrayTopMargin">@dimen/swrve__control_tray_top_margin</item>
+        <item name="conversationControlLayoutMargin">@dimen/swrve__control_tray_item_margin</item>
+        <item name="conversationControlButtonStyle">@style/cio__control_button</item>
+        <item name="conversationContentStyle">@style/cio__conversation_content_box</item>
+        <item name="conversationContentTrayBottomMargin">@dimen/swrve__content_tray_bottom_margin</item>
+        <item name="conversationContentDescriptionStyle">@style/cio__description_item</item>
+        <item name="conversationInputTextBoxDefaultStyle">@style/cio__edit_box</item>
+        <item name="conversationTextContentDefaultStyle">@style/cio__content_textview</item>
+        <item name="conversationDialogContentDefaultStyle">@style/cio__dialog_textview</item>
+        <item name="conversationDialogButtonDefaultStyle">@style/cio__dialog_button</item>
+        <item name="conversationInputMultiValueItemStyle">@style/cio__mv_item</item>
+        <item name="conversationInputMultiValueDescriptionStyle">@style/cio__mv_description_item</item>
+        <item name="conversationMVSpinner">@style/cio__mvl_spinner</item>
+        <item name="conversationContentRatingBarStyle">@style/cio__rating_bar</item>
+        <item name="conversationContentRatingBarContainerStyle">@style/cio__rating_bar_container</item>
+    </style>
+    <style name="cio__button_tray">
+
+    </style>
+    <style name="cio__content_bold_textview" parent="@style/cio__content_textview">
+        <item name="android:textStyle">bold</item>
+        <item name="android:gravity">left</item>
+        <item name="android:layout_gravity">left</item>
+        <item name="android:textSize">10pt</item>
+        <item name="android:paddingLeft">10dp</item>
+        <item name="android:typeface">sans</item>
+    </style>
+    <style name="cio__content_textview" parent="@android:style/Widget.TextView">
+        <item name="android:padding">10dp</item>
+    </style>
+    <style name="cio__control_button" parent="@android:style/Widget.Button">
+        <item name="android:textStyle">normal</item>
+        <item name="android:padding">4dp</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:minHeight">50dp</item>
+    </style>
+    <style name="cio__conversation_content_box">
+        <!-- If we ever make the content section editable, this is where we would do it. -->
+    </style>
+    <style name="cio__description_item" parent="@style/cio__content_textview">
+        <item name="android:gravity">left</item>
+        <item name="android:layout_gravity">left</item>
+        <item name="android:textSize">10pt</item>
+        <item name="android:paddingLeft">10dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:typeface">sans</item>
+        <item name="android:textColor">#FF333333</item>
+    </style>
+    <style name="cio__dialog_button" parent="@android:style/Widget.Button">
+        <item name="android:minWidth">160dp</item>
+        <item name="android:layout_margin">10dp</item>
+    </style>
+    <style name="cio__dialog_textview" parent="@android:style/Widget.TextView">
+        <item name="android:minHeight">40dp</item>
+        <item name="android:padding">10dp</item>
+        <item name="android:textColor">#FF333333</item>
+    </style>
+    <style name="cio__edit_box" parent="@android:style/Widget.EditText">
+         <!--Any changes to the editText Style should go here -->
+        <item name="android:gravity">top</item>
+        <item name="android:padding">6dp</item>
+        <item name="android:enabled">true</item>
+    </style>
+    <style name="cio__list_help_text" parent="cio__content_textview">
+        <item name="android:textSize">12sp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textStyle">italic</item>
+        <item name="android:textColor">#FF666666</item>
+    </style>
+    <style name="cio__mv_description_item" parent="@style/cio__content_textview">
+        <item name="android:gravity">left</item>
+        <item name="android:layout_gravity">left</item>
+        <item name="android:textSize">10pt</item>
+        <item name="android:paddingLeft">10dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:typeface">sans</item>
+        <item name="android:textColor">#FF333333</item>
+    </style>
+    <style name="cio__mv_item" parent="@android:style/Widget.CompoundButton.RadioButton">
+        <item name="android:shadowColor">#FFFFFF</item>
+        <item name="android:shadowDx">0</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">1</item>
+        <item name="android:textColor">#FF333333</item>
+    </style>
+    <style name="cio__mvl_spinner" parent="Widget.AppCompat.Spinner">
+
+    </style>
+    <style name="cio__np_displayCell">
+        <item name="android:layout_marginLeft">1dp</item>
+        <item name="android:layout_marginRight">2dp</item>
+    </style>
+    <style name="cio__rating_bar" parent="@android:style/Widget.RatingBar">
+        <item name="android:progressDrawable">@drawable/swrve__rating_bar</item>
+        <item name="android:minHeight">50dp</item>
+        <item name="android:maxHeight">50dp</item>
+    </style>
+    <style name="cio__rating_bar_container">
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:paddingLeft">20dp</item>
+        <item name="android:paddingTop">12dp</item>
+    </style>
+</resources>
