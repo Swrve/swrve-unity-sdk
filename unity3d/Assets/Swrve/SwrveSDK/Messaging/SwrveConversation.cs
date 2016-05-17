@@ -20,6 +20,11 @@ public class SwrveConversation : SwrveBaseMessage
     
     public List<string> ConversationAssets;
 
+    /// <summary>
+    /// Priority of the message.
+    /// </summary>
+    public int Priority = 9999;
+
     private SwrveConversation (SwrveConversationCampaign campaign)
     {
         this.Campaign = campaign;
@@ -54,6 +59,10 @@ public class SwrveConversation : SwrveBaseMessage
             }
         }
         conversation.Conversation = Json.Serialize (conversationData);
+
+        if (conversationData.ContainsKey ("priority")) {
+            conversation.Priority = MiniJsonHelper.GetInt (conversationData, "priority");
+        }
         
         return conversation;
     }
