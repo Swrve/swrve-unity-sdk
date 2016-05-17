@@ -153,22 +153,18 @@ public static class SwrveHelper
 
     public static bool IsOnDevice()
     {
-    #if UNITY_IOS
+#if UNITY_IOS
         return IsAvailableOn(UnityEngine.RuntimePlatform.IPhonePlayer);
 
-    #elif UNITY_ANDROID
+#elif UNITY_ANDROID
         return IsAvailableOn(UnityEngine.RuntimePlatform.Android);
-
-        #endif
+#endif
+		return false;
     }
 
     public static bool IsAvailableOn(UnityEngine.RuntimePlatform platform)
     {
-        bool available = false;
-
-        available = UnityEngine.Application.platform == platform;
-        
-        return available;
+        return UnityEngine.Application.platform == platform;
     }
 }
 }

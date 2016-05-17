@@ -1480,6 +1480,9 @@ public partial class SwrveSDK
 
         IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
         List<SwrveConversation> availableConversations = new List<SwrveConversation>();
+        // Select conversations with higher priority
+        int minPriority = int.MaxValue;
+        List<SwrveConversation> candidateConversations = new List<SwrveConversation>();
         while (itCampaign.MoveNext() && result == null) {
             if(!itCampaign.Current.IsA<SwrveConversationCampaign>()) {
                 continue;
@@ -1490,12 +1493,21 @@ public partial class SwrveSDK
             // Check if the message supports the current orientation
             if (nextConversation != null) {
                 availableConversations.Add(nextConversation);
+                if (nextConversation.Priority <= minPriority) {
+                    if (nextConversation.Priority < minPriority) {
+                        // If it is lower than any of the previous ones
+                        // remove those from being candidates
+                        candidateConversations.Clear();
+                    }
+                    minPriority = nextConversation.Priority;
+                    candidateConversations.Add(nextConversation);
+                }
             }
         }
-        if (availableConversations.Count > 0) {
+        if (candidateConversations.Count > 0) {
             // Select randomly
-            availableConversations.Shuffle();
-            result = availableConversations[0];
+            candidateConversations.Shuffle();
+            result = candidateConversations[0];
         }
 
         if (qaUser != null && campaign != null && result != null) {
