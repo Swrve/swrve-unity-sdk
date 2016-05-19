@@ -25,16 +25,25 @@ import com.unity3d.player.UnityPlayer;
 public class SwrveGcmIntentService extends GcmListenerService {
 	private static final String LOG_TAG = "SwrveGcmIntentService";
 
+	public static final String SWRVE_PUSH_IDENTIFIER = "_p";
+	public static final String SWRVE_SILENT_PUSH_IDENTIFIER = "_sp";
+
 	@Override
 	public void onMessageReceived(String from, Bundle data) {
 		processRemoteNotification(data);
 	}
 
 	private static boolean isSwrveRemoteNotification(final Bundle msg) {
-		Object rawId = msg.get("_p");
+		Object rawId = msg.get(SWRVE_PUSH_IDENTIFIER);
 		String msgId = (rawId != null) ? rawId.toString() : null;
 		return msgId != null && !msgId.equals("");
-     }
+	}
+
+	private static boolean isSwrveSilentRemoteNotification(final Bundle msg) {
+		Object rawId = msg.get(SWRVE_SILENT_PUSH_IDENTIFIER);
+		String msgId = (rawId != null) ? rawId.toString() : null;
+		return msgId != null && !msgId.equals("");
+	}
 
 	private void processRemoteNotification(Bundle msg) {
 		try {
@@ -59,10 +68,22 @@ public class SwrveGcmIntentService extends GcmListenerService {
 		
 				// Process notification
 				processNotification(msg, activityClassName);
+			} else if (isSwrveSilentRemoteNotification(msg)) {
+				Log.d(LOG_TAG, "Received silent push notification");
+				onSilentPushNotification(msg);
 			}
 		} catch (Exception ex) {
 			Log.e(LOG_TAG, "Error processing push notification", ex);
 		}
+	}
+
+	/**
+	 * Override this function to process silent notifications.
+	 *
+	 * @param msg
+	 */
+	public void onSilentPushNotification(Bundle msg) {
+		// To be implemented by customers
 	}
 
 	/**
@@ -153,17 +174,22 @@ public class SwrveGcmIntentService extends GcmListenerService {
 			finalIconId = res.getIdentifier(materialIconName, "drawable", getPackageName());
 		}
 
-		if (isEmptyString(pushTitle)) {
-			if (app != null) {
-				// No configured push title
-				CharSequence appTitle = app.loadLabel(packageManager);
-				if (appTitle != null) {
-					// Default to the application title
-					pushTitle = appTitle.toString();
-				}
-			}
+		String messagePushTitle = msg.getString("title");
+		if (!isEmptyString(messagePushTitle)) {
+			pushTitle = messagePushTitle;
+		} else {
 			if (isEmptyString(pushTitle)) {
-				pushTitle = "Configure your app title";
+				if (app != null) {
+					// No configured push title
+					CharSequence appTitle = app.loadLabel(packageManager);
+					if (appTitle != null) {
+						// Default to the application title
+						pushTitle = appTitle.toString();
+					}
+				}
+				if (isEmptyString(pushTitle)) {
+					pushTitle = "Configure your app title";
+				}
 			}
 		}
 
