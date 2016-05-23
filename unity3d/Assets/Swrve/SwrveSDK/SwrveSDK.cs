@@ -1409,8 +1409,8 @@ public partial class SwrveSDK
                     }
                 } else {
                     if (qaUser != null) {
-                        qaUser.campaignMessages.Add (nextCampaign.Id, nextMessage);
-                        qaUser.campaignReasons.Add (nextCampaign.Id, "Message didn't support the current device orientation: " + deviceOrientation);
+                        qaUser.campaignMessages[nextCampaign.Id] = nextMessage;
+                        qaUser.campaignReasons[nextCampaign.Id] = "Message didn't support the current device orientation: " + deviceOrientation;
                     }
                 }
             }
@@ -1499,15 +1499,15 @@ public partial class SwrveSDK
         }
 
         if (qaUser != null && campaign != null && result != null) {
-            // A message was chosen, check if other campaigns would have returned a message
+            // A message was chosen, check if other campaigns would have returned a conversation
             IEnumerator<SwrveConversation> itOtherConversations = availableConversations.GetEnumerator ();
             while (itOtherConversations.MoveNext()) {
                 SwrveConversation otherMessage = itOtherConversations.Current;
                 if (otherMessage != result) {
                     int otherCampaignId = otherMessage.Campaign.Id;
                     if((qaUser != null) && !qaUser.campaignMessages.ContainsKey(otherCampaignId)) {
-                        qaUser.campaignMessages.Add (otherCampaignId, otherMessage);
-                        qaUser.campaignReasons.Add (otherCampaignId, "Campaign " + campaign.Id + " was selected for display ahead of this campaign");
+                        qaUser.campaignMessages[otherCampaignId] = otherMessage;
+                        qaUser.campaignReasons[otherCampaignId] = "Campaign " + campaign.Id + " was selected for display ahead of this campaign";
                     }
                 }
             }

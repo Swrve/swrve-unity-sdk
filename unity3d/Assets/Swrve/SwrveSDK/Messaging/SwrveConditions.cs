@@ -71,14 +71,14 @@ public class SwrveConditions
             payload.ContainsKey (this.key) && string.Equals (payload [this.key], this.value, StringComparison.OrdinalIgnoreCase);
     }
 
-    private bool matchesAny(IDictionary<string, string> payload) {
+    private bool matchesAll(IDictionary<string, string> payload) {
         return (this.op == TriggerOperatorType.AND) &&
-            this.args.Any (cond => cond.Matches (payload));
+            this.args.All (cond => cond.Matches (payload));
     }
 
     public bool Matches (IDictionary<string, string> payload)
     {
-        return isEmpty () || ((payload != null) && (matchesEquals (payload) || matchesAny (payload)));
+        return isEmpty () || ((payload != null) && (matchesEquals (payload) || matchesAll (payload)));
     }
 
     public static SwrveConditions LoadFromJson (IDictionary<string, object> json, bool isRoot)
