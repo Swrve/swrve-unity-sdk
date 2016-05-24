@@ -27,4 +27,4 @@ dependencies {
     compile project(':UnityLibrary')
 }
 
-assembleDebug.finalizedBy ':UnityLibrary:copyToUnity'
+//assembleDebug.finalizedBy ':UnityLibrary:copyToUnity'

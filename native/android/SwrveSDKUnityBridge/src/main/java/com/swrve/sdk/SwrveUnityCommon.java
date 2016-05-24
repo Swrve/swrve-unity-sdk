@@ -29,6 +29,9 @@ import java.util.Map;
 
 public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 {
+    public final static String SWRVE_TEMPORARY_PATH_KEY = "swrveTemporaryPath";
+    public final static String SDK_VERSION_KEY = "sdkVersion";
+
     private final static String LOG_TAG = "UnitySwrveCommon";
 
     private Map<String, Object> currentDetails;
@@ -60,7 +63,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             "UnitySwrveCommon constructor called with jsonString" +
                     " \"" + jsonString + "\""
         );
-
         SwrveCommon.setSwrveCommon(this);
 
         if (context instanceof Activity) {
@@ -231,8 +233,13 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         return getStringDetail("swrvePath");
     }
 
+    @Override
+    public String getSwrveSDKVersion() {
+        return getStringDetail(SDK_VERSION_KEY);
+    }
+
     public String getSwrveTemporaryPath() {
-        return getStringDetail("swrveTemporaryPath");
+        return getStringDetail(SWRVE_TEMPORARY_PATH_KEY);
     }
 
     public String getLocTag() {
@@ -267,12 +274,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     public void setLocationSegmentVersion(int locationSegmentVersion) {
 
     }
-
-    @Override
-    public String getSwrveSDKVersion() {
-        return null;
-    }
-
     // @Override
     public String getCachedLocationData() {
         return readFile(getSwrvePath(), getLocTag() + getUserId());
@@ -361,7 +362,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     @Override
     public JSONObject getDeviceInfo() throws JSONException {
-        return null;
+        return new JSONObject("{}");
     }
 
     /***

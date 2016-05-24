@@ -79,4 +79,4 @@ task copyToUnity << {
     }
 }
 
-assembleDebug.finalizedBy copyToUnity
+//assembleDebug.finalizedBy copyToUnity
