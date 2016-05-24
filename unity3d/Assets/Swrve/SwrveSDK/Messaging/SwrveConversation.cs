@@ -20,8 +20,11 @@ public class SwrveConversation : SwrveBaseMessage
     
     public List<string> ConversationAssets;
 
-    private SwrveConversation (SwrveConversationCampaign campaign)
+    public ISwrveAssetController assetController;
+
+    private SwrveConversation (ISwrveAssetController assetController, SwrveConversationCampaign campaign)
     {
+        this.assetController = assetController;
         this.Campaign = campaign;
         this.ConversationAssets = new List<string> ();
     }
@@ -38,9 +41,9 @@ public class SwrveConversation : SwrveBaseMessage
     /// <returns>
     /// Parsed conversation wrapper for native layer.
     /// </returns>
-    public static SwrveConversation LoadFromJSON (SwrveConversationCampaign campaign, Dictionary<string, object> conversationData)
+    public static SwrveConversation LoadFromJSON (SwrveSDK sdk, SwrveConversationCampaign campaign, Dictionary<string, object> conversationData)
     {
-        SwrveConversation conversation = new SwrveConversation (campaign);
+        SwrveConversation conversation = new SwrveConversation (sdk, campaign);
         conversation.Id = MiniJsonHelper.GetInt (conversationData, "id");
         List<object> pages = (List<object>)conversationData ["pages"];
         for(int i = 0; i < pages.Count; i++) {
@@ -75,11 +78,11 @@ public class SwrveConversation : SwrveBaseMessage
     /// <returns>
     /// True if the campaign assets have been downloaded.
     /// </returns>
-    public bool isDownloaded (string assetPath)
+    public bool IsDownloaded ()
     {
         List<string> assets = this.ListOfAssets ();
         foreach (string asset in assets) {
-            if (!CrossPlatformFile.Exists (assetPath + "/" + asset)) {
+            if (!assetController.IsAssetInCache(asset)) {
                 return false;
             }
         }

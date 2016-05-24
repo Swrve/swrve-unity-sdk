@@ -1555,8 +1555,14 @@ public partial class SwrveSDK
         campaign.Status = SwrveCampaignState.Status.Seen;
         SaveCampaignData(campaign);
     }
+
+    public List<SwrveBaseCampaign> GetMessageCenterCampaigns()
+    { 
+        return GetMessageCenterCampaigns (GetDeviceOrientation ());
+    }
         
-    public List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation orientation) { 
+    public List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation orientation)
+    { 
         List<SwrveBaseCampaign> result = new List<SwrveBaseCampaign>();
         IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
         while(itCampaign.MoveNext()) {
@@ -1568,7 +1574,7 @@ public partial class SwrveSDK
         return result;
     }
         
-    public void removeMessageCenterCampaign(SwrveBaseCampaign campaign) {
+    public void RemoveMessageCenterCampaign(SwrveBaseCampaign campaign) {
         campaign.Status = SwrveCampaignState.Status.Deleted;
         SaveCampaignData(campaign);
     }

@@ -16,7 +16,7 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
     /// The Swrve Conversation associated with this campaign.
     /// </summary>
     public SwrveConversation Conversation;
-    private SwrveConversationCampaign (DateTime initialisedTime, string assetPath) : base(initialisedTime, assetPath)
+    private SwrveConversationCampaign (DateTime initialisedTime) : base(initialisedTime)
     {
     }
 
@@ -54,12 +54,12 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
 
     public override bool AreAssetsReady()
     {
-        return this.Conversation.isDownloaded (assetPath);
+        return this.Conversation.IsDownloaded ();
     }
 
     public override bool SupportsOrientation(SwrveOrientation orientation)
     {
-        return orientation == SwrveOrientation.Portrait;
+        return true;
     }
 
     /// <summary>
@@ -73,10 +73,10 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
         return new List<string> ( Conversation.ListOfAssets() );
     }
 
-    new public static SwrveConversationCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int campaignId, DateTime initialisedTime, string assetPath)
+    new public static SwrveConversationCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int campaignId, DateTime initialisedTime)
     {
-        SwrveConversationCampaign campaign = new SwrveConversationCampaign (initialisedTime, assetPath);
-        campaign.Conversation = SwrveConversation.LoadFromJSON (campaign, (Dictionary<string, object>)campaignData ["conversation"]);
+        SwrveConversationCampaign campaign = new SwrveConversationCampaign (initialisedTime);
+        campaign.Conversation = SwrveConversation.LoadFromJSON (sdk, campaign, (Dictionary<string, object>)campaignData ["conversation"]);
         return campaign;
     }
 }

@@ -44,7 +44,7 @@ public class MessageCenterMessage : MonoBehaviour
             "Delete Campaign",
             "Are you sure you want to delete this campaign?",
             () => {
-                SwrveComponent.SDK.removeMessageCenterCampaign (campaign);
+                SwrveComponent.SDK.RemoveMessageCenterCampaign (campaign);
                 transform.SetParent (null);
                 Destroy (gameObject);
             }

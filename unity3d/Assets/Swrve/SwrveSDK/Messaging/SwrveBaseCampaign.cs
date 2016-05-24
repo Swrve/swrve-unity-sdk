@@ -115,7 +115,7 @@ public abstract class SwrveBaseCampaign
      * @return true if the campaign is an MessageCenter campaign.
      */
     public bool IsMessageCenter() {
-      return messageCenter;
+        return messageCenter;
     }
 
     protected void SetIsMessageCenter(bool isMessageCenter) {
@@ -256,11 +256,11 @@ public abstract class SwrveBaseCampaign
 
         if(campaignData.ContainsKey(CONVERSATION_KEY))
         {
-            campaign = SwrveConversationCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime, assetPath);
+            campaign = SwrveConversationCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime);
         }
         else if(campaignData.ContainsKey(MESSAGES_KEY))
         {
-            campaign = SwrveMessagesCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime, assetPath, qaUser);
+            campaign = SwrveMessagesCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime, qaUser);
         }
 
         if(campaign == null)
@@ -270,7 +270,9 @@ public abstract class SwrveBaseCampaign
         campaign.Id = id;
 		
         AssignCampaignTriggers(campaign, campaignData);
-        if(campaign.GetTriggers().Count == 0)
+        campaign.SetIsMessageCenter(campaignData.ContainsKey(MESSAGE_CENTER_KEY) && (bool)campaignData[MESSAGE_CENTER_KEY]);
+
+        if((!campaign.IsMessageCenter()) && (campaign.GetTriggers().Count == 0))
         {
             campaign.LogAndAddReason("Campaign [" + campaign.Id + "], has no triggers. Skipping this campaign.", qaUser);
             return null;
@@ -278,8 +280,6 @@ public abstract class SwrveBaseCampaign
 
         AssignCampaignRules(campaign, campaignData);
         AssignCampaignDates(campaign, campaignData);
-
-        campaign.SetIsMessageCenter(campaignData.ContainsKey(MESSAGE_CENTER_KEY) && (bool)campaignData[MESSAGE_CENTER_KEY]);
         campaign.Subject = campaignData.ContainsKey(SUBJECT_KEY) ? (string)campaignData[SUBJECT_KEY] : "";
 
         if(campaign.IsMessageCenter())
