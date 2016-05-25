@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 /// </summary>
 /// <remarks>
 /// </remarks>
-public partial class SwrveSDK
+public partial class SwrveSDK : ISwrveAssetController
 {
     public const string SdkVersion = "4.5";
 
@@ -1577,6 +1577,14 @@ public partial class SwrveSDK
     public void RemoveMessageCenterCampaign(SwrveBaseCampaign campaign) {
         campaign.Status = SwrveCampaignState.Status.Deleted;
         SaveCampaignData(campaign);
+    }
+
+    public bool IsAssetInCache(string asset) {
+        return asset != null && this.GetAssetsOnDisk ().Contains (asset);
+    }
+
+    public HashSet<string> GetAssetsOnDisk() {
+        return this.assetsOnDisk;
     }
 
     /// <summary>

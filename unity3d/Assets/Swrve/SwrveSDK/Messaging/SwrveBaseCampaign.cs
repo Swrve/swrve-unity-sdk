@@ -141,7 +141,6 @@ public abstract class SwrveBaseCampaign
     public SwrveCampaignState State;
 
     protected readonly DateTime swrveInitialisedTime;
-    protected readonly string assetPath;
     protected DateTime showMessagesAfterLaunch;
     protected DateTime showMessagesAfterDelay {
         get {
@@ -155,11 +154,10 @@ public abstract class SwrveBaseCampaign
     protected int delayFirstMessage = DefaultDelayFirstMessage;
     protected int maxImpressions;
 
-    protected SwrveBaseCampaign (DateTime initialisedTime, string assetPath)
+    protected SwrveBaseCampaign (DateTime initialisedTime)
     {
         this.State = new SwrveCampaignState();
         this.swrveInitialisedTime = initialisedTime;
-        this.assetPath = assetPath;
         this.triggers = new List<SwrveTrigger> ();
         this.minDelayBetweenMessage = DefaultMinDelay;
         this.showMessagesAfterLaunch = swrveInitialisedTime + TimeSpan.FromSeconds (DefaultDelayFirstMessage);
@@ -249,7 +247,7 @@ public abstract class SwrveBaseCampaign
     /// <returns>
     /// Parsed in-app campaign.
     /// </returns>
-    public static SwrveBaseCampaign LoadFromJSON(SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath, SwrveQAUser qaUser)
+    public static SwrveBaseCampaign LoadFromJSON(SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, SwrveQAUser qaUser)
     {
         int id = MiniJsonHelper.GetInt(campaignData, ID_KEY);
         SwrveBaseCampaign campaign = null;

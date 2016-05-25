@@ -1309,7 +1309,7 @@ public partial class SwrveSDK
 
                     for (int i = 0, j = jsonCampaigns.Count; i < j; i++) {
                         Dictionary<string, object> campaignData = (Dictionary<string, object>)jsonCampaigns [i];
-                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (this, campaignData, initialisedTime, swrveTemporaryPath, qaUser);
+                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (this, campaignData, initialisedTime, qaUser);
                         if(campaign == null) {
                             continue;
                         }

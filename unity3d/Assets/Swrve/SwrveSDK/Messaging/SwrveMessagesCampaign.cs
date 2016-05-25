@@ -17,7 +17,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
     /// </summary>
     public List<SwrveMessage> Messages;
 
-    private SwrveMessagesCampaign (DateTime initialisedTime, string assetPath) : base (initialisedTime, assetPath)
+    private SwrveMessagesCampaign (DateTime initialisedTime) : base (initialisedTime)
     {
         this.Messages = new List<SwrveMessage> ();
     }
@@ -81,13 +81,13 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
             randomMessages.Shuffle ();
             for(int mi = 0; mi < randomMessages.Count; mi++) {
                 SwrveMessage message = randomMessages[mi];
-                if (message.IsDownloaded (assetPath)) {
+                if (message.IsDownloaded ()) {
                     return message;
                 }
             }
         } else if (Next < messagesCount) {
             SwrveMessage message = Messages [Next];
-            if (message.IsDownloaded (assetPath)) {
+            if (message.IsDownloaded ()) {
                 return message;
             }
         }
@@ -103,7 +103,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
 
     public override bool AreAssetsReady()
     {
-        return this.Messages.All (m => m.IsDownloaded (assetPath));
+        return this.Messages.All (m => m.IsDownloaded ());
     }
 
     public override bool SupportsOrientation(SwrveOrientation orientation) {
@@ -151,9 +151,9 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         }
     }
 
-    new public static SwrveMessagesCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, string assetPath, SwrveQAUser qaUser)
+    new public static SwrveMessagesCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, SwrveQAUser qaUser)
     {
-        SwrveMessagesCampaign campaign = new SwrveMessagesCampaign (initialisedTime, assetPath);
+        SwrveMessagesCampaign campaign = new SwrveMessagesCampaign (initialisedTime);
 
         object _messages = null;
         campaignData.TryGetValue ("messages", out _messages);

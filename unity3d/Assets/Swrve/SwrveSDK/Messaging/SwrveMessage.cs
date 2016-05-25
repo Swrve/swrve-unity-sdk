@@ -46,8 +46,11 @@ public class SwrveMessage : SwrveBaseMessage
     /// </summary>
     public float AnimationScale = 1f;
 
-    private SwrveMessage (SwrveMessagesCampaign campaign)
+    public ISwrveAssetController assetController;
+
+    private SwrveMessage (ISwrveAssetController assetController, SwrveMessagesCampaign campaign)
     {
+        this.assetController = assetController;
         this.Campaign = campaign;
         this.Formats = new List<SwrveMessageFormat> ();
     }
@@ -87,7 +90,7 @@ public class SwrveMessage : SwrveBaseMessage
     /// </returns>
     public static SwrveMessage LoadFromJSON (SwrveSDK sdk, SwrveMessagesCampaign campaign, Dictionary<string, object> messageData)
     {
-        SwrveMessage message = new SwrveMessage (campaign);
+        SwrveMessage message = new SwrveMessage (sdk, campaign);
         message.Id = MiniJsonHelper.GetInt (messageData, "id");
         message.Name = (string)messageData ["name"];
 
@@ -155,12 +158,12 @@ public class SwrveMessage : SwrveBaseMessage
     /// <returns>
     /// True if the campaign assets have been downloaded.
     /// </returns>
-    public bool IsDownloaded (string assetPath)
+    public bool IsDownloaded ()
     {
         List<string> assets = this.ListOfAssets ();
         for(int ai = 0; ai < assets.Count; ai++) {
             string asset = assets[ai];
-            if (!CrossPlatformFile.Exists (assetPath + "/" + asset)) {
+            if(!assetController.IsAssetInCache (asset)) {
                 return false;
             }
         }
