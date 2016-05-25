@@ -17,7 +17,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
     /// </summary>
     public List<SwrveMessage> Messages;
 
-    private SwrveMessagesCampaign (DateTime initialisedTime, string assetPath) : base (initialisedTime, assetPath)
+    private SwrveMessagesCampaign (DateTime initialisedTime) : base (initialisedTime)
     {
         this.Messages = new List<SwrveMessage> ();
     }
@@ -81,13 +81,13 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
             randomMessages.Shuffle ();
             for(int mi = 0; mi < randomMessages.Count; mi++) {
                 SwrveMessage message = randomMessages[mi];
-                if (message.IsDownloaded (assetPath)) {
+                if (message.IsDownloaded ()) {
                     return message;
                 }
             }
         } else if (Next < messagesCount) {
             SwrveMessage message = Messages [Next];
-            if (message.IsDownloaded (assetPath)) {
+            if (message.IsDownloaded ()) {
                 return message;
             }
         }
@@ -103,7 +103,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
 
     public override bool AreAssetsReady()
     {
-        return this.Messages.All (m => m.IsDownloaded (assetPath));
+        return this.Messages.All (m => m.IsDownloaded ());
     }
 
     public override bool SupportsOrientation(SwrveOrientation orientation) {
@@ -150,12 +150,27 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         }
     }
 
-    new public static SwrveMessagesCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, string assetPath)
+    new public static SwrveMessagesCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, SwrveQAUser qaUser)
     {
-        SwrveMessagesCampaign campaign = new SwrveMessagesCampaign (initialisedTime, assetPath);
-        IList<object> jsonMessages = (IList<object>)campaignData ["messages"];
-        for (int k = 0, t = jsonMessages.Count; k < t; k++) {
-            Dictionary<string, object> messageData = (Dictionary<string, object>)jsonMessages [k];
+        SwrveMessagesCampaign campaign = new SwrveMessagesCampaign (initialisedTime);
+
+        object _messages = null;
+        campaignData.TryGetValue ("messages", out _messages);
+        IList<object> messages = null;
+        try {
+            messages = (IList<object>)_messages;
+        }
+        catch(Exception e) {
+            campaign.LogAndAddReason ("Campaign [" + id + "] invalid messages found, skipping.  Error: " + e, qaUser);
+        }
+
+        if (messages == null) {
+            campaign.LogAndAddReason ("Campaign [" + id + "] JSON messages are null, skipping.", qaUser);
+            return null;
+        }
+
+        for (int k = 0, t = messages.Count; k < t; k++) {
+            Dictionary<string, object> messageData = (Dictionary<string, object>)messages [k];
             SwrveMessage message = SwrveMessage.LoadFromJSON (sdk, campaign, messageData);
             if (message.Formats.Count > 0) {
                 campaign.AddMessage (message);
