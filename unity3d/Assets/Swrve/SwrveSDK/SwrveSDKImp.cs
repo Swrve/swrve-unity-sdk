@@ -1351,6 +1351,9 @@ public partial class SwrveSDK
 
     private void LoadResourcesAndCampaigns ()
     {
+        if (!IsAlive ()) {
+            return;
+        }
         try {
             if (!campaignsConnecting) {
                 if (!config.AutoDownloadCampaignsAndResources) {

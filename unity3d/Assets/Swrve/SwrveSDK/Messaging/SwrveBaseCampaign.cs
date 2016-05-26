@@ -202,12 +202,12 @@ public abstract class SwrveBaseCampaign
         DateTime utcNow = SwrveHelper.GetUtcNow ();
 
         if (StartDate > utcNow) {
-            LogAndAddReason ("Campaign " + Id + " has not started yet", qaUser);
+            LogAndAddReason (string.Format("Campaign {0} not started yet (now: {1}, end: {2})", Id, utcNow, StartDate), qaUser);
             return false;
         }
 
         if (EndDate < utcNow) {
-            LogAndAddReason ("Campaign " + Id + " has finished", qaUser);
+            LogAndAddReason (string.Format("Campaign {0} has finished (now: {1}, end: {2})", Id, utcNow, EndDate), qaUser);
             return false;
         }
 
