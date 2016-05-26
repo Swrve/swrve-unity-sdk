@@ -48,18 +48,6 @@ public partial class SwrveSDK
     private long installTimeEpoch;
     private string installTimeFormatted;
     private string lastPushEngagedId;
-#if UNITY_IPHONE
-    private string iOSdeviceToken;
-#endif
-#if UNITY_ANDROID
-    private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
-    private string gcmDeviceToken;
-    private static AndroidJavaObject androidPlugin;
-    private static bool androidPluginInitialized = false;
-    private static bool androidPluginInitializedSuccessfully = false;
-    private string googlePlayAdvertisingId;
-    private static bool startedPlot;
-#endif
     private int deviceWidth;
     private int deviceHeight;
     private long lastSessionTick;
@@ -167,9 +155,9 @@ public partial class SwrveSDK
         if (path == null || path.Length == 0) {
             path = Application.persistentDataPath;
         }
-    #if UNITY_IPHONE
+#if UNITY_IPHONE
         path = path + "/com.ngt.msgs";
-    #endif
+#endif
 		if (!File.Exists (path))
 		{
 			Directory.CreateDirectory (path);
@@ -406,31 +394,8 @@ public partial class SwrveSDK
 
     protected string GetDeviceLanguage ()
     {
-        string language = null;
-#if UNITY_IPHONE
-        try {
-            language = _swrveiOSGetLanguage();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device language, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-#elif UNITY_ANDROID
-        try {
-            using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
-                AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
-                language = defaultLocale.Call<string>("getLanguage");
-                string country = defaultLocale.Call<string>("getCountry");
-                if (!string.IsNullOrEmpty (country)) {
-                    language += "-" + country;
-                }
-                string variant = defaultLocale.Call<string>("getVariant");
-                if (!string.IsNullOrEmpty (variant)) {
-                    language += "-" + variant;
-                }
-            }
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device language, make sure you are running on an Android device: " + exp.ToString());
-        }
-#endif
+        string language = getNativeLanguage ();
+
         if (string.IsNullOrEmpty (language)) {
             CultureInfo info = CultureInfo.CurrentUICulture;
             string cultureLang = info.TwoLetterISOLanguageName.ToLower ();
@@ -533,6 +498,7 @@ public partial class SwrveSDK
         if (campaignsAndResourcesFlushRefreshDelay == 0) {
             campaignsAndResourcesFlushRefreshDelay = DefaultCampaignResourcesFlushRefreshDelay;
         }
+
 #if UNITY_IPHONE
         // Load device token
         iOSdeviceToken = GetSavediOSDeviceToken();
@@ -559,11 +525,7 @@ public partial class SwrveSDK
     private string GetRandomUUID ()
     {
 #if UNITY_IPHONE
-        try {
-            return _swrveiOSUUID();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
-        }
+        getNativeRandomUUID();
 #else
         try {
             Type type = System.Type.GetType ("System.Guid");
@@ -1614,294 +1576,10 @@ public partial class SwrveSDK
         return deviceCarrierInfo;
     }
 
-#if UNITY_IPHONE
-
-    protected void RegisterForPushNotificationsIOS()
-    {
-        try {
-            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.pushCategories.Select (a => a.toDict ()).ToList ()));
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-#if UNITY_5
-            UnityEngine.iOS.NotificationServices.RegisterForNotifications(UnityEngine.iOS.NotificationType.Alert | UnityEngine.iOS.NotificationType.Badge | UnityEngine.iOS.NotificationType.Sound);
-#else
-            NotificationServices.RegisterForRemoteNotificationTypes(RemoteNotificationType.Alert | RemoteNotificationType.Badge | RemoteNotificationType.Sound);
-#endif
-        }
-    }
-
-    protected string GetSavediOSDeviceToken()
-    {
-        string savedValue = storage.Load (iOSdeviceTokenSave);
-        if (!string.IsNullOrEmpty(savedValue)) {
-            return savedValue;
-        }
-
-        return null;
-    }
-
-#if UNITY_5
-    protected void ProcessRemoteNotification (UnityEngine.iOS.RemoteNotification notification)
-#else
-    protected void ProcessRemoteNotification (RemoteNotification notification)
-#endif
-    {
-        if(config.PushNotificationEnabled) {
-            ProcessRemoteNotificationUserInfo(notification.userInfo);
-            if(PushNotificationListener != null) {
-                PushNotificationListener.OnRemoteNotification(notification);
-            }
-            if(qaUser != null) {
-                qaUser.PushNotification(notification);
-            }
-        }
-    }
-
-    protected void ProcessRemoteNotificationUserInfo(IDictionary userInfo) {
-        if (userInfo != null && userInfo.Contains(PushTrackingKey)) {
-            // It is a Swrve push, we need to check if it was sent while the app was in the background
-            bool whileInBackground = !userInfo.Contains("_swrveForeground");
-            if (whileInBackground) {
-                object rawId = userInfo[PushTrackingKey];
-                string pushId = rawId.ToString();
-                // SWRVE-5613 Hack
-                if (rawId is Int64) {
-                    pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
-                }
-                SendPushNotificationEngagedEvent(pushId);
-            } else {
-                SwrveLog.Log("Swrve remote notification received while in the foreground");
-            }
-        } else {
-            SwrveLog.Log("Got unidentified notification");
-        }
-        
-        // Process push deeplink
-        if (userInfo != null && userInfo.Contains (PushDeeplinkKey)) {
-            object deeplinkUrl = userInfo[PushDeeplinkKey];
-            if (deeplinkUrl != null) {
-                OpenURL(deeplinkUrl.ToString());
-            }
-        }
-    }
-#endif
-
-#if UNITY_ANDROID
-    private const int GooglePlayPushPluginVersion = 4;
-
-    private void GooglePlayRegisterForPushNotification(MonoBehaviour container, string senderId)
-    {
-        try {
-            bool registered = false;
-            this.gcmDeviceToken = storage.Load (GcmDeviceTokenSave);
-
-            if (!androidPluginInitialized) {
-                androidPluginInitialized = true;
-
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
-                    string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
-
-                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
-                        androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
-
-                        if (androidPlugin != null) {
-                            // Check that the version is the same
-                            int pluginVersion = androidPlugin.CallStatic<int>("getVersion");
-
-                            if (pluginVersion != GooglePlayPushPluginVersion) {
-                                // Plugin with changes to the public API not supported
-                                androidPlugin = null;
-                                throw new Exception("The version of the Swrve Android Push plugin is different. This Swrve SDK needs version " + GooglePlayPushPluginVersion);
-                            } else {
-                                androidPluginInitializedSuccessfully = true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (androidPluginInitializedSuccessfully) {
-                registered = androidPlugin.CallStatic<bool>("registerDevice", container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
-            }
-
-            if (!registered) {
-                SwrveLog.LogError("Could not communicate with the Swrve Android Push plugin. Have you copied all the jars to the directory?");
-            }
-        } catch (Exception exp) {
-            SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
-        }
-    }
-
-    public void SetGooglePlayAdvertisingId(string advertisingId)
-    {
-        this.googlePlayAdvertisingId = advertisingId;
-        storage.Save(GoogleAdvertisingIdSave, advertisingId);
-    }
-
-    private void RequestGooglePlayAdvertisingId(MonoBehaviour container)
-    {
-        try {
-            this.googlePlayAdvertisingId = storage.Load(GoogleAdvertisingIdSave);
-            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
-                string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
-
-                if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
-                    androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
-                    if (androidPlugin != null) {
-                        androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
-                    }
-                }
-            }
-        } catch (Exception exp) {
-            SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
-        }
-    }
-
-    private string AndroidGetTimezone()
-    {
-        try {
-            AndroidJavaObject cal = new AndroidJavaObject("java.util.GregorianCalendar");
-            return cal.Call<AndroidJavaObject>("getTimeZone").Call<string>("getID");
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device timezone, make sure you are running on an Android device: " + exp.ToString());
-        }
-
-        return null;
-    }
-
-    private string AndroidGetRegion()
-    {
-        try {
-            using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
-                AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
-                return defaultLocale.Call<string>("getCountry");
-            }
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device region, make sure you are running on an Android device: " + exp.ToString());
-        }
-
-        return null;
-    }
-
-    private string AndroidGetAppVersion()
-    {
-        try {
-            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
-                AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
-                string packageName = context.Call<string>("getPackageName");
-                string versionName = context.Call<AndroidJavaObject>("getPackageManager")
-                                     .Call<AndroidJavaObject>("getPackageInfo", packageName, 0).Get<string>("versionName");
-                return versionName;
-            }
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device app version, make sure you are running on an Android device: " + exp.ToString());
-        }
-
-        return null;
-    }
-
-    private string _androidId;
-    private string AndroidGetAndroidId()
-    {
-        if (_androidId == null) {
-            try {
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
-                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
-                    AndroidJavaObject contentResolver = context.Call<AndroidJavaObject> ("getContentResolver");
-                    AndroidJavaClass settingsSecure = new AndroidJavaClass ("android.provider.Settings$Secure");
-                    _androidId = settingsSecure.CallStatic<string> ("getString", contentResolver, "android_id");
-                }
-            } catch (Exception exp) {
-                SwrveLog.LogWarning("Couldn't get the \"android_id\" resource, make sure you are running on an Android device: " + exp.ToString());
-            }
-        }
-        return _androidId;
-    }
-
-    private AndroidJavaObject _androidBridge;
-    private AndroidJavaObject AndroidGetBridge()
-    {
-        if (_androidBridge == null && SwrveHelper.IsOnDevice())
-        {
-            _androidBridge = new AndroidJavaObject("com.swrve.sdk.SwrveUnityCommon");
-        }
-        return _androidBridge;
-    }
-
-    private void AndroidInitNative(string jsonString)
-    {
-        try {
-            AndroidGetBridge ().Call ("init", jsonString);
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't init common from Android: " + exp.ToString ());
-        }
-    }
-
-    private void AndroidShowConversation(string conversation)
-    {
-        try {
-            AndroidGetBridge().Call("ShowConversation", conversation);
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
-        }
-    }
-
-    private int AndroidConversationVersion()
-    {
-        int result = 0;
-        try {
-            result = AndroidGetBridge().Call<int>("ConversationVersion");
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get conversations version from Android: " + exp.ToString());
-        }
-        return result;
-    }
-
-    private AndroidJavaClass _androidLocation;
-    private AndroidJavaClass AndroidGetLocation()
-    {
-        if (_androidLocation == null && SwrveHelper.IsOnDevice()) {
-            _androidLocation = new AndroidJavaClass ("com.swrve.sdk.SwrveLocationUnityBridge");
-        }
-        return _androidLocation;
-    }
-
-    private void AndroidStartPlot()
-    {
-        try {
-            AndroidGetLocation ().CallStatic ("StartPlot");
-            startedPlot = true;
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
-        }
-    }
-
-    private void AndroidStartPlotAfterPermissions()
-    {
-        if (!startedPlot) {
-            try {
-                startedPlot = AndroidGetLocation ().CallStatic<bool> ("StartPlotAfterPermissions");
-            } catch (Exception exp) {
-                SwrveLog.LogWarning ("StartPlotAfterPermissions't DoOther from Android: " + exp.ToString ());
-            }
-        }
-    }
-
-#endif
-
     public string GetAppVersion ()
     {
         if (string.IsNullOrEmpty (config.AppVersion)) {
-#if UNITY_ANDROID
-            config.AppVersion = AndroidGetAppVersion();
-#elif UNITY_IPHONE
-            try {
-                config.AppVersion = _swrveiOSGetAppVersion();
-                SwrveLog.Log ("got iOS version name " + config.AppVersion);
-            } catch (Exception exp) {
-                SwrveLog.LogWarning("Couldn't get the device app version, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-            }
-#endif
+            setNativeAppVersion ();
         }
         return config.AppVersion;
     }
@@ -1915,15 +1593,7 @@ public partial class SwrveSDK
         }
     #endif
 
-    #if UNITY_ANDROID
-        AndroidShowConversation(conversation);
-    #elif UNITY_IPHONE
-        try {
-          _swrveiOSShowConversation(conversation);
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get show conversation correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-    #endif
+        showNativeConversation (conversation);
     }
 
     private void SetInputManager (IInputManager inputManager)
@@ -2004,15 +1674,7 @@ public partial class SwrveSDK
 
         string jsonString = Json.Serialize (currentDetails);
 
-    #if UNITY_ANDROID
-        AndroidInitNative(jsonString);
-    #elif UNITY_IOS
-        try {
-            _swrveiOSInitNative(jsonString);
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get init the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-    #endif
+        initNative (jsonString);
         setConversationVersion();
     
         if (config.LocationAutostart) {
@@ -2021,38 +1683,14 @@ public partial class SwrveSDK
     }
     
     private void startPlot() {
-    #if UNITY_ANDROID
-        AndroidStartPlot();
-    #elif UNITY_IOS
-        try {
-          _swrveiOSStartPlot();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-    #endif
+        startNativeLocation ();
     }
 
     private void startPlotAfterPermissions() {
-    #if UNITY_ANDROID
-        AndroidStartPlotAfterPermissions();
-    #elif UNITY_IOS
-        try {
-            _swrveiOSStartPlot();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-    #endif
+        startNativeLocationAfterPermission ();
     }
 
     private void setConversationVersion() {
-    #if UNITY_ANDROID
-        conversationVersion = AndroidConversationVersion();
-    #elif UNITY_IOS
-        try {
-            conversationVersion = _swrveiOSConversationVersion();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-    #endif
+        setNativeConversationVersion ();
     }
 }
