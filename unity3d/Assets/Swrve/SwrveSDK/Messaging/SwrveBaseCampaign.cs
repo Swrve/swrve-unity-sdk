@@ -295,13 +295,6 @@ public abstract class SwrveBaseCampaign
         IList<object> jsonTriggers = (IList<object>)campaignData [TRIGGERS_KEY];
         for (int i = 0, j = jsonTriggers.Count; i < j; i++) {
             object jsonTrigger = jsonTriggers [i];
-            if (jsonTrigger.GetType () == typeof(string)) {
-                jsonTrigger = new Dictionary<string, object> {
-                    { EVENT_NAME_KEY, jsonTrigger },
-                    { CONDITIONS_KEY, new Dictionary<string, object>() }
-                };
-            }
-
             try {
                 SwrveTrigger trigger = SwrveTrigger.LoadFromJson ((IDictionary<string, object>)jsonTrigger);
                 campaign.GetTriggers ().Add (trigger);
