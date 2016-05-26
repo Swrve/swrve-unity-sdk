@@ -1012,6 +1012,24 @@ public partial class SwrveSDK
         }
     }
 
+    private bool isValidMessageCenter(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
+        bool valid = campaign.IsMessageCenter ()
+            && campaign.Status != SwrveCampaignState.Status.Deleted
+            && campaign.IsActive (qaUser)
+            && campaign.SupportsOrientation (orientation)
+            && campaign.AreAssetsReady ();
+
+        string s = string.Format(
+            "mc: {0}, status: {1}, active: {2}, orientation: {3}, assets: {4}",
+            campaign.IsMessageCenter (), campaign.Status != SwrveCampaignState.Status.Deleted,
+            campaign.IsActive (qaUser), campaign.SupportsOrientation (orientation),
+            campaign.AreAssetsReady ()
+        );
+        SwrveLog.Log (s);
+
+        return valid;
+    }
+
     private void NoMessagesWereShown (string eventName, string reason)
     {
         SwrveLog.Log ("Not showing message for " + eventName + ": " + reason);
@@ -1289,6 +1307,9 @@ public partial class SwrveSDK
 
     private void LoadResourcesAndCampaigns ()
     {
+        if (!IsAlive ()) {
+            return;
+        }
         try {
             if (!campaignsConnecting) {
                 if (!config.AutoDownloadCampaignsAndResources) {

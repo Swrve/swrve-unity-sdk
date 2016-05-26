@@ -49,7 +49,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         }
 
         if (checkCampaignLimits (triggerEvent, payload, qaUser)) {
-            // SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
+            SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
 
             return GetNextMessage (messagesCount, qaUser);
         }
@@ -137,6 +137,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
     /// </summary>
     public void MessageWasShownToUser (SwrveMessageFormat messageFormat)
     {
+        Status = SwrveCampaignState.Status.Seen;
         IncrementImpressions ();
         SetMessageMinDelayThrottle ();
         if (Messages.Count > 0) {
@@ -176,6 +177,10 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
                 campaign.AddMessage (message);
             }
         }
+        if (campaign.Messages.Count == 0) {
+            campaign.LogAndAddReason ("Campaign [" + id + "] no messages found, skipping.", qaUser);
+        }
+
         return campaign;
     }
 }

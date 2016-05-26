@@ -1433,6 +1433,38 @@ public partial class SwrveSDK : ISwrveAssetController
         
         return true;
     }
+
+    public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
+        Container.StartCoroutine (LaunchMessage (
+            ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
+            GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
+        ));
+        campaign.Status = SwrveCampaignState.Status.Seen;
+        SaveCampaignData(campaign);
+    }
+
+    public List<SwrveBaseCampaign> GetMessageCenterCampaigns()
+    { 
+        return GetMessageCenterCampaigns (GetDeviceOrientation ());
+    }
+
+    public List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation orientation)
+    { 
+        List<SwrveBaseCampaign> result = new List<SwrveBaseCampaign>();
+        IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
+        while(itCampaign.MoveNext()) {
+            SwrveBaseCampaign campaign = itCampaign.Current;
+            if (isValidMessageCenter (campaign, orientation)) {
+                result.Add (campaign);
+            }
+        }
+        return result;
+    }
+
+    public void RemoveMessageCenterCampaign(SwrveBaseCampaign campaign) {
+        campaign.Status = SwrveCampaignState.Status.Deleted;
+        SaveCampaignData(campaign);
+    }
     
     public bool IsAssetInCache(string asset) {
         return asset != null && this.GetAssetsOnDisk ().Contains (asset);

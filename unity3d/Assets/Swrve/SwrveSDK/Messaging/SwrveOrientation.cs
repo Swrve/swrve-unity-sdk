@@ -13,6 +13,10 @@ public enum SwrveOrientation {
 
 public static class SwrveOrientationHelper
 {
+    const string PORTRAIT_KEY = "portrait";
+    const string LANDSCAPE_KEY = "landscape";
+    const string BOTH_KEY = "both";
+
     /// <summary>
     /// Convert from String to SwrveOrientation.
     /// </summary>
@@ -24,9 +28,9 @@ public static class SwrveOrientationHelper
     /// </returns>
     public static SwrveOrientation Parse (string orientation)
     {
-        if (orientation.ToLower ().Equals ("portrait")) {
+        if (orientation.ToLower ().Equals (PORTRAIT_KEY)) {
             return SwrveOrientation.Portrait;
-        } else if (orientation.ToLower ().Equals ("both")) {
+        } else if (orientation.ToLower ().Equals (BOTH_KEY)) {
             return SwrveOrientation.Both;
         }
 

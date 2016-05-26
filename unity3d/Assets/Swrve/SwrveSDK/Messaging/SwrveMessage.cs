@@ -118,6 +118,9 @@ public class SwrveMessage : SwrveBaseMessage
     /// </returns>
     public bool SupportsOrientation (SwrveOrientation orientation)
     {
+        if (orientation == SwrveOrientation.Both) {
+            return true;
+        }
         return (GetFormat (orientation) != null);
     }
 
