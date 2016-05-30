@@ -14,7 +14,8 @@
 @synthesize conversationWindow;
 
 -(void)conversationWasShownToUser:(SwrveBaseConversation*)conversation {
-    NSLog(@"conversationWasShownToUser: %@", conversation);
+#pragma unused(conversation)
+    // this is handled on Unity's side
 }
 
 - (void) conversationClosed {
