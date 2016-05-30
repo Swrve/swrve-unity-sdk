@@ -1021,7 +1021,7 @@ public partial class SwrveSDK
     }
 
     private bool isValidMessageCenter(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
-        return campaign.IsMessageCenter ()
+        return campaign.MessageCenter
           && campaign.Status != SwrveCampaignState.Status.Deleted
           && campaign.IsActive (qaUser)
           && campaign.SupportsOrientation (orientation)
