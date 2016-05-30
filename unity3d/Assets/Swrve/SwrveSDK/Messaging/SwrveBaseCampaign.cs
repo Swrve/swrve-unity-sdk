@@ -46,7 +46,10 @@ public abstract class SwrveBaseCampaign
     /// <summary>
     // Flag indicating if it is a MessageCenter campaign
     /// </summary>
-    protected bool messageCenter;
+    public bool MessageCenter {
+        get;
+        protected set;
+    }
 
     /// <summary>
     // MessageCenter subject of the campaign
@@ -106,19 +109,6 @@ public abstract class SwrveBaseCampaign
         set {
             this.State.CurStatus = value;
         }
-    }
-
-    /**
-     * Used internally to identify campaigns that have been marked as MessageCenter campaigns on the dashboard.
-     *
-     * @return true if the campaign is an MessageCenter campaign.
-     */
-    public bool IsMessageCenter() {
-        return messageCenter;
-    }
-
-    protected void SetIsMessageCenter(bool isMessageCenter) {
-        this.messageCenter = isMessageCenter;
     }
 
     /**
@@ -258,9 +248,9 @@ public abstract class SwrveBaseCampaign
         campaign.Id = id;
 
         AssignCampaignTriggers(campaign, campaignData);
-        campaign.SetIsMessageCenter(campaignData.ContainsKey(MESSAGE_CENTER_KEY) && (bool)campaignData[MESSAGE_CENTER_KEY]);
+        campaign.MessageCenter = campaignData.ContainsKey(MESSAGE_CENTER_KEY) && (bool)campaignData[MESSAGE_CENTER_KEY];
 
-        if((!campaign.IsMessageCenter()) && (campaign.GetTriggers().Count == 0))
+        if((!campaign.MessageCenter) && (campaign.GetTriggers().Count == 0))
         {
             campaign.LogAndAddReason("Campaign [" + campaign.Id + "], has no triggers. Skipping this campaign.", qaUser);
             return null;
@@ -270,7 +260,7 @@ public abstract class SwrveBaseCampaign
         AssignCampaignDates(campaign, campaignData);
         campaign.Subject = campaignData.ContainsKey(SUBJECT_KEY) ? (string)campaignData[SUBJECT_KEY] : "";
 
-        if(campaign.IsMessageCenter())
+        if(campaign.MessageCenter)
         {
             SwrveLog.Log(string.Format("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
         }
