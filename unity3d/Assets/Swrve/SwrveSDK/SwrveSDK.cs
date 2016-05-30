@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 /// </summary>
 /// <remarks>
 /// </remarks>
-public partial class SwrveSDK
+public partial class SwrveSDK : ISwrveAssetController
 {
     public const string SdkVersion = "4.5";
 
@@ -1433,7 +1433,47 @@ public partial class SwrveSDK
         
         return true;
     }
+
+    public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
+        Container.StartCoroutine (LaunchMessage (
+            ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
+            GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
+        ));
+        campaign.Status = SwrveCampaignState.Status.Seen;
+        SaveCampaignData(campaign);
+    }
+
+    public List<SwrveBaseCampaign> GetMessageCenterCampaigns()
+    { 
+        return GetMessageCenterCampaigns (GetDeviceOrientation ());
+    }
+
+    public List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation orientation)
+    { 
+        List<SwrveBaseCampaign> result = new List<SwrveBaseCampaign>();
+        IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
+        while(itCampaign.MoveNext()) {
+            SwrveBaseCampaign campaign = itCampaign.Current;
+            if (isValidMessageCenter (campaign, orientation)) {
+                result.Add (campaign);
+            }
+        }
+        return result;
+    }
+
+    public void RemoveMessageCenterCampaign(SwrveBaseCampaign campaign) {
+        campaign.Status = SwrveCampaignState.Status.Deleted;
+        SaveCampaignData(campaign);
+    }
     
+    public bool IsAssetInCache(string asset) {
+        return asset != null && this.GetAssetsOnDisk ().Contains (asset);
+    }
+
+    public HashSet<string> GetAssetsOnDisk() {
+        return this.assetsOnDisk;
+    }
+
     /// <summary>
     /// Obtain an in-app message for the given id.
     /// </summary>
