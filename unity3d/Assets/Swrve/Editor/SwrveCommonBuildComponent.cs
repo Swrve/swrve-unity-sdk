@@ -36,6 +36,7 @@ public class SwrveCommonBuildComponent
     {
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.Android);
         PlayerSettings.bundleIdentifier = packageName;
+        SwrveBuildComponent.CorrectApplicationId ();
 
         // Fix for ANDROID_HOME Unity bug
         FixAndroidHomeNotFound ();
