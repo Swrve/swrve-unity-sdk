@@ -399,13 +399,15 @@ public partial class SwrveSDK
         }
     }
 
-    private void getNativeRandomUUID()
+    private string getNativeRandomUUID()
     {
+        string uuid = null;
         try {
-            return _swrveiOSUUID();
+            uuid = _swrveiOSUUID();
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
         }
+        return uuid;
     }
 
     private void setNativeConversationVersion()
@@ -426,22 +428,18 @@ public partial class SwrveSDK
         }
     }
 
-    private void startLocationNative()
+    private void startNativeLocation()
     {
         try {
             _swrveiOSStartPlot();
         } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+            SwrveLog.LogWarning("Couldn't start Location on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
     }
 
-    private void startLocationAfterPermission()
+    private void startNativeLocationAfterPermission()
     {
-        try {
-            _swrveiOSStartPlot();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
+        startNativeLocation ();
     }
 
 }

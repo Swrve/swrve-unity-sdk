@@ -1273,12 +1273,23 @@ public partial class SwrveSDK : ISwrveAssetController
         
         return true;
     }
+ 
+    public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign) {
+        ShowMessageCenterCampaign (campaign, GetDeviceOrientation ());
+    }
 
     public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
-        Container.StartCoroutine (LaunchMessage (
-            ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
-            GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
-        ));
+        if (campaign.IsA<SwrveMessagesCampaign> ()) {
+            Container.StartCoroutine (LaunchMessage (
+                ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
+                GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
+            ));
+        }
+        else if (campaign.IsA<SwrveConversationCampaign> ()) {
+            Container.StartCoroutine (LaunchConversation(
+                ((SwrveConversationCampaign)campaign).Conversation
+            ));
+        }
         campaign.Status = SwrveCampaignState.Status.Seen;
         SaveCampaignData(campaign);
     }

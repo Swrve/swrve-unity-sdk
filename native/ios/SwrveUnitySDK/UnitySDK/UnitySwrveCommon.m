@@ -31,6 +31,7 @@ static dispatch_once_t sharedInstanceToken = 0;
 @synthesize configDict;
 @synthesize eventBuffer;
 @synthesize eventBufferBytes;
+@synthesize deviceToken;
 
 -(id) init {
     self = [super init];
@@ -376,6 +377,12 @@ static dispatch_once_t sharedInstanceToken = 0;
     UnitySendMessage("SwrvePrefab",
                      [UnitySwrveHelper NSStringCopy:method],
                      [UnitySwrveHelper NSStringCopy:msg]);
+}
+
+
+-(NSSet*) pushCategories
+{
+    return nil;
 }
 
 @end

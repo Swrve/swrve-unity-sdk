@@ -1678,15 +1678,15 @@ public partial class SwrveSDK
         setConversationVersion();
     
         if (config.LocationAutostart) {
-            startPlot ();
+            startLocation ();
         }
     }
     
-    private void startPlot() {
+    private void startLocation() {
         startNativeLocation ();
     }
 
-    private void startPlotAfterPermissions() {
+    private void startLocationAfterPermissions() {
         startNativeLocationAfterPermission ();
     }
 

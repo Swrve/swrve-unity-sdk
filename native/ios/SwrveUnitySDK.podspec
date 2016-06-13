@@ -16,5 +16,5 @@ Pod::Spec.new do |s|
 
   s.dependency 'SwrveSDKCommon', '~> 4.5.0'
   s.dependency 'SwrveConversationSDK', '~> 4.5.0'
-  s.dependency 'SwrveLocationSDK', '~> 4.5.0'
+  s.dependency 'SwrveLocationSDK', '~> 1.1'
 end
