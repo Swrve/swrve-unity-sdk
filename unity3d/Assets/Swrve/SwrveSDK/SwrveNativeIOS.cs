@@ -259,9 +259,6 @@ public partial class SwrveSDK
     [DllImport ("__Internal")]
     private static extern int _swrveiOSConversationVersion();
 
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSGetConversationResult();
-
     private string iOSdeviceToken;
 
     protected void RegisterForPushNotificationsIOS()
