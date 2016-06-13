@@ -55,14 +55,13 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
     #if UNITY_EDITOR
         SwrveComponent.SDK.ConversationEditorCallback = OnConversation;
     #endif
+        
 
-        foreach(KeyValuePair<string, UnityAction> kvp in new Dictionary<string, UnityAction> {
-            {"Left Panel", ToLeftPanel},
-            {"Main Menu", ToMainMenu},
-            {"Message Center", ToMessageCenter}
-        } ) {
-            SetButton (kvp, footerPanel);
-        }
+        new Dictionary<string, UnityAction> {
+            { "Left Panel", ToLeftPanel },
+            { "Main Menu", ToMainMenu },
+            { "Message Center", ToMessageCenter }
+        }.ToList ().ForEach (kvp => SetButton (kvp, footerPanel));
     }
 
     public static void SetButton(KeyValuePair<string, UnityAction> kvp, Transform transform) {
@@ -139,7 +138,7 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
         if(PositionState.Moving == state)
         {
             List<MoveInfo> toDelete = null;
-            foreach (MoveInfo info in moves) {
+            moves.ForEach (info => {
                 if (1 > Math.Abs (info.position.x - info.stepTarget)) {
                     info.position.x = info.stepTarget;
                 }
@@ -154,17 +153,17 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
                 }
 
                 info.target.transform.position = info.position;
-            }
+            });
 
             if (null != toDelete) {
-                foreach (MoveInfo info in toDelete) {
+                toDelete.ForEach (info => {
                     moves.Remove (info);
                     if (info.target == nextInactive) {
                         info.position.x = info.originalX;
                         info.target.transform.position = info.position;
                         info.target.SetActive (false);
                     }
-                }
+                });
             }
             if (0 == moves.Count) {
                 this.state = this.nextState;
@@ -178,8 +177,8 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
         string pattern = @"<[^>]+>";
         Dictionary<string, object> convoDict = (Dictionary<string, object>)Json.Deserialize (conversation);
         view.header.text = (string)convoDict["name"];
-        foreach (var page in (List<object>)convoDict["pages"]) {
-            foreach (var content in (List<object>)((Dictionary<string, object>)page)["content"]) {
+        ((List<object>)convoDict["pages"]).ForEach( page => {
+            ((List<object>)((Dictionary<string, object>)page)["content"]).ForEach(content => {
                 Dictionary<string, object> _content = (Dictionary<string, object>)content;
                 if (_content.ContainsKey ("value")) {
                     string value = (string)_content ["value"];
@@ -189,7 +188,8 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
                     if (matches.Count > 0)
                     {
                         UnityEngine.Debug.Log (string.Format ("{0} ({1} matches):", value, matches.Count));
-                        foreach (Match match in matches) {
+                        for(int i = 0; i < matches.Count; i++) {
+                            Match match = matches[i];
                             UnityEngine.Debug.Log ("   " + match.Value);
                             value = value.Replace (match.Value, "");
                         }
@@ -197,8 +197,8 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
 
                     view.conversation.text += value + "\n\n";
                 }
-            }
-        }
+            });
+        });
     }
 
     public static void AskModalQuestion(

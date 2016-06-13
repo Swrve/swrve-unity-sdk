@@ -135,7 +135,9 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     public static void EnableScenesForBuild()
     {
         string androidDir = Path.Combine (Directory.GetCurrentDirectory (), "Assets/Plugins/Android");
-        foreach (string project in Directory.GetDirectories (androidDir)) {
+        string[] dirs = Directory.GetDirectories (androidDir);
+        for (int i = 0; i < dirs.Length; i++) {
+            string project = dirs [i];
             string amFile = Path.Combine(project, "_AndroidManifest.xml");
             if (File.Exists (amFile)) {
                 File.WriteAllText (Path.Combine (project, "AndroidManifest.xml"),

@@ -125,16 +125,20 @@ public class SwrveCommonBuildComponent
             Directory.CreateDirectory (destDirName);
         }
 
+        int i;
+
         // Get the files in the directory and copy them to the new location.
         FileInfo[] files = dir.GetFiles ();
-        foreach (FileInfo file in files) {
+        for(i = 0; i < files.Length; i++) {
+            FileInfo file = files [i];
             string temppath = Path.Combine (destDirName, file.Name);
             file.CopyTo (temppath, overrideFiles);
         }
 
         // If copying subdirectories, copy them and their contents to new location.
         if (copySubDirs) {
-            foreach (DirectoryInfo subdir in dirs) {
+            for(i = 0; i < dirs.Length; i++) {
+                DirectoryInfo subdir = dirs [i];
                 string temppath = Path.Combine (destDirName, subdir.Name);
                 DirectoryCopy (subdir.FullName, temppath, copySubDirs, overrideFiles);
             }

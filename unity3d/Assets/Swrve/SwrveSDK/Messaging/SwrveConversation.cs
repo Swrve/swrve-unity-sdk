@@ -81,13 +81,7 @@ public class SwrveConversation : SwrveBaseMessage
     public bool IsDownloaded ()
     {
         List<string> assets = this.ListOfAssets ();
-        foreach (string asset in assets) {
-            if (!assetController.IsAssetInCache(asset)) {
-                return false;
-            }
-        }
-
-        return true;
+        return assets.All (asset => assetController.IsAssetInCache (asset));
     }
 
   	override public string GetBaseFormattedMessageType() {

@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Events;
 using Swrve.IAP;
+using System.Linq;
 
 public class MainMenuComponent : MonoBehaviour {
     public string eventTriggerName;
@@ -12,7 +13,7 @@ public class MainMenuComponent : MonoBehaviour {
     public Transform panel;
 
   	void Start () {
-        foreach(KeyValuePair<string, UnityAction> kvp in new Dictionary<string, UnityAction> {
+        new Dictionary<string, UnityAction> {
             {"Named Event", SendEvent},
             {"User update", SendUserAttributes},
             {"Purchase Item", PurchaseItem},
@@ -24,9 +25,9 @@ public class MainMenuComponent : MonoBehaviour {
             {"Send To Swrve", SendToSwrve},
             {"Trigger Message", TriggerMessage},
             {"Save To Disk", SaveToDisk}
-        } ) {
+        }.ToList().ForEach(kvp => {
             HomeMenuComponent.SetButton (kvp, panel);
-        }
+        });
     }
 
     void SendEvent() {

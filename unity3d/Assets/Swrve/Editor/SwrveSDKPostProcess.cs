@@ -25,7 +25,8 @@ public class SwrveSDKPostProcess
     public static void iOSOnlySendRemoteNotificationsIfInBackground (string path)
     {
         List<string> allMMFiles = GetAllFiles (path, "*.mm");
-        foreach (string filePath in allMMFiles) {
+        for(int i = 0; i < allMMFiles.Count; i++) {
+            string filePath = allMMFiles [i];
             string contents = File.ReadAllText (filePath);
             int alreadyApplied = contents.IndexOf("swrveState");
             int hookPosition = contents.IndexOf ("didReceiveRemoteNotification");
@@ -36,7 +37,9 @@ public class SwrveSDKPostProcess
                 string pattern = @"UnitySendRemoteNotification[\w\s]*\(userInfo\)[\w\s]*;";
                 Match closestInstance = null;
                 int closestInstanceIndex = Int32.MaxValue;
-                foreach (Match match in Regex.Matches(contents, pattern)) {
+                MatchCollection matches = Regex.Matches (contents, pattern);
+                for(int j = 0; j < matches.Count; j++) {
+                    Match match = matches [j];
                     if (match.Index > hookPosition && closestInstanceIndex > match.Index) {
                         // Closest instance of UnitySendRemoteNotification to hook
                         closestInstanceIndex = match.Index;
@@ -62,7 +65,9 @@ public class SwrveSDKPostProcess
         try {
             string[] files = System.IO.Directory.GetFiles (path, fileExtension);
             result.AddRange (files);
-            foreach (string d in Directory.GetDirectories(path)) {
+            string[] dirs = Directory.GetDirectories (path);
+            for (int i = 0; i < dirs.Length; i++) {
+                string d = dirs [i];
                 List<string> filesInDir = GetAllFiles (d, fileExtension);
                 result.AddRange (filesInDir);
             }
