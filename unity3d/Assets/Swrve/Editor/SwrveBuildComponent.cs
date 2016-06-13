@@ -132,7 +132,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     }
 
     [MenuItem ("Swrve Demo/Correct ${applicationId} in AndroidManifests")]
-    public static void EnableScenesForBuild()
+    public static void CorrectApplicationId()
     {
         string androidDir = Path.Combine (Directory.GetCurrentDirectory (), "Assets/Plugins/Android");
         string[] dirs = Directory.GetDirectories (androidDir);

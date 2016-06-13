@@ -39,7 +39,7 @@ def deleteEmptyDirs(project) {
 }
 
 def customCopy(project, prefix) {
-    def todir = '../unity3d/Assets/Plugins/Android'
+    def todir = '../../../unity3d/Assets/Plugins/Android'
     def aarName = project + '-debug.aar'
     def projectdir = todir + '/' + project
     println 'deleting ' + projectdir
