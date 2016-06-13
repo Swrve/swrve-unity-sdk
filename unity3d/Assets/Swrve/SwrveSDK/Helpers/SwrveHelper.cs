@@ -159,7 +159,10 @@ public static class SwrveHelper
     #elif UNITY_ANDROID
         return IsAvailableOn(UnityEngine.RuntimePlatform.Android);
 
-        #endif
+    #else
+        return false;
+
+    #endif
     }
 
     public static bool IsAvailableOn(UnityEngine.RuntimePlatform platform)
