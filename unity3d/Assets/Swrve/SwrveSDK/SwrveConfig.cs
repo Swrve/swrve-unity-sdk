@@ -250,11 +250,8 @@ public class SwrveConfig
     /// </summary>
     public bool LogAppleIDFA = false;
 
-
-#if UNITY_IOS
     // iOS Push Categories
     public List<UIUserNotificationCategory> pushCategories = new List<UIUserNotificationCategory>();
-#endif
 
     public void CalculateEndpoints (int appId)
     {
