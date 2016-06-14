@@ -18,6 +18,7 @@ public class SwrveCommonBuildComponent
     {
         fileName = Path.GetFullPath (fileName);
         UnityEngine.Debug.Log ("[####] Building " + fileName);
+        UnityEngine.Debug.Log ("With: " + PlayerSettings.iOS.sdkVersion + ", opt: " + opt + ", scenes: " + mainScenes + ", id: " + bundleIdentifier);
 
         PlayerSettings.bundleIdentifier = bundleIdentifier;
 #if UNITY_5
