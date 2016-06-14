@@ -1655,6 +1655,7 @@ public partial class SwrveSDK
     private void InitNative()
     {
         Dictionary<string, object> currentDetails = new Dictionary<string, object> {
+            {"sdkVersion", SwrveSDK.SdkVersion},
             {"apiKey", apiKey},
             {"appId", gameId},
             {"userId", userId},
