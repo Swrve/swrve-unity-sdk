@@ -16,7 +16,7 @@ public class SwrveCommonBuildComponent
 
     protected static void BuildIOS (string fileName, BuildOptions opt, string[] mainScenes, string bundleIdentifier)
     {
-        UnityEngine.Debug.Log ("[####] Building " + fileName);
+        UnityEngine.Debug.Log ("[####] Building " + Path.GetFullPath(fileName));
 
         PlayerSettings.bundleIdentifier = bundleIdentifier;
 #if UNITY_5
