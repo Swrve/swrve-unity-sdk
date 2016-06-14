@@ -102,7 +102,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     [MenuItem ("Swrve Demo/Android/Test build with all stripping levels")]
     public static void TestBuildAndroid ()
     {
-        string outputPath = "../../buildtemp/tmp_Android";
+        string outputPath = "../../buildtemp/tmp_Android.apk";
 
         // Build Android
         PlayerSettings.strippingLevel = StrippingLevel.Disabled;

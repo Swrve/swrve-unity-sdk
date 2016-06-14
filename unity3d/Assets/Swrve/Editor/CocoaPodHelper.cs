@@ -61,9 +61,11 @@
                 process.StartInfo.FileName = podPath;
                 process.StartInfo.Arguments = command;
                 UnityEngine.Debug.Log(
-					"Executing " + podPath +
-					" command: " + process.StartInfo.Arguments
-				);
+					        "Executing " + podPath +
+					        " command: " + process.StartInfo.Arguments +
+                  " (in: " + projDir + ")"
+				        );
+
                 process.StartInfo.CreateNoWindow = true;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 process.StartInfo.UseShellExecute = false;

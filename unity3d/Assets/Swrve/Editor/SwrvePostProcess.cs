@@ -12,7 +12,7 @@ public class SwrvePostProcess : MonoBehaviour
 #if UNITY_5
 		if(target == BuildTarget.iOS)
 #else
-    if(target == BuildTarget.iPhone)
+        if(target == BuildTarget.iPhone)
 #endif
 		{
             //Copy the podfile into the project.
@@ -36,6 +36,7 @@ public class SwrvePostProcess : MonoBehaviour
     public static void CorrectPBXProj(string pathToBuiltProject)
     {
         string pbxprojpath = Path.Combine(pathToBuiltProject, "Unity-iPhone.xcodeproj/project.pbxproj");
+        UnityEngine.Debug.Log ("correcting " + pbxprojpath);
         string pbxproj = File.ReadAllText(pbxprojpath);
         pbxproj = pbxproj.Replace("SDKROOT = iphonesimulator", "SDKROOT = iphoneos");
         pbxproj = pbxproj.Replace("SUPPORTED_PLATFORMS = \"iphoneos iphonesimulator\";",
@@ -44,6 +45,8 @@ public class SwrvePostProcess : MonoBehaviour
                   iphonesimulator,
                 );"
         );
+
+        pbxproj = pbxproj.Replace ("OTHER_CFLAGS = \"-mno-thumb\";", "OTHER_CFLAGS = (\"-mno-thumb\");");
         pbxproj = pbxproj.Replace(
             @"OTHER_LDFLAGS = (",
             @"OTHER_LDFLAGS = (""$(inherited)"","
@@ -62,6 +65,7 @@ public class SwrvePostProcess : MonoBehaviour
     public static void CorrectXCScheme(string pathToBuiltProject)
     {
         string xcschemepath = Path.Combine(pathToBuiltProject, "Unity-iPhone.xcodeproj/xcshareddata/xcschemes/Unity-iPhone.xcscheme");
+        UnityEngine.Debug.Log ("correcting " + xcschemepath);
         string xcscheme = File.ReadAllText (xcschemepath);
         xcscheme = xcscheme.Replace ("parallelizeBuildables=\"YES\"", "parallelizeBuildables=\"NO\"");
         xcscheme = xcscheme.Replace ("buildImplicitDependencies=\"YES\"", "buildImplicitDependencies=\"NO\"");

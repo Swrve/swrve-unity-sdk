@@ -26,14 +26,15 @@ public class SwrveCommonBuildComponent
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);
         string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iPhone, opt);
 #endif
-
         if (error != null && !error.Equals (string.Empty)) {
             throw new Exception (error);
         }
+        UnityEngine.Debug.Log ("Built " + fileName);
     }
 
     protected static void BuildAndroid (string fileName, BuildOptions opt, string[] mainScenes, string packageName)
     {
+        UnityEngine.Debug.Log ("[####] Building " + fileName);
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.Android);
         PlayerSettings.bundleIdentifier = packageName;
         SwrveBuildComponent.CorrectApplicationId ();
@@ -46,6 +47,7 @@ public class SwrveCommonBuildComponent
         if (error != null && !error.Equals (string.Empty)) {
             throw new Exception (error);
         }
+        UnityEngine.Debug.Log ("Built " + fileName);
     }
 
     protected static string FixAndroidHomeNotFound ()
