@@ -64,9 +64,10 @@ public class SwrveMessageRenderer
             GUI.color = Color.white;
         }
 
+        bool rotatedFormat = format.Rotate;
         // Rotate the inner message if necessary
-        if (format.Rotate) {
-            Vector2 pivotPoint = new Vector2 (Screen.width / 2, Screen.height / 2);
+        if (rotatedFormat) {
+            Vector2 pivotPoint = new Vector2 (centerx, centery);
             GUIUtility.RotateAroundPivot (90, pivotPoint);
         }
 
@@ -97,12 +98,21 @@ public class SwrveMessageRenderer
             if (button.Texture != null) {
                 float computedSize = scale * button.AnimationScale;
                 Point centerPoint = button.GetCenteredPosition (button.Texture.width, button.Texture.height, computedSize, scale);
-                centerPoint.X += centerx;
-                centerPoint.Y += centery;
-                button.Rect.x = centerPoint.X;
-                button.Rect.y = centerPoint.Y;
+                button.Rect.x = centerPoint.X + centerx;
+                button.Rect.y = centerPoint.Y + centery;
                 button.Rect.width = button.Texture.width * computedSize;
                 button.Rect.height = button.Texture.height * computedSize;
+
+                if (rotatedFormat) {
+                    // Rotate 90 degrees the hit area
+                    Point widgetCenter = button.GetCenter (button.Texture.width, button.Texture.height, computedSize);
+                    button.PointerRect.x = centerx - (button.Position.Y * scale) + widgetCenter.Y;
+                    button.PointerRect.y = centery + (button.Position.X * scale) + widgetCenter.X;
+                    button.PointerRect.width = button.Rect.height;
+                    button.PointerRect.height = button.Rect.width;
+                } else {
+                    button.PointerRect = button.Rect;
+                }
                 if (Animator != null) {
                     Animator.AnimateButtonPressed (button);
                 } else {

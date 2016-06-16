@@ -38,10 +38,18 @@ public abstract class SwrveWidget
         Size = new Point (0, 0);
     }
 
+    public Point GetCenter (float w, float h, float Scale)
+    {
+        int x = (int)(-w * Scale / 2.0);
+        int y = (int)(-h * Scale / 2.0);
+        return new Point (x, y);
+    }
+
     public Point GetCenteredPosition (float w, float h, float Scale, float FormatScale)
     {
-        int x = (int)(-w * Scale / 2.0 + Position.X * FormatScale);
-        int y = (int)(-h * Scale / 2.0 + Position.Y * FormatScale);
+        Point center = GetCenter (w, h, Scale);
+        int x = (int)(center.X + Position.X * FormatScale);
+        int y = (int)(center.Y + Position.Y * FormatScale);
         return new Point (x, y);
     }
 }
