@@ -97,7 +97,7 @@ public class SwrveCommonBuildComponent
         info.UseShellExecute = false;
         info.WorkingDirectory = workingDirectory;
         info.FileName = androidSDKLocation + "/platform-tools/adb";
-        info.Arguments = "install -r " + filePath;
+        info.Arguments = string.Format("install -r {0}", filePath);
         System.Diagnostics.Process proc = System.Diagnostics.Process.Start (info);
 
         string errorOutput = string.Empty;
@@ -109,6 +109,17 @@ public class SwrveCommonBuildComponent
             EditorUtility.DisplayDialog (projectName + " Install", "Could not install the " + projectName + " on the device. Error code: " + proc.ExitCode, "Accept");
             throw new Exception (errorOutput);
         } else {
+            info = new ProcessStartInfo ();
+            info.RedirectStandardError = true;
+            info.UseShellExecute = false;
+            info.WorkingDirectory = workingDirectory;
+            info.FileName = androidSDKLocation + "/platform-tools/adb";
+            info.Arguments = string.Format("shell monkey -p {0} -c android.intent.category.LAUNCHER 1", PlayerSettings.bundleIdentifier);
+            proc = System.Diagnostics.Process.Start (info);
+            while (!proc.HasExited) {
+                errorOutput += proc.StandardError.ReadToEnd ();
+            }
+
             UnityEngine.Debug.Log ("Android build installed successfully");
         }
     }

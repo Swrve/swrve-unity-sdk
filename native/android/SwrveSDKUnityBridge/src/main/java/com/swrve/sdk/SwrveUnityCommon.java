@@ -41,6 +41,12 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     private File cacheDir;
 
+    private static SwrveUnityCommon instance;
+
+    public static boolean IsInitialised() {
+        return null != instance;
+    }
+
     public SwrveUnityCommon() { }
 
     public void init(String jsonString) {
@@ -70,8 +76,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         } else {
             this.context = new WeakReference<>(context);
         }
-
-        SwrveLogger.d("SwrveUnityCommon inited with " + this.context.get() + ", cache dir: " + this.cacheDir, "SwrveUnity");
 
         SharedPreferences sp = this.context.get().getSharedPreferences("FILE", Context.MODE_PRIVATE);
         if(null != jsonString) {
@@ -233,6 +237,8 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         return getStringDetail("swrvePath");
     }
 
+    String getPrefabName() { return getStringDetail("prefabName"); }
+
     @Override
     public String getSwrveSDKVersion() {
         return getStringDetail(SDK_VERSION_KEY);
@@ -266,17 +272,17 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     }
 
     @Override
-    public String getCachedData(String userId, String key) {
-        return null;
+    public void setLocationSegmentVersion(int locationSegmentVersion) {
+        sendMessageUp("SetLocationSegmentVersion", Integer.toString(locationSegmentVersion));
     }
 
     @Override
-    public void setLocationSegmentVersion(int locationSegmentVersion) {
-
-    }
-    // @Override
-    public String getCachedLocationData() {
-        return readFile(getSwrvePath(), getLocTag() + getUserId());
+    public String getCachedData(String userId, String key) {
+        if(LOCATION_CAMPAIGN_CATEGORY.equals(key))
+        {
+            return readFile(getSwrvePath(), getLocTag() + userId);
+        }
+        return null;
     }
 
     public void ShowConversation(String conversation) {
@@ -295,11 +301,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         return ISwrveConversationSDK.CONVERSATION_VERSION;
     }
 
-    // @Override
-    public void setLocationVersion(int locationVersion) {
-        sendMessageUp("SetLocationVersion", Integer.toString(locationVersion));
-    }
-
     @Override
     public void userUpdate(Map<String, String> attributes) {
         Gson gson = new Gson();
@@ -308,7 +309,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     private void sendMessageUp(String method, String msg)
     {
-        UnityPlayer.UnitySendMessage("SwrvePrefab", method, msg);
+        UnityPlayer.UnitySendMessage(getPrefabName(), method, msg);
     }
 
     @Override
@@ -353,11 +354,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     @Override
     public int getHttpTimeout() {
         return getIntDetail("httpTimeout");
-    }
-
-    @Override
-    public int getMaxEventsPerFlush() {
-        return getIntDetail("maxEventsPerFlush");
     }
 
     @Override

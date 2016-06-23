@@ -206,9 +206,9 @@ public class SwrveComponent : MonoBehaviour
 #endif
     }
 
-    public void SetLocationVersion(string locationVersion) {
+    public void SetLocationSegmentVersion(string locationSegmentVersion) {
         try {
-          _SDK.SetLocationVersion(int.Parse(locationVersion));
+            _SDK.SetLocationSegmentVersion(int.Parse(locationSegmentVersion));
         } catch (System.Exception e) {
             SwrveLog.LogError (e.ToString(), "location");
         }

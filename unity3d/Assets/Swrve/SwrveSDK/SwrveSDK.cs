@@ -227,6 +227,8 @@ public partial class SwrveSDK : ISwrveAssetController
         this.Container = container;
         this.ResourceManager = new Swrve.ResourceManager.SwrveResourceManager ();
         this.config = config;
+        this.prefabName = container.name;
+
         this.gameId = gameId;
         this.apiKey = apiKey;
         this.userId = config.UserId;
@@ -363,7 +365,7 @@ public partial class SwrveSDK : ISwrveAssetController
         StartCampaignsAndResourcesTimer();
         DisableAutoShowAfterDelay();
 
-        locationVersion = 0;
+        locationSegmentVersion = 0;
         conversationVersion = 0;
 
         if(SwrveHelper.IsOnDevice())
@@ -372,7 +374,7 @@ public partial class SwrveSDK : ISwrveAssetController
         }
         else
         {
-            locationVersion = 1;
+            locationSegmentVersion = 1;
             conversationVersion = 3;
         }
 #endif
@@ -1052,8 +1054,8 @@ public partial class SwrveSDK : ISwrveAssetController
 #endif
     }
 
-    public void SetLocationVersion(int locationVersion) {
-        this.locationVersion = locationVersion;
+    public void SetLocationSegmentVersion(int locationSegmentVersion) {
+        this.locationSegmentVersion = locationSegmentVersion;
     }
 
     /// <summary>

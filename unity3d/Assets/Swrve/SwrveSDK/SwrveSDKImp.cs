@@ -100,6 +100,7 @@ public partial class SwrveSDK
     protected SwrveOrientation currentOrientation;
     protected IInputManager inputManager = NativeInputManager.Instance;
     private string cdn = "http://swrve-content.s3.amazonaws.com/messaging/message_image/";
+    protected string prefabName;
 
     // Talk rules
     private const int DefaultDelayFirstMessage = 150;
@@ -117,7 +118,7 @@ public partial class SwrveSDK
     private bool campaignAndResourcesCoroutineEnabled = true;
     private IEnumerator campaignAndResourcesCoroutineInstance;
 
-    private int locationVersion;
+    private int locationSegmentVersion;
     private int conversationVersion;
 
     private void QueueSessionStart ()
@@ -1349,7 +1350,7 @@ public partial class SwrveSDK
                     getRequest.AppendFormat("&conversation_version={0}", this.conversationVersion);
                 }
                 if (config.LocationEnabled) {
-                    getRequest.AppendFormat("&location_version={0}", this.locationVersion);
+                    getRequest.AppendFormat("&location_version={0}", this.locationSegmentVersion);
                 }
 
                 if (!string.IsNullOrEmpty (lastETag)) {
@@ -1669,6 +1670,7 @@ public partial class SwrveSDK
             {"maxEventsPerFlush", 50},
             {"locTag", LocationSave},
             {"swrvePath", swrvePath},
+            {"prefabName", prefabName},
             {"swrveTemporaryPath", swrveTemporaryPath},
             {"sigSuffix", SwrveFileStorage.SIGNATURE_SUFFIX}
         };

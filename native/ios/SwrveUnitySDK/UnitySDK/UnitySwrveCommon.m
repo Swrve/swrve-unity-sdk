@@ -89,6 +89,10 @@ static dispatch_once_t sharedInstanceToken = 0;
     return [self stringFromConfig:@"swrvePath"];
 }
 
+-(NSString*) prefabName {
+    return [self stringFromConfig:@"prefabName"];
+}
+
 -(NSString*) locTag {
     return [self stringFromConfig:@"locTag"];
 }
@@ -359,7 +363,7 @@ static dispatch_once_t sharedInstanceToken = 0;
 }
 
 -(void) setLocationSegmentVersion:(int)version {
-    [self sendMessageUp:@"setLocationSegmentVersion"
+    [self sendMessageUp:@"SetLocationSegmentVersion"
                     msg:[NSString stringWithFormat:@"%d", version]];
 }
 
@@ -374,11 +378,10 @@ static dispatch_once_t sharedInstanceToken = 0;
 
 -(void) sendMessageUp:(NSString*)method msg:(NSString*)msg
 {
-    UnitySendMessage("SwrvePrefab",
+    UnitySendMessage([UnitySwrveHelper NSStringCopy:[self prefabName]],
                      [UnitySwrveHelper NSStringCopy:method],
                      [UnitySwrveHelper NSStringCopy:msg]);
 }
-
 
 -(NSSet*) pushCategories
 {

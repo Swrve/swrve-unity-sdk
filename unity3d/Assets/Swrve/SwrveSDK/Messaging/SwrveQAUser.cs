@@ -42,6 +42,9 @@ public class SwrveQAUser
             restClient = new RESTClient ();
             this.loggingUrl = MiniJsonHelper.GetString (jsonQa, "logging_url", null);
             this.loggingUrl = this.loggingUrl.Replace ("https://", "http://");
+            if (!this.loggingUrl.EndsWith ("/")) {
+                this.loggingUrl = this.loggingUrl + "/";
+            }
         }
 
         campaignReasons = new Dictionary<int, string> ();
