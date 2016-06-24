@@ -22,6 +22,11 @@ public class SwrveConversation : SwrveBaseMessage
 
     public ISwrveAssetController assetController;
 
+    /// <summary>
+    /// Priority of the message.
+    /// </summary>
+    public int Priority = 9999;
+
     private SwrveConversation (ISwrveAssetController assetController, SwrveConversationCampaign campaign)
     {
         this.assetController = assetController;
@@ -57,6 +62,9 @@ public class SwrveConversation : SwrveBaseMessage
             }
         }
         conversation.Conversation = Json.Serialize (conversationData);
+        if (conversationData.ContainsKey ("priority")) {
+            conversation.Priority = MiniJsonHelper.GetInt (conversationData, "priority");
+        }
         
         return conversation;
     }
