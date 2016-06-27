@@ -15,7 +15,7 @@
 
 -(void)conversationWasShownToUser:(SwrveBaseConversation*)conversation {
 #pragma unused(conversation)
-    // this is handled on Unity's side
+    // this is handled already, on Unity's side
 }
 
 - (void) conversationClosed {
