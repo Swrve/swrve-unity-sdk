@@ -1420,7 +1420,7 @@ public partial class SwrveSDK : ISwrveAssetController
     public IEnumerator ShowConversationForEvent (string eventName, SwrveConversation conversation)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        yield return Container.StartCoroutine(LaunchConversation(conversation));
+        yield return Container.StartCoroutine (LaunchConversation (conversation));
         TaskFinished ("ShowConversationForEvent");
 #else
         yield return null;
