@@ -6,13 +6,11 @@ import org.json.JSONObject;
 import android.os.Bundle;
 
 public class SwrveNotification {
-
-	private static final String SWRVE_PUSH_IDENTIFIER = "_p";
 	
 	public static class Builder {
 		public static SwrveNotification build(Bundle msg) {
-			if (msg.containsKey(SWRVE_PUSH_IDENTIFIER)) {
-				String id = msg.get(SWRVE_PUSH_IDENTIFIER).toString();
+			if (msg.containsKey(SwrveGcmIntentService.SWRVE_PUSH_IDENTIFIER)) {
+				String id = msg.get(SwrveGcmIntentService.SWRVE_PUSH_IDENTIFIER).toString();
 				return new SwrveNotification(id, msg);
 			}
 			

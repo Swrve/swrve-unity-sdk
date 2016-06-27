@@ -149,7 +149,7 @@ extern "C"
         if (![app respondsToSelector:@selector(registerUserNotificationSettings:)])
         {
             // Use the old API
-            [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound];
+            [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound | UIRemoteNotificationTypeNewsstandContentAvailability];
         }
         else
 #endif
@@ -159,7 +159,7 @@ extern "C"
         }
 #else
         // Not building with the latest XCode that contains iOS 8 definitions
-        [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound];
+        [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound | UIRemoteNotificationTypeNewsstandContentAvailability];
 #endif
     }
 }
