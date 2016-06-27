@@ -661,7 +661,7 @@ public partial class SwrveSDK
             baseMessage = conversation;
         }
         
-        if (config.TalkEnabled) {
+        if ((baseMessage == null) && config.TalkEnabled) {
             SwrveMessage message = GetMessageForEvent (eventName, payload);
             StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
             baseMessage = message;
