@@ -41,5 +41,10 @@ public class SwrveButton : SwrveWidget
     /// Has it been pressed
     /// </summary>
     public bool Pressed = false;
+
+    /// <summary>
+    /// Pointer bounds.
+    /// </summary>
+    public Rect PointerRect;
 }
 }
