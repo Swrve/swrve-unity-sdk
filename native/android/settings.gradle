@@ -1,0 +1,7 @@
+include ":SwrveSDKCommon"
+project(":SwrveSDKCommon").projectDir = file("../../../../android/public/SwrveSDKCommon")
+
+include ":SwrveConversationSDK"
+project(":SwrveConversationSDK").projectDir = file("../../../../android/public/SwrveConversationSDK")
+
+include ":DummyUnityLibrary", ":SwrveSDKPushSupport", ":SwrveSDKUnityBridge", ":SwrveSDKUnityAndroidBridge", ":SwrveSDKUnityAndroidBridgeTest"
