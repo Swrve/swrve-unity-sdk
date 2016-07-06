@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 
 import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import com.swrve.sdk.conversations.ui.ConversationActivity;
 import com.unity3d.player.UnityPlayer;
@@ -113,6 +114,20 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         );
         Gson gson = new Gson();
         this.currentDetails = gson.fromJson(jsonString, new TypeToken<Map<String, Object>>(){}.getType());
+        if(this.currentDetails.containsKey(DEVICE_INFO_KEY)) {
+            LinkedTreeMap<String, Object> _deviceInfo = (LinkedTreeMap<String, Object>)this.currentDetails.get(DEVICE_INFO_KEY);
+            try {
+                JSONObject deviceInfo = new JSONObject("{}");
+                for (Map.Entry<String, Object> entry: _deviceInfo.entrySet()) {
+                    deviceInfo.put(entry.getKey(), entry.getValue());
+                }
+                this.currentDetails.remove(DEVICE_INFO_KEY);
+                this.currentDetails.put(DEVICE_INFO_KEY, deviceInfo);
+            }
+            catch (JSONException ex) {
+                SwrveLogger.e("Error while creating device info json object", ex);
+            }
+        }
     }
 
     private String readFile(String dir, String filename) {
@@ -356,6 +371,11 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     @Override
     public int getHttpTimeout() {
         return getIntDetail("httpTimeout");
+    }
+
+    @Override
+    public int getMaxEventsPerFlush() {
+        return getIntDetail("maxEventsPerFlush");
     }
 
     @Override
