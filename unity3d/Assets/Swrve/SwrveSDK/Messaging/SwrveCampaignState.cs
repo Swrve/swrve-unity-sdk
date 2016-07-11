@@ -74,5 +74,12 @@ public class SwrveCampaignState
         
         return Status.Unseen;
     }
+
+    public override string ToString() {
+        return string.Format (
+            "[SwrveCampaignState] Impressions: {0}, Next: {1}, ShowMessagesAfterDelay: {2}, CurStatus: {3}",
+            Impressions, Next, ShowMessagesAfterDelay, CurStatus
+        );
+    }
 }
 }

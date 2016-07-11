@@ -221,7 +221,7 @@ public class SwrveComponent : MonoBehaviour
             Dictionary<string, object>.Enumerator it = o.GetEnumerator();
 
             while(it.MoveNext()) {
-                _o[it.Current.Key] = (string) it.Current.Value;
+                _o[it.Current.Key] = string.Format("{0}", it.Current.Value);
             }
 
             _SDK.UserUpdate(_o);

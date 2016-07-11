@@ -209,7 +209,7 @@ public abstract class SwrveBaseCampaign
         if (qaUser != null && !qaUser.campaignReasons.ContainsKey (Id)) {
             qaUser.campaignReasons.Add (Id, reason);
         }
-        SwrveLog.Log (reason);
+        SwrveLog.Log (string.Format ("{0} {1}", this, reason));
     }
 
     protected void LogAndAddReason (int ident, string reason, SwrveQAUser qaUser)

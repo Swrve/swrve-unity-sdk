@@ -45,7 +45,7 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
         }
 
         if (checkCampaignLimits (triggerEvent, payload, qaUser)) {
-            SwrveLog.Log (triggerEvent + " matches a trigger in " + Id);
+            SwrveLog.Log (string.Format ("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
 
             return Conversation;
         }

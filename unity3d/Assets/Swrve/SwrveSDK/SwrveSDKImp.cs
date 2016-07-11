@@ -674,6 +674,9 @@ public partial class SwrveSDK
         if (baseMessage == null) {
             SwrveLog.Log ("Not showing message: no candidate for " + eventName);
         } else {
+            SwrveLog.Log (string.Format (
+                "[{0}] {1} has been shown for {2}\nstate: {3}",
+                baseMessage, baseMessage.Campaign.Id, eventName, baseMessage.Campaign.State));
             NamedEventInternal (
                 baseMessage.GetEventPrefix () + "returned",
                 new Dictionary<string, string> { { "id", baseMessage.Id.ToString () } },
@@ -1034,6 +1037,10 @@ public partial class SwrveSDK
         if (null != conversation) {
             yield return null;
             ShowConversation(conversation.Conversation);
+            if (null != conversation.Campaign) {
+                conversation.Campaign.IncrementImpressions ();
+                SaveCampaignData (conversation.Campaign);
+            }
         }
     }
 
@@ -1662,6 +1669,7 @@ public partial class SwrveSDK
             {"userId", userId},
             {"appVersion", GetAppVersion()},
             {"uniqueKey", GetUniqueKey()},
+            {"deviceInfo", GetDeviceInfo()},
             {"batchUrl", "/1/batch"},
             {"eventsServer", config.EventsServer},
             {"contentServer", config.ContentServer},
