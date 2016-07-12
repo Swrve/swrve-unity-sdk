@@ -19,5 +19,5 @@ dependencies {
     compile 'com.google.android.gms:play-services-basement:' + project.GOOGLE_GMS_TOOLS_VERSION
     compile 'com.google.android.gms:play-services-gcm:' + project.GOOGLE_GMS_TOOLS_VERSION
     compile 'com.google.android.gms:play-services-ads:' + project.GOOGLE_GMS_TOOLS_VERSION
-    compile project(':DummyUnityLibrary')
+    compile project(':UnityFacade')
 }
