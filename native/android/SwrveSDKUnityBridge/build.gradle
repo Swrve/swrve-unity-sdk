@@ -13,7 +13,6 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile project(path: ':SwrveConversationSDK')
+    compile project(':SwrveConversationSDK')
     compile project(':UnityFacade')
 }
