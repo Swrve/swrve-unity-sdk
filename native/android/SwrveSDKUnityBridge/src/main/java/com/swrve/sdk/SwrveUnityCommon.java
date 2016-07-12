@@ -46,7 +46,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     private static SwrveUnityCommon instance;
 
-    public static boolean IsInitialised() {
+    public static boolean isInitialised() {
         return null != instance;
     }
 
@@ -302,7 +302,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         return null;
     }
 
-    public void ShowConversation(String conversation) {
+    public void showConversation(String conversation) {
         try {
             Intent intent = new Intent(context.get(), ConversationActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -314,7 +314,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         }
     }
 
-    public int ConversationVersion() {
+    public int conversationVersion() {
         return ISwrveConversationSDK.CONVERSATION_VERSION;
     }
 
