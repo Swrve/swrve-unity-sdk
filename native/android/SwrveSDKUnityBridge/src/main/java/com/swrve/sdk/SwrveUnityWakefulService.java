@@ -3,6 +3,7 @@ package com.swrve.sdk;
 import android.app.IntentService;
 import android.content.Intent;
 
+import com.swrve.sdk.rest.IRESTClient;
 import com.swrve.sdk.rest.IRESTResponseListener;
 import com.swrve.sdk.rest.RESTClient;
 import com.swrve.sdk.rest.RESTResponse;
@@ -41,27 +42,35 @@ public class SwrveUnityWakefulService extends IntentService {
         }
     }
 
-    void sendEvents(ArrayList<String> events) {
-        SwrveLogger.i(LOG_TAG, "Sending queued events");
+    protected int sendEvents(ArrayList<String> events) {
+        SwrveLogger.i(LOG_TAG, "Sending batch of events:" + events);
+        int eventsSent = 0;
         try {
             LinkedHashMap<Long, String> eventsMap = new LinkedHashMap<>();
             for(int i = 0; i < events.size(); i++) {
                 eventsMap.put((long)i, events.get(i));
             }
-            RESTClient rc = new RESTClient(swrveCommon.getHttpTimeout());
+            IRESTClient restClient = createRESTClient();
             String postData = EventHelper.eventsAsBatch(eventsMap, swrveCommon.getUserId(), swrveCommon.getAppVersion(), swrveCommon.getSessionKey(), swrveCommon.getDeviceId());
             IPostBatchRequestListener pbrl = new IPostBatchRequestListener() {
                 public void onResponse(boolean shouldDelete) {
-                    SwrveLogger.d(LOG_TAG, "sendEventsAsBatch response, should delete: " + shouldDelete);
+                    SwrveLogger.d(LOG_TAG, "Background sendEventsAsBatch response, success:" + shouldDelete);
                 }
             };
-            postBatchRequest(rc, postData, pbrl);
+
+            postBatchRequest(restClient, postData, pbrl);
+            eventsSent = events.size();
         } catch (JSONException je) {
-            SwrveLogger.e(LOG_TAG, "Unable to generate event batch, and send events", je);
+            SwrveLogger.e(LOG_TAG, "Unable to generate event batch, and send events in background", je);
         }
+        return eventsSent;
     }
 
-    private void postBatchRequest(RESTClient restClient, final String postData, final IPostBatchRequestListener listener) {
+    protected IRESTClient createRESTClient() {
+        return new RESTClient(swrveCommon.getHttpTimeout());
+    }
+
+    private void postBatchRequest(IRESTClient restClient, final String postData, final IPostBatchRequestListener listener) {
         restClient.post(SwrveCommon.getInstance().getBatchURL(), postData, new IRESTResponseListener() {
             @Override
             public void onResponse(RESTResponse response) {
