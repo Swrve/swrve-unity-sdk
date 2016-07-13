@@ -9,8 +9,7 @@ public class SwrveUnityApplication extends Application {
 
         SwrveCommon.setRunnable(new Runnable() {
             @Override
-            public void run() {
-                new SwrveUnityCommon().init(SwrveUnityApplication.this, null);
+            public void run() {new SwrveUnityCommon(SwrveUnityApplication.this);
             }
         });
     }

@@ -44,19 +44,16 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     private File cacheDir;
 
-    private static SwrveUnityCommon instance;
-
     public static boolean isInitialised() {
-        return null != instance;
+        return null != SwrveCommon.getInstance();
     }
 
-    public SwrveUnityCommon() { }
-
-    public void init(String jsonString) {
-        init(
-            UnityPlayer.currentActivity.getApplicationContext(),
-            jsonString
-        );
+    /***
+     * This is the automatically called Constructor from SwrveUnityApplication
+     * Application class, if used.
+     */
+    public SwrveUnityCommon(Context context) {
+        this(context, null);
     }
 
     /***
@@ -64,15 +61,16 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
      * via a native plugin, with a jsonString of settings, which will be
      * then cached locally.
      *
-     * @param context ApplicationContext
      * @param jsonString JSON String of configuration
      */
-    public void init(Context context, String jsonString) {
-        SwrveLogger.d(
-            "UnitySwrveCommon constructor called with jsonString" +
-                    " \"" + jsonString + "\""
-        );
+    public SwrveUnityCommon(String jsonString) {
+        this(UnityPlayer.currentActivity, jsonString);
+    }
+
+    private SwrveUnityCommon(Context context, String jsonString) {
         SwrveCommon.setSwrveCommon(this);
+
+        SwrveLogger.d("UnitySwrveCommon constructor called with jsonString \"" + jsonString + "\"");
 
         if (context instanceof Activity) {
             this.context = new WeakReference<>(context.getApplicationContext());
@@ -81,39 +79,33 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         }
 
         SharedPreferences sp = this.context.get().getSharedPreferences("FILE", Context.MODE_PRIVATE);
-        if(null != jsonString) {
-            try {
-                initFromJSON(jsonString);
-                SharedPreferences.Editor editor = sp.edit();
-                editor.putString(LOG_TAG, jsonString);
-                editor.apply();
-            } catch (Exception e) {
-                jsonString = null;
-                SwrveLogger.e(LOG_TAG, "Error loading settings from JSON", e);
-            }
-        }
-
         if(null == jsonString) {
             try {
-                initFromJSON(sp.getString(LOG_TAG, ""));
+                jsonString = sp.getString(LOG_TAG, "");
             } catch (Exception e) {
                 SwrveLogger.e(LOG_TAG, "Error loading Unity settings from shared prefs", e);
             }
         }
 
-        this.cacheDir = new File(getSwrveTemporaryPath());
+        if(null != jsonString) {
+            try {
+                Gson gson = new Gson();
+                this.currentDetails = gson.fromJson(jsonString, new TypeToken<Map<String, Object>>(){}.getType());
 
-        sessionKey =
-            SwrveHelper.generateSessionToken(this.getApiKey(), this.getAppId(), getUserId()); // Generate session token
+                resetDeviceInfo();
+                SharedPreferences.Editor editor = sp.edit();
+                editor.putString(LOG_TAG, jsonString);
+                editor.apply();
+            } catch (Exception e) {
+                SwrveLogger.e(LOG_TAG, "Error loading settings from JSON", e);
+            }
+        }
+
+        this.cacheDir = new File(getSwrveTemporaryPath());
+        sessionKey = SwrveHelper.generateSessionToken(this.getApiKey(), this.getAppId(), getUserId());
     }
 
-    public void initFromJSON(String jsonString) {
-        SwrveLogger.d(
-            "UnitySwrveCommon:initFromJSON called with jsonString" +
-            " \"" + jsonString + "\""
-        );
-        Gson gson = new Gson();
-        this.currentDetails = gson.fromJson(jsonString, new TypeToken<Map<String, Object>>(){}.getType());
+    private void resetDeviceInfo() {
         if(this.currentDetails.containsKey(DEVICE_INFO_KEY)) {
             LinkedTreeMap<String, Object> _deviceInfo = (LinkedTreeMap<String, Object>)this.currentDetails.get(DEVICE_INFO_KEY);
             try {

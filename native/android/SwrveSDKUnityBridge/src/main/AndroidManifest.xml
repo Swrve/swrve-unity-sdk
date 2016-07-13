@@ -9,7 +9,7 @@
         <service android:exported="false" android:name="com.swrve.sdk.SwrveUnityWakefulService"/>
         <receiver android:exported="false" android:name="com.swrve.sdk.SwrveUnityWakefulReceiver">
             <intent-filter>
-                <action android:name="${applicationId}.swrve.SwrveWakeful" />
+                <action android:name="${applicationId}.swrve.SwrveUnityWakeful" />
             </intent-filter>
         </receiver>
 
