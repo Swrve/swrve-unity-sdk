@@ -34,6 +34,29 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     public final static String SDK_VERSION_KEY = "sdkVersion";
     public final static String PREFAB_NAME_KEY = "prefabName";
     public final static String DEVICE_INFO_KEY = "deviceInfo";
+    public final static String API_KEY_KEY = "apiKey";
+    public final static String DEVICE_ID_KEY = "deviceId";
+    public final static String APP_ID_KEY = "appId";
+    public final static String USER_ID_KEY = "userId";
+    public final static String SWRVE_PATH_KEY = "swrvePath";
+    public final static String LOC_TAG_KEY = "locTag";
+    public final static String SIG_SUFFIX_KEY = "sigSuffix";
+    public final static String APP_VERSION_KEY = "appVersion";
+    public final static String UNIQUE_KEY_KEY = "uniqueKey";
+    public final static String BATCH_URL_KEY = "batchUrl";
+    public final static String EVENTS_SERVER_KEY = "eventsServer";
+    public final static String HTTP_TIMEOUT_KEY = "httpTimeout";
+    public final static String MAX_EVENTS_PER_FLUSH_KEY = "maxEventsPerFlush";
+
+    public final static String EVENT_KEY = "event";
+    public final static String NAME_KEY = "name";
+    public final static String CONVERSATION_KEY = "conversation";
+    public final static String PAGE_KEY = "page";
+
+    public final static String SHARED_PREFERENCE_FILENAME = "swrve_unity_json_data";
+
+    public final static String UNITY_SET_LOCATION_SEGMENT_VERSION = "SetLocationSegmentVersion";
+    public final static String UNITY_USER_UPDATE = "UserUpdate";
 
     private final static String LOG_TAG = "UnitySwrveCommon";
 
@@ -70,7 +93,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     private SwrveUnityCommon(Context context, String jsonString) {
         SwrveCommon.setSwrveCommon(this);
 
-        SwrveLogger.d("UnitySwrveCommon constructor called with jsonString \"" + jsonString + "\"");
+        SwrveLogger.d(LOG_TAG, "UnitySwrveCommon constructor called with jsonString \"" + jsonString + "\"");
 
         if (context instanceof Activity) {
             this.context = new WeakReference<>(context.getApplicationContext());
@@ -78,7 +101,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             this.context = new WeakReference<>(context);
         }
 
-        SharedPreferences sp = this.context.get().getSharedPreferences("FILE", Context.MODE_PRIVATE);
+        SharedPreferences sp = this.context.get().getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
         if(null == jsonString) {
             try {
                 jsonString = sp.getString(LOG_TAG, "");
@@ -96,13 +119,16 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
                 SharedPreferences.Editor editor = sp.edit();
                 editor.putString(LOG_TAG, jsonString);
                 editor.apply();
+
+                this.cacheDir = new File(getSwrveTemporaryPath());
+                sessionKey = SwrveHelper.generateSessionToken(this.getApiKey(), this.getAppId(), getUserId());
             } catch (Exception e) {
                 SwrveLogger.e(LOG_TAG, "Error loading settings from JSON", e);
             }
         }
-
-        this.cacheDir = new File(getSwrveTemporaryPath());
-        sessionKey = SwrveHelper.generateSessionToken(this.getApiKey(), this.getAppId(), getUserId());
+        else {
+            SwrveLogger.d(LOG_TAG, "UnitySwrveCommon error no jsonString, nothing native will work correctly");
+        }
     }
 
     private void resetDeviceInfo() {
@@ -117,7 +143,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
                 this.currentDetails.put(DEVICE_INFO_KEY, deviceInfo);
             }
             catch (JSONException ex) {
-                SwrveLogger.e("Error while creating device info json object", ex);
+                SwrveLogger.e(LOG_TAG, "Error while creating device info json object", ex);
             }
         }
     }
@@ -143,9 +169,9 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             fileContent = _fileContent;
 
         } catch (NoSuchAlgorithmException e) {
-            SwrveLogger.e("SwrveSDK", "Computing signature failed because of invalid algorithm", e);
+            SwrveLogger.e(LOG_TAG, "Computing signature failed because of invalid algorithm", e);
         } catch (InvalidKeyException e) {
-            SwrveLogger.e("SwrveSDK", "Computing signature failed because of an invalid key", e);
+            SwrveLogger.e(LOG_TAG, "Computing signature failed because of an invalid key", e);
         }
 
         return fileContent;
@@ -186,7 +212,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
                 // prints character
                 text.append((char)value);
             }
-            SwrveLogger.d("read file: " + filePath + ", content: " + text, "FileReader");
+            SwrveLogger.d(LOG_TAG, "FileReader read file: " + filePath + ", content: " + text);
 
         } catch(Exception e) {
             e.printStackTrace();
@@ -216,7 +242,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     @Override
     public String getApiKey() {
-        return getStringDetail("apiKey");
+        return getStringDetail(API_KEY_KEY);
     }
 
     @Override
@@ -226,24 +252,24 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     @Override
     public short getDeviceId() {
-        if(currentDetails.containsKey("deviceId")) {
-            return ((Double)currentDetails.get("deviceId")).shortValue();
+        if(currentDetails.containsKey(DEVICE_ID_KEY)) {
+            return ((Double)currentDetails.get(DEVICE_ID_KEY)).shortValue();
         }
         return 0;
     }
 
     @Override
     public int getAppId() {
-        return getIntDetail("appId");
+        return getIntDetail(APP_ID_KEY);
     }
 
     @Override
     public String getUserId() {
-        return getStringDetail("userId");
+        return getStringDetail(USER_ID_KEY);
     }
 
     public String getSwrvePath() {
-        return getStringDetail("swrvePath");
+        return getStringDetail(SWRVE_PATH_KEY);
     }
 
     String getPrefabName() { return getStringDetail(PREFAB_NAME_KEY); }
@@ -258,31 +284,42 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     }
 
     public String getLocTag() {
-        return getStringDetail("locTag");
+        return getStringDetail(LOC_TAG_KEY);
     }
 
     public String getSigSuffix() {
-        return getStringDetail("sigSuffix");
+        return getStringDetail(SIG_SUFFIX_KEY);
     }
 
     @Override
     public String getAppVersion() {
-        return getStringDetail("appVersion");
+        return getStringDetail(APP_VERSION_KEY);
     }
 
     @Override
     public String getUniqueKey() {
-        return getStringDetail("uniqueKey");
+        return getStringDetail(UNIQUE_KEY_KEY);
     }
 
     @Override
     public String getBatchURL() {
-        return getEventsServer() + getStringDetail("batchUrl");
+        return getEventsServer() + getStringDetail(BATCH_URL_KEY);
     }
 
     @Override
     public void setLocationSegmentVersion(int locationSegmentVersion) {
-        sendMessageUp("SetLocationSegmentVersion", Integer.toString(locationSegmentVersion));
+        sendMessageUp(UNITY_SET_LOCATION_SEGMENT_VERSION, Integer.toString(locationSegmentVersion));
+    }
+
+    @Override
+    public void userUpdate(Map<String, String> attributes) {
+        Gson gson = new Gson();
+        sendMessageUp(UNITY_USER_UPDATE, gson.toJson(attributes));
+    }
+
+    private void sendMessageUp(String method, String msg)
+    {
+        UnityPlayer.UnitySendMessage(getPrefabName(), method, msg);
     }
 
     @Override
@@ -298,7 +335,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         try {
             Intent intent = new Intent(context.get(), ConversationActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.putExtra("conversation", new SwrveBaseConversation(new JSONObject(conversation), cacheDir));
+            intent.putExtra(CONVERSATION_KEY, new SwrveBaseConversation(new JSONObject(conversation), cacheDir));
             context.get().startActivity(intent);
         }
         catch (JSONException exc) {
@@ -308,17 +345,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     public int conversationVersion() {
         return ISwrveConversationSDK.CONVERSATION_VERSION;
-    }
-
-    @Override
-    public void userUpdate(Map<String, String> attributes) {
-        Gson gson = new Gson();
-        sendMessageUp("UserUpdate", gson.toJson(attributes));
-    }
-
-    private void sendMessageUp(String method, String msg)
-    {
-        UnityPlayer.UnitySendMessage(getPrefabName(), method, msg);
     }
 
     @Override
@@ -333,20 +359,20 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         if (payload == null) {
             payload = new HashMap<>();
         }
-        payload.put("event", eventPayloadName);
-        payload.put("conversation", Integer.toString(conversationId));
-        payload.put("page", page);
+        payload.put(EVENT_KEY, eventPayloadName);
+        payload.put(CONVERSATION_KEY, Integer.toString(conversationId));
+        payload.put(PAGE_KEY, page);
 
         SwrveLogger.d(LOG_TAG, "Sending view conversation event: " + eventParamName);
 
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put("name", eventParamName);
+        parameters.put(NAME_KEY, eventParamName);
 
         ArrayList<String> conversationEvents = new ArrayList<>();
         try {
-            conversationEvents.add(EventHelper.eventAsJSON("event", parameters, null, null));
+            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, null, null));
         } catch (JSONException e) {
-            SwrveLogger.e(LOG_TAG, "LocationCampaignEngageReceiver. Could not send the location engaged event", e);
+            SwrveLogger.e(LOG_TAG, "Could not queue conversation events params: " + parameters, e);
         }
         sendEventsWakefully(context.get(), conversationEvents);
     }
@@ -357,17 +383,17 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     @Override
     public String getEventsServer() {
-        return getStringDetail("eventsServer");
+        return getStringDetail(EVENTS_SERVER_KEY);
     }
 
     @Override
     public int getHttpTimeout() {
-        return getIntDetail("httpTimeout");
+        return getIntDetail(HTTP_TIMEOUT_KEY);
     }
 
     @Override
     public int getMaxEventsPerFlush() {
-        return getIntDetail("maxEventsPerFlush");
+        return getIntDetail(MAX_EVENTS_PER_FLUSH_KEY);
     }
 
     @Override
