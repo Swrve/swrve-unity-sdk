@@ -27,6 +27,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 {
@@ -331,22 +335,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         return null;
     }
 
-    public void showConversation(String conversation) {
-        try {
-            Intent intent = new Intent(context.get(), ConversationActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.putExtra(CONVERSATION_KEY, new SwrveBaseConversation(new JSONObject(conversation), cacheDir));
-            context.get().startActivity(intent);
-        }
-        catch (JSONException exc) {
-            SwrveLogger.e(LOG_TAG, "Could not JSONify conversation, conversation string didn't have the correct structure.");
-        }
-    }
-
-    public int getConversationVersion() {
-        return ISwrveConversationSDK.CONVERSATION_VERSION;
-    }
-
     @Override
     public void sendEventsWakefully(Context context, ArrayList<String> events) {
         Intent intent = new Intent(context, SwrveUnityWakefulReceiver.class);
@@ -407,4 +395,29 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     /***
      * eo Config
      */
+
+    @CalledByUnity
+    public void showConversation(String conversation) {
+        try {
+            Intent intent = new Intent(context.get(), ConversationActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.putExtra(CONVERSATION_KEY, new SwrveBaseConversation(new JSONObject(conversation), cacheDir));
+            context.get().startActivity(intent);
+        }
+        catch (JSONException exc) {
+            SwrveLogger.e(LOG_TAG, "Could not JSONify conversation, conversation string didn't have the correct structure.");
+        }
+    }
+
+    @CalledByUnity
+    public int getConversationVersion() {
+        return ISwrveConversationSDK.CONVERSATION_VERSION;
+    }
+}
+
+// This annotation is used by the JNI generator to create the necessary JNI
+// bindings and expose this method to native code.
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@interface CalledByUnity {
 }
