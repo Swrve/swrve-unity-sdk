@@ -1,17 +1,8 @@
 package com.swrve.sdk;
 
 import android.app.IntentService;
-import android.content.Context;
 import android.content.Intent;
 
-import com.swrve.sdk.EventHelper;
-import com.swrve.sdk.IPostBatchRequestListener;
-import com.swrve.sdk.ISwrveCommon;
-import com.swrve.sdk.SwrveCommon;
-import com.swrve.sdk.SwrveHelper;
-import com.swrve.sdk.SwrveLogger;
-import com.swrve.sdk.localstorage.ILocalStorage;
-import com.swrve.sdk.rest.IRESTClient;
 import com.swrve.sdk.rest.IRESTResponseListener;
 import com.swrve.sdk.rest.RESTClient;
 import com.swrve.sdk.rest.RESTResponse;
@@ -19,18 +10,17 @@ import com.swrve.sdk.rest.RESTResponse;
 import org.json.JSONException;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 
-public class SwrveWakefulService extends IntentService {
+public class SwrveUnityWakefulService extends IntentService {
 
     private static final String LOG_TAG = "SwrveWakeful";
     public static final String EXTRA_EVENTS = "swrve_wakeful_events";
 
     private ISwrveCommon swrveCommon = SwrveCommon.getInstance();
 
-    public SwrveWakefulService() {
-        super("SwrveWakefulService");
+    public SwrveUnityWakefulService() {
+        super("SwrveUnityWakefulService");
     }
 
     @Override
@@ -40,14 +30,14 @@ public class SwrveWakefulService extends IntentService {
             if (eventsExtras != null && eventsExtras.size() > 0) {
                 sendEvents(eventsExtras);
             } else {
-                SwrveLogger.e(LOG_TAG, "SwrveWakefulService: Unknown intent received.");
+                SwrveLogger.e(LOG_TAG, "SwrveUnityWakefulService: Unknown intent received.");
             }
         }
         catch (Exception e) {
             SwrveLogger.e(LOG_TAG, "Unable to properly process Intent information", e);
         }
         finally {
-            SwrveWakefulReceiver.completeWakefulIntent(intent);
+            SwrveUnityWakefulReceiver.completeWakefulIntent(intent);
         }
     }
 

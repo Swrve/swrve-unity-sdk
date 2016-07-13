@@ -331,8 +331,8 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     @Override
     public void sendEventsWakefully(Context context, ArrayList<String> events) {
-        Intent intent = new Intent(context, SwrveWakefulReceiver.class);
-        intent.putStringArrayListExtra(SwrveWakefulService.EXTRA_EVENTS, events);
+        Intent intent = new Intent(context, SwrveUnityWakefulReceiver.class);
+        intent.putStringArrayListExtra(SwrveUnityWakefulService.EXTRA_EVENTS, events);
         context.sendBroadcast(intent);
     }
 
