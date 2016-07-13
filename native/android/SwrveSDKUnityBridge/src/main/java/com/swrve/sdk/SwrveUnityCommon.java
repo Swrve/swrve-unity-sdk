@@ -343,7 +343,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         }
     }
 
-    public int conversationVersion() {
+    public int getConversationVersion() {
         return ISwrveConversationSDK.CONVERSATION_VERSION;
     }
 
