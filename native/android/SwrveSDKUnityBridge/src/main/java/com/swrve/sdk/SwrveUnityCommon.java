@@ -27,10 +27,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
 public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 {
@@ -70,10 +66,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     private String sessionKey;
 
     private File cacheDir;
-
-    public static boolean isInitialised() {
-        return null != SwrveCommon.getInstance();
-    }
 
     /***
      * This is the automatically called Constructor from SwrveUnityApplication
@@ -397,6 +389,11 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
      */
 
     @CalledByUnity
+    public static boolean isInitialised() {
+        return null != SwrveCommon.getInstance();
+    }
+
+    @CalledByUnity
     public void showConversation(String conversation) {
         try {
             Intent intent = new Intent(context.get(), ConversationActivity.class);
@@ -413,11 +410,4 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     public int getConversationVersion() {
         return ISwrveConversationSDK.CONVERSATION_VERSION;
     }
-}
-
-// This annotation is used by the JNI generator to create the necessary JNI
-// bindings and expose this method to native code.
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-@interface CalledByUnity {
 }
