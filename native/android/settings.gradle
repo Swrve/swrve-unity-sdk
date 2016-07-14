@@ -1,7 +1,11 @@
 include ":SwrveSDKCommon"
-project(":SwrveSDKCommon").projectDir = file("../../../../android/public/SwrveSDKCommon")
+project(":SwrveSDKCommon").projectDir = new File(ANDROID_REPO_LOC, "/SwrveSDKCommon")
 
 include ":SwrveConversationSDK"
-project(":SwrveConversationSDK").projectDir = file("../../../../android/public/SwrveConversationSDK")
+project(":SwrveConversationSDK").projectDir = new File(ANDROID_REPO_LOC, "/SwrveConversationSDK")
 
-include ":DummyUnityLibrary", ":SwrveSDKPushSupport", ":SwrveSDKUnityBridge", ":SwrveSDKUnityAndroidBridge", ":SwrveSDKUnityAndroidBridgeTest"
+include ":UnityFacade"
+include ":SwrveSDKPushSupport"
+include ":SwrveSDKUnityBridge"
+include ":SwrveSDKUnityAndroidBridge"
+include ":SwrveSDKUnityAndroidBridgeTest"

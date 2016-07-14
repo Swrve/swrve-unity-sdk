@@ -4,9 +4,13 @@
 #import "SwrveConversationContainerViewController.h"
 #import "SwrveCommon.h"
 
+@class SwrveConversationItemViewController;
+
 @interface UnitySwrveMessageEventHandler()
 
 @property (nonatomic, retain) UIWindow* conversationWindow;
+@property (nonatomic, retain) SwrveConversationItemViewController* swrveConversationItemViewController;
+
 @end
 
 @implementation UnitySwrveMessageEventHandler
@@ -23,6 +27,7 @@
     @synchronized(self) {
         self.conversationWindow.hidden = YES;
         self.conversationWindow = nil;
+        self.swrveConversationItemViewController = nil;
     }
 }
 
@@ -61,14 +66,18 @@
             }
             
             self.conversationWindow = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-            [self.swrveConversationItemViewController setConversation:conversation andMessageController:self];
+            [self.swrveConversationItemViewController setConversation:conversation
+                                                 andMessageController:self];
             
             // Create a navigation controller in which to push the conversation, and choose iPad presentation style
-            SwrveConversationsNavigationController *svnc = [[SwrveConversationsNavigationController alloc] initWithRootViewController:self.swrveConversationItemViewController];
+            SwrveConversationsNavigationController *svnc =
+                [[SwrveConversationsNavigationController alloc] initWithRootViewController:self.swrveConversationItemViewController];
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wselector"
             // Attach cancel button to the conversation navigation options
-            UIBarButtonItem *cancelButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self.swrveConversationItemViewController action:@selector(cancelButtonTapped:)];
+            UIBarButtonItem *cancelButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
+                                                                                          target:self.swrveConversationItemViewController
+                                                                                          action:@selector(cancelButtonTapped:)];
 #pragma clang diagnostic pop
             self.swrveConversationItemViewController.navigationItem.leftBarButtonItem = cancelButton;
             
