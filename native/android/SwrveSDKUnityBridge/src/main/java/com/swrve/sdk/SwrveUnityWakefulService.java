@@ -4,9 +4,7 @@ import android.app.IntentService;
 import android.content.Intent;
 
 import com.swrve.sdk.rest.IRESTClient;
-import com.swrve.sdk.rest.IRESTResponseListener;
 import com.swrve.sdk.rest.RESTClient;
-import com.swrve.sdk.rest.RESTResponse;
 
 import org.json.JSONException;
 
@@ -50,15 +48,11 @@ public class SwrveUnityWakefulService extends IntentService {
             for(int i = 0; i < events.size(); i++) {
                 eventsMap.put((long)i, events.get(i));
             }
-            IRESTClient restClient = createRESTClient();
             String postData = EventHelper.eventsAsBatch(eventsMap, swrveCommon.getUserId(), swrveCommon.getAppVersion(), swrveCommon.getSessionKey(), swrveCommon.getDeviceId());
-            IPostBatchRequestListener pbrl = new IPostBatchRequestListener() {
-                public void onResponse(boolean shouldDelete) {
-                    SwrveLogger.d(LOG_TAG, "Background sendEventsAsBatch response, success:" + shouldDelete);
-                }
-            };
 
-            postBatchRequest(restClient, postData, pbrl);
+            IRESTClient restClient = createRESTClient();
+            restClient.post(SwrveCommon.getInstance().getBatchURL(), postData, null);
+
             eventsSent = events.size();
         } catch (JSONException je) {
             SwrveLogger.e(LOG_TAG, "Unable to generate event batch, and send events in background", je);
@@ -68,30 +62,5 @@ public class SwrveUnityWakefulService extends IntentService {
 
     protected IRESTClient createRESTClient() {
         return new RESTClient(swrveCommon.getHttpTimeout());
-    }
-
-    private void postBatchRequest(IRESTClient restClient, final String postData, final IPostBatchRequestListener listener) {
-        restClient.post(SwrveCommon.getInstance().getBatchURL(), postData, new IRESTResponseListener() {
-            @Override
-            public void onResponse(RESTResponse response) {
-                boolean deleteEvents = true;
-                if (SwrveHelper.userErrorResponseCode(response.responseCode)) {
-                    SwrveLogger.e(LOG_TAG, "Error sending events to Swrve: " + response.responseBody);
-                } else if (SwrveHelper.successResponseCode(response.responseCode)) {
-                    SwrveLogger.i(LOG_TAG, "Events sent to Swrve");
-                } else if (SwrveHelper.serverErrorResponseCode(response.responseCode)) {
-                    deleteEvents = false;
-                    SwrveLogger.e(LOG_TAG, "Error sending events to Swrve: " + response.responseBody);
-                }
-
-                // Resend if we got a server error (5XX)
-                listener.onResponse(deleteEvents);
-            }
-
-            @Override
-            public void onException(Exception ex) {
-                SwrveLogger.e(LOG_TAG, "Error posting batch of events. postData:" + postData, ex);
-            }
-        });
     }
 }

@@ -209,9 +209,8 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
                 text.append((char)value);
             }
             SwrveLogger.d(LOG_TAG, "FileReader read file: " + filePath + ", content: " + text);
-
         } catch(Exception e) {
-            e.printStackTrace();
+            SwrveLogger.e(LOG_TAG, "Error reading file:" + filePath, e);
         } finally {
             // releases resources associated with the streams
             tryCloseCloseable(is);
