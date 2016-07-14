@@ -650,39 +650,53 @@ public partial class SwrveSDK
 
     protected void ShowBaseMessage (string eventName, IDictionary<string, string> payload)
     {
-        if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
-            return;
-        }
+        SwrveBaseMessage baseMessage = GetBaseMessage (eventName, payload);
 
-        SwrveBaseMessage baseMessage = null;
-        if (config.ConversationsEnabled) {
-            SwrveConversation conversation = GetConversationForEvent (eventName);
-            StartTask ("ShowConversationForEvent", ShowConversationForEvent (eventName, conversation));
-            baseMessage = conversation;
-        }
-        
-        if ((baseMessage == null) && config.TalkEnabled) {
-            SwrveMessage message = GetMessageForEvent (eventName, payload);
-            StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
-            baseMessage = message;
+        if (null != baseMessage) {
+            if (baseMessage.Campaign.IsA<SwrveConversationCampaign> ()) {
+                StartTask ("ShowConversationForEvent", ShowConversationForEvent (eventName, (SwrveConversation)baseMessage));
+            }
+            else {
+                StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, (SwrveMessage)baseMessage, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+            }
         }
 
         if (qaUser != null) {
             qaUser.Trigger (eventName, baseMessage);
         }
 
-        if (baseMessage == null) {
-            SwrveLog.Log ("Not showing message: no candidate for " + eventName);
-        } else {
-            SwrveLog.Log (string.Format (
-                "[{0}] {1} has been shown for {2}\nstate: {3}",
-                baseMessage, baseMessage.Campaign.Id, eventName, baseMessage.Campaign.State));
+        if (baseMessage != null) {
             NamedEventInternal (
                 baseMessage.GetEventPrefix () + "returned",
                 new Dictionary<string, string> { { "id", baseMessage.Id.ToString () } },
                 false
             );
         }
+    }
+
+    public SwrveBaseMessage GetBaseMessage(string eventName, IDictionary<string, string> payload=null)
+    {
+        if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
+            return null;
+        }
+
+        SwrveBaseMessage baseMessage = null;
+        if (config.ConversationsEnabled) {
+            baseMessage = GetConversationForEvent (eventName, payload);
+        }
+        if ((baseMessage == null) && config.TalkEnabled) {
+            baseMessage = GetMessageForEvent (eventName, payload);
+        }
+
+        if (baseMessage == null) {
+            SwrveLog.Log ("Not showing message: no candidate for " + eventName);
+        } else {
+            SwrveLog.Log (string.Format (
+                "[{0}] {1} has been chosen for {2}\nstate: {3}",
+                baseMessage, baseMessage.Campaign.Id, eventName, baseMessage.Campaign.State));
+        }
+
+        return baseMessage;
     }
 
     private bool IsAlive ()
@@ -1037,10 +1051,17 @@ public partial class SwrveSDK
         if (null != conversation) {
             yield return null;
             ShowConversation(conversation.Conversation);
-            if (null != conversation.Campaign) {
-                conversation.Campaign.IncrementImpressions ();
-                SaveCampaignData (conversation.Campaign);
-            }
+            ConversationWasShownToUser (conversation);
+        }
+    }
+
+    public void ConversationWasShownToUser(SwrveConversation conversation)
+    {
+        SetMessageMinDelayThrottle();
+
+        if (null != conversation.Campaign) {
+            conversation.Campaign.WasShownToUser ();
+            SaveCampaignData (conversation.Campaign);
         }
     }
 
@@ -1660,8 +1681,7 @@ public partial class SwrveSDK
         autoShowMessagesEnabled = false;
     }
 
-    private void InitNative()
-    {
+    private string GetNativeDetails() {
         Dictionary<string, object> currentDetails = new Dictionary<string, object> {
             {"sdkVersion", SwrveSDK.SdkVersion},
             {"apiKey", apiKey},
@@ -1685,7 +1705,12 @@ public partial class SwrveSDK
 
         string jsonString = Json.Serialize (currentDetails);
 
-        initNative (jsonString);
+        return jsonString;
+    }
+
+    private void InitNative()
+    {
+        initNative ();
         setConversationVersion();
     
         if (config.LocationAutostart) {

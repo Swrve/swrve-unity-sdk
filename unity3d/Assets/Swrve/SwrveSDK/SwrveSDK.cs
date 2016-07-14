@@ -362,7 +362,6 @@ public partial class SwrveSDK : ISwrveAssetController
             }
         }
 
-        StartCampaignsAndResourcesTimer();
         DisableAutoShowAfterDelay();
 
         locationSegmentVersion = 0;
@@ -377,6 +376,8 @@ public partial class SwrveSDK : ISwrveAssetController
             locationSegmentVersion = 1;
             conversationVersion = 3;
         }
+
+        StartCampaignsAndResourcesTimer();
 #endif
     }
 

@@ -327,10 +327,10 @@ public partial class SwrveSDK
         }
     }
 
-    private void initNative(string jsonString)
+    private void initNative()
     {
         try {
-            _swrveiOSInitNative(jsonString);
+            _swrveiOSInitNative(GetNativeDetails ());
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get init the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }

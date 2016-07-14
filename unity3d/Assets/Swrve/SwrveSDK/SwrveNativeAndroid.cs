@@ -8,6 +8,10 @@ using SwrveMiniJSON;
 public partial class SwrveSDK
 {
     private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
+    private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
+    private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
+    private const string UnityCurrentActivityName = "currentActivity";
+
     private string gcmDeviceToken;
     private static AndroidJavaObject androidPlugin;
     private static bool androidPluginInitialized = false;
@@ -78,63 +82,51 @@ public partial class SwrveSDK
     private void showNativeConversation (string conversation)
     {
         try {
-            AndroidGetBridge().Call("ShowConversation", conversation);
+            AndroidGetBridge().Call("showConversation", conversation);
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
         }
     }
 
-    private void initNative (string jsonString)
+    private void initNative ()
     {
-        AndroidInitNative(jsonString);
+        AndroidInitNative();
     }
 
     private void startNativeLocation()
     {
         try {
-            AndroidGetLocation ().CallStatic ("StartPlot");
+            AndroidGetBridge ();
+            AndroidJavaClass swrvePlotClass = new AndroidJavaClass ("com.swrve.sdk.SwrvePlot");
+
+            if (_androidLocation == null && SwrveHelper.IsOnDevice()) {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (UnityPlayerName)) {
+                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
+                    swrvePlotClass.CallStatic ("onCreate", context);
+                }
+            }
             startedPlot = true;
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
         }
     }
 
-    private void startNativeLocationAfterPermission()
-    {
-        if (!startedPlot) {
-            try {
-                startedPlot = AndroidGetLocation ().CallStatic<bool> ("StartPlotAfterPermissions");
-            } catch (Exception exp) {
-                SwrveLog.LogWarning ("StartPlotAfterPermissions't DoOther from Android: " + exp.ToString ());
-            }
-        }
-    }
-
     private void setNativeConversationVersion()
     {
         try {
-            conversationVersion = AndroidGetBridge().Call<int>("ConversationVersion");
+            conversationVersion = AndroidGetBridge().Call<int>("getConversationVersion");
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get conversations version from Android: " + exp.ToString());
         }
     }
 
-    private void AndroidInitNative(string jsonString)
+    private void AndroidInitNative()
     {
         try {
-            AndroidGetBridge ().Call ("init", jsonString);
+            AndroidGetBridge ();
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't init common from Android: " + exp.ToString ());
         }
-    }
-
-    private AndroidJavaClass _androidLocation;
-    private AndroidJavaClass AndroidGetLocation()
-    {
-        if (_androidLocation == null && SwrveHelper.IsOnDevice()) {
-            _androidLocation = new AndroidJavaClass ("com.swrve.sdk.SwrveLocationUnityBridge");
-        }
-        return _androidLocation;
     }
 
     private void GooglePlayRegisterForPushNotification(MonoBehaviour container, string senderId)
@@ -146,7 +138,7 @@ public partial class SwrveSDK
             if (!androidPluginInitialized) {
                 androidPluginInitialized = true;
 
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
                     string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
 
                     if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
@@ -190,7 +182,7 @@ public partial class SwrveSDK
     {
         try {
             this.googlePlayAdvertisingId = storage.Load(GoogleAdvertisingIdSave);
-            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
+            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
                 string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
 
                 if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
@@ -234,8 +226,8 @@ public partial class SwrveSDK
     private string AndroidGetAppVersion()
     {
         try {
-            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
-                AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
+            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
+                AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>();
                 string packageName = context.Call<string>("getPackageName");
                 string versionName = context.Call<AndroidJavaObject>("getPackageManager")
                     .Call<AndroidJavaObject>("getPackageInfo", packageName, 0).Get<string>("versionName");
@@ -253,8 +245,8 @@ public partial class SwrveSDK
     {
         if (_androidId == null) {
             try {
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
-                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
+                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
                     AndroidJavaObject contentResolver = context.Call<AndroidJavaObject> ("getContentResolver");
                     AndroidJavaClass settingsSecure = new AndroidJavaClass ("android.provider.Settings$Secure");
                     _androidId = settingsSecure.CallStatic<string> ("getString", contentResolver, "android_id");
@@ -269,9 +261,12 @@ public partial class SwrveSDK
     private AndroidJavaObject _androidBridge;
     private AndroidJavaObject AndroidGetBridge()
     {
-        if (_androidBridge == null && SwrveHelper.IsOnDevice())
-        {
-            _androidBridge = new AndroidJavaObject("com.swrve.sdk.SwrveUnityCommon");
+        if (SwrveHelper.IsOnDevice ()) {
+            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
+                if (!unityPlayerClass.CallStatic<bool> ("isInitialised")) {
+                    _androidBridge = new AndroidJavaObject (SwrveAndroidUnityCommonName, GetNativeDetails ());
+                }
+            }
         }
         return _androidBridge;
     }

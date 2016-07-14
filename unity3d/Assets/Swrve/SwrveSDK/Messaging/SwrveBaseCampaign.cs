@@ -187,7 +187,6 @@ public abstract class SwrveBaseCampaign
 
     public bool IsActive (SwrveQAUser qaUser)
     {
-
         // Use UTC to compare to start/end dates from DB
         DateTime utcNow = SwrveHelper.GetUtcNow ();
 
@@ -357,6 +356,21 @@ public abstract class SwrveBaseCampaign
     protected void SetMessageMinDelayThrottle ()
     {
         this.showMessagesAfterDelay = SwrveHelper.GetNow () + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
+    }
+
+    /// <summary>
+    /// Notify that a base message was shown to the user. This function
+    /// has to be called only once when the message is displayed to
+    /// the user.
+    /// This is automatically called by the SDK and will only need
+    /// to be manually called if you are implementing your own
+    /// in-app message rendering code.
+    /// </summary>
+    public void WasShownToUser ()
+    {
+        Status = SwrveCampaignState.Status.Seen;
+        IncrementImpressions ();
+        SetMessageMinDelayThrottle ();
     }
 
     /// <summary>
