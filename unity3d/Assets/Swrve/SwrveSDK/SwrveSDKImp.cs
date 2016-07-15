@@ -1722,10 +1722,6 @@ public partial class SwrveSDK
         startNativeLocation ();
     }
 
-    private void startLocationAfterPermissions() {
-        startNativeLocationAfterPermission ();
-    }
-
     private void setConversationVersion() {
         setNativeConversationVersion ();
     }

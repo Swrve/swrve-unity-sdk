@@ -9,6 +9,13 @@ public partial class SwrveSDK
 {
     private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
     private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
+    private const string SwrveAndroidPlotName = "com.swrve.sdk.SwrvePlot";
+
+    private const string IsInitialisedName = "isInitialised";
+    private const string GetConversationVersionName = "getConversationVersion";
+    private const string ShowConversationName = "showConversation";
+    private const string SwrvePlotOnCreateName = "onCreate";
+
     private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
     private const string UnityCurrentActivityName = "currentActivity";
 
@@ -72,61 +79,6 @@ public partial class SwrveSDK
             SwrveLog.LogWarning("Couldn't get the device language, make sure you are running on an Android device: " + exp.ToString());
         }
         return language;
-    }
-
-    private void setNativeAppVersion ()
-    {
-        config.AppVersion = AndroidGetAppVersion();
-    }
-
-    private void showNativeConversation (string conversation)
-    {
-        try {
-            AndroidGetBridge().Call("showConversation", conversation);
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
-        }
-    }
-
-    private void initNative ()
-    {
-        AndroidInitNative();
-    }
-
-    private void startNativeLocation()
-    {
-        try {
-            AndroidGetBridge ();
-            AndroidJavaClass swrvePlotClass = new AndroidJavaClass ("com.swrve.sdk.SwrvePlot");
-
-            if (_androidLocation == null && SwrveHelper.IsOnDevice()) {
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (UnityPlayerName)) {
-                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
-                    swrvePlotClass.CallStatic ("onCreate", context);
-                }
-            }
-            startedPlot = true;
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
-        }
-    }
-
-    private void setNativeConversationVersion()
-    {
-        try {
-            conversationVersion = AndroidGetBridge().Call<int>("getConversationVersion");
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get conversations version from Android: " + exp.ToString());
-        }
-    }
-
-    private void AndroidInitNative()
-    {
-        try {
-            AndroidGetBridge ();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't init common from Android: " + exp.ToString ());
-        }
     }
 
     private void GooglePlayRegisterForPushNotification(MonoBehaviour container, string senderId)
@@ -227,7 +179,7 @@ public partial class SwrveSDK
     {
         try {
             using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
-                AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>();
+                AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
                 string packageName = context.Call<string>("getPackageName");
                 string versionName = context.Call<AndroidJavaObject>("getPackageManager")
                     .Call<AndroidJavaObject>("getPackageInfo", packageName, 0).Get<string>("versionName");
@@ -256,19 +208,6 @@ public partial class SwrveSDK
             }
         }
         return _androidId;
-    }
-
-    private AndroidJavaObject _androidBridge;
-    private AndroidJavaObject AndroidGetBridge()
-    {
-        if (SwrveHelper.IsOnDevice ()) {
-            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
-                if (!unityPlayerClass.CallStatic<bool> ("isInitialised")) {
-                    _androidBridge = new AndroidJavaObject (SwrveAndroidUnityCommonName, GetNativeDetails ());
-                }
-            }
-        }
-        return _androidBridge;
     }
 
     /// <summary>
@@ -371,6 +310,75 @@ public partial class SwrveSDK
             }
         }
     }
+
+    private void initNative ()
+    {
+        AndroidInitNative();
+    }
+
+    private void AndroidInitNative()
+    {
+        try {
+            AndroidGetBridge ();
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't init common from Android: " + exp.ToString ());
+        }
+    }
+
+    private AndroidJavaObject _androidBridge;
+    private AndroidJavaObject AndroidGetBridge()
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
+                if (!unityPlayerClass.CallStatic<bool> (IsInitialisedName)) {
+                    _androidBridge = new AndroidJavaObject (SwrveAndroidUnityCommonName, GetNativeDetails ());
+                }
+            }
+        }
+        return _androidBridge;
+    }
+
+    private void setNativeAppVersion ()
+    {
+        config.AppVersion = AndroidGetAppVersion();
+    }
+
+    private void showNativeConversation (string conversation)
+    {
+        try {
+            AndroidGetBridge().Call(ShowConversationName, conversation);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
+        }
+    }
+
+    private void startNativeLocation()
+    {
+        try {
+            AndroidGetBridge ();
+            AndroidJavaClass swrvePlotClass = new AndroidJavaClass (SwrveAndroidPlotName);
+
+            if (SwrveHelper.IsOnDevice ()) {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (UnityPlayerName)) {
+                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
+                    swrvePlotClass.CallStatic (SwrvePlotOnCreateName, context);
+                }
+            }
+            startedPlot = true;
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
+        }
+    }
+
+    private void setNativeConversationVersion()
+    {
+        try {
+            conversationVersion = AndroidGetBridge().Call<int>(GetConversationVersionName);
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't get conversations version from Android: " + exp.ToString());
+        }
+    }
+
 }
 
 #endif
