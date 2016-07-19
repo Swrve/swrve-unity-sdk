@@ -7,7 +7,7 @@ public partial class SwrveSDK
     private string getNativeLanguage () { return null; }
     private void setNativeAppVersion () {}
     private void showNativeConversation (string conversation) {}
-    private void initNative (string jsonString) {}
+    private void initNative () {}
     private void startNativeLocation () {}
     private void startNativeLocationAfterPermission () {}
     private void setNativeConversationVersion () {}
