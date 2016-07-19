@@ -330,7 +330,7 @@ public partial class SwrveSDK
     {
         if (SwrveHelper.IsOnDevice ()) {
             using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
-                if (!unityPlayerClass.CallStatic<bool> (IsInitialisedName)) {
+                if (null == _androidBridge || !unityPlayerClass.CallStatic<bool> (IsInitialisedName)) {
                     _androidBridge = new AndroidJavaObject (SwrveAndroidUnityCommonName, GetNativeDetails ());
                 }
             }
