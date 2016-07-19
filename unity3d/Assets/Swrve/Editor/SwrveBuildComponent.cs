@@ -102,7 +102,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     [MenuItem ("Swrve Demo/Android/Test build with all stripping levels")]
     public static void TestBuildAndroid ()
     {
-        string outputPath = "../../buildtemp/tmp_Android";
+        string outputPath = "../../buildtemp/tmp_Android.apk";
 
         // Build Android
         PlayerSettings.strippingLevel = StrippingLevel.Disabled;
@@ -128,6 +128,22 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         string error = BuildPipeline.BuildPlayer (mainScenes, outputPath, BuildTarget.WebPlayer, opt);
         if (error != null && !error.Equals (string.Empty)) {
             throw new Exception (error);
+        }
+    }
+
+    [MenuItem ("Swrve Demo/Correct ${applicationId} in AndroidManifests")]
+    public static void CorrectApplicationId()
+    {
+        string androidDir = Path.Combine (Directory.GetCurrentDirectory (), "Assets/Plugins/Android");
+        string[] dirs = Directory.GetDirectories (androidDir);
+        for (int i = 0; i < dirs.Length; i++) {
+            string project = dirs [i];
+            string amFile = Path.Combine(project, "_AndroidManifest.xml");
+            if (File.Exists (amFile)) {
+                File.WriteAllText (Path.Combine (project, "AndroidManifest.xml"),
+                    File.ReadAllText (amFile).Replace ("${applicationId}", PlayerSettings.bundleIdentifier)
+                );
+            }
         }
     }
 }

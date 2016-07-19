@@ -82,7 +82,7 @@ public static class SwrveHelper
             byte[] bKey = System.Text.Encoding.UTF8.GetBytes (key);
             using (HMACMD5 hmac = new HMACMD5(bKey)) {
                 byte[] signature = hmac.ComputeHash (bData);
-                return System.Text.Encoding.UTF8.GetString (signature);
+                return System.Convert.ToBase64String (signature);
             }
         }
         return null;
@@ -144,6 +144,34 @@ public static class SwrveHelper
     public static string FilterNonAlphanumeric(string str)
     {
         return rgxNonAlphanumeric.Replace(str, string.Empty);
+    }
+
+    public static bool IsNotOnDevice()
+    {
+        return !IsOnDevice();
+    }
+
+    public static bool IsOnDevice()
+    {
+    #if UNITY_IOS
+        return IsAvailableOn(UnityEngine.RuntimePlatform.IPhonePlayer);
+
+    #elif UNITY_ANDROID
+        return IsAvailableOn(UnityEngine.RuntimePlatform.Android);
+
+    #else
+        return false;
+
+    #endif
+    }
+
+    public static bool IsAvailableOn(UnityEngine.RuntimePlatform platform)
+    {
+        bool available = false;
+
+        available = UnityEngine.Application.platform == platform;
+        
+        return available;
     }
 }
 }

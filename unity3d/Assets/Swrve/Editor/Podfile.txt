@@ -1,0 +1,14 @@
+target 'Unity-iPhone' do
+  pod 'SwrveSDKCommon', :path => '../../../ios/public'
+  pod 'SwrveLocationSDK', :path => '../../../ios/SwrveLocationSDK'
+  pod 'SwrveConversationSDK', :path => '../../../ios/public'
+  pod 'SwrveUnitySDK', :path => '../../public/native/ios'
+end
+
+post_install do |installer_representation|
+  installer_representation.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = ['$(inherited)', 'SWRVE_LOG_IDFA', 'SWRVE_LOG_IDFV', 'SWRVE_LOCATION_SDK']
+    end
+  end
+end

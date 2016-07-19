@@ -16,26 +16,30 @@ public class SwrveCommonBuildComponent
 
     protected static void BuildIOS (string fileName, BuildOptions opt, string[] mainScenes, string bundleIdentifier)
     {
-#if UNITY_5
-        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
-#else
-        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);
-#endif
+        fileName = Path.GetFullPath (fileName);
+        UnityEngine.Debug.Log ("[####] Building " + fileName);
+        UnityEngine.Debug.Log ("With: " + PlayerSettings.iOS.sdkVersion + ", opt: " + opt + ", scenes: " + mainScenes + ", id: " + bundleIdentifier);
+
         PlayerSettings.bundleIdentifier = bundleIdentifier;
 #if UNITY_5
+        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
         string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt);
 #else
+        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);
         string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iPhone, opt);
 #endif
         if (error != null && !error.Equals (string.Empty)) {
             throw new Exception (error);
         }
+        UnityEngine.Debug.Log ("Built " + fileName);
     }
 
     protected static void BuildAndroid (string fileName, BuildOptions opt, string[] mainScenes, string packageName)
     {
+        UnityEngine.Debug.Log ("[####] Building " + fileName);
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.Android);
         PlayerSettings.bundleIdentifier = packageName;
+        SwrveBuildComponent.CorrectApplicationId ();
 
         // Fix for ANDROID_HOME Unity bug
         FixAndroidHomeNotFound ();
@@ -45,6 +49,7 @@ public class SwrveCommonBuildComponent
         if (error != null && !error.Equals (string.Empty)) {
             throw new Exception (error);
         }
+        UnityEngine.Debug.Log ("Built " + fileName);
     }
 
     protected static string FixAndroidHomeNotFound ()
@@ -92,7 +97,7 @@ public class SwrveCommonBuildComponent
         info.UseShellExecute = false;
         info.WorkingDirectory = workingDirectory;
         info.FileName = androidSDKLocation + "/platform-tools/adb";
-        info.Arguments = "install -r " + filePath;
+        info.Arguments = string.Format("install -r {0}", filePath);
         System.Diagnostics.Process proc = System.Diagnostics.Process.Start (info);
 
         string errorOutput = string.Empty;
@@ -104,6 +109,17 @@ public class SwrveCommonBuildComponent
             EditorUtility.DisplayDialog (projectName + " Install", "Could not install the " + projectName + " on the device. Error code: " + proc.ExitCode, "Accept");
             throw new Exception (errorOutput);
         } else {
+            info = new ProcessStartInfo ();
+            info.RedirectStandardError = true;
+            info.UseShellExecute = false;
+            info.WorkingDirectory = workingDirectory;
+            info.FileName = androidSDKLocation + "/platform-tools/adb";
+            info.Arguments = string.Format("shell monkey -p {0} -c android.intent.category.LAUNCHER 1", PlayerSettings.bundleIdentifier);
+            proc = System.Diagnostics.Process.Start (info);
+            while (!proc.HasExited) {
+                errorOutput += proc.StandardError.ReadToEnd ();
+            }
+
             UnityEngine.Debug.Log ("Android build installed successfully");
         }
     }
@@ -125,16 +141,20 @@ public class SwrveCommonBuildComponent
             Directory.CreateDirectory (destDirName);
         }
 
+        int i;
+
         // Get the files in the directory and copy them to the new location.
         FileInfo[] files = dir.GetFiles ();
-        foreach (FileInfo file in files) {
+        for(i = 0; i < files.Length; i++) {
+            FileInfo file = files [i];
             string temppath = Path.Combine (destDirName, file.Name);
             file.CopyTo (temppath, overrideFiles);
         }
 
         // If copying subdirectories, copy them and their contents to new location.
         if (copySubDirs) {
-            foreach (DirectoryInfo subdir in dirs) {
+            for(i = 0; i < dirs.Length; i++) {
+                DirectoryInfo subdir = dirs [i];
                 string temppath = Path.Combine (destDirName, subdir.Name);
                 DirectoryCopy (subdir.FullName, temppath, copySubDirs, overrideFiles);
             }

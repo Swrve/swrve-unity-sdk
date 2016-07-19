@@ -1,5 +1,6 @@
 using UnityEngine;
 using Swrve;
+using SwrveMiniJSON;
 using Swrve.Helpers;
 using System.Collections.Generic;
 
@@ -12,7 +13,7 @@ public class SwrveComponent : MonoBehaviour
     /// <summary>
     /// Instance of the Swrve SDK.
     /// </summary>
-    public SwrveSDK SDK;
+    protected SwrveSDK _SDK;
 
     /// <summary>
     /// ID for your game, as supplied by Swrve.
@@ -62,6 +63,8 @@ public class SwrveComponent : MonoBehaviour
         }
     }
 
+    public static SwrveSDK SDK { get { return Instance._SDK; } }
+
     /// <summary>
     /// Default constructor. Will be called by Unity when
     /// placing this script in your scene.
@@ -69,7 +72,7 @@ public class SwrveComponent : MonoBehaviour
     public SwrveComponent ()
     {
         Config = new SwrveConfig ();
-        SDK = new SwrveSDK ();
+        _SDK = new SwrveSDK ();
     }
 
     /// <summary>
@@ -83,7 +86,7 @@ public class SwrveComponent : MonoBehaviour
     /// </param>
     public void Init (int gameId, string apiKey)
     {
-        SDK.Init (this, gameId, apiKey, Config);
+        _SDK.Init (this, gameId, apiKey, Config);
     }
 
     /// <summary>
@@ -102,7 +105,7 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public void OnGUI ()
     {
-        SDK.OnGUI ();
+        _SDK.OnGUI ();
     }
 
 
@@ -112,13 +115,13 @@ public class SwrveComponent : MonoBehaviour
 
     public void Update ()
     {
-        if (SDK != null && SDK.Initialised) {
-            SDK.Update ();
+        if (_SDK != null && _SDK.Initialised) {
+            _SDK.Update ();
 #if UNITY_IPHONE
             if (!deviceTokenSent) {
-                deviceTokenSent = SDK.ObtainIOSDeviceToken();
+                deviceTokenSent = _SDK.ObtainIOSDeviceToken();
             }
-            SDK.ProcessRemoteNotifications();
+            _SDK.ProcessRemoteNotifications();
 #endif
         }
     }
@@ -166,8 +169,8 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public void OnDestroy ()
     {
-        if (SDK.Initialised) {
-            SDK.OnSwrveDestroy ();
+        if (_SDK.Initialised) {
+            _SDK.OnSwrveDestroy ();
         }
         StopAllCoroutines ();
     }
@@ -177,8 +180,8 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public void OnApplicationQuit ()
     {
-        if (SDK.Initialised && FlushEventsOnApplicationQuit) {
-            SDK.OnSwrveDestroy ();
+        if (_SDK.Initialised && FlushEventsOnApplicationQuit) {
+            _SDK.OnSwrveDestroy ();
         }
     }
 
@@ -187,11 +190,11 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public void OnApplicationPause (bool pauseStatus)
     {
-        if (SDK != null && SDK.Initialised && Config != null && Config.AutomaticSessionManagement) {
+        if (_SDK != null && _SDK.Initialised && Config != null && Config.AutomaticSessionManagement) {
             if (pauseStatus) {
-                SDK.OnSwrvePause ();
+                _SDK.OnSwrvePause ();
             } else {
-                SDK.OnSwrveResume ();
+                _SDK.OnSwrveResume ();
             }
         }
 
@@ -201,5 +204,29 @@ public class SwrveComponent : MonoBehaviour
             deviceTokenSent = false;
         }
 #endif
+    }
+
+    public void SetLocationSegmentVersion(string locationSegmentVersion) {
+        try {
+            _SDK.SetLocationSegmentVersion(int.Parse(locationSegmentVersion));
+        } catch (System.Exception e) {
+            SwrveLog.LogError (e.ToString(), "location");
+        }
+    }
+
+    public void UserUpdate(string userUpdate) {
+        try {
+            Dictionary<string, object> o = (Dictionary<string, object>)Json.Deserialize (userUpdate);
+            Dictionary<string, string> _o = new Dictionary<string, string>();
+            Dictionary<string, object>.Enumerator it = o.GetEnumerator();
+
+            while(it.MoveNext()) {
+                _o[it.Current.Key] = string.Format("{0}", it.Current.Value);
+            }
+
+            _SDK.UserUpdate(_o);
+        } catch (System.Exception e) {
+            SwrveLog.LogError (e.ToString(), "userUpdate");
+        }
     }
 }
