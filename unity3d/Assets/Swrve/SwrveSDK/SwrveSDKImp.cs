@@ -875,7 +875,7 @@ public partial class SwrveSDK
         Vector3 mousePosition = inputManager.GetMousePosition ();
         for(int bi = 0; bi < currentMessage.Buttons.Count; bi++) {
             SwrveButton button = currentMessage.Buttons[bi];
-            if (button.Rect.Contains (mousePosition)) {
+            if (button.PointerRect.Contains (mousePosition)) {
                 button.Pressed = true;
             }
         }
@@ -888,7 +888,7 @@ public partial class SwrveSDK
         for (int i = currentMessage.Buttons.Count - 1; i >= 0 && clickedButton == null; i--) {
             SwrveButton button = currentMessage.Buttons [i];
             Vector3 mousePosition = inputManager.GetMousePosition ();
-            if (button.Rect.Contains (mousePosition) && button.Pressed) {
+            if (button.PointerRect.Contains (mousePosition) && button.Pressed) {
                 clickedButton = button;
             } else {
                 button.Pressed = false;
