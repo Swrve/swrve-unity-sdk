@@ -13,7 +13,7 @@ public class SwrveComponent : MonoBehaviour
     /// <summary>
     /// Instance of the Swrve SDK.
     /// </summary>
-    protected SwrveSDK _SDK;
+    public SwrveSDK SDK;
 
     /// <summary>
     /// ID for your game, as supplied by Swrve.
@@ -63,8 +63,6 @@ public class SwrveComponent : MonoBehaviour
         }
     }
 
-    public static SwrveSDK SDK { get { return Instance._SDK; } }
-
     /// <summary>
     /// Default constructor. Will be called by Unity when
     /// placing this script in your scene.
@@ -72,7 +70,7 @@ public class SwrveComponent : MonoBehaviour
     public SwrveComponent ()
     {
         Config = new SwrveConfig ();
-        _SDK = new SwrveSDK ();
+        SDK = new SwrveSDK ();
     }
 
     /// <summary>
@@ -86,7 +84,7 @@ public class SwrveComponent : MonoBehaviour
     /// </param>
     public void Init (int gameId, string apiKey)
     {
-        _SDK.Init (this, gameId, apiKey, Config);
+        SDK.Init (this, gameId, apiKey, Config);
     }
 
     /// <summary>
@@ -105,7 +103,7 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public void OnGUI ()
     {
-        _SDK.OnGUI ();
+        SDK.OnGUI ();
     }
 
 
@@ -115,13 +113,13 @@ public class SwrveComponent : MonoBehaviour
 
     public void Update ()
     {
-        if (_SDK != null && _SDK.Initialised) {
-            _SDK.Update ();
+        if (SDK != null && SDK.Initialised) {
+            SDK.Update ();
 #if UNITY_IPHONE
             if (!deviceTokenSent) {
-                deviceTokenSent = _SDK.ObtainIOSDeviceToken();
+                deviceTokenSent = SDK.ObtainIOSDeviceToken();
             }
-            _SDK.ProcessRemoteNotifications();
+            SDK.ProcessRemoteNotifications();
 #endif
         }
     }
@@ -169,8 +167,8 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public void OnDestroy ()
     {
-        if (_SDK.Initialised) {
-            _SDK.OnSwrveDestroy ();
+        if (SDK.Initialised) {
+            SDK.OnSwrveDestroy ();
         }
         StopAllCoroutines ();
     }
@@ -180,8 +178,8 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public void OnApplicationQuit ()
     {
-        if (_SDK.Initialised && FlushEventsOnApplicationQuit) {
-            _SDK.OnSwrveDestroy ();
+        if (SDK.Initialised && FlushEventsOnApplicationQuit) {
+            SDK.OnSwrveDestroy ();
         }
     }
 
@@ -190,11 +188,11 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public void OnApplicationPause (bool pauseStatus)
     {
-        if (_SDK != null && _SDK.Initialised && Config != null && Config.AutomaticSessionManagement) {
+        if (SDK != null && SDK.Initialised && Config != null && Config.AutomaticSessionManagement) {
             if (pauseStatus) {
-                _SDK.OnSwrvePause ();
+                SDK.OnSwrvePause ();
             } else {
-                _SDK.OnSwrveResume ();
+                SDK.OnSwrveResume ();
             }
         }
 
@@ -208,7 +206,7 @@ public class SwrveComponent : MonoBehaviour
 
     public void SetLocationSegmentVersion(string locationSegmentVersion) {
         try {
-            _SDK.SetLocationSegmentVersion(int.Parse(locationSegmentVersion));
+            SDK.SetLocationSegmentVersion(int.Parse(locationSegmentVersion));
         } catch (System.Exception e) {
             SwrveLog.LogError (e.ToString(), "location");
         }
@@ -224,7 +222,7 @@ public class SwrveComponent : MonoBehaviour
                 _o[it.Current.Key] = string.Format("{0}", it.Current.Value);
             }
 
-            _SDK.UserUpdate(_o);
+            SDK.UserUpdate(_o);
         } catch (System.Exception e) {
             SwrveLog.LogError (e.ToString(), "userUpdate");
         }

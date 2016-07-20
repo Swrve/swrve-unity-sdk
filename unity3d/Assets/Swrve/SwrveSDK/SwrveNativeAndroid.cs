@@ -132,20 +132,22 @@ public partial class SwrveSDK
 
     private void RequestGooglePlayAdvertisingId(MonoBehaviour container)
     {
-        try {
-            this.googlePlayAdvertisingId = storage.Load(GoogleAdvertisingIdSave);
-            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
-                string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                this.googlePlayAdvertisingId = storage.Load(GoogleAdvertisingIdSave);
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
+                    string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
 
-                if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
-                    androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
-                    if (androidPlugin != null) {
-                        androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
+                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
+                        androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
+                        if (androidPlugin != null) {
+                            androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
+                        }
                     }
                 }
+            } catch (Exception exp) {
+                SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
             }
-        } catch (Exception exp) {
-            SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
         }
     }
 
@@ -177,16 +179,18 @@ public partial class SwrveSDK
 
     private string AndroidGetAppVersion()
     {
-        try {
-            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
-                AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
-                string packageName = context.Call<string>("getPackageName");
-                string versionName = context.Call<AndroidJavaObject>("getPackageManager")
-                    .Call<AndroidJavaObject>("getPackageInfo", packageName, 0).Get<string>("versionName");
-                return versionName;
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (UnityPlayerName)) {
+                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject> (UnityCurrentActivityName);
+                    string packageName = context.Call<string> ("getPackageName");
+                    string versionName = context.Call<AndroidJavaObject> ("getPackageManager")
+                    .Call<AndroidJavaObject> ("getPackageInfo", packageName, 0).Get<string> ("versionName");
+                    return versionName;
+                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning ("Couldn't get the device app version, make sure you are running on an Android device: " + exp.ToString ());
             }
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device app version, make sure you are running on an Android device: " + exp.ToString());
         }
 
         return null;
@@ -195,7 +199,7 @@ public partial class SwrveSDK
     private string _androidId;
     private string AndroidGetAndroidId()
     {
-        if (_androidId == null) {
+        if (SwrveHelper.IsOnDevice () && (_androidId == null)) {
             try {
                 using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
                     AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);

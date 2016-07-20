@@ -16,6 +16,14 @@ public class MessageCenterMessage : MonoBehaviour
     public Button deleteButton;
     public SwrveBaseCampaign campaign;
 
+    /// Reference to the Swrve Component in the scene.
+    private SwrveComponent swrveComponent;
+
+    // Use this for initialization
+    void Start () {
+        swrveComponent = (SwrveComponent)FindObjectOfType (typeof(SwrveComponent));
+    }
+
     public void setCampaign(SwrveBaseCampaign campaign) {
         this.campaign = campaign;
         updateCampaignInfo ();
@@ -35,7 +43,7 @@ public class MessageCenterMessage : MonoBehaviour
     }
 
     public void onSelected() {
-        SwrveComponent.SDK.ShowMessageCenterCampaign (campaign, SwrveOrientation.Portrait);
+        swrveComponent.SDK.ShowMessageCenterCampaign (campaign, SwrveOrientation.Portrait);
         updateCampaignInfo ();
     }
 
@@ -44,7 +52,7 @@ public class MessageCenterMessage : MonoBehaviour
             "Delete Campaign",
             "Are you sure you want to delete this campaign?",
             () => {
-                SwrveComponent.SDK.RemoveMessageCenterCampaign (campaign);
+                swrveComponent.SDK.RemoveMessageCenterCampaign (campaign);
                 transform.SetParent (null);
                 Destroy (gameObject);
             }

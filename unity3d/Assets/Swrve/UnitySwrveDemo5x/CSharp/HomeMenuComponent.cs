@@ -41,19 +41,24 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
     private static GameObject ButtonPrefab;
     private static GameObject ModalQuestionPrefab;
 
+    /// Reference to the Swrve Component in the scene.
+    private SwrveComponent swrveComponent;
+
     void Awake() {
         ModalQuestionPrefab = _modalQuestionPrefab;
         ButtonPrefab = _buttonPrefab;
     }
 
   	// Use this for initialization
-  	void Start () {
+    void Start () {
+        swrveComponent = (SwrveComponent)FindObjectOfType (typeof(SwrveComponent));
+
         // In-app messaging setup
-        SwrveComponent.SDK.GlobalMessageListener = new CustomMessageListener (this);
-        SwrveComponent.SDK.GlobalCustomButtonListener = new CustomButtonListener ();
+        swrveComponent.SDK.GlobalMessageListener = new CustomMessageListener (this);
+        swrveComponent.SDK.GlobalCustomButtonListener = new CustomButtonListener ();
 
     #if UNITY_EDITOR
-        SwrveComponent.SDK.ConversationEditorCallback = OnConversation;
+        swrveComponent.SDK.ConversationEditorCallback = OnConversation;
     #endif
         
 
