@@ -364,17 +364,9 @@ public partial class SwrveSDK : ISwrveAssetController
 
         DisableAutoShowAfterDelay();
 
-        locationSegmentVersion = 0;
-        conversationVersion = 0;
-
         if(SwrveHelper.IsOnDevice())
         {
             InitNative();
-        }
-        else
-        {
-            locationSegmentVersion = 1;
-            conversationVersion = 3;
         }
 
         StartCampaignsAndResourcesTimer();
@@ -1057,6 +1049,10 @@ public partial class SwrveSDK : ISwrveAssetController
 
     public void SetLocationSegmentVersion(int locationSegmentVersion) {
         this.locationSegmentVersion = locationSegmentVersion;
+    }
+
+    public void SetConversationVersion(int conversationVersion) {
+        this.conversationVersion = conversationVersion;
     }
 
     /// <summary>

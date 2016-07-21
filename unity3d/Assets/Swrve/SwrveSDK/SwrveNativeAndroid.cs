@@ -358,26 +358,26 @@ public partial class SwrveSDK
 
     private void startNativeLocation()
     {
-        try {
-            AndroidGetBridge ();
-            AndroidJavaClass swrvePlotClass = new AndroidJavaClass (SwrveAndroidPlotName);
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                AndroidGetBridge ();
+                AndroidJavaClass swrvePlotClass = new AndroidJavaClass (SwrveAndroidPlotName);
 
-            if (SwrveHelper.IsOnDevice ()) {
                 using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (UnityPlayerName)) {
                     AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
                     swrvePlotClass.CallStatic (SwrvePlotOnCreateName, context);
                 }
+                startedPlot = true;
+            } catch (Exception exp) {
+                SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
             }
-            startedPlot = true;
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
         }
     }
 
     private void setNativeConversationVersion()
     {
         try {
-            conversationVersion = AndroidGetBridge().Call<int>(GetConversationVersionName);
+            SetConversationVersion (AndroidGetBridge().Call<int> (GetConversationVersionName));
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get conversations version from Android: " + exp.ToString());
         }

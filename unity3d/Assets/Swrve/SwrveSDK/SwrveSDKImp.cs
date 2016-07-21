@@ -1711,20 +1711,16 @@ public partial class SwrveSDK
     private void InitNative()
     {
         initNative ();
-        setConversationVersion();
+        setNativeConversationVersion ();
     
         if (config.LocationAutostart) {
             startLocation ();
         }
     }
     
-    private void startLocation() {
+    protected void startLocation() {
         if (config.LocationEnabled) {
             startNativeLocation ();
         }
-    }
-
-    private void setConversationVersion() {
-        setNativeConversationVersion ();
     }
 }

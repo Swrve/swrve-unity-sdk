@@ -410,7 +410,7 @@ public partial class SwrveSDK
     private void setNativeConversationVersion()
     {
         try {
-            conversationVersion = _swrveiOSConversationVersion();
+            SetConversationVersion (_swrveiOSConversationVersion ());
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }

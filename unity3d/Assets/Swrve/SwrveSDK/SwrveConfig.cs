@@ -84,12 +84,12 @@ public class SwrveConfig
     /// <summary>
     /// Enable or disable Location features for in-app campaigns/
     /// </summary>
-    public bool LocationEnabled = true;
+    public bool LocationEnabled = false;
     
     /// <summary>
     /// Set whether Location (plot) will autostart, or whether you want to enable it manually (after asking for permission)
     /// </summary>
-    public bool LocationAutostart = true;
+    public bool LocationAutostart = false;
 
     /// <summary>
     /// Automatically download campaigns and user resources.
