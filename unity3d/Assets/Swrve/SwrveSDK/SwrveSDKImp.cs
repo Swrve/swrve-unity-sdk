@@ -1719,7 +1719,9 @@ public partial class SwrveSDK
     }
     
     private void startLocation() {
-        startNativeLocation ();
+        if (config.LocationEnabled) {
+            startNativeLocation ();
+        }
     }
 
     private void setConversationVersion() {
