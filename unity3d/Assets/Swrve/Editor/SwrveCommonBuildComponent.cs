@@ -124,6 +124,14 @@ public class SwrveCommonBuildComponent
         }
     }
 
+    protected static void CopyFile(string src, string dst)
+    {
+        if (!File.Exists(src)) {
+            throw new Exception("File " + src + " does not exist");
+        }
+        File.Copy(src, dst, true);
+    }
+
     protected static void DirectoryCopy (string sourceDirName, string destDirName, bool copySubDirs, bool overrideFiles)
     {
         // Get the subdirectories for the specified directory.
@@ -163,25 +171,52 @@ public class SwrveCommonBuildComponent
 
     protected static void RunSh (string workingDirectory, string arguments)
     {
-        ProcessStartInfo info = new ProcessStartInfo ();
-        info.RedirectStandardError = true;
-        info.UseShellExecute = false;
-        info.WorkingDirectory = workingDirectory;
-        info.FileName = "/bin/bash";
-        info.Arguments = arguments;
-        System.Diagnostics.Process proc = System.Diagnostics.Process.Start (info);
+        ExecuteCommand (workingDirectory, "/bin/bash", arguments);
+    }
 
-        string errorOutput = string.Empty;
-        while (!proc.HasExited) {
-            errorOutput += proc.StandardError.ReadToEnd ();
+    protected static void ExecuteCommand(string workingDirectory, string filename, string arguments)
+    {
+        if ("." == workingDirectory) {
+            workingDirectory = new DirectoryInfo (".").FullName;
         }
 
-        if (proc.ExitCode != 0) {
-            EditorUtility.DisplayDialog ("Bash sh", "Could run bash sh. Error code: " + proc.ExitCode, "Accept");
-            throw new Exception (errorOutput);
-        } else {
-            UnityEngine.Debug.Log ("Bash sh " + arguments + " successfull");
+        Process proc = new Process ();
+        proc.StartInfo.WorkingDirectory = workingDirectory;
+        proc.StartInfo.FileName = filename;
+        proc.StartInfo.Arguments = arguments;
+        SwrveLog.Log(string.Format("Executing {0} command: {1} (in: {2} )\n(cd {2}; {0} {1})",
+            filename, arguments, workingDirectory
+        ));
+
+        proc.StartInfo.CreateNoWindow = true;
+        proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        proc.StartInfo.UseShellExecute = false;
+        proc.StartInfo.RedirectStandardError = true;
+        proc.StartInfo.RedirectStandardOutput = true;
+
+        try
+        {
+            proc.Start();
+            proc.StandardError.ReadToEnd();
+            string stdOutput = proc.StandardOutput.ReadToEnd();
+            string errorOutput = proc.StandardError.ReadToEnd();
+
+            if("" != stdOutput) {
+                SwrveLog.Log(stdOutput);
+            }
+            if("" != errorOutput) {
+                SwrveLog.LogError(errorOutput);
+            }
+
+            if (proc.ExitCode == 0) {
+                UnityEngine.Debug.Log (filename + " " + arguments + " successfull");
+            }
+        }
+        catch (Exception e)
+        {
+            throw new Exception(string.Format("Encountered unexpected error while running {0}", filename), e);
         }
     }
+
 }
 

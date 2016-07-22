@@ -20,13 +20,11 @@ static dispatch_once_t sharedInstanceToken = 0;
 // Count the number of UTF-16 code points stored in buffer
 @property (atomic) int eventBufferBytes;
 
+@property (atomic) NSDictionary* deviceInfo;
+
 @end
 
 @implementation UnitySwrveCommonDelegate
-
-@synthesize appID;
-@synthesize userID;
-@synthesize deviceInfo;
 
 @synthesize configDict;
 @synthesize eventBuffer;
@@ -65,7 +63,7 @@ static dispatch_once_t sharedInstanceToken = 0;
                                         options:NSJSONReadingMutableContainers error:&error];
     NSLog(@"full config dict: %@", swrve.configDict);
     
-    [swrve initLocation];
+    swrve.deviceInfo = [swrve.configDict objectForKey:@"deviceInfo"];
 }
 
 -(NSString*) swrveSDKVersion {
@@ -104,13 +102,15 @@ static dispatch_once_t sharedInstanceToken = 0;
 -(NSString*) userId {
     return [self stringFromConfig:@"userId"];
 }
-
--(NSString*) apiKey {
-    return [self stringFromConfig:@"apiKey"];
-}
+-(NSString*) userID { return [self userId]; }
 
 -(long) appId {
     return [self longFromConfig:@"appId"];
+}
+-(long) appID { return [self appId]; }
+
+-(NSString*) apiKey {
+    return [self stringFromConfig:@"apiKey"];
 }
 
 -(NSString*) appVersion {
@@ -139,17 +139,6 @@ static dispatch_once_t sharedInstanceToken = 0;
 
 -(NSString*) getLocationPath {
     return [NSString stringWithFormat:@"%@/%@%@", [self applicationPath], [self locTag], [self userId]];
-}
-
--(NSData*) getCampaignData:(int)category {
-    if(SWRVE_CAMPAIGN_LOCATION == category) {
-        NSURL *fileURL = [NSURL fileURLWithPath:[self getLocationPath]];
-        NSURL *signatureURL = [NSURL fileURLWithPath:[NSString stringWithFormat:@"%@%@", [self getLocationPath], [self sigSuffix]]];
-        NSString *signatureKey = [self uniqueKey];
-        SwrveSignatureProtectedFile *locationCampaignFile = [[SwrveSignatureProtectedFile alloc] initFile:fileURL signatureFilename:signatureURL usingKey:signatureKey];
-        return [locationCampaignFile readFromFile];
-    }
-    return nil;
 }
 
 -(BOOL) processPermissionRequest:(NSString*)action {
@@ -355,18 +344,6 @@ static dispatch_once_t sharedInstanceToken = 0;
     return json;
 }
 
--(void) initLocation
-{
-#ifdef SWRVE_LOCATION_SDK
-    [SwrvePlot initializeWithLaunchOptions:nil delegate:self];
-#endif
-}
-
--(void) setLocationSegmentVersion:(int)version {
-    [self sendMessageUp:@"SetLocationSegmentVersion"
-                    msg:[NSString stringWithFormat:@"%d", version]];
-}
-
 -(int) userUpdate:(NSDictionary *)attributes {
     NSData* jsonData = [NSJSONSerialization dataWithJSONObject:attributes options:0 error:nil];
     NSString* json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -386,6 +363,43 @@ static dispatch_once_t sharedInstanceToken = 0;
 -(NSSet*) pushCategories
 {
     return nil;
+}
+
+-(void) initLocation
+{
+#ifdef SWRVE_LOCATION_SDK
+    [SwrvePlot initializeWithLaunchOptions:nil delegate:self];
+#endif
+}
+
+-(void) setLocationSegmentVersion:(int)version {
+    [self sendMessageUp:@"SetLocationSegmentVersion"
+                    msg:[NSString stringWithFormat:@"%d", version]];
+}
+
+-(NSData*) getCampaignData:(int)category {
+    if(SWRVE_CAMPAIGN_LOCATION == category) {
+        NSURL *fileURL = [NSURL fileURLWithPath:[self getLocationPath]];
+        NSURL *signatureURL = [NSURL fileURLWithPath:[NSString stringWithFormat:@"%@%@", [self getLocationPath], [self sigSuffix]]];
+        NSString *signatureKey = [self uniqueKey];
+        SwrveSignatureProtectedFile *locationCampaignFile = [[SwrveSignatureProtectedFile alloc] initFile:fileURL
+                                                                                        signatureFilename:signatureURL
+                                                                                                 usingKey:signatureKey];
+        return [locationCampaignFile readFromFile];
+    }
+    return nil;
+}
+
+-(void)plotFilterNotifications:(PlotFilterNotifications*)filterNotifications {
+#ifdef SWRVE_LOCATION_SDK
+    [SwrvePlot filterLocationCampaigns:filterNotifications];
+#endif
+}
+
+-(void)plotHandleNotification:(UILocalNotification*)localNotification data:(NSString*)data {
+#ifdef SWRVE_LOCATION_SDK
+    [SwrvePlot engageLocationCampaign:localNotification withData:data];
+#endif
 }
 
 @end

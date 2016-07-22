@@ -1480,6 +1480,9 @@ public partial class SwrveSDK
                         if (config.LocationEnabled) {
                             if (root.ContainsKey("location_campaigns")) {
                                 Dictionary<string, object> locationData = (Dictionary<string, object>)root["location_campaigns"];
+                            #if UNITY_IPHONE
+                                locationData = (Dictionary<string, object>)locationData["campaigns"];
+                            #endif
                                 string locationJson = SwrveMiniJSON.Json.Serialize(locationData);
                                 SaveLocationCache (locationJson);
                             }

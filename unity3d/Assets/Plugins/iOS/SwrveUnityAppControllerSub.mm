@@ -12,14 +12,6 @@
 
 @implementation SwrveUnityAppControllerSub
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
-{
-#ifdef SWRVE_LOCATION_SDK
-    [SwrvePlot initializeWithLaunchOptions:launchOptions delegate:[UnitySwrveCommonDelegate sharedInstance]];
-#endif
-    return [super application:application didFinishLaunchingWithOptions:launchOptions];
-}
-
 - (void)application:(UIApplication*)application didReceiveRemoteNotification:(NSDictionary*)userInfo
 {
     UIApplicationState swrveState = [application applicationState];
