@@ -4,9 +4,13 @@ using UnityEditor;
 using System.Collections;
 using System.IO;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 public class SwrvePostProcess : SwrveCommonBuildComponent
 {
+    public static string PODFILE_LOC = "Assets/Swrve/Editor/Podfile.txt";
+    public static bool OPEN_WORKSPACE = false;
+
     [PostProcessBuild(100)]
 	public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
 	{
@@ -16,11 +20,10 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
         if(target == BuildTarget.iPhone)
     #endif
         {
-            SwrveLog.Log ("SwrvePostProcess (iOS)");
+            SwrveLog.Log (string.Format ("SwrvePostProcess (iOS) - {0}", PODFILE_LOC));
             //Copy the podfile into the project.
-            string podfile = "Assets/Swrve/Editor/Podfile.txt";
           
-            CopyFile(podfile, Path.Combine (pathToBuiltProject, "Podfile"));
+            CopyFile(PODFILE_LOC, Path.Combine (pathToBuiltProject, "Podfile"));
 
             List<string> podPaths = new List<string>{ "/usr/local/bin/pod", "/usr/bin/pod" };
             string podPath = null;
@@ -39,6 +42,9 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
             }
 
             ExecuteCommand(pathToBuiltProject, podPath, "install");
+            if (OPEN_WORKSPACE && !UnityEditorInternal.InternalEditorUtility.inBatchMode) {
+                Process.Start (string.Format ("file://{0}/Unity-iPhone.xcworkspace", pathToBuiltProject));
+            }
 		}
 		else
 		{
