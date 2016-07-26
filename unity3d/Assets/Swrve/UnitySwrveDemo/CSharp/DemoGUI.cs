@@ -1,3 +1,5 @@
+#if !UNITY_5
+
 using UnityEngine;
 using System.Collections;
 using System;
@@ -12,15 +14,14 @@ using Swrve.IAP;
 
 public class DemoGUI : BaseDemoGUI
 {
-    /// Reference to the Swrve Component in the scene.
-    private SwrveComponent swrveComponent;
-
     /// Enable or disable the game UI.
     public bool UIEnabled = true;
 
+    /// Reference to the Swrve Component in the scene.
+    private SwrveComponent swrveComponent;
+
     void Start ()
     {
-        // Get the Swrve Component reference from the scene
         swrveComponent = (SwrveComponent)FindObjectOfType (typeof(SwrveComponent));
 
         // In-app messaging setup
@@ -150,3 +151,5 @@ public class DemoGUI : BaseDemoGUI
         }
     }
 }
+
+#endif

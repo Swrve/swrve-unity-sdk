@@ -13,6 +13,7 @@ namespace Swrve.Messaging
 public abstract class SwrveBaseCampaign
 {
     const string ID_KEY = "id";
+    const string CONVERSATION_KEY = "conversation";
     const string MESSAGES_KEY = "messages";
     const string SUBJECT_KEY = "subject";
     const string MESSAGE_CENTER_KEY = "message_center";
@@ -95,7 +96,7 @@ public abstract class SwrveBaseCampaign
             this.State.Next = value;
         }
     }
-
+     
     /// <summary>
     /// Get the status of the campaign.
     /// </summary>
@@ -110,7 +111,7 @@ public abstract class SwrveBaseCampaign
             this.State.CurStatus = value;
         }
     }
-
+        
     /**
      * @return the name of the campaign.
      */
@@ -186,7 +187,6 @@ public abstract class SwrveBaseCampaign
 
     public bool IsActive (SwrveQAUser qaUser)
     {
-
         // Use UTC to compare to start/end dates from DB
         DateTime utcNow = SwrveHelper.GetUtcNow ();
 
@@ -208,7 +208,7 @@ public abstract class SwrveBaseCampaign
         if (qaUser != null && !qaUser.campaignReasons.ContainsKey (Id)) {
             qaUser.campaignReasons.Add (Id, reason);
         }
-        SwrveLog.Log (reason);
+        SwrveLog.Log (string.Format ("{0} {1}", this, reason));
     }
 
     protected void LogAndAddReason (int ident, string reason, SwrveQAUser qaUser)
@@ -239,14 +239,23 @@ public abstract class SwrveBaseCampaign
     public static SwrveBaseCampaign LoadFromJSON(SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, SwrveQAUser qaUser)
     {
         int id = MiniJsonHelper.GetInt(campaignData, ID_KEY);
-        SwrveBaseCampaign campaign = SwrveMessagesCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime, qaUser);
+        SwrveBaseCampaign campaign = null;
+
+        if(campaignData.ContainsKey(CONVERSATION_KEY))
+        {
+            campaign = SwrveConversationCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime);
+        }
+        else if(campaignData.ContainsKey(MESSAGES_KEY))
+        {
+            campaign = SwrveMessagesCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime, qaUser);
+        }
 
         if(campaign == null)
         {
             return null;
         }
         campaign.Id = id;
-
+		
         AssignCampaignTriggers(campaign, campaignData);
         campaign.MessageCenter = campaignData.ContainsKey(MESSAGE_CENTER_KEY) && (bool)campaignData[MESSAGE_CENTER_KEY];
 
@@ -285,6 +294,13 @@ public abstract class SwrveBaseCampaign
         IList<object> jsonTriggers = (IList<object>)campaignData [TRIGGERS_KEY];
         for (int i = 0, j = jsonTriggers.Count; i < j; i++) {
             object jsonTrigger = jsonTriggers [i];
+            if (jsonTrigger.GetType () == typeof(string)) {
+                jsonTrigger = new Dictionary<string, object> {
+                    { EVENT_NAME_KEY, jsonTrigger },
+                    { CONDITIONS_KEY, new Dictionary<string, object>() }
+                };
+            }
+
             try {
                 SwrveTrigger trigger = SwrveTrigger.LoadFromJson ((IDictionary<string, object>)jsonTrigger);
                 campaign.GetTriggers ().Add (trigger);
@@ -340,6 +356,21 @@ public abstract class SwrveBaseCampaign
     protected void SetMessageMinDelayThrottle ()
     {
         this.showMessagesAfterDelay = SwrveHelper.GetNow () + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
+    }
+
+    /// <summary>
+    /// Notify that a base message was shown to the user. This function
+    /// has to be called only once when the message is displayed to
+    /// the user.
+    /// This is automatically called by the SDK and will only need
+    /// to be manually called if you are implementing your own
+    /// in-app message rendering code.
+    /// </summary>
+    public void WasShownToUser ()
+    {
+        Status = SwrveCampaignState.Status.Seen;
+        IncrementImpressions ();
+        SetMessageMinDelayThrottle ();
     }
 
     /// <summary>
