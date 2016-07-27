@@ -88,9 +88,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     private SwrveUnityCommon(Context context, String jsonString) {
         SwrveCommon.setSwrveCommon(this);
-
-        SwrveLogger.d(LOG_TAG, "UnitySwrveCommon constructor called with jsonString \"" + jsonString + "\"");
-
         if (context instanceof Activity) {
             this.context = new WeakReference<>(context.getApplicationContext());
         } else {
@@ -105,6 +102,8 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
                 SwrveLogger.e(LOG_TAG, "Error loading Unity settings from shared prefs", e);
             }
         }
+
+        SwrveLogger.d(LOG_TAG, "UnitySwrveCommon constructor called with jsonString \"" + jsonString + "\"");
 
         if(null != jsonString) {
             try {
