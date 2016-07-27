@@ -62,7 +62,7 @@ static dispatch_once_t sharedInstanceToken = 0;
     if((jsonConfig == nil) || (0 == [jsonConfig length])) {
         jsonConfig = [preferences stringForKey:spKey];
     }
-    if(jsonConfig == nil) {
+    if((jsonConfig == nil) || (0 == [jsonConfig length])) {
         return;
     }
     NSLog(@"full config dict: %@", jsonConfig);
