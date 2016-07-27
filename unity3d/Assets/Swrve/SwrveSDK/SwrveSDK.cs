@@ -985,7 +985,7 @@ public partial class SwrveSDK : ISwrveAssetController
                     SwrveLog.Log("Sending click event: " + clickEvent);
                     Dictionary<string, string> clickPayload = new Dictionary<string, string> ();
                     clickPayload.Add ("name", button.Name);
-                    NamedEventInternal (clickEvent, clickPayload);
+                    NamedEventInternal (clickEvent, clickPayload, false);
                 }
             } catch (Exception e) {
                 SwrveLog.LogError("Error while processing button click " + e);
@@ -1025,7 +1025,7 @@ public partial class SwrveSDK : ISwrveAssetController
             payload.Add ("format", messageFormat.Name);
             payload.Add ("orientation", messageFormat.Orientation.ToString ());
             payload.Add ("size", messageFormat.Size.X + "x" + messageFormat.Size.Y);
-            NamedEventInternal (viewEvent, payload);
+            NamedEventInternal (viewEvent, payload, false);
         } catch (Exception e) {
             SwrveLog.LogError("Error while processing message impression " + e);
         }
