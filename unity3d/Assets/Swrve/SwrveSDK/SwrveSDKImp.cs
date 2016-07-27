@@ -860,6 +860,10 @@ public partial class SwrveSDK
             CoroutineReference<bool> wereAllLoaded = new CoroutineReference<bool> (false);
             yield return StartTask("PreloadFormatAssets", PreloadFormatAssets(newFormat, wereAllLoaded));
             if (wereAllLoaded.Value ()) {
+                // Pass the listeners to the new format object
+                newFormat.MessageListener = oldFormat.MessageListener;
+                newFormat.CustomButtonListener = oldFormat.CustomButtonListener;
+                newFormat.InstallButtonListener = oldFormat.InstallButtonListener;
                 // Choosen orientation
                 currentMessage = currentDisplayingMessage = newFormat;
                 oldFormat.UnloadAssets ();
@@ -1473,7 +1477,7 @@ public partial class SwrveSDK
                                 Dictionary<string, string> payload = new Dictionary<string, string> ();
                                 payload.Add ("ids", campaignIds.ToString ());
                                 payload.Add ("count", (campaigns == null)? "0" : campaigns.Count.ToString ());
-                                NamedEventInternal ("Swrve.Messages.campaigns_downloaded", payload);
+                                NamedEventInternal ("Swrve.Messages.campaigns_downloaded", payload, false);
                             }
                         }
 
@@ -1715,12 +1719,12 @@ public partial class SwrveSDK
     {
         initNative ();
         setNativeConversationVersion ();
-    
+
         if (config.LocationAutostart) {
             startLocation ();
         }
     }
-    
+
     protected void startLocation() {
         if (config.LocationEnabled) {
             startNativeLocation ();

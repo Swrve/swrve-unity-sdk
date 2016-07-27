@@ -246,6 +246,7 @@ public class SwrveMessageFormat
         this.Dismissed = false;
         this.Message.Position = startPoint;
         this.Message.TargetPosition = endPoint;
+        this.Rotate = false;
 
         if (MessageListener != null) {
             MessageListener.OnShow (this);
