@@ -349,7 +349,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
         ArrayList<String> conversationEvents = new ArrayList<>();
         try {
-            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, null, null));
+            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, payload, null));
         } catch (JSONException e) {
             SwrveLogger.e(LOG_TAG, "Could not queue conversation events params: " + parameters, e);
         }
