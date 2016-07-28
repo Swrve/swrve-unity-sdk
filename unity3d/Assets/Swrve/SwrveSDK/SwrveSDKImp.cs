@@ -1694,6 +1694,7 @@ public partial class SwrveSDK
             {"apiKey", apiKey},
             {"appId", gameId},
             {"userId", userId},
+            {"deviceId", GetDeviceId()},
             {"appVersion", GetAppVersion()},
             {"uniqueKey", GetUniqueKey()},
             {"deviceInfo", GetDeviceInfo()},
