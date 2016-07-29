@@ -12,6 +12,20 @@
 
 @implementation SwrveUnityAppControllerSub
 
+- (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
+{
+    NSLog(@"SwrveUnityAppControllerSub - application didFinishLaunchingWithOptions");
+    
+#ifdef SWRVE_LOCATION_SDK
+    [UnitySwrveCommonDelegate init:nil];
+    UnitySwrveCommonDelegate* unitySwrve = (UnitySwrveCommonDelegate*)[SwrveCommon sharedInstance];
+    if(unitySwrve != nil) {
+        [SwrvePlot initializeWithLaunchOptions:launchOptions delegate:unitySwrve];
+    }
+#endif
+    return [super application:application didFinishLaunchingWithOptions:launchOptions];
+}
+
 - (void)application:(UIApplication*)application didReceiveRemoteNotification:(NSDictionary*)userInfo
 {
     UIApplicationState swrveState = [application applicationState];

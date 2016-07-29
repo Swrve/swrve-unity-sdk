@@ -54,16 +54,32 @@ static dispatch_once_t sharedInstanceToken = 0;
     _swrveSharedUnity = nil;
 }
 
-+(void) init:(char*)jsonConfig {
-    UnitySwrveCommonDelegate* swrve = [UnitySwrveCommonDelegate sharedInstance];
++(void) init:(char*)_jsonConfig {
+    NSString* jsonConfig = [UnitySwrveHelper CStringToNSString:_jsonConfig];
+    
+    NSString* spKey = @"storedConfig";
+    NSUserDefaults *preferences = [NSUserDefaults standardUserDefaults];
+    if((jsonConfig == nil) || (0 == [jsonConfig length])) {
+        jsonConfig = [preferences stringForKey:spKey];
+    }
+    if((jsonConfig == nil) || (0 == [jsonConfig length])) {
+        return;
+    }
+    NSLog(@"full config dict: %@", jsonConfig);
     
     NSError* error = nil;
-    swrve.configDict =
-        [NSJSONSerialization JSONObjectWithData:[[UnitySwrveHelper CStringToNSString:jsonConfig] dataUsingEncoding:NSUTF8StringEncoding]
+    NSDictionary* configDict =
+        [NSJSONSerialization JSONObjectWithData:[jsonConfig dataUsingEncoding:NSUTF8StringEncoding]
                                         options:NSJSONReadingMutableContainers error:&error];
-    NSLog(@"full config dict: %@", swrve.configDict);
+    if(error == nil) {
+        UnitySwrveCommonDelegate* swrve = [UnitySwrveCommonDelegate sharedInstance];
+        swrve.configDict = configDict;
+        NSLog(@"full config dict: %@", swrve.configDict);
     
-    swrve.deviceInfo = [swrve.configDict objectForKey:@"deviceInfo"];
+        swrve.deviceInfo = [swrve.configDict objectForKey:@"deviceInfo"];
+        [preferences setObject:jsonConfig forKey:spKey];
+        [preferences synchronize];
+    }
 }
 
 -(NSString*) swrveSDKVersion {
