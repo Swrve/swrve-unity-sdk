@@ -41,7 +41,9 @@ public class SwrveQAUser
         if (Logging) {
             restClient = new RESTClient ();
             this.loggingUrl = MiniJsonHelper.GetString (jsonQa, "logging_url", null);
-            this.loggingUrl = this.loggingUrl.Replace ("https://", "http://");
+
+            this.loggingUrl = this.loggingUrl.Replace ("http://", "https://");
+
             if (!this.loggingUrl.EndsWith ("/")) {
                 this.loggingUrl = this.loggingUrl + "/";
             }
