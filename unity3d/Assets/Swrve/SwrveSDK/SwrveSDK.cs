@@ -1038,7 +1038,7 @@ public partial class SwrveSDK : ISwrveAssetController
     /// <returns>
     /// True if there are any in-app messages currently on screen.
     /// </returns>
-    public bool IsMessageDispaying ()
+    public bool IsMessageDisplaying ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
         return (currentMessage != null);
@@ -1046,6 +1046,10 @@ public partial class SwrveSDK : ISwrveAssetController
         return false;
 #endif
     }
+
+
+    [Obsolete("IsMessageDispaying is deprecated, please use IsMessageDisplaying instead.")]
+    public bool IsMessageDispaying () { return IsMessageDisplaying (); }
 
     public void SetLocationSegmentVersion(int locationSegmentVersion) {
         this.locationSegmentVersion = locationSegmentVersion;
