@@ -395,13 +395,8 @@ static dispatch_once_t sharedInstanceToken = 0;
 
 -(NSData*) getCampaignData:(int)category {
     if(SWRVE_CAMPAIGN_LOCATION == category) {
-        NSURL *fileURL = [NSURL fileURLWithPath:[self getLocationPath]];
-        NSURL *signatureURL = [NSURL fileURLWithPath:[NSString stringWithFormat:@"%@%@", [self getLocationPath], [self sigSuffix]]];
-        NSString *signatureKey = [self uniqueKey];
-        SwrveSignatureProtectedFile *locationCampaignFile = [[SwrveSignatureProtectedFile alloc] initFile:fileURL
-                                                                                        signatureFilename:signatureURL
-                                                                                                 usingKey:signatureKey];
-        return [locationCampaignFile readFromFile];
+        // We could add a security check here
+        return [NSData dataWithContentsOfURL: [NSURL fileURLWithPath:[self getLocationPath]]];
     }
     return nil;
 }
