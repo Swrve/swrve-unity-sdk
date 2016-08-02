@@ -32,12 +32,13 @@ public class SwrveMessageRenderer
         return blankTexture;
     }
 
-    public static void InitMessage (SwrveMessageFormat format)
+    public static void InitMessage (SwrveMessageFormat format, SwrveOrientation deviceOrientation)
     {
         if (Animator != null) {
             Animator.InitMessage (format);
         } else {
-            format.Init (new Point (0, 0), new Point (0, 0));
+            format.Init (deviceOrientation);
+            format.InitAnimation (new Point (0, 0), new Point (0, 0));
         }
     }
 
@@ -133,4 +134,3 @@ public class SwrveMessageRenderer
     }
 }
 }
-

@@ -864,12 +864,14 @@ public partial class SwrveSDK
             CoroutineReference<bool> wereAllLoaded = new CoroutineReference<bool> (false);
             yield return StartTask("PreloadFormatAssets", PreloadFormatAssets(newFormat, wereAllLoaded));
             if (wereAllLoaded.Value ()) {
+                currentOrientation = GetDeviceOrientation ();
+                newFormat.Init (currentOrientation);
                 // Pass the listeners to the new format object
                 newFormat.MessageListener = oldFormat.MessageListener;
                 newFormat.CustomButtonListener = oldFormat.CustomButtonListener;
                 newFormat.InstallButtonListener = oldFormat.InstallButtonListener;
-                // Choosen orientation
                 currentMessage = currentDisplayingMessage = newFormat;
+
                 oldFormat.UnloadAssets ();
             } else {
                 SwrveLog.LogError ("Could not switch orientation. Not all assets could be preloaded");
@@ -1141,7 +1143,12 @@ public partial class SwrveSDK
 
         currentDisplayingMessage = currentMessage;
         currentOrientation = GetDeviceOrientation ();
-        SwrveMessageRenderer.InitMessage (currentDisplayingMessage);
+        SwrveMessageRenderer.InitMessage (currentDisplayingMessage, currentOrientation);
+
+        if (messageListener != null) {
+            messageListener.OnShow (format);
+        }
+
         // Message was shown to user
         MessageWasShownToUser (currentDisplayingMessage);
 
