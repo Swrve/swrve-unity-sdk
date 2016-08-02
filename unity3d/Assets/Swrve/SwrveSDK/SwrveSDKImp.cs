@@ -803,6 +803,10 @@ public partial class SwrveSDK
                     ProcessButtonUp ();
                 }
             }
+
+            if (!currentMessage.Closing && NativeIsBackPressed ()) {
+                currentMessage.Dismiss ();
+            }
         }
     }
 

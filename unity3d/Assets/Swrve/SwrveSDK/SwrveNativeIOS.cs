@@ -439,5 +439,10 @@ public partial class SwrveSDK
         startNativeLocation ();
     }
 
+    private bool NativeIsBackPressed ()
+    {
+        return false;
+    }
+
 }
 #endif
