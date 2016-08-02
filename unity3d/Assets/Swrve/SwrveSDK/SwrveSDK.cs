@@ -1173,7 +1173,7 @@ public partial class SwrveSDK : ISwrveAssetController
         return null;
 #endif
     }
-                
+
     /// <summary>
     /// Obtain a Swrve Message for the given event.
     /// </summary>
@@ -1267,25 +1267,25 @@ public partial class SwrveSDK : ISwrveAssetController
             NoMessagesWereShown (eventName, "No campaigns available");
             return false;
         }
-        
+
         if (!string.Equals(eventName, DefaultAutoShowMessagesTrigger, StringComparison.OrdinalIgnoreCase) && IsTooSoonToShowMessageAfterLaunch (now)) {
             NoMessagesWereShown(eventName, "{App throttle limit} Too soon after launch. Wait until " + showMessagesAfterLaunch.ToString (WaitTimeFormat));
             return false;
         }
-        
+
         if (IsTooSoonToShowMessageAfterDelay (now)) {
             NoMessagesWereShown(eventName, "{App throttle limit} Too soon after last base message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
             return false;
         }
-        
+
         if (HasShowTooManyMessagesAlready ()) {
             NoMessagesWereShown(eventName, "{App throttle limit} Too many base messages shown");
             return false;
         }
-        
+
         return true;
     }
- 
+
     public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign) {
         ShowMessageCenterCampaign (campaign, GetDeviceOrientation ());
     }
@@ -1307,12 +1307,12 @@ public partial class SwrveSDK : ISwrveAssetController
     }
 
     public List<SwrveBaseCampaign> GetMessageCenterCampaigns()
-    { 
+    {
         return GetMessageCenterCampaigns (GetDeviceOrientation ());
     }
-        
+
     public List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation orientation)
-    { 
+    {
         List<SwrveBaseCampaign> result = new List<SwrveBaseCampaign>();
         IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
         while(itCampaign.MoveNext()) {
@@ -1323,7 +1323,7 @@ public partial class SwrveSDK : ISwrveAssetController
         }
         return result;
     }
-        
+
     public void RemoveMessageCenterCampaign(SwrveBaseCampaign campaign) {
         campaign.Status = SwrveCampaignState.Status.Deleted;
         SaveCampaignData(campaign);
