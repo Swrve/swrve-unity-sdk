@@ -383,6 +383,11 @@ public partial class SwrveSDK
         }
     }
 
+    private bool NativeIsBackPressed ()
+    {
+        return Input.GetKeyDown (KeyCode.Escape);
+    }
+
 }
 
 #endif

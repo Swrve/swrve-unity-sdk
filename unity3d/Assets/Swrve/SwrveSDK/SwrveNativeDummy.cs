@@ -11,6 +11,7 @@ public partial class SwrveSDK
     private void startNativeLocation () {}
     private void startNativeLocationAfterPermission () {}
     private void setNativeConversationVersion () {}
+    private bool NativeIsBackPressed () { return false; }
 }
 
 #endif
