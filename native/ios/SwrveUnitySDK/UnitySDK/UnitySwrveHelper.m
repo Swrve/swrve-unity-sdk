@@ -134,7 +134,6 @@
 }
 
 #ifdef __IPHONE_8_0
-#if __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_8_0
 +(NSSet*) categorySetFromJson:(NSString*)jsonString
 {
     NSMutableSet* categorySet = nil;
@@ -202,7 +201,6 @@
     
     return categorySet;
 }
-#endif
 #endif //defined(__IPHONE_8_0)
 
 
