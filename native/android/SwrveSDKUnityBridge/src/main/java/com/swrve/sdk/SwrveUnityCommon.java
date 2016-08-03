@@ -247,7 +247,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     @Override
     public short getDeviceId() {
         if(currentDetails.containsKey(DEVICE_ID_KEY)) {
-            return ((Double)currentDetails.get(DEVICE_ID_KEY)).shortValue();
+            return Short.parseShort(getStringDetail(DEVICE_ID_KEY));
         }
         return 0;
     }
