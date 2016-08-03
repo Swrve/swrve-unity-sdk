@@ -1,6 +1,6 @@
 #if COCOAPODS
-#import <SwrveMessageEventHandler.h>
-#import <SwrveBaseConversation.h>
+#import <SwrveConversationSDK/SwrveMessageEventHandler.h>
+#import <SwrveConversationSDK/SwrveBaseConversation.h>
 #else
 #import "SwrveMessageEventHandler.h"
 #import "SwrveBaseConversation.h"

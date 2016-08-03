@@ -1,5 +1,5 @@
 #if COCOAPODS
-#import <SwrveCommon.h>
+#import <SwrveSDKCommon/SwrveCommon.h>
 #else
 #import "SwrveCommon.h"
 #endif
