@@ -1,4 +1,8 @@
+#if COCOAPODS
+#import <SwrveCommon.h>
+#else
 #import "SwrveCommon.h"
+#endif
 
 void UnitySendMessage(const char *, const char *, const char *);
 
