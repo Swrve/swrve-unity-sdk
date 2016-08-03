@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.version          = "4.5.0"
   s.summary          = "iOS Common library for Swrve."
   s.homepage         = "http://www.swrve.com"
-  s.license          = { "type" => "Apache License, Version 2.0", "file" => 'native/ios/' + s.name.to_s + '/UnitySDK/LICENSE' }
+  s.license          = { "type" => "Apache License, Version 2.0", "file" => 'native/ios/' + s.name.to_s + '/LICENSE' }
   s.authors          = "Swrve Mobile Inc or its licensors"
   s.source           = { :git => "https://github.com/Swrve/swrve-unity-sdk.git", :tag => s.version.to_s }
   s.social_media_url = 'https://twitter.com/Swrve_Inc'
