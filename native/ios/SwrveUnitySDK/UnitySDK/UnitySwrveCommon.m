@@ -412,3 +412,8 @@ static dispatch_once_t sharedInstanceToken = 0;
 #endif
 
 @end
+
+#ifndef UNITY_IOS
+void UnitySendMessage(const char* _obj, const char* _method, const char* _msg) {
+}
+#endif
