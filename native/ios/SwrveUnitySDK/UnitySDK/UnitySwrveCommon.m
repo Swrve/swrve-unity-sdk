@@ -401,16 +401,14 @@ static dispatch_once_t sharedInstanceToken = 0;
     return nil;
 }
 
--(void)plotFilterNotifications:(PlotFilterNotifications*)filterNotifications {
 #ifdef SWRVE_LOCATION_SDK
+-(void)plotFilterNotifications:(PlotFilterNotifications*)filterNotifications {
     [SwrvePlot filterLocationCampaigns:filterNotifications];
-#endif
 }
 
 -(void)plotHandleNotification:(UILocalNotification*)localNotification data:(NSString*)data {
-#ifdef SWRVE_LOCATION_SDK
     [SwrvePlot engageLocationCampaign:localNotification withData:data];
-#endif
 }
+#endif
 
 @end
