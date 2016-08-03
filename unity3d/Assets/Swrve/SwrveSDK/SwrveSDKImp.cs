@@ -1404,6 +1404,8 @@ public partial class SwrveSDK
             // Move from SwrveCampaignState to the dictionary
             campaignSettings ["Next" + campaign.Id] = campaign.Next;
             campaignSettings ["Impressions" + campaign.Id] = campaign.Impressions;
+            campaignSettings ["ShowMessagesAfterDelay" + campaign.Id] = (long)(((TimeSpan)(campaign.ShowMessagesAfterDelay - SwrveHelper.UnixEpoch)).TotalMilliseconds);
+
 
             string serializedCampaignSettings = Json.Serialize (campaignSettings);
             storage.Save (CampaignsSettingsSave, serializedCampaignSettings, userId);

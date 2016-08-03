@@ -65,6 +65,19 @@ public class SwrveCampaign
             this.State.Next = value;
         }
     }
+    
+    /// <summary>
+    /// DateTime the message can be shown next. Used to disable the campaign if
+    /// it was shown too recently
+    /// </summary>
+    public DateTime ShowMessagesAfterDelay {
+        get {
+            return this.State.ShowMessagesAfterDelay;
+        }
+        set {
+            this.State.ShowMessagesAfterDelay = value;
+        }
+    }
 
     /// <summary>
     /// Indicates if the campaign serves messages randomly or using round robin.
@@ -79,14 +92,6 @@ public class SwrveCampaign
     protected readonly DateTime swrveInitialisedTime;
     protected readonly string assetPath;
     protected DateTime showMessagesAfterLaunch;
-    protected DateTime showMessagesAfterDelay {
-        get {
-            return this.State.ShowMessagesAfterDelay;
-        }
-        set {
-            this.State.ShowMessagesAfterDelay = value;
-        }
-    }
     protected int minDelayBetweenMessage;
     protected int delayFirstMessage = DefaultDelayFirstMessage;
     protected int maxImpressions;
@@ -159,7 +164,7 @@ public class SwrveCampaign
         }
 
         if (IsTooSoonToShowMessageAfterDelay (localNow)) {
-            LogAndAddReason (campaignReasons, "{Campaign throttle limit} Too soon after last message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
+            LogAndAddReason (campaignReasons, "{Campaign throttle limit} Too soon after last message. Wait until " + ShowMessagesAfterDelay.ToString (WaitTimeFormat));
             return null;
         }
 
@@ -335,12 +340,12 @@ public class SwrveCampaign
 
     protected bool IsTooSoonToShowMessageAfterDelay (DateTime now)
     {
-        return now < showMessagesAfterDelay;
+        return now < ShowMessagesAfterDelay;
     }
 
     protected void SetMessageMinDelayThrottle()
     {
-        this.showMessagesAfterDelay = SwrveHelper.GetNow () + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
+        this.ShowMessagesAfterDelay = SwrveHelper.GetNow () + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
     }
 
     /// <summary>
