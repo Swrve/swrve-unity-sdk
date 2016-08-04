@@ -840,7 +840,6 @@ public partial class SwrveSDK : ISwrveAssetController
 #elif UNITY_METRO
         string os = "WindowsStore";
 #else
-#error
         string os = Application.platform.ToString();
 #endif
 
