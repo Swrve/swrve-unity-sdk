@@ -1,4 +1,4 @@
-#if UNITY_IPHONE && !UNITY_5_0_0
+#if !UNITY_5_0_0
 #define SWRVE_USE_HTTPS_DEFAULTS
 #endif
 
@@ -75,17 +75,17 @@ public class SwrveConfig
     /// Enable or disable Talk features for in-app campaigns/
     /// </summary>
     public bool TalkEnabled = true;
-    
+
     /// <summary>
     /// Enable or disable Conversations features for in-app campaigns/
     /// </summary>
     public bool ConversationsEnabled = true;
-    
+
     /// <summary>
     /// Enable or disable Location features for in-app campaigns/
     /// </summary>
     public bool LocationEnabled = false;
-    
+
     /// <summary>
     /// Set whether Location (plot) will autostart, or whether you want to enable it manually (after asking for permission)
     /// </summary>
