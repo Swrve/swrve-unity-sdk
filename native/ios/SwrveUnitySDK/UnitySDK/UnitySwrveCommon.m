@@ -30,6 +30,7 @@ static dispatch_once_t sharedInstanceToken = 0;
 @synthesize eventBuffer;
 @synthesize eventBufferBytes;
 @synthesize deviceToken;
+@synthesize deviceInfo;
 
 -(id) init {
     self = [super init];
@@ -56,7 +57,7 @@ static dispatch_once_t sharedInstanceToken = 0;
 
 +(void) init:(char*)_jsonConfig {
     NSString* jsonConfig = [UnitySwrveHelper CStringToNSString:_jsonConfig];
-    
+
     NSString* spKey = @"storedConfig";
     NSUserDefaults *preferences = [NSUserDefaults standardUserDefaults];
     if((jsonConfig == nil) || (0 == [jsonConfig length])) {
@@ -66,16 +67,16 @@ static dispatch_once_t sharedInstanceToken = 0;
         return;
     }
     NSLog(@"full config dict: %@", jsonConfig);
-    
+
     NSError* error = nil;
-    NSDictionary* configDict =
+    NSDictionary* newConfigDict =
         [NSJSONSerialization JSONObjectWithData:[jsonConfig dataUsingEncoding:NSUTF8StringEncoding]
                                         options:NSJSONReadingMutableContainers error:&error];
     if(error == nil) {
         UnitySwrveCommonDelegate* swrve = [UnitySwrveCommonDelegate sharedInstance];
-        swrve.configDict = configDict;
+        swrve.configDict = newConfigDict;
         NSLog(@"full config dict: %@", swrve.configDict);
-    
+
         swrve.deviceInfo = [swrve.configDict objectForKey:@"deviceInfo"];
         [preferences setObject:jsonConfig forKey:spKey];
         [preferences synchronize];
@@ -174,7 +175,7 @@ static dispatch_once_t sharedInstanceToken = 0;
     if (!eventPayload) {
         eventPayload = [[NSDictionary alloc]init];
     }
-    
+
     NSMutableDictionary* json = [[NSMutableDictionary alloc] init];
     [json setValue:NullableNSString(eventName) forKey:@"name"];
     [json setValue:eventPayload forKey:@"payload"];
@@ -186,7 +187,7 @@ static dispatch_once_t sharedInstanceToken = 0;
 -(void) queueEvent:(NSString*)eventType data:(NSMutableDictionary*)eventData triggerCallback:(bool)triggerCallback
 {
     NSLog(@"%d", triggerCallback);
-    
+
     if ([self eventBuffer]) {
         // Add common attributes (if not already present)
         if (![eventData objectForKey:@"type"]) {
@@ -195,7 +196,7 @@ static dispatch_once_t sharedInstanceToken = 0;
         if (![eventData objectForKey:@"time"]) {
             [eventData setValue:[NSNumber numberWithUnsignedLongLong:[self getTime]] forKey:@"time"];
         }
-        
+
         // Convert to string
         NSData* json_data = [NSJSONSerialization dataWithJSONObject:eventData options:0 error:nil];
         if (json_data) {
@@ -208,25 +209,25 @@ static dispatch_once_t sharedInstanceToken = 0;
 }
 
 -(void) sendQueuedEvents
-{   
+{
     // Early out if length is zero.
     if ([[self eventBuffer] count] == 0) return;
-    
+
     // Swap buffers
     NSArray* buffer = [self eventBuffer];
     int bytes = [self eventBufferBytes];
     [self initBuffer];
-    
+
     NSString* session_token = [self createSessionToken];
     NSString* array_body = [self copyBufferToJson:buffer];
     NSString* json_string = [self createJSON:session_token events:array_body];
-    
+
     NSData* json_data = [json_string dataUsingEncoding:NSUTF8StringEncoding];
-    
+
     [self sendHttpPOSTRequest:[self getBatchUrl]
                      jsonData:json_data
             completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
-                
+
                 if (error){
                     DebugLog(@"Error opening HTTP stream: %@ %@", [error localizedDescription], [error localizedFailureReason]);
                     [self setEventBufferBytes:[self eventBufferBytes] + bytes];
@@ -252,7 +253,7 @@ static dispatch_once_t sharedInstanceToken = 0;
     [request setHTTPBody:json];
     [request setValue:@"application/json; charset=utf-8" forHTTPHeaderField:@"Content-Type"];
     [request setValue:[NSString stringWithFormat:@"%lu", (unsigned long)[json length]] forHTTPHeaderField:@"Content-Length"];
-    
+
     [self sendHttpRequest:request completionHandler:handler];
 }
 
@@ -260,12 +261,12 @@ static dispatch_once_t sharedInstanceToken = 0;
 {
     // Add http request performance metrics for any previous requests into the header of this request (see JIRA SWRVE-5067 for more details)
     NSArray* allMetricsToSend;
-    
+
     if (allMetricsToSend != nil && [allMetricsToSend count] > 0) {
         NSString* fullHeader = [allMetricsToSend componentsJoinedByString:@";"];
         [request addValue:fullHeader forHTTPHeaderField:@"Swrve-Latency-Metrics"];
     }
-    
+
     if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"9.0")) {
         NSURLSession *session = [NSURLSession sharedSession];
         NSURLSessionDataTask *task = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
@@ -291,11 +292,11 @@ static dispatch_once_t sharedInstanceToken = 0;
     // Get the time since the epoch in seconds
     struct timeval time; gettimeofday(&time, NULL);
     const long session_start = time.tv_sec;
-    
+
     NSString* source = [NSString stringWithFormat:@"%@%ld%@", [self userId], session_start, [self apiKey]];
-    
+
     NSString* digest = [self createStringWithMD5:source];
-    
+
     // $session_token = "$app_id=$user_id=$session_start=$md5_hash";
     NSString* session_token = [NSString stringWithFormat:@"%ld=%@=%ld=%@",
                                [self appId],
@@ -310,24 +311,24 @@ static dispatch_once_t sharedInstanceToken = 0;
 #define C "%02x"
 #define CCCC C C C C
 #define DIGEST_FORMAT CCCC CCCC CCCC CCCC
-    
+
     NSString* digestFormat = [NSString stringWithFormat:@"%s", DIGEST_FORMAT];
-    
+
     NSData* buffer = [source dataUsingEncoding:NSUTF8StringEncoding];
-    
+
     unsigned char digest[CC_MD5_DIGEST_LENGTH] = {0};
     unsigned int length = (unsigned int)[buffer length];
     CC_MD5_CTX context;
     CC_MD5_Init(&context);
     CC_MD5_Update(&context, [buffer bytes], length);
     CC_MD5_Final(digest, &context);
-    
+
     NSString* result = [NSString stringWithFormat:digestFormat,
                         digest[ 0], digest[ 1], digest[ 2], digest[ 3],
                         digest[ 4], digest[ 5], digest[ 6], digest[ 7],
                         digest[ 8], digest[ 9], digest[10], digest[11],
                         digest[12], digest[13], digest[14], digest[15]];
-    
+
     return result;
 }
 
@@ -346,26 +347,26 @@ static dispatch_once_t sharedInstanceToken = 0;
                      JSONObjectWithData:bodyData
                      options:NSJSONReadingMutableContainers
                      error:nil];
-    
+
     NSMutableDictionary* jsonPacket = [[NSMutableDictionary alloc] init];
     [jsonPacket setValue:[self userId] forKey:@"user"];
     [jsonPacket setValue:[NSNumber numberWithInt:SWRVE_VERSION] forKey:@"version"];
     [jsonPacket setValue:NullableNSString([self appVersion]) forKey:@"app_version"];
     [jsonPacket setValue:NullableNSString(sessionToken) forKey:@"session_token"];
     [jsonPacket setValue:body forKey:@"data"];
-    
+
     NSData* jsonData = [NSJSONSerialization dataWithJSONObject:jsonPacket options:0 error:nil];
     NSString* json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    
+
     return json;
 }
 
 -(int) userUpdate:(NSDictionary *)attributes {
     NSData* jsonData = [NSJSONSerialization dataWithJSONObject:attributes options:0 error:nil];
     NSString* json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    
+
     [self sendMessageUp:@"UserUpdate" msg:json];
-    
+
     return SWRVE_SUCCESS;
 }
 
