@@ -1,5 +1,6 @@
 using UnityEngine;
 using Swrve;
+using SwrveMiniJSON;
 using Swrve.Helpers;
 using System.Collections.Generic;
 
@@ -201,5 +202,29 @@ public class SwrveComponent : MonoBehaviour
             deviceTokenSent = false;
         }
 #endif
+    }
+
+    public void SetLocationSegmentVersion(string locationSegmentVersion) {
+        try {
+            SDK.SetLocationSegmentVersion(int.Parse(locationSegmentVersion));
+        } catch (System.Exception e) {
+            SwrveLog.LogError (e.ToString(), "location");
+        }
+    }
+
+    public void UserUpdate(string userUpdate) {
+        try {
+            Dictionary<string, object> o = (Dictionary<string, object>)Json.Deserialize (userUpdate);
+            Dictionary<string, string> _o = new Dictionary<string, string>();
+            Dictionary<string, object>.Enumerator it = o.GetEnumerator();
+
+            while(it.MoveNext()) {
+                _o[it.Current.Key] = string.Format("{0}", it.Current.Value);
+            }
+
+            SDK.UserUpdate(_o);
+        } catch (System.Exception e) {
+            SwrveLog.LogError (e.ToString(), "userUpdate");
+        }
     }
 }

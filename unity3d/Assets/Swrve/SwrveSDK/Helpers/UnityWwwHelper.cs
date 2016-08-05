@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using SwrveMiniJSON;
 
 namespace Swrve.Helpers
 {
@@ -45,6 +46,15 @@ public class UnityWwwHelper
 
             if (errorKey != null) {
                 SwrveLog.LogError (@"Request response headers [""X-Swrve-Error""]: " + errorKey + " at " + request.url);
+                try {
+                    if (!string.IsNullOrEmpty (request.text)) {
+                        SwrveLog.LogError (@"Request response headers [""X-Swrve-Error""]: " +
+                            ((IDictionary<string, object>)Json.Deserialize(request.text))["message"]);
+                    }
+                }
+                catch(Exception e) {
+                    
+                }
                 return WwwDeducedError.ApplicationErrorHeader;
             }
         }

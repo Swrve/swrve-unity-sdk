@@ -20,13 +20,11 @@ static dispatch_once_t sharedInstanceToken = 0;
 // Count the number of UTF-16 code points stored in buffer
 @property (atomic) int eventBufferBytes;
 
+@property (atomic) NSDictionary* deviceInfo;
+
 @end
 
 @implementation UnitySwrveCommonDelegate
-
-@synthesize appID;
-@synthesize userID;
-@synthesize deviceInfo;
 
 @synthesize configDict;
 @synthesize eventBuffer;
@@ -56,16 +54,32 @@ static dispatch_once_t sharedInstanceToken = 0;
     _swrveSharedUnity = nil;
 }
 
-+(void) init:(char*)jsonConfig {
-    UnitySwrveCommonDelegate* swrve = [UnitySwrveCommonDelegate sharedInstance];
++(void) init:(char*)_jsonConfig {
+    NSString* jsonConfig = [UnitySwrveHelper CStringToNSString:_jsonConfig];
+    
+    NSString* spKey = @"storedConfig";
+    NSUserDefaults *preferences = [NSUserDefaults standardUserDefaults];
+    if((jsonConfig == nil) || (0 == [jsonConfig length])) {
+        jsonConfig = [preferences stringForKey:spKey];
+    }
+    if((jsonConfig == nil) || (0 == [jsonConfig length])) {
+        return;
+    }
+    NSLog(@"full config dict: %@", jsonConfig);
     
     NSError* error = nil;
-    swrve.configDict =
-        [NSJSONSerialization JSONObjectWithData:[[UnitySwrveHelper CStringToNSString:jsonConfig] dataUsingEncoding:NSUTF8StringEncoding]
+    NSDictionary* configDict =
+        [NSJSONSerialization JSONObjectWithData:[jsonConfig dataUsingEncoding:NSUTF8StringEncoding]
                                         options:NSJSONReadingMutableContainers error:&error];
-    NSLog(@"full config dict: %@", swrve.configDict);
+    if(error == nil) {
+        UnitySwrveCommonDelegate* swrve = [UnitySwrveCommonDelegate sharedInstance];
+        swrve.configDict = configDict;
+        NSLog(@"full config dict: %@", swrve.configDict);
     
-    [swrve initLocation];
+        swrve.deviceInfo = [swrve.configDict objectForKey:@"deviceInfo"];
+        [preferences setObject:jsonConfig forKey:spKey];
+        [preferences synchronize];
+    }
 }
 
 -(NSString*) swrveSDKVersion {
@@ -104,13 +118,15 @@ static dispatch_once_t sharedInstanceToken = 0;
 -(NSString*) userId {
     return [self stringFromConfig:@"userId"];
 }
-
--(NSString*) apiKey {
-    return [self stringFromConfig:@"apiKey"];
-}
+-(NSString*) userID { return [self userId]; }
 
 -(long) appId {
     return [self longFromConfig:@"appId"];
+}
+-(long) appID { return [self appId]; }
+
+-(NSString*) apiKey {
+    return [self stringFromConfig:@"apiKey"];
 }
 
 -(NSString*) appVersion {
@@ -139,17 +155,6 @@ static dispatch_once_t sharedInstanceToken = 0;
 
 -(NSString*) getLocationPath {
     return [NSString stringWithFormat:@"%@/%@%@", [self applicationPath], [self locTag], [self userId]];
-}
-
--(NSData*) getCampaignData:(int)category {
-    if(SWRVE_CAMPAIGN_LOCATION == category) {
-        NSURL *fileURL = [NSURL fileURLWithPath:[self getLocationPath]];
-        NSURL *signatureURL = [NSURL fileURLWithPath:[NSString stringWithFormat:@"%@%@", [self getLocationPath], [self sigSuffix]]];
-        NSString *signatureKey = [self uniqueKey];
-        SwrveSignatureProtectedFile *locationCampaignFile = [[SwrveSignatureProtectedFile alloc] initFile:fileURL signatureFilename:signatureURL usingKey:signatureKey];
-        return [locationCampaignFile readFromFile];
-    }
-    return nil;
 }
 
 -(BOOL) processPermissionRequest:(NSString*)action {
@@ -355,18 +360,6 @@ static dispatch_once_t sharedInstanceToken = 0;
     return json;
 }
 
--(void) initLocation
-{
-#ifdef SWRVE_LOCATION_SDK
-    [SwrvePlot initializeWithLaunchOptions:nil delegate:self];
-#endif
-}
-
--(void) setLocationSegmentVersion:(int)version {
-    [self sendMessageUp:@"SetLocationSegmentVersion"
-                    msg:[NSString stringWithFormat:@"%d", version]];
-}
-
 -(int) userUpdate:(NSDictionary *)attributes {
     NSData* jsonData = [NSJSONSerialization dataWithJSONObject:attributes options:0 error:nil];
     NSString* json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -388,4 +381,39 @@ static dispatch_once_t sharedInstanceToken = 0;
     return nil;
 }
 
+-(void) initLocation
+{
+#ifdef SWRVE_LOCATION_SDK
+    [SwrvePlot initializeWithLaunchOptions:nil delegate:self];
+#endif
+}
+
+-(void) setLocationSegmentVersion:(int)version {
+    [self sendMessageUp:@"SetLocationSegmentVersion"
+                    msg:[NSString stringWithFormat:@"%d", version]];
+}
+
+-(NSData*) getCampaignData:(int)category {
+    if(SWRVE_CAMPAIGN_LOCATION == category) {
+        // We could add a security check here
+        return [NSData dataWithContentsOfURL: [NSURL fileURLWithPath:[self getLocationPath]]];
+    }
+    return nil;
+}
+
+#ifdef SWRVE_LOCATION_SDK
+-(void)plotFilterNotifications:(PlotFilterNotifications*)filterNotifications {
+    [SwrvePlot filterLocationCampaigns:filterNotifications];
+}
+
+-(void)plotHandleNotification:(UILocalNotification*)localNotification data:(NSString*)data {
+    [SwrvePlot engageLocationCampaign:localNotification withData:data];
+}
+#endif
+
 @end
+
+#ifndef UNITY_IOS
+void UnitySendMessage(const char* _obj, const char* _method, const char* _msg) {
+}
+#endif
