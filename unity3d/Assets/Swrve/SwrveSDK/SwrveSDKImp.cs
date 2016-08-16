@@ -99,7 +99,7 @@ public partial class SwrveSDK
     protected SwrveMessageFormat currentDisplayingMessage = null;
     protected SwrveOrientation currentOrientation;
     protected IInputManager inputManager = NativeInputManager.Instance;
-    private string cdn = "http://swrve-content.s3.amazonaws.com/messaging/message_image/";
+    private string cdn = "https://swrve-content.s3.amazonaws.com/messaging/message_image/";
     protected string prefabName;
 
     // Talk rules
