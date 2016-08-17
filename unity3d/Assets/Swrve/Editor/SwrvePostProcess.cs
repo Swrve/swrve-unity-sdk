@@ -18,7 +18,7 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
   	public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
   	{
     #if UNITY_5
-    	if(target == BuildTarget.iOS)
+    	  if(target == BuildTarget.iOS)
     #else
         if(target == BuildTarget.iPhone)
     #endif
@@ -27,7 +27,6 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
             CorrectXCodeProject(pathToBuiltProject, true);
 
             //Copy the podfile into the project.
-
             CopyFile(PODFILE_LOC, Path.Combine (pathToBuiltProject, "Podfile"));
 
             List<string> podPaths = new List<string>{ "/usr/local/bin/pod", "/usr/bin/pod" };
@@ -46,7 +45,7 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
                 return;
             }
 
-            ExecuteCommand(pathToBuiltProject, podPath, "update");
+            ExecuteCommand(pathToBuiltProject, podPath, "install");
             if (OPEN_WORKSPACE && !UnityEditorInternal.InternalEditorUtility.inBatchMode) {
                 Process.Start (string.Format ("file://{0}/Unity-iPhone.xcworkspace", pathToBuiltProject));
             }
@@ -62,18 +61,18 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
         string path = Path.Combine (Path.Combine (pathToProject, "Unity-iPhone.xcodeproj"), "project.pbxproj");
         string xcodeproj = File.ReadAllText (path);
 
-        xcodeproj = FixList ("OTHER_CFLAGS", xcodeproj);
-        xcodeproj = FixList ("OTHER_LDFLAGS", xcodeproj);
-        xcodeproj = FixList ("HEADER_SEARCH_PATHS", xcodeproj);
-        xcodeproj = FixList ("GCC_PREPROCESSOR_DEFINITIONS", xcodeproj);
-        xcodeproj = FixValue ("SDKROOT", xcodeproj, "\"iphoneos\"");
+        xcodeproj = EnsureInheritedInXCodeList ("OTHER_CFLAGS", xcodeproj);
+        xcodeproj = EnsureInheritedInXCodeList ("OTHER_LDFLAGS", xcodeproj);
+        xcodeproj = EnsureInheritedInXCodeList ("HEADER_SEARCH_PATHS", xcodeproj);
+        xcodeproj = EnsureInheritedInXCodeList ("GCC_PREPROCESSOR_DEFINITIONS", xcodeproj);
+        xcodeproj = SetValueOfXCodeGroup ("SDKROOT", xcodeproj, "\"iphoneos\"");
 
         if (writeOut) {
             File.WriteAllText (path, xcodeproj);
         }
     }
 
-    private static string FixValue (string grouping, string project, string replacewith)
+    private static string SetValueOfXCodeGroup (string grouping, string project, string replacewith)
     {
         string pattern = string.Format (@"{0} = .*;$", grouping);
         string replacement = string.Format (@"{0} = {1};", grouping, replacewith);
@@ -86,7 +85,7 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
         return project;
     }
 
-    private static string FixList (string grouping, string project)
+    private static string EnsureInheritedInXCodeList (string grouping, string project)
     {
         string pattern = string.Format (@"{0} = \($", grouping);
         string replacement = string.Format (@"{0} = (""$(inherited)"",", grouping);
