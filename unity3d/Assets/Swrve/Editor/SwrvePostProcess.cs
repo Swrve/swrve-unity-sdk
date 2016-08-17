@@ -22,7 +22,7 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
         {
             SwrveLog.Log (string.Format ("SwrvePostProcess (iOS) - {0}", PODFILE_LOC));
             //Copy the podfile into the project.
-          
+
             CopyFile(PODFILE_LOC, Path.Combine (pathToBuiltProject, "Podfile"));
 
             List<string> podPaths = new List<string>{ "/usr/local/bin/pod", "/usr/bin/pod" };
@@ -41,7 +41,7 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
                 return;
             }
 
-            ExecuteCommand(pathToBuiltProject, podPath, "install");
+            ExecuteCommand(pathToBuiltProject, podPath, "update");
             if (OPEN_WORKSPACE && !UnityEditorInternal.InternalEditorUtility.inBatchMode) {
                 Process.Start (string.Format ("file://{0}/Unity-iPhone.xcworkspace", pathToBuiltProject));
             }
