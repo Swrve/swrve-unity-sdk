@@ -240,16 +240,25 @@ public class SwrveMessageFormat
     /// <summary>
     /// Initialize the message to be displayed.
     /// </summary>
-    public void Init (Point startPoint, Point endPoint)
+    public void Init (SwrveOrientation deviceOrientation)
     {
         this.Closing = false;
         this.Dismissed = false;
-        this.Message.Position = startPoint;
-        this.Message.TargetPosition = endPoint;
+        // Check if we have to rotate the format
+        this.Rotate = (this.Orientation != deviceOrientation);
 
         if (MessageListener != null) {
             MessageListener.OnShow (this);
         }
+    }
+
+    /// <summary>
+    /// Initialize the message to be displayed.
+    /// </summary>
+    public void InitAnimation (Point startPoint, Point endPoint)
+    {
+        this.Message.Position = startPoint;
+        this.Message.TargetPosition = endPoint;
     }
 
     /// <summary>

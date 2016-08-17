@@ -1,0 +1,5 @@
+target 'Unity-iPhone' do
+  pod 'SwrveSDKCommon', '4.5.1'
+  pod 'SwrveConversationSDK', '4.5.1'
+  pod 'SwrveUnitySDK', '4.5.1'
+end
