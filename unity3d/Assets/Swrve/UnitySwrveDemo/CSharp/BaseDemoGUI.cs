@@ -1,5 +1,3 @@
-#if !UNITY_5
-
 using System;
 using UnityEngine;
 
@@ -97,5 +95,3 @@ public class BaseDemoGUI : MonoBehaviour
         TriggerMessage
     };
 }
-
-#endif
