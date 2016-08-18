@@ -30,7 +30,7 @@ GameObject:
   - 114: {fileID: 11469164}
   - 114: {fileID: 11422904}
   m_Layer: 5
-  m_Name: Header
+  m_Name: HeaderText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -86,7 +86,7 @@ GameObject:
   - 114: {fileID: 11498276}
   - 114: {fileID: 11416388}
   m_Layer: 5
-  m_Name: Content
+  m_Name: ContentText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
