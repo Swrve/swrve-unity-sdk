@@ -1,5 +1,3 @@
-#if !UNITY_5
-
 using UnityEngine;
 using System.Collections;
 using System;
@@ -27,6 +25,10 @@ public class DemoGUI : BaseDemoGUI
         // In-app messaging setup
         swrveComponent.SDK.GlobalMessageListener = new CustomMessageListener (this);
         swrveComponent.SDK.GlobalCustomButtonListener = new CustomButtonListener ();
+
+#if UNITY_5
+        Debug.LogWarning("Consider using the UnitySwrveDemo5xx");
+#endif
     }
 
     void Update ()
@@ -151,5 +153,3 @@ public class DemoGUI : BaseDemoGUI
         }
     }
 }
-
-#endif

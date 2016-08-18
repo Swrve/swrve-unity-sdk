@@ -9,6 +9,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
+/// <summary>
+/// Integrates the native code required for Conversations and Location campaigns support.
+/// </summary>
 public class SwrvePostProcess : SwrveCommonBuildComponent
 {
     public static string PODFILE_LOC = "Assets/Swrve/Editor/Podfile.txt";
@@ -17,43 +20,38 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
     [PostProcessBuild(100)]
   	public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
   	{
-    #if UNITY_5
-    	  if(target == BuildTarget.iOS)
-    #else
+#if UNITY_5
+        if (target == BuildTarget.iOS)
+#else
         if(target == BuildTarget.iPhone)
-    #endif
+#endif
         {
             SwrveLog.Log (string.Format ("SwrvePostProcess (iOS) - {0}", PODFILE_LOC));
-            CorrectXCodeProject(pathToBuiltProject, true);
+            CorrectXCodeProject (pathToBuiltProject, true);
 
             //Copy the podfile into the project.
-            CopyFile(PODFILE_LOC, Path.Combine (pathToBuiltProject, "Podfile"));
+            CopyFile (PODFILE_LOC, Path.Combine (pathToBuiltProject, "Podfile"));
 
             List<string> podPaths = new List<string>{ "/usr/local/bin/pod", "/usr/bin/pod" };
             string podPath = null;
 
             for (int i = 0; i < podPaths.Count; i++) {
-                if(File.Exists(podPaths[i])) {
-                    podPath = podPaths[i];
+                if (File.Exists (podPaths [i])) {
+                    podPath = podPaths [i];
                     break;
                 }
             }
 
-            if (null == podPath)
-            {
-                UnityEngine.Debug.LogError("pod executable not found: " + podPath);
+            if (null == podPath) {
+                UnityEngine.Debug.LogError ("pod executable not found: " + podPath);
                 return;
             }
 
-            ExecuteCommand(pathToBuiltProject, podPath, "install");
+            ExecuteCommand (pathToBuiltProject, podPath, "install");
             if (OPEN_WORKSPACE && !UnityEditorInternal.InternalEditorUtility.inBatchMode) {
                 Process.Start (string.Format ("file://{0}/Unity-iPhone.xcworkspace", pathToBuiltProject));
             }
-    		}
-    		else
-    		{
-    			UnityEngine.Debug.Log("post process for Android");
-    		}
+        }
   	}
 
     private static void CorrectXCodeProject (string pathToProject, bool writeOut)
