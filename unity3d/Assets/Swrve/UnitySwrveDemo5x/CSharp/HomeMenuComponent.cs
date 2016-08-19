@@ -32,7 +32,6 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
     public GameObject _modalQuestionPrefab;
     public GameObject _demoConversationPrefab;
 
-    public GameObject _leftPanel;
     public GameObject _mainMenu;
     public GameObject _messageCenter;
 
@@ -61,9 +60,7 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
         swrveComponent.SDK.ConversationEditorCallback = OnConversation;
     #endif
         
-
         new Dictionary<string, UnityAction> {
-            { "Left Panel", ToLeftPanel },
             { "Main Menu", ToMainMenu },
             { "Message Center", ToMessageCenter }
         }.ToList ().ForEach (kvp => SetButton (kvp, footerPanel));
@@ -104,10 +101,6 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
             stepTarget = position.x + ((left ? -1 : 1) * UnityEngine.Screen.width);
             this.target = target;
         }
-    }
-
-    void ToLeftPanel() {
-        MoveTo (_leftPanel);
     }
 
     void ToMainMenu() {
