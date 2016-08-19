@@ -42,12 +42,17 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
                 }
             }
 
-            if (null == podPath) {
-                UnityEngine.Debug.LogError ("pod executable not found: " + podPath);
-                return;
+            if(null == podPath)
+            {
+                podPath = ExecuteCommand (".", "which", "pod");
+                if(string.IsNullOrEmpty(podPath))
+                {
+                    SwrveLog.LogError("`pod` not found on the filesystem, pod update will likely fail");
+                    podPath = "pod";
+                }
             }
 
-            ExecuteCommand (pathToBuiltProject, podPath, "install");
+            ExecuteCommand (pathToBuiltProject, podPath, "update");
             if (OPEN_WORKSPACE && !UnityEditorInternal.InternalEditorUtility.inBatchMode) {
                 Process.Start (string.Format ("file://{0}/Unity-iPhone.xcworkspace", pathToBuiltProject));
             }
