@@ -348,7 +348,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
         ArrayList<String> conversationEvents = new ArrayList<>();
         try {
-            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, payload, null));
+            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, payload, getNextSequenceNumber()));
         } catch (JSONException e) {
             SwrveLogger.e(LOG_TAG, "Could not queue conversation events params: " + parameters, e);
         }
@@ -407,5 +407,10 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     @CalledByUnity
     public int getConversationVersion() {
         return ISwrveConversationSDK.CONVERSATION_VERSION;
+    }
+
+    @Override
+    public int getNextSequenceNumber() {
+        return 0; //
     }
 }
