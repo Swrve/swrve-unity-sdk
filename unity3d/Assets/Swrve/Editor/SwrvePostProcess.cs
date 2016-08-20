@@ -32,32 +32,39 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
             //Copy the podfile into the project.
             CopyFile (PODFILE_LOC, Path.Combine (pathToBuiltProject, "Podfile"));
 
-            List<string> podPaths = new List<string>{ "/usr/local/bin/pod", "/usr/bin/pod" };
-            string podPath = null;
-
-            for (int i = 0; i < podPaths.Count; i++) {
-                if (File.Exists (podPaths [i])) {
-                    podPath = podPaths [i];
-                    break;
-                }
-            }
-
-            if(null == podPath)
-            {
-                podPath = ExecuteCommand (".", "which", "pod");
-                if(string.IsNullOrEmpty(podPath))
-                {
-                    SwrveLog.LogError("`pod` not found on the filesystem, pod update will likely fail");
-                    podPath = "pod";
-                }
-            }
-
-            ExecuteCommand (pathToBuiltProject, podPath, "update");
+            ExecuteCommand (pathToBuiltProject, GetPodPath(), "update");
             if (OPEN_WORKSPACE && !UnityEditorInternal.InternalEditorUtility.inBatchMode) {
                 Process.Start (string.Format ("file://{0}/Unity-iPhone.xcworkspace", pathToBuiltProject));
             }
         }
-  	}
+    }
+
+    private static string GetPodPath()
+    {
+        List<string> podPaths = new List<string> { "/usr/local/bin/pod", "/usr/bin/pod" };
+        string podPath = null;
+
+        for (int i = 0; i < podPaths.Count; i++) {
+            if (File.Exists (podPaths [i])) {
+                podPath = podPaths [i];
+                break;
+            }
+        }
+
+        if(null == podPath) {
+            podPath = ExecuteCommand (".", "/bin/bash", "-l -c 'which pod'");
+            if(string.IsNullOrEmpty(podPath)) {
+                SwrveLog.LogError("`pod` not found on the filesystem, pod update will likely fail");
+                podPath = "pod";
+            }
+        }
+
+        if ("pod" != podPath) {
+            SwrveLog.Log ("Using CocoaPod location at: " + podPath);
+        }
+		
+        return podPath;
+    }
 
     private static void CorrectXCodeProject (string pathToProject, bool writeOut)
     {
