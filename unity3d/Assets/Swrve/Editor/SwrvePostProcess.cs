@@ -32,38 +32,11 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
             //Copy the podfile into the project.
             CopyFile (PODFILE_LOC, Path.Combine (pathToBuiltProject, "Podfile"));
 
-            ExecuteCommand (pathToBuiltProject, GetPodPath(), "update");
+            ExecuteCommand (pathToBuiltProject, "/bin/bash", "-l -c 'pod update'");
             if (OPEN_WORKSPACE && !UnityEditorInternal.InternalEditorUtility.inBatchMode) {
                 Process.Start (string.Format ("file://{0}/Unity-iPhone.xcworkspace", pathToBuiltProject));
             }
         }
-    }
-
-    private static string GetPodPath()
-    {
-        List<string> podPaths = new List<string> { "/usr/local/bin/pod", "/usr/bin/pod" };
-        string podPath = null;
-
-        for (int i = 0; i < podPaths.Count; i++) {
-            if (File.Exists (podPaths [i])) {
-                podPath = podPaths [i];
-                break;
-            }
-        }
-
-        if(null == podPath) {
-            podPath = ExecuteCommand (".", "/bin/bash", "-l -c 'which pod'");
-            if(string.IsNullOrEmpty(podPath)) {
-                SwrveLog.LogError("`pod` not found on the filesystem, pod update will likely fail");
-                podPath = "pod";
-            }
-        }
-
-        if ("pod" != podPath) {
-            SwrveLog.Log ("Using CocoaPod location at: " + podPath);
-        }
-		
-        return podPath;
     }
 
     private static void CorrectXCodeProject (string pathToProject, bool writeOut)
@@ -76,6 +49,8 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
         xcodeproj = EnsureInheritedInXCodeList ("HEADER_SEARCH_PATHS", xcodeproj);
         xcodeproj = EnsureInheritedInXCodeList ("GCC_PREPROCESSOR_DEFINITIONS", xcodeproj);
         xcodeproj = SetValueOfXCodeGroup ("SDKROOT", xcodeproj, "\"iphoneos\"");
+
+        xcodeproj = Regex.Replace (xcodeproj, @"^.*Libraries/Plugins/Android/SwrveSDKPushSupport.*$", "", RegexOptions.Multiline);
 
         if (writeOut) {
             File.WriteAllText (path, xcodeproj);
