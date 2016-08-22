@@ -74,11 +74,22 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
     {
         string pattern = string.Format (@"{0} = \($", grouping);
         string replacement = string.Format (@"{0} = (""$(inherited)"",", grouping);
+        RegexOptions opts = RegexOptions.Multiline;
 
-        Match match = Regex.Match (project, pattern, RegexOptions.Multiline);
-        log (string.Format ("searching for {0}, found: {1}", pattern, match.Success));
+        Match match = Regex.Match (project, pattern, opts);
+        if(!match.Success)
+        {
+            opts = RegexOptions.None;
+            pattern = string.Format("{0} = [\"]*([^\"]+)[\"]*;", grouping);
+            match = Regex.Match (project, pattern, opts);
+            replacement = string.Format (@"{0} = (""$(inherited)"", ""{1}"");", grouping, match.Groups[1]);
+        }
 
-        project = Regex.Replace (project, pattern, replacement, RegexOptions.Multiline);
+        if(match.Success)
+        {
+            log (string.Format ("{0} << found\n{1} << searched for", match.Groups[0], pattern));
+            project = Regex.Replace (project, pattern, replacement, opts);
+        }
 
         return project;
     }
