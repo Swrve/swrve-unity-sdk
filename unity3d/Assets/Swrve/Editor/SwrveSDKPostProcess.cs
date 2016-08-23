@@ -13,6 +13,7 @@ public class SwrveSDKPostProcess
 //    [PostProcessBuild]
     public static void OnPostprocessBuild (BuildTarget target, string pathToBuiltProject)
     {
+#if UNITY_IPHONE
 #if UNITY_5
         if (target == BuildTarget.iOS && pathToBuiltProject != null) {
 #else
@@ -20,8 +21,10 @@ public class SwrveSDKPostProcess
 #endif
             iOSOnlySendRemoteNotificationsIfInBackground (pathToBuiltProject);
         }
-    }
+#endif
+        }
 
+#if UNITY_IPHONE
     public static void iOSOnlySendRemoteNotificationsIfInBackground (string path)
     {
         List<string> allMMFiles = GetAllFiles (path, "*.mm");
@@ -58,6 +61,7 @@ public class SwrveSDKPostProcess
             }
         }
     }
+#endif
 
     static List<string> GetAllFiles (string path, string fileExtension)
     {

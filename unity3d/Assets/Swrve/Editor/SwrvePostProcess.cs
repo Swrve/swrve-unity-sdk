@@ -5,6 +5,8 @@ using System.Collections;
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using UnityEditor;
 
 public class SwrvePostProcess : SwrveCommonBuildComponent
 {
@@ -46,7 +48,16 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
                 Process.Start (string.Format ("file://{0}/Unity-iPhone.xcworkspace", pathToBuiltProject));
             }
 		}
-		else
+		else if(target == BuildTarget.WSAPlayer)
+        {
+	        List<string> uwpProjs = new List<string>() { "UWP\\Assembly-CSharp-firstpass", "UWP\\Assembly-CSharp" };
+
+	        for (int i = 0; i < uwpProjs.Count; i++)
+	        {
+	            File.Copy(Path.Combine(projRoot, "UnityCommon.props"), Path.Combine(uwpProjs[i], "UnityCommon.props"), true);
+	        }
+        }
+        else
 		{
 			UnityEngine.Debug.Log("post process for Android");
 		}

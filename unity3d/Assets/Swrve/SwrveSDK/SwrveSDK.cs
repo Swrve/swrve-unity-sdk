@@ -1,4 +1,4 @@
-#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE
+#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WSA_10_0
 #define SWRVE_SUPPORTED_PLATFORM
 #endif
 using UnityEngine;
@@ -17,9 +17,12 @@ using Swrve.Messaging;
 using Swrve.Helpers;
 using Swrve.ResourceManager;
 using Swrve.Device;
-using Swrve.IAP;
 
-#if UNITY_WP8 || UNITY_METRO
+#if UNITY_IPHONE
+using System.Runtime.InteropServices;
+#endif
+
+#if (UNITY_WP8 || UNITY_METRO) && !UNITY_WSA_10_0
 #error "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk."
 + "It is not covered by any performance warranty otherwise offered by Swrve"
 #endif
@@ -342,6 +345,8 @@ public partial class SwrveSDK : ISwrveAssetController
                 config.AppStore = SwrveAppStore.Google;
 #elif UNITY_IPHONE
                 config.AppStore = SwrveAppStore.Apple;
+#elif UNITY_WSA_10_0
+                config.AppStore = SwrveAppStore.Windows;
 #else
                 throw new Exception ("App store must be apple, google, amazon or a custom app store");
 #endif
