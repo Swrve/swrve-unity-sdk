@@ -50,16 +50,17 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
 		}
 		else if(target == BuildTarget.WSAPlayer)
         {
+            SwrveLog.Log (string.Format ("SwrvePostProcess (Windows Store) - {0}", pathToBuiltProject));
 	        List<string> uwpProjs = new List<string>() { "UWP\\Assembly-CSharp-firstpass", "UWP\\Assembly-CSharp" };
 
 	        for (int i = 0; i < uwpProjs.Count; i++)
 	        {
-	            File.Copy(Path.Combine(projRoot, "UnityCommon.props"), Path.Combine(uwpProjs[i], "UnityCommon.props"), true);
+	            File.Copy(Path.Combine(pathToBuiltProject, "UnityCommon.props"), Path.Combine(uwpProjs[i], "UnityCommon.props"), true);
 	        }
         }
         else
 		{
-			UnityEngine.Debug.Log("post process for Android");
+			SwrveLog.Log("post process for " + target);
 		}
 	}
 }
