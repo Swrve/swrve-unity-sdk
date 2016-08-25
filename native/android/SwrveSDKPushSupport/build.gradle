@@ -13,7 +13,6 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:support-v4:' + project.ANDROID_DESIGN_TOOLS_VERSION
     compile 'com.google.android.gms:play-services-base:' + project.GOOGLE_GMS_TOOLS_VERSION
     compile 'com.google.android.gms:play-services-basement:' + project.GOOGLE_GMS_TOOLS_VERSION
