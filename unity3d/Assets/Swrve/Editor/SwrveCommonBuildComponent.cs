@@ -174,8 +174,9 @@ public class SwrveCommonBuildComponent
         ExecuteCommand (workingDirectory, "/bin/bash", arguments);
     }
 
-    protected static void ExecuteCommand(string workingDirectory, string filename, string arguments)
+    protected static string ExecuteCommand (string workingDirectory, string filename, string arguments)
     {
+        string resp = "";
         if ("." == workingDirectory) {
             workingDirectory = new DirectoryInfo (".").FullName;
         }
@@ -184,7 +185,7 @@ public class SwrveCommonBuildComponent
         proc.StartInfo.WorkingDirectory = workingDirectory;
         proc.StartInfo.FileName = filename;
         proc.StartInfo.Arguments = arguments;
-        SwrveLog.Log(string.Format("Executing {0} command: {1} (in: {2} )\n(cd {2}; {0} {1})",
+        SwrveLog.Log (string.Format ("Executing {0} command: {1} (in: {2} )\n(cd {2}; {0} {1})",
             filename, arguments, workingDirectory
         ));
 
@@ -194,28 +195,27 @@ public class SwrveCommonBuildComponent
         proc.StartInfo.RedirectStandardError = true;
         proc.StartInfo.RedirectStandardOutput = true;
 
-        try
-        {
-            proc.Start();
-            proc.StandardError.ReadToEnd();
-            string stdOutput = proc.StandardOutput.ReadToEnd();
-            string errorOutput = proc.StandardError.ReadToEnd();
+        try {
+            proc.Start ();
+            proc.StandardError.ReadToEnd ();
+            resp = proc.StandardOutput.ReadToEnd ();
+            string errorOutput = proc.StandardError.ReadToEnd ();
 
-            if("" != stdOutput) {
-                SwrveLog.Log(stdOutput);
+            if ("" != resp) {
+                SwrveLog.Log (resp);
             }
-            if("" != errorOutput) {
-                SwrveLog.LogError(errorOutput);
+            if ("" != errorOutput) {
+                SwrveLog.LogError (errorOutput);
             }
 
             if (proc.ExitCode == 0) {
                 UnityEngine.Debug.Log (filename + " " + arguments + " successfull");
             }
+        } catch (Exception e) {
+            throw new Exception (string.Format ("Encountered unexpected error while running {0}", filename), e);
         }
-        catch (Exception e)
-        {
-            throw new Exception(string.Format("Encountered unexpected error while running {0}", filename), e);
-        }
+
+        return resp;
     }
 
 }
