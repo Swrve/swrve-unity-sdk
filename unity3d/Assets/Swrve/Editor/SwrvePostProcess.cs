@@ -8,34 +8,23 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
+using UnityEditor.iOS.Xcode;
 
 /// <summary>
 /// Integrates the native code required for Conversations and Location campaigns support.
 /// </summary>
 public class SwrvePostProcess : SwrveCommonBuildComponent
 {
-    public static string PODFILE_LOC = "Assets/Swrve/Editor/Podfile.txt";
-    public static bool OPEN_WORKSPACE = false;
-
     [PostProcessBuild(100)]
-  	public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
-  	{
+    public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
+    {
 #if UNITY_5
         if (target == BuildTarget.iOS)
 #else
         if(target == BuildTarget.iPhone)
 #endif
         {
-            SwrveLog.Log (string.Format ("SwrvePostProcess (iOS) - {0}", PODFILE_LOC));
             CorrectXCodeProject (pathToBuiltProject, true);
-
-            //Copy the podfile into the project.
-            CopyFile (PODFILE_LOC, Path.Combine (pathToBuiltProject, "Podfile"));
-
-            ExecuteCommand (pathToBuiltProject, "/bin/bash", "-l -c 'pod update'");
-            if (OPEN_WORKSPACE && !UnityEditorInternal.InternalEditorUtility.inBatchMode) {
-                Process.Start (string.Format ("file://{0}/Unity-iPhone.xcworkspace", pathToBuiltProject));
-            }
         }
     }
 
@@ -44,58 +33,91 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
         string path = Path.Combine (Path.Combine (pathToProject, "Unity-iPhone.xcodeproj"), "project.pbxproj");
         string xcodeproj = File.ReadAllText (path);
 
-        xcodeproj = EnsureInheritedInXCodeList ("OTHER_CFLAGS", xcodeproj);
-        xcodeproj = EnsureInheritedInXCodeList ("OTHER_LDFLAGS", xcodeproj);
-        xcodeproj = EnsureInheritedInXCodeList ("HEADER_SEARCH_PATHS", xcodeproj);
-        xcodeproj = EnsureInheritedInXCodeList ("GCC_PREPROCESSOR_DEFINITIONS", xcodeproj);
+        // 1. Make sure it can run on devices and emus!
         xcodeproj = SetValueOfXCodeGroup ("SDKROOT", xcodeproj, "\"iphoneos\"");
 
+        // 2. Enable Objective C exceptions
+        xcodeproj = xcodeproj.Replace("GCC_ENABLE_OBJC_EXCEPTIONS = NO;", "GCC_ENABLE_OBJC_EXCEPTIONS = YES;");
+
+        // 3. Remove Android content that gets injected in the XCode project
         xcodeproj = Regex.Replace (xcodeproj, @"^.*Libraries/Plugins/Android/SwrveSDKPushSupport.*$", "", RegexOptions.Multiline);
 
+        // 4. Add required framewroks for Conversations
+        PBXProject project = new PBXProject();
+        project.ReadFromString (xcodeproj);
+        string targetGuid = project.TargetGuidByName ("Unity-iPhone");
+        project.AddFrameworkToProject (targetGuid, "AddressBook.framework", false);
+        project.AddFrameworkToProject (targetGuid, "AssetsLibrary.framework", false);
+        project.AddFrameworkToProject (targetGuid, "AdSupport.framework", false);
+        project.AddFrameworkToProject (targetGuid, "Contacts.framework", true);
+        project.AddFrameworkToProject (targetGuid, "Photos.framework", true);
+
+        // 5. Add conversations resources to bundle (to project and to a new PBXResourcesBuildPhase)
+        string resourcesProjectPath = "Libraries/Plugins/iOS/SwrveConversationSDK/Resources";
+        string resourcesPath = pathToProject + Path.DirectorySeparatorChar + resourcesProjectPath;
+        System.IO.Directory.CreateDirectory (resourcesPath);
+        string[] resources = System.IO.Directory.GetFiles ("Assets/Plugins/iOS/SwrveConversationSDK/Resources");
+        string fileGuids = "";
+
+        if (resources.Length == 0) {
+            UnityEngine.Debug.LogError ("Swrve SDK - Could not find any resources. If you want to use Conversations please contact support@swrve.com");
+        }
+
+        for (int i = 0; i < resources.Length; i++) {
+            string resourcePath = resources [i];
+            if (!resourcesPath.EndsWith (".meta")) {
+                string resourceFileName = System.IO.Path.GetFileName (resourcePath);
+                string newPath = resourcesPath + Path.DirectorySeparatorChar + resourceFileName;
+                System.IO.File.Copy (resourcePath, newPath);
+                string resourceGuid = project.AddFile (newPath, resourcesProjectPath + Path.DirectorySeparatorChar + resourceFileName);
+                project.AddFileToBuild (targetGuid, resourceGuid);
+                fileGuids += "        " + resourceGuid + ", /* " + resourceFileName + " */" + Environment.NewLine;
+            }
+        }
+        xcodeproj = project.WriteToString ();
+
+        // Write new PBXResourcesBuildPhase
+        string resourcesPhaseGuid = GenerateResourceGuid (xcodeproj, "34D6B58518607986004707B7");
+        string newResourcesPhase = Environment.NewLine + "/* Begin Swrve PBXResourcesBuildPhase section */" + Environment.NewLine;
+        newResourcesPhase += resourcesPhaseGuid + " /* Swrve Resources */ = {" + Environment.NewLine;
+        newResourcesPhase += "    isa = PBXResourcesBuildPhase;" + Environment.NewLine;
+        newResourcesPhase += "    buildActionMask = 2147483647;" + Environment.NewLine;
+        newResourcesPhase += "    files = (" + Environment.NewLine;
+        newResourcesPhase += fileGuids;
+        newResourcesPhase += "    );" + Environment.NewLine;
+        newResourcesPhase += "    runOnlyForDeploymentPostprocessing = 0;" + Environment.NewLine;
+        newResourcesPhase += "};" + Environment.NewLine + "/* End Swrve PBXResourcesBuildPhase section */" + Environment.NewLine;
+        // Find injection point as first entry in tbe 'objects = {' entry
+        Match resourcesInjectionPoint = Regex.Match(xcodeproj, @"objects(\s)*=(\s)*{");
+        if (resourcesInjectionPoint.Success) {
+            int injectionPoint = resourcesInjectionPoint.Index + resourcesInjectionPoint.Length;
+            xcodeproj = xcodeproj.Insert (injectionPoint, newResourcesPhase);
+        } else {
+            UnityEngine.Debug.LogError ("Swrve SDK - Could not find injection point for resources in the pbxproj. If you want to use Conversations please contact support@swrve.com");
+        }
+
+        // Write changes to the Xcode project
         if (writeOut) {
             File.WriteAllText (path, xcodeproj);
         }
+
     }
 
     private static string SetValueOfXCodeGroup (string grouping, string project, string replacewith)
     {
         string pattern = string.Format (@"{0} = .*;$", grouping);
         string replacement = string.Format (@"{0} = {1};", grouping, replacewith);
-
         Match match = Regex.Match (project, pattern, RegexOptions.Multiline);
-        log (string.Format ("searching for {0}, found: {1}", pattern, match.Success));
-
         project = Regex.Replace (project, pattern, replacement, RegexOptions.Multiline);
-
         return project;
     }
 
-    private static string EnsureInheritedInXCodeList (string grouping, string project)
+    private static string GenerateResourceGuid(string xcodeproj, string defaultGuid)
     {
-        string pattern = string.Format (@"{0} = \($", grouping);
-        string replacement = string.Format (@"{0} = (""$(inherited)"",", grouping);
-        RegexOptions opts = RegexOptions.Multiline;
-
-        Match match = Regex.Match (project, pattern, opts);
-        if(!match.Success)
-        {
-            opts = RegexOptions.None;
-            pattern = string.Format("{0} = [\"]*([^\"]+)[\"]*;", grouping);
-            match = Regex.Match (project, pattern, opts);
-            replacement = string.Format (@"{0} = (""$(inherited)"", ""{1}"");", grouping, match.Groups[1]);
+        string guid = defaultGuid;
+        while (xcodeproj.Contains(guid)) {
+            guid = Guid.NewGuid().ToString().Replace("-", string.Empty).Substring(0, 24);
         }
-
-        if(match.Success)
-        {
-            log (string.Format ("{0} << found\n{1} << searched for", match.Groups[0], pattern));
-            project = Regex.Replace (project, pattern, replacement, opts);
-        }
-
-        return project;
-    }
-
-    private static void log(string msg)
-    {
-        UnityEngine.Debug.Log(msg);
+        return guid;
     }
 }
