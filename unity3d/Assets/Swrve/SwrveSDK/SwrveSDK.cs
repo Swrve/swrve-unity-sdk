@@ -8,6 +8,7 @@ using System.Collections;
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Globalization;
 using Swrve;
@@ -17,10 +18,6 @@ using Swrve.Helpers;
 using Swrve.ResourceManager;
 using Swrve.Device;
 using Swrve.IAP;
-
-#if UNITY_IPHONE
-using System.Runtime.InteropServices;
-#endif
 
 #if UNITY_WP8 || UNITY_METRO
 #error "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk."
@@ -38,33 +35,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK : ISwrveAssetController
 {
-    public const string SdkVersion = "4.5";
-
-#if UNITY_IPHONE
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSGetLanguage();
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSGetTimeZone();
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSGetAppVersion();
-
-    [DllImport ("__Internal")]
-    private static extern void _swrveRegisterForPushNotifications();
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSUUID();
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveLocaleCountry();
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveIDFA();
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveIDFV();
-#endif
+    public const string SdkVersion = "4.5.1";
 
     private int gameId;
     /// <summary>
@@ -143,6 +114,10 @@ public partial class SwrveSDK : ISwrveAssetController
     /// Disable default renderer and manage messages manually.
     /// </summary>
     public ISwrveTriggeredMessageListener TriggeredMessageListener = null;
+
+#if UNITY_EDITOR
+    public Action<string> ConversationEditorCallback;
+#endif
 
     /// <summary>
     /// A callback to get notified when user resources have been updated.
@@ -252,6 +227,8 @@ public partial class SwrveSDK : ISwrveAssetController
         this.Container = container;
         this.ResourceManager = new Swrve.ResourceManager.SwrveResourceManager ();
         this.config = config;
+        this.prefabName = container.name;
+
         this.gameId = gameId;
         this.apiKey = apiKey;
         this.userId = config.UserId;
@@ -385,8 +362,14 @@ public partial class SwrveSDK : ISwrveAssetController
             }
         }
 
-        StartCampaignsAndResourcesTimer();
         DisableAutoShowAfterDelay();
+
+        if(SwrveHelper.IsOnDevice())
+        {
+            InitNative();
+        }
+
+        StartCampaignsAndResourcesTimer();
 #endif
     }
 
@@ -551,165 +534,6 @@ public partial class SwrveSDK : ISwrveAssetController
         _Iap (quantity, productId, productPrice, currency, rewards, string.Empty, string.Empty, string.Empty, "unknown_store");
 #endif
     }
-
-#if UNITY_IPHONE
-    /// <summary>
-    /// Buffer the event of a purchase using real currency, where a single item
-    /// (that isn't an in-app currency) was purchased.
-    /// The receipt provided will be validated against the iTunes Store.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "iap" event.
-    /// Note that this method is currently only supported for the Apple App Store,
-    /// and a valid receipt needs to be provided for verification.
-    /// </remarks>
-    /// <param name="quantity">
-    /// Quantity purchased.
-    /// </param>
-    /// <param name="productId">
-    /// Unique product identifier for the item bought. This should match the Swrve resource name.
-    /// </param>
-    /// <param name="productPrice">
-    /// Price of the product purchased in real money. Note that this is the price
-    /// per product, not the total price of the transaction (when quantity > 1).
-    /// </param>
-    /// <param name="currency">
-    /// Real world currency used for this transaction. This must be an ISO currency code.
-    /// </param>
-    /// <param name="receipt">
-    /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
-    /// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
-    /// </param>
-    public void IapApple (int quantity, string productId, double productPrice, string currency, IapReceipt receipt)
-    {
-        IapApple (quantity, productId, productPrice, currency, receipt, string.Empty);
-    }
-
-    /// <summary>
-    /// Buffer the event of a purchase using real currency, where a single item
-    /// (that isn't an in-app currency) was purchased.
-    /// The receipt provided will be validated against the iTunes Store.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "iap" event.
-    /// Note that this method is currently only supported for the Apple App Store,
-    /// and a valid receipt needs to be provided for verification.
-    /// </remarks>
-    /// <param name="quantity">
-    /// Quantity purchased.
-    /// </param>
-    /// <param name="productId">
-    /// Unique product identifier for the item bought. This should match the Swrve resource name.
-    /// </param>
-    /// <param name="productPrice">
-    /// Price of the product purchased in real money. Note that this is the price
-    /// per product, not the total price of the transaction (when quantity > 1).
-    /// </param>
-    /// <param name="currency">
-    /// Real world currency used for this transaction. This must be an ISO currency code.
-    /// </param>
-    /// <param name="receipt">
-    /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
-    /// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
-    /// </param>
-    /// <param name="transactionId">
-    /// The transaction id identifying the purchase iOS7+ (see SKPaymentTransaction::transactionIdentifier).
-    /// </param>
-    public void IapApple (int quantity, string productId, double productPrice, string currency, IapReceipt receipt, string transactionId)
-    {
-        IapRewards no_rewards = new IapRewards();
-        IapApple (quantity, productId, productPrice, currency, no_rewards, receipt, transactionId);
-    }
-
-    /// <summary>
-    /// Buffer the event of a purchase using real currency, where any in-app
-    /// currencies were purchased, or where multiple items were purchased as part of a bundle.
-    /// The receipt provided will be validated against the iTunes Store.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "iap" event.
-    /// Note that this method is currently only supported for the Apple App Store,
-    /// and a valid receipt needs to be provided for verification.
-    /// </remarks>
-    /// <param name="quantity">
-    /// Quantity purchased.
-    /// </param>
-    /// <param name="productId">
-    /// Unique product identifier for the item bought. This should match the Swrve resource name.
-    /// </param>
-    /// <param name="productPrice">
-    /// Price of the product purchased in real money. Note that this is the price
-    /// per product, not the total price of the transaction (when quantity > 1).
-    /// </param>
-    /// <param name="currency">
-    /// Real world currency used for this transaction. This must be an ISO currency code.
-    /// </param>
-    /// <param name="rewards">
-    /// SwrveIAPRewards object containing any in-app currency and/or additional items
-    /// included in this purchase that need to be recorded.
-    /// This parameter is optional.
-    /// </param>
-    /// <param name="receipt">
-    /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
-    /// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
-    /// </param>
-    public void IapApple (int quantity, string productId, double productPrice, string currency, IapRewards rewards, IapReceipt receipt)
-    {
-        IapApple (quantity, productId, productPrice, currency, rewards, receipt, string.Empty);
-    }
-
-    /// <summary>
-    /// Buffer the event of a purchase using real currency, where any in-app
-    /// currencies were purchased, or where multiple items were purchased as part of a bundle.
-    /// The receipt provided will be validated against the iTunes Store.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "iap" event.
-    /// Note that this method is currently only supported for the Apple App Store,
-    /// and a valid receipt needs to be provided for verification.
-    /// </remarks>
-    /// <param name="quantity">
-    /// Quantity purchased.
-    /// </param>
-    /// <param name="productId">
-    /// Unique product identifier for the item bought. This should match the Swrve resource name.
-    /// </param>
-    /// <param name="productPrice">
-    /// Price of the product purchased in real money. Note that this is the price
-    /// per product, not the total price of the transaction (when quantity > 1).
-    /// </param>
-    /// <param name="currency">
-    /// Real world currency used for this transaction. This must be an ISO currency code.
-    /// </param>
-    /// <param name="rewards">
-    /// SwrveIAPRewards object containing any in-app currency and/or additional items
-    /// included in this purchase that need to be recorded.
-    /// This parameter is optional.
-    /// </param>
-    /// <param name="receipt">
-    /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
-    /// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
-    /// </param>
-    /// <param name="transactionId">
-    /// The transaction id identifying the purchase iOS7+ (see SKPaymentTransaction::transactionIdentifier).
-    /// </param>
-    public void IapApple (int quantity, string productId, double productPrice, string currency, IapRewards rewards, IapReceipt receipt, string transactionId)
-    {
-        if (config.AppStore != "apple") {
-            throw new Exception("This function can only be called to validate IAP events from Apple");
-        } else {
-            string encodedReceipt = null;
-            if (receipt != null) {
-                encodedReceipt = receipt.GetBase64EncodedReceipt();
-            }
-            if (String.IsNullOrEmpty(encodedReceipt)) {
-                SwrveLog.LogError("IAP event not sent: receipt cannot be empty for Apple Store verification");
-                return;
-            }
-            _Iap (quantity, productId, productPrice, currency, rewards, encodedReceipt, string.Empty, transactionId, config.AppStore);
-        }
-    }
-#endif
 
 #if UNITY_ANDROID
     /// <summary>
@@ -1016,7 +840,6 @@ public partial class SwrveSDK : ISwrveAssetController
 #elif UNITY_METRO
         string os = "WindowsStore";
 #else
-#error
         string os = Application.platform.ToString();
 #endif
 
@@ -1039,72 +862,7 @@ public partial class SwrveSDK : ISwrveAssetController
         String tzUtcOffsetSeconds = DateTimeOffset.Now.Offset.TotalSeconds.ToString();
         deviceInfo ["swrve.utc_offset_seconds"] = tzUtcOffsetSeconds;
 
-#if UNITY_IPHONE
-        if (!string.IsNullOrEmpty(iOSdeviceToken)) {
-            deviceInfo["swrve.ios_token"] = iOSdeviceToken;
-        }
-
-        try {
-            deviceInfo ["swrve.timezone_name"] = _swrveiOSGetTimeZone();
-        } catch (Exception e) {
-            SwrveLog.LogWarning("Couldn't get device timezone on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
-        }
-
-        try {
-            deviceInfo ["swrve.device_region"] = _swrveLocaleCountry();
-        } catch (Exception e) {
-            SwrveLog.LogWarning("Couldn't get device region on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
-        }
-
-        if (config.LogAppleIDFV) {
-            try {
-                String idfv = _swrveIDFV();
-                if (!string.IsNullOrEmpty(idfv)) {
-                    deviceInfo ["swrve.IDFV"] = idfv;
-                }
-            } catch (Exception e) {
-                SwrveLog.LogWarning("Couldn't get device IDFV, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
-            }
-        }
-        if (config.LogAppleIDFA) {
-            try {
-                String idfa = _swrveIDFA();
-                if (!string.IsNullOrEmpty(idfa)) {
-                    deviceInfo ["swrve.IDFA"] = idfa;
-                }
-            } catch (Exception e) {
-                SwrveLog.LogWarning("Couldn't get device IDFA, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
-            }
-        }
-#elif UNITY_ANDROID
-        if (!string.IsNullOrEmpty(gcmDeviceToken)) {
-            deviceInfo["swrve.gcm_token"] = gcmDeviceToken;
-        }
-
-        string timezone = AndroidGetTimezone();
-        if (!string.IsNullOrEmpty(timezone)) {
-            deviceInfo ["swrve.timezone_name"] = timezone;
-        }
-
-        string deviceRegion = AndroidGetRegion();
-        if (!string.IsNullOrEmpty(deviceRegion)) {
-            deviceInfo ["swrve.device_region"] = deviceRegion;
-        }
-        
-        if (config.LogAndroidId) {
-            try {
-                deviceInfo ["swrve.android_id"] = AndroidGetAndroidId();
-            } catch (Exception e) {
-                SwrveLog.LogWarning("Couldn't get device IDFA, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
-            }
-        }
-
-        if (config.LogGoogleAdvertisingId) {
-            if (!string.IsNullOrEmpty(googlePlayAdvertisingId)) {
-                deviceInfo ["swrve.GAID"] = googlePlayAdvertisingId;
-            }
-        }
-#endif
+        setNativeInfo (deviceInfo);
 
         // Carrier info
         ICarrierInfo carrierInfo = GetCarrierInfoProvider();
@@ -1226,7 +984,7 @@ public partial class SwrveSDK : ISwrveAssetController
                     SwrveLog.Log("Sending click event: " + clickEvent);
                     Dictionary<string, string> clickPayload = new Dictionary<string, string> ();
                     clickPayload.Add ("name", button.Name);
-                    NamedEventInternal (clickEvent, clickPayload);
+                    NamedEventInternal (clickEvent, clickPayload, false);
                 }
             } catch (Exception e) {
                 SwrveLog.LogError("Error while processing button click " + e);
@@ -1266,7 +1024,7 @@ public partial class SwrveSDK : ISwrveAssetController
             payload.Add ("format", messageFormat.Name);
             payload.Add ("orientation", messageFormat.Orientation.ToString ());
             payload.Add ("size", messageFormat.Size.X + "x" + messageFormat.Size.Y);
-            NamedEventInternal (viewEvent, payload);
+            NamedEventInternal (viewEvent, payload, false);
         } catch (Exception e) {
             SwrveLog.LogError("Error while processing message impression " + e);
         }
@@ -1279,13 +1037,25 @@ public partial class SwrveSDK : ISwrveAssetController
     /// <returns>
     /// True if there are any in-app messages currently on screen.
     /// </returns>
-    public bool IsMessageDispaying ()
+    public bool IsMessageDisplaying ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
         return (currentMessage != null);
 #else
         return false;
 #endif
+    }
+
+
+    [Obsolete("IsMessageDispaying is deprecated, please use IsMessageDisplaying instead.")]
+    public bool IsMessageDispaying () { return IsMessageDisplaying (); }
+
+    public void SetLocationSegmentVersion(int locationSegmentVersion) {
+        this.locationSegmentVersion = locationSegmentVersion;
+    }
+
+    public void SetConversationVersion(int conversationVersion) {
+        this.conversationVersion = conversationVersion;
     }
 
     /// <summary>
@@ -1323,13 +1093,13 @@ public partial class SwrveSDK : ISwrveAssetController
     /// <returns>
     /// In-app message for the given event.
     /// </returns>
-	  public SwrveMessage GetMessageForEvent (string eventName, IDictionary<string, string> payload=null) {
-    		if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
-    			return null;
-    		}
+    public SwrveMessage GetMessageForEvent (string eventName, IDictionary<string, string> payload=null) {
+        if (!checkCampaignRules (eventName, SwrveHelper.GetNow ())) {
+            return null;
+        }
 
         try {
-            return _getMessageForEvent(eventName, payload);
+            return _getMessageForEvent (eventName, payload);
         } catch (Exception e) {
             SwrveLog.LogError (e.ToString (), "message");
         }
@@ -1344,60 +1114,146 @@ public partial class SwrveSDK : ISwrveAssetController
 
         SwrveLog.Log("Trying to get message for: " + eventName);
 
-        if (campaigns != null) {
-            IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
-            List<SwrveMessage> availableMessages = new List<SwrveMessage>();
-            // Select messages with higher priority
-            int minPriority = int.MaxValue;
-            List<SwrveMessage> candidateMessages = new List<SwrveMessage>();
-            SwrveOrientation deviceOrientation = GetDeviceOrientation();
-            while (itCampaign.MoveNext() && result == null) {
-                if(!itCampaign.Current.IsA<SwrveMessagesCampaign>()) {
-                    continue;
-                }
+        IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
+        List<SwrveMessage> availableMessages = new List<SwrveMessage>();
+        // Select messages with higher priority
+        int minPriority = int.MaxValue;
+        List<SwrveMessage> candidateMessages = new List<SwrveMessage>();
+        SwrveOrientation deviceOrientation = GetDeviceOrientation();
+        while (itCampaign.MoveNext() && result == null) {
+            if(!itCampaign.Current.IsA<SwrveMessagesCampaign>()) {
+                continue;
+            }
 
-                SwrveMessagesCampaign nextCampaign = (SwrveMessagesCampaign)itCampaign.Current;
-                SwrveMessage nextMessage = nextCampaign.GetMessageForEvent (eventName, payload, qaUser);
-                // Check if the message supports the current orientation
-                if (nextMessage != null) {
-                    if (nextMessage.SupportsOrientation(deviceOrientation)) {
-                        availableMessages.Add(nextMessage);
-                        if (nextMessage.Priority <= minPriority) {
-                            if (nextMessage.Priority < minPriority) {
-                                // If it is lower than any of the previous ones
-                                // remove those from being candidates
-                                candidateMessages.Clear();
-                            }
-                            minPriority = nextMessage.Priority;
-                            candidateMessages.Add(nextMessage);
+            SwrveMessagesCampaign nextCampaign = (SwrveMessagesCampaign)itCampaign.Current;
+            SwrveMessage nextMessage = nextCampaign.GetMessageForEvent (eventName, payload, qaUser);
+            // Check if the message supports the current orientation
+            if (nextMessage != null) {
+                if (nextMessage.SupportsOrientation(deviceOrientation)) {
+                    availableMessages.Add(nextMessage);
+                    if (nextMessage.Priority <= minPriority) {
+                        if (nextMessage.Priority < minPriority) {
+                            // If it is lower than any of the previous ones
+                            // remove those from being candidates
+                            candidateMessages.Clear();
                         }
-                    } else {
-                        if (qaUser != null) {
-                            qaUser.campaignMessages[nextCampaign.Id] = nextMessage;
-                            qaUser.campaignReasons[nextCampaign.Id] = "Message didn't support the current device orientation: " + deviceOrientation;
-                        }
+                        minPriority = nextMessage.Priority;
+                        candidateMessages.Add(nextMessage);
+                    }
+                } else {
+                    if (qaUser != null) {
+                        qaUser.campaignMessages[nextCampaign.Id] = nextMessage;
+                        qaUser.campaignReasons[nextCampaign.Id] = "Message didn't support the current device orientation: " + deviceOrientation;
                     }
                 }
             }
+        }
 
-            // Select randomly from the highest messages
-            if (candidateMessages.Count > 0) {
-                candidateMessages.Shuffle();
-                result = candidateMessages[0];
-                campaign = result.Campaign;
+        // Select randomly from the highest messages
+        if (candidateMessages.Count > 0) {
+            candidateMessages.Shuffle();
+            result = candidateMessages[0];
+            campaign = result.Campaign;
+        }
+
+        if (qaUser != null && campaign != null && result != null) {
+            // A message was chosen, check if other campaigns would have returned a message
+            IEnumerator<SwrveMessage> itOtherMessage = availableMessages.GetEnumerator ();
+            while (itOtherMessage.MoveNext()) {
+                SwrveMessage otherMessage = itOtherMessage.Current;
+                if (otherMessage != result) {
+                    int otherCampaignId = otherMessage.Campaign.Id;
+                    if((qaUser != null) && !qaUser.campaignMessages.ContainsKey(otherCampaignId)) {
+                        qaUser.campaignMessages.Add (otherCampaignId, otherMessage);
+                        qaUser.campaignReasons.Add (otherCampaignId, "Campaign " + campaign.Id + " was selected for display ahead of this campaign");
+                    }
+                }
+            }
+        }
+
+        return result;
+#else
+        return null;
+#endif
+    }
+
+    /// <summary>
+    /// Obtain a Swrve Message for the given event.
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "event" event.
+    /// </remarks>
+    /// <param name="eventName">
+    /// The name of the event that was triggered.
+    /// </param>
+    /// <returns>
+    /// Swrve Message for the given event.
+    /// </returns>
+    public SwrveConversation GetConversationForEvent (string eventName, IDictionary<string, string> payload=null) {
+        if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
+            return null;
+        }
+
+        try {
+            return _getConversationForEvent(eventName, payload);
+        } catch (Exception e) {
+            SwrveLog.LogError (e.ToString (), "conversation");
+        }
+        return null;
+    }
+
+    private SwrveConversation _getConversationForEvent (string eventName, IDictionary<string, string> payload=null)
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        SwrveConversation result = null;
+        SwrveBaseCampaign campaign = null;
+        DateTime now = SwrveHelper.GetNow();
+
+        SwrveLog.Log("Trying to get conversation for: " + eventName);
+
+        IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
+        List<SwrveConversation> availableConversations = new List<SwrveConversation>();
+
+        // Select conversations with higher priority
+        int minPriority = int.MaxValue;
+        List<SwrveConversation> candidateConversations = new List<SwrveConversation>();
+        while (itCampaign.MoveNext() && result == null) {
+            if(!itCampaign.Current.IsA<SwrveConversationCampaign>()) {
+                continue;
             }
 
-            if (qaUser != null && campaign != null && result != null) {
-                // A message was chosen, check if other campaigns would have returned a message
-                IEnumerator<SwrveMessage> itOtherMessage = availableMessages.GetEnumerator ();
-                while (itOtherMessage.MoveNext()) {
-                    SwrveMessage otherMessage = itOtherMessage.Current;
-                    if (otherMessage != result) {
-                        int otherCampaignId = otherMessage.Campaign.Id;
-                        if((qaUser != null) && !qaUser.campaignMessages.ContainsKey(otherCampaignId)) {
-                            qaUser.campaignMessages[otherCampaignId] = otherMessage;
-                            qaUser.campaignReasons[otherCampaignId] = "Campaign " + campaign.Id + " was selected for display ahead of this campaign";
-                        }
+            SwrveConversationCampaign nextCampaign = (SwrveConversationCampaign)itCampaign.Current;
+            SwrveConversation nextConversation = nextCampaign.GetConversationForEvent (eventName, payload, qaUser);
+            // Check if the message supports the current orientation
+            if (nextConversation != null) {
+                availableConversations.Add(nextConversation);
+                if (nextConversation.Priority <= minPriority) {
+                    if (nextConversation.Priority < minPriority) {
+                        // If it is lower than any of the previous ones
+                        // remove those from being candidates
+                        candidateConversations.Clear();
+                    }
+                    minPriority = nextConversation.Priority;
+                    candidateConversations.Add(nextConversation);
+                }
+            }
+        }
+        if (candidateConversations.Count > 0) {
+            // Select randomly
+            candidateConversations.Shuffle();
+            result = candidateConversations[0];
+        }
+
+        if (qaUser != null && campaign != null && result != null) {
+            // A message was chosen, check if other campaigns would have returned a conversation
+            IEnumerator<SwrveConversation> itOtherConversations = availableConversations.GetEnumerator ();
+            while (itOtherConversations.MoveNext()) {
+                SwrveConversation otherMessage = itOtherConversations.Current;
+                if (otherMessage != result) {
+                    int otherCampaignId = otherMessage.Campaign.Id;
+                    if((qaUser != null) && !qaUser.campaignMessages.ContainsKey(otherCampaignId)) {
+                        qaUser.campaignMessages[otherCampaignId] = otherMessage;
+                        qaUser.campaignReasons[otherCampaignId] = "Campaign " + campaign.Id + " was selected for display ahead of this campaign";
                     }
                 }
             }
@@ -1410,46 +1266,56 @@ public partial class SwrveSDK : ISwrveAssetController
     }
 
     private bool checkCampaignRules(string eventName, DateTime now) {
-		SwrveLog.LogInfo ("running: " + eventName);
-        if (campaigns.Count == 0) {
+        if ((campaigns == null) || (campaigns.Count == 0)) {
             NoMessagesWereShown (eventName, "No campaigns available");
             return false;
         }
-        
+
         if (!string.Equals(eventName, DefaultAutoShowMessagesTrigger, StringComparison.OrdinalIgnoreCase) && IsTooSoonToShowMessageAfterLaunch (now)) {
             NoMessagesWereShown(eventName, "{App throttle limit} Too soon after launch. Wait until " + showMessagesAfterLaunch.ToString (WaitTimeFormat));
             return false;
         }
-        
+
         if (IsTooSoonToShowMessageAfterDelay (now)) {
             NoMessagesWereShown(eventName, "{App throttle limit} Too soon after last base message. Wait until " + showMessagesAfterDelay.ToString (WaitTimeFormat));
             return false;
         }
-        
+
         if (HasShowTooManyMessagesAlready ()) {
             NoMessagesWereShown(eventName, "{App throttle limit} Too many base messages shown");
             return false;
         }
-        
+
         return true;
     }
 
+    public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign) {
+        ShowMessageCenterCampaign (campaign, GetDeviceOrientation ());
+    }
+
     public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
-        Container.StartCoroutine (LaunchMessage (
-            ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
-            GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
-        ));
+        if (campaign.IsA<SwrveMessagesCampaign> ()) {
+            Container.StartCoroutine (LaunchMessage (
+                ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
+                GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
+            ));
+        }
+        else if (campaign.IsA<SwrveConversationCampaign> ()) {
+            Container.StartCoroutine (LaunchConversation(
+                ((SwrveConversationCampaign)campaign).Conversation
+            ));
+        }
         campaign.Status = SwrveCampaignState.Status.Seen;
         SaveCampaignData(campaign);
     }
 
     public List<SwrveBaseCampaign> GetMessageCenterCampaigns()
-    { 
+    {
         return GetMessageCenterCampaigns (GetDeviceOrientation ());
     }
 
     public List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation orientation)
-    { 
+    {
         List<SwrveBaseCampaign> result = new List<SwrveBaseCampaign>();
         IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
         while(itCampaign.MoveNext()) {
@@ -1465,7 +1331,7 @@ public partial class SwrveSDK : ISwrveAssetController
         campaign.Status = SwrveCampaignState.Status.Deleted;
         SaveCampaignData(campaign);
     }
-    
+
     public bool IsAssetInCache(string asset) {
         return asset != null && this.GetAssetsOnDisk ().Contains (asset);
     }
@@ -1543,6 +1409,25 @@ public partial class SwrveSDK : ISwrveAssetController
     }
 
     /// <summary>
+    /// Display a conversation for the given trigger event.
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "event" event.
+    /// </remarks>
+    /// <param name="eventName">
+    /// The name of the event that was triggered
+    /// </param>
+    public IEnumerator ShowConversationForEvent (string eventName, SwrveConversation conversation)
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        yield return Container.StartCoroutine (LaunchConversation (conversation));
+        TaskFinished ("ShowConversationForEvent");
+#else
+        yield return null;
+#endif
+    }
+
+    /// <summary>
     /// Dismisses the current message if any is beign displayed.
     /// </summary>
     public void DismissMessage ()
@@ -1582,175 +1467,4 @@ public partial class SwrveSDK : ISwrveAssetController
             return config.DefaultBackgroundColor;
         }
     }
-
-#if UNITY_IPHONE
-
-    /// <summary>
-    /// Obtains the device token if available.
-    /// </summary>
-    /// <returns>
-    /// If the token was correctly obtained.
-    /// </returns>
-    public bool ObtainIOSDeviceToken()
-    {
-        if (config.PushNotificationEnabled) {
-#if UNITY_5
-            byte[] token = UnityEngine.iOS.NotificationServices.deviceToken;
-#else
-            byte[] token = NotificationServices.deviceToken;
-#endif
-            if (token != null) {
-                // Send token as user update and to Babble if QA user
-                string hexToken = SwrveHelper.FilterNonAlphanumeric(System.BitConverter.ToString(token));
-                bool sendDeviceInfo = (iOSdeviceToken != hexToken);
-                if (sendDeviceInfo) {
-                    iOSdeviceToken = hexToken;
-                    // Save device token for future launches
-                    storage.Save (iOSdeviceTokenSave, iOSdeviceToken);
-                    SendDeviceInfo();
-
-                    if (qaUser != null) {
-                        qaUser.UpdateDeviceInfo();
-                    }
-                }
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Processe remote notifications and clear them.
-    /// </summary>
-    public void ProcessRemoteNotifications()
-    {
-        if (config.PushNotificationEnabled) {
-            // Process push notifications
-#if UNITY_5
-            int notificationCount = UnityEngine.iOS.NotificationServices.remoteNotificationCount;
-#else
-            int notificationCount = NotificationServices.remoteNotificationCount;
-#endif
-            if(notificationCount > 0) {
-                SwrveLog.Log("Got " + notificationCount + " remote notifications");
-
-#if UNITY_5
-                for(int i = 0; i < notificationCount; i++) {
-                    ProcessRemoteNotification(UnityEngine.iOS.NotificationServices.remoteNotifications[i]);
-                }
-                UnityEngine.iOS.NotificationServices.ClearRemoteNotifications();
-#else
-                for(int i = 0; i < notificationCount; i++) {
-                    ProcessRemoteNotification(NotificationServices.remoteNotifications[i]);
-                }
-                NotificationServices.ClearRemoteNotifications();
-#endif
-            }
-        }
-    }
-#endif
-#if UNITY_ANDROID
-    /// <summary>
-    /// Used internally by the Google Cloud Messaging plugin to notify
-    /// of a device registration id.
-    /// </summary>
-    /// <param name="registrationId">
-    /// The new device registration id.
-    /// </param>
-    public void RegistrationIdReceived(string registrationId)
-    {
-        if (!string.IsNullOrEmpty(registrationId)) {
-            bool sendDeviceInfo = (this.gcmDeviceToken != registrationId);
-
-            if (sendDeviceInfo) {
-                this.gcmDeviceToken = registrationId;
-                storage.Save (GcmDeviceTokenSave, gcmDeviceToken);
-                if (qaUser != null) {
-                    qaUser.UpdateDeviceInfo();
-                }
-                SendDeviceInfo();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Used internally by the Google Cloud Messaging plugin to notify
-    /// of a received push notification, without any user interaction.
-    /// </summary>
-    /// <param name="notificationJson">
-    /// Serialized push notification information.
-    /// </param>
-    public void NotificationReceived(string notificationJson)
-    {
-        Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
-        if (androidPlugin != null && notification != null) {
-            string pushId = GetPushId(notification);
-            if (pushId != null) {
-                // Acknowledge the received notification
-                androidPlugin.CallStatic("sdkAcknowledgeReceivedNotification", pushId);
-            }
-        }
-
-        if (PushNotificationListener != null) {
-            try {
-              PushNotificationListener.OnNotificationReceived(notification);
-            } catch (Exception exp) {
-                SwrveLog.LogError("Error processing the push notification: " + exp.Message);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Obtain the Swrve identifier from a received push notification.
-    /// </summary>
-    /// <param name="notification">
-    /// Push notification received by the app.
-    /// </param>
-    private string GetPushId(Dictionary<string, object> notification)
-    {
-        if  (notification != null && notification.ContainsKey(PushTrackingKey)) {
-            return notification[PushTrackingKey].ToString();
-        } else {
-            SwrveLog.Log("Got unidentified notification");
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Used internally by the Google Cloud Messaging plugin to notify
-    /// of a received push notification when the app was opened from it.
-    /// </summary>
-    /// <param name="notificationJson">
-    /// Serialized push notification information.
-    /// </param>
-    public void OpenedFromPushNotification(string notificationJson)
-    {
-        Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
-        string pushId = GetPushId(notification);
-        SendPushNotificationEngagedEvent(pushId);
-        if (pushId != null && androidPlugin != null) {
-            // Acknowledge the received notification
-            androidPlugin.CallStatic("sdkAcknowledgeOpenedNotification", pushId);
-        }
-
-        // Process push deeplink
-        if (notification != null && notification.ContainsKey (PushDeeplinkKey)) {
-            object deeplinkUrl = notification[PushDeeplinkKey];
-            if (deeplinkUrl != null) {
-                OpenURL(deeplinkUrl.ToString());
-            }
-        }
-
-        if (PushNotificationListener != null) {
-            try {
-              PushNotificationListener.OnOpenedFromPushNotification(notification);
-            } catch (Exception exp) {
-                SwrveLog.LogError("Error processing the push notification: " + exp.Message);
-            }
-        }
-    }
-#endif
 }

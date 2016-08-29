@@ -88,9 +88,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
     private SwrveUnityCommon(Context context, String jsonString) {
         SwrveCommon.setSwrveCommon(this);
-
-        SwrveLogger.d(LOG_TAG, "UnitySwrveCommon constructor called with jsonString \"" + jsonString + "\"");
-
         if (context instanceof Activity) {
             this.context = new WeakReference<>(context.getApplicationContext());
         } else {
@@ -105,6 +102,8 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
                 SwrveLogger.e(LOG_TAG, "Error loading Unity settings from shared prefs", e);
             }
         }
+
+        SwrveLogger.d(LOG_TAG, "UnitySwrveCommon constructor called with jsonString \"" + jsonString + "\"");
 
         if(null != jsonString) {
             try {
@@ -248,7 +247,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     @Override
     public short getDeviceId() {
         if(currentDetails.containsKey(DEVICE_ID_KEY)) {
-            return ((Double)currentDetails.get(DEVICE_ID_KEY)).shortValue();
+            return Short.parseShort(getStringDetail(DEVICE_ID_KEY));
         }
         return 0;
     }
@@ -349,7 +348,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
         ArrayList<String> conversationEvents = new ArrayList<>();
         try {
-            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, null, null));
+            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, payload, null));
         } catch (JSONException e) {
             SwrveLogger.e(LOG_TAG, "Could not queue conversation events params: " + parameters, e);
         }

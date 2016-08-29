@@ -95,4 +95,3 @@ public class BaseDemoGUI : MonoBehaviour
         TriggerMessage
     };
 }
-

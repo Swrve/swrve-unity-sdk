@@ -41,10 +41,23 @@ public class SwrveQAUser
         if (Logging) {
             restClient = new RESTClient ();
             this.loggingUrl = MiniJsonHelper.GetString (jsonQa, "logging_url", null);
+
+            this.loggingUrl = this.loggingUrl.Replace ("http://", "https://");
+
+            if (!this.loggingUrl.EndsWith ("/")) {
+                this.loggingUrl = this.loggingUrl + "/";
+            }
         }
 
         campaignReasons = new Dictionary<int, string> ();
         campaignMessages = new Dictionary<int, SwrveBaseMessage> ();
+    }
+
+    protected string getEndpoint(string path) {
+        while (path.StartsWith ("/")) {
+            path = path.Substring (1);
+        }
+        return this.loggingUrl + path;
     }
 
     public void TalkSession (Dictionary<int, string> campaignsDownloaded)
@@ -52,7 +65,7 @@ public class SwrveQAUser
         try {
             if (CanMakeSessionRequest ()) {
                 lastSessionRequestTime = SwrveHelper.GetMilliseconds();
-                String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/session";
+                String endpoint = getEndpoint("talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/session");
                 Dictionary<string, object> talkSessionJson = new Dictionary<string, object> ();
 
                 // Add campaigns (downloaded or not) to request
@@ -84,7 +97,7 @@ public class SwrveQAUser
     {
         try {
             if (CanMakeRequest ()) {
-                String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/device_info";
+                String endpoint = getEndpoint("talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/device_info");
                 Dictionary<string, object> deviceJson = new Dictionary<string, object> ();
                 Dictionary<string, string> deviceData = swrve.GetDeviceInfo ();
                 Dictionary<string, string>.Enumerator deviceDataEnum = deviceData.GetEnumerator();
@@ -117,7 +130,7 @@ public class SwrveQAUser
     {
         try {
             if (CanMakeTriggerRequest ()) {
-                string endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/trigger";
+                string endpoint = getEndpoint("talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/trigger");
                 Dictionary<string, object> triggerJson = new Dictionary<string, object> ();
                 triggerJson.Add ("trigger_name", eventName);
                 triggerJson.Add ("displayed", false);
@@ -142,7 +155,7 @@ public class SwrveQAUser
                 campaignReasons = new Dictionary<int, string>();
                 campaignMessages = new Dictionary<int, SwrveBaseMessage>();
 
-                String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/trigger";
+                String endpoint = getEndpoint("talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/trigger");
                 Dictionary<string, object> triggerJson = new Dictionary<string, object> ();
                 triggerJson.Add ("trigger_name", eventName);
                 triggerJson.Add ("displayed", baseMessage != null);
@@ -194,7 +207,7 @@ public class SwrveQAUser
 #endif
     {
         try {
-            String endpoint = loggingUrl + "/talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/push";
+            String endpoint = getEndpoint("talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/push");
 
             if (CanMakePushNotificationRequest()) {
                 lastPushNotificationRequestTime = SwrveHelper.GetMilliseconds ();
