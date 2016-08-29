@@ -141,10 +141,11 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
             string amFile = Path.Combine(project, "_AndroidManifest.xml");
             if (File.Exists (amFile)) {
                 File.WriteAllText (Path.Combine (project, "AndroidManifest.xml"),
-                    File.ReadAllText (amFile).Replace ("${applicationId}", PlayerSettings.bundleIdentifier)
-                );
+                                   File.ReadAllText (amFile).Replace ("${applicationId}", PlayerSettings.bundleIdentifier)
+                                  );
             }
         }
+        AssetDatabase.Refresh ();
     }
 }
 
