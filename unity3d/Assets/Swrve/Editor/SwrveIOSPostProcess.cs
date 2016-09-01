@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿#if UNITY_IPHONE
+using UnityEngine;
 using UnityEditor.Callbacks;
 using UnityEditor;
 using System;
@@ -13,7 +14,7 @@ using UnityEditor.iOS.Xcode;
 /// <summary>
 /// Integrates the native code required for Conversations and Location campaigns support.
 /// </summary>
-public class SwrvePostProcess : SwrveCommonBuildComponent
+public class SwrveIOSPostProcess : SwrveCommonBuildComponent
 {
     [PostProcessBuild(100)]
     public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
@@ -121,3 +122,4 @@ public class SwrvePostProcess : SwrveCommonBuildComponent
         return guid;
     }
 }
+#endif
