@@ -1,7 +1,7 @@
 using UnityEngine;
-using Swrve;
-using SwrveMiniJSON;
-using Swrve.Helpers;
+using SwrveUnity;
+using SwrveUnityMiniJSON;
+using SwrveUnity.Helpers;
 using System.Collections.Generic;
 
 /// <summary>

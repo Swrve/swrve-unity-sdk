@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace Swrve.IAP
+namespace SwrveUnity.IAP
 {
 public class RawReceipt : IapReceipt
 {

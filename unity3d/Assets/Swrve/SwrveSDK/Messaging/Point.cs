@@ -1,4 +1,4 @@
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Used internally to represent a point in 2D space.

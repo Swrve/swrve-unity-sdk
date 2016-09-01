@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Used internally to render in-app messages using Unity GUI.

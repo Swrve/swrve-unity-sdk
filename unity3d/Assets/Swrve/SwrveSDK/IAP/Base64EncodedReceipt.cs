@@ -1,4 +1,4 @@
-﻿namespace Swrve.IAP
+﻿namespace SwrveUnity.IAP
 {
 public class Base64EncodedReceipt : IapReceipt
 {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System;
-using SwrveMiniJSON;
-using Swrve.Helpers;
+using SwrveUnityMiniJSON;
+using SwrveUnity.Helpers;
 
 /// <summary>
 /// Reperesents the rewards given to a user after a purchase.

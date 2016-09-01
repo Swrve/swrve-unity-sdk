@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Swrve.Helpers
+namespace SwrveUnity.Helpers
 {
 /// <summary>
 /// Used internally to build POST requests for submission to %Swrve.

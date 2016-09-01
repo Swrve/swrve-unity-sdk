@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
 
-namespace Swrve.Helpers
+namespace SwrveUnity.Helpers
 {
 /// <summary
 /// Used internally as a helper for the Swrve SDK.

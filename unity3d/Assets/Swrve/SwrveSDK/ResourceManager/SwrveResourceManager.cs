@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Swrve.ResourceManager
+namespace SwrveUnity.ResourceManager
 {
 /// <summary>
 /// Represents a resource set up in the dashboard.

@@ -2,19 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
-using Swrve;
+using SwrveUnity;
 using System.Collections;
 using UnityEngine;
-using SwrveMiniJSON;
+using SwrveUnityMiniJSON;
 using System.IO;
-using Swrve.REST;
-using Swrve.Messaging;
-using Swrve.Input;
-using Swrve.Helpers;
-using Swrve.Storage;
+using SwrveUnity.REST;
+using SwrveUnity.Messaging;
+using SwrveUnity.Input;
+using SwrveUnity.Helpers;
+using SwrveUnity.Storage;
 using System.Reflection;
 using System.Globalization;
-using Swrve.Device;
+using SwrveUnity.Device;
 
 /// <summary>
 /// Internal base class implementation of the Swrve SDK.
@@ -1457,7 +1457,7 @@ public partial class SwrveSDK
                         if (root.ContainsKey("user_resources")) {
                             // Process user resources
                             IList<object> userResourcesData = (IList<object>)root["user_resources"];
-                            string userResourcesJson = SwrveMiniJSON.Json.Serialize(userResourcesData);
+                            string userResourcesJson = SwrveUnityMiniJSON.Json.Serialize(userResourcesData);
                             storage.SaveSecure(AbTestUserResourcesSave, userResourcesJson, userId);
                             userResources = ProcessUserResources(userResourcesData);
                             userResourcesRaw = userResourcesJson;
@@ -1470,7 +1470,7 @@ public partial class SwrveSDK
                         if (config.TalkEnabled) {
                             if (root.ContainsKey("campaigns")) {
                                 Dictionary<string, object> campaignsData = (Dictionary<string, object>)root["campaigns"];
-                                string campaignsJson = SwrveMiniJSON.Json.Serialize(campaignsData);
+                                string campaignsJson = SwrveUnityMiniJSON.Json.Serialize(campaignsData);
                                 SaveCampaignsCache (campaignsJson);
 
                                 AutoShowMessages();
@@ -1498,7 +1498,7 @@ public partial class SwrveSDK
                             #if UNITY_IPHONE
                                 locationData = (Dictionary<string, object>)locationData["campaigns"];
                             #endif
-                                string locationJson = SwrveMiniJSON.Json.Serialize(locationData);
+                                string locationJson = SwrveUnityMiniJSON.Json.Serialize(locationData);
                                 SaveLocationCache (locationJson);
                             }
                         }
