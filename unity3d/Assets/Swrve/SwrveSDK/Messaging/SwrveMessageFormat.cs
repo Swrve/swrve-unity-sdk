@@ -196,9 +196,9 @@ public class SwrveMessageFormat
         button.ActionType = actionType;
         button.Action = StringValueFromAttribute (buttonData, "action");
         if (button.ActionType == SwrveActionType.Install) {
-            string gameId = StringValueFromAttribute (buttonData, "game_id");
-            if (gameId != null && gameId != string.Empty) {
-                button.GameId = int.Parse (gameId);
+            string appId = StringValueFromAttribute (buttonData, "game_id");
+            if (appId != null && appId != string.Empty) {
+                button.AppId = int.Parse (appId);
             }
         }
 
