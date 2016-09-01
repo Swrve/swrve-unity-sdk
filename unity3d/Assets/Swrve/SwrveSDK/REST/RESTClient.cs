@@ -13,10 +13,10 @@ using System.IO.Compression;
 
 using UnityEngine;
 using System.Collections.Generic;
-using Swrve.Helpers;
+using SwrveUnity.Helpers;
 using System.Text;
 
-namespace Swrve.REST
+namespace SwrveUnity.REST
 {
 /// <summary>
 /// Used internally to connect to REST services.

@@ -1,8 +1,8 @@
 using System;
-using Swrve.Helpers;
+using SwrveUnity.Helpers;
 using System.Collections.Generic;
 
-namespace Swrve.REST
+namespace SwrveUnity.REST
 {
 /// <summary>
 /// Used internally to wrap REST responses.

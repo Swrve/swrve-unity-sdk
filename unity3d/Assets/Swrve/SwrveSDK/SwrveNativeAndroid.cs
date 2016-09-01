@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System;
 using UnityEngine;
-using Swrve.Helpers;
-using SwrveMiniJSON;
+using SwrveUnity.Helpers;
+using SwrveUnityMiniJSON;
 
 public partial class SwrveSDK
 {

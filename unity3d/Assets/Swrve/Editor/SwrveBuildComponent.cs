@@ -18,7 +18,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     private static string IOSDemoBundleIdentifier = "com.swrve.demo";
     private static string AndroidPackageName = "com.example.gcm";
 
-    [MenuItem ("Swrve Demo/Export unityPackage")]
+    [MenuItem ("Swrve/Export unityPackage")]
     public static void ExportUnityPackage ()
     {
 #if UNITY_5
@@ -29,13 +29,13 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         AssetDatabase.ExportPackage (assets, "../../buildtemp/Swrve.unityPackage", ExportPackageOptions.Recurse);
     }
 
-    [MenuItem ("Swrve Demo/iOS/Build Demo (Xcode project)")]
+    [MenuItem ("Swrve/iOS/Build Demo (Xcode project)")]
     public static void BuildDemoiOS ()
     {
         BuildIOS ("../../SwrveDemo", opt, mainScenes, IOSDemoBundleIdentifier);
     }
 
-    [MenuItem ("Swrve Demo/iOS/Build and Install Demo")]
+    [MenuItem ("Swrve/iOS/Build and Install Demo")]
     public static void BuildAndInstallDemoiOS ()
     {
         // Build
@@ -53,13 +53,13 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         UnityEngine.Debug.Log("Demo installed on device");
     }
 
-    [MenuItem ("Swrve Demo/Android/Build Demo (.apk)")]
+    [MenuItem ("Swrve/Android/Build Demo (.apk)")]
     public static void BuildDemoAndroid ()
     {
         BuildAndroid ("../buildtemp/SwrveDemo.apk", opt, mainScenes, AndroidPackageName);
     }
 
-    [MenuItem ("Swrve Demo/Android/Build and Install Demo")]
+    [MenuItem ("Swrve/Android/Build and Install Demo")]
     public static void BuildAndInstallDemoAndroid ()
     {
         // Build
@@ -77,7 +77,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     }
 
     // Tests
-    [MenuItem ("Swrve Demo/iOS/Test build with all stripping levels")]
+    [MenuItem ("Swrve/iOS/Test build with all stripping levels")]
     public static void TestBuildiOS ()
     {
         string outputPath = "../../buildtemp/tmp_iOS";
@@ -99,7 +99,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
     }
 
-    [MenuItem ("Swrve Demo/Android/Test build with all stripping levels")]
+    [MenuItem ("Swrve/Android/Test build with all stripping levels")]
     public static void TestBuildAndroid ()
     {
         string outputPath = "../../buildtemp/tmp_Android.apk";
@@ -131,7 +131,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         }
     }
 
-    [MenuItem ("Swrve Demo/Correct ${applicationId} in AndroidManifests")]
+    [MenuItem ("Swrve/Correct ${applicationId} in AndroidManifests")]
     public static void CorrectApplicationId()
     {
         string androidDir = Path.Combine (Directory.GetCurrentDirectory (), "Assets/Plugins/Android");
@@ -145,6 +145,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
                 );
             }
         }
+        AssetDatabase.Refresh ();
     }
 }
 

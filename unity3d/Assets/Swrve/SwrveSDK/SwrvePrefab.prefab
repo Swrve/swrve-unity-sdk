@@ -42,28 +42,28 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 47a6e343a3a6a47659f180ae8178ccf7, type: 3}
-  m_Name: 
-  GameId: 0
+  m_Name:
+  AppId: 0
   ApiKey: your_api_key_here
   Config:
-    UserId: 
-    AppVersion: 
-    AppStore: 
-    Language: 
+    UserId:
+    AppVersion:
+    AppStore:
+    Language:
     DefaultLanguage: en
     TalkEnabled: 1
     AutoDownloadCampaignsAndResources: 1
     Orientation: 2
-    EventsServer: http://api.swrve.com
+    EventsServer:
     UseHttpsForEventsServer: 1
-    ContentServer: http://content.swrve.com
+    ContentServer:
     UseHttpsForContentServer: 1
     AutomaticSessionManagement: 1
     NewSessionInterval: 30
     MaxBufferChars: 20000
     StoreDataInPlayerPrefs: 0
     PushNotificationEnabled: 0
-    GCMSenderId: 
+    GCMSenderId:
     GCMPushNotificationTitle: '#Your App Title'
     AutoShowMessagesMaxDelay: 5
   FlushEventsOnApplicationQuit: 1

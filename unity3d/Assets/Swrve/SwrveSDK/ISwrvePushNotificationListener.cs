@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace Swrve
+namespace SwrveUnity
 {
 /// <summary>
 /// Implement this interface to be notified of any Swrve push notification

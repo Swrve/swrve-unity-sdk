@@ -2,4 +2,6 @@
 /docs/
 /buildtemp/*
 *.log
+/unity3d/Assets/Plugins/iOS/SwrveConversationSDK*
+/unity3d/Assets/Plugins/iOS/SwrveSDKCommon*
 .DS_Store

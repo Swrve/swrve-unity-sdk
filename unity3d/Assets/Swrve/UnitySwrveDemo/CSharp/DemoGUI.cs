@@ -1,20 +1,18 @@
-#if !UNITY_5
-
 using UnityEngine;
 using System.Collections;
 using System;
 using System.Collections.Generic;
-using Swrve.Messaging;
+using SwrveUnity.Messaging;
 
 /// <summary>
 /// Swrve SDK demo.
 /// </summary>
-using Swrve.IAP;
+using SwrveUnity.IAP;
 
 
 public class DemoGUI : BaseDemoGUI
 {
-    /// Enable or disable the game UI.
+    /// Enable or disable the app UI.
     public bool UIEnabled = true;
 
     /// Reference to the Swrve Component in the scene.
@@ -27,6 +25,10 @@ public class DemoGUI : BaseDemoGUI
         // In-app messaging setup
         swrveComponent.SDK.GlobalMessageListener = new CustomMessageListener (this);
         swrveComponent.SDK.GlobalCustomButtonListener = new CustomButtonListener ();
+
+#if UNITY_5
+        Debug.LogWarning("Consider using the UnitySwrveDemo5xx");
+#endif
     }
 
     void Update ()
@@ -123,7 +125,7 @@ public class DemoGUI : BaseDemoGUI
     }
 
     /// <summary>
-    /// Observe the SDK for in-app messages and pause/resume your game.
+    /// Observe the SDK for in-app messages and pause/resume your app.
     /// </summary>
     private class CustomMessageListener : ISwrveMessageListener
     {
@@ -136,7 +138,7 @@ public class DemoGUI : BaseDemoGUI
 
         public void OnShow (SwrveMessageFormat format)
         {
-            // Pause game
+            // Pause app
             container.UIEnabled = false;
         }
 
@@ -146,10 +148,8 @@ public class DemoGUI : BaseDemoGUI
 
         public void OnDismiss (SwrveMessageFormat format)
         {
-            // Resume game
+            // Resume app
             container.UIEnabled = true;
         }
     }
 }
-
-#endif

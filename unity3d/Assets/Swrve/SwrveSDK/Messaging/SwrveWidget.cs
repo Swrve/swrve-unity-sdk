@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Base in-app message element class.

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// In-app message button.
@@ -28,9 +28,9 @@ public class SwrveButton : SwrveWidget
     public SwrveMessage Message;
 
     /// <summary>
-    /// ID of the target installation game
+    /// ID of the target installation app
     /// </summary>
-    public int GameId;
+    public int AppId;
 
     /// <summary>
     /// Name of the button

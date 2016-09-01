@@ -1,6 +1,6 @@
 using System;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Use this values to specify the app store where you app will be submitted.

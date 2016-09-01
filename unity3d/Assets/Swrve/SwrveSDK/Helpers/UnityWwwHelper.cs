@@ -1,9 +1,9 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using SwrveMiniJSON;
+using SwrveUnityMiniJSON;
 
-namespace Swrve.Helpers
+namespace SwrveUnity.Helpers
 {
 public enum WwwDeducedError {
     NoError,

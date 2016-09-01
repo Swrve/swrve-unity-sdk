@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Swrve.Helpers
+namespace SwrveUnity.Helpers
 {
 /// <summary>
 /// Used internally to build POST requests for submission to %Swrve.
@@ -20,18 +20,18 @@ public class PostBodyBuilder
  ""data"":[{5}]
 }}", @"\s", "");
 
-    public static byte[] Build (string apiKey, int gameId, string userId, string deviceId, string appVersion, long time, string events)
+    public static byte[] Build (string apiKey, int appId, string userId, string deviceId, string appVersion, long time, string events)
     {
-        var sessionToken = CreateSessionToken (apiKey, gameId, userId, time);
+        var sessionToken = CreateSessionToken (apiKey, appId, userId, time);
         var postString = String.Format (Format, userId, ApiVersion, appVersion, sessionToken, deviceId, events);
         var encodedData = Encoding.UTF8.GetBytes (postString);
         return encodedData;
     }
 
-    private static string CreateSessionToken (string apiKey, int gameId, string userId, long time)
+    private static string CreateSessionToken (string apiKey, int appId, string userId, long time)
     {
         var md5Hash = SwrveHelper.ApplyMD5 (String.Format ("{0}{1}{2}", userId, time, apiKey));
-        return String.Format ("{0}={1}={2}={3}", gameId, userId, time, md5Hash);
+        return String.Format ("{0}={1}={2}={3}", appId, userId, time, md5Hash);
     }
 }
 }

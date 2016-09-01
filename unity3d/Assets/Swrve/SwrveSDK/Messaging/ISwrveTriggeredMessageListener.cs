@@ -1,6 +1,6 @@
 using System;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Implement this to use your own rendering code for in-app messages.
@@ -9,7 +9,7 @@ namespace Swrve.Messaging
 public interface ISwrveTriggeredMessageListener
 {
     /// <summary>
-    /// Called once per message being shown. Pause your game
+    /// Called once per message being shown. Pause your app
     /// here if necessary.
     /// </summary>
     /// <param name="message">
@@ -23,4 +23,3 @@ public interface ISwrveTriggeredMessageListener
     void DismissCurrentMessage ();
 }
 }
-

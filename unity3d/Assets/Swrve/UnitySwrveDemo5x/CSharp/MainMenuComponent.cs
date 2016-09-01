@@ -4,7 +4,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Events;
-using Swrve.IAP;
+using SwrveUnity.IAP;
 using System.Linq;
 
 public class MainMenuComponent : MonoBehaviour {

@@ -1,6 +1,6 @@
 using System;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Implement this interface to handle callbacks of install buttons
@@ -11,13 +11,13 @@ public interface ISwrveInstallButtonListener
     /// <summary>
     /// This method is invoked when an install button has been pressed on an in-app message.
     /// </summary>
-    /// <param name="gameAppStoreUrl">
-    /// App store install link specified for the game.
+    /// <param name="appStoreUrl">
+    /// App store install link specified for the app.
     /// </param>
     /// <returns>
     /// Returning false stops the normal flow of event processing
     /// to enable custom logic. Return true otherwise.
     /// </returns>
-    bool OnAction (string gameAppStoreUrl);
+    bool OnAction (string appStoreUrl);
 }
 }

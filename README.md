@@ -9,18 +9,15 @@ Have a look at the quick integration guide at http://docs.swrve.com/developer-do
 
 Requirements
 ------------
-### Unity 4.0.0+
-The SDK needs a Unity version higher than 4.0.0 to be able to compile.
-
-### Unity 5+ Personal or Unity 4.0.0+ Pro
-Some of the features like push notifications require the use of native plugins. Native plugins are now available in Unity Personal 5+ or previvous versions of Unity Pro.
+### Unity 5.0.0+
+The SDK needs a Unity version higher than 5.0.0 to be able to compile.
 
 How to run the demo
 -------------------
 - Open the project 'unity3d' from the repository.
 - Open the demo scene under 'Assets/Swrve/UnitySwrveDemo/DemoScene.unity'.
 - Under the Hierarchy view, click on SwrvePrefab. This is the SDK component in your scene.
-- Introduce your gameId and apiKey in the Inspector view with the values provided by Swrve.
+- Input your appId and apiKey in the Inspector view with the values provided by Swrve.
 - Click the Play button at the top.
 
 How to build the SDK

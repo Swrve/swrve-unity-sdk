@@ -1,6 +1,6 @@
 using System;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Used for device orientation and specifying orientation filters.
