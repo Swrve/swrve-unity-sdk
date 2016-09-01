@@ -9,7 +9,7 @@ namespace SwrveUnity.Messaging
 public interface ISwrveTriggeredMessageListener
 {
     /// <summary>
-    /// Called once per message being shown. Pause your game
+    /// Called once per message being shown. Pause your app
     /// here if necessary.
     /// </summary>
     /// <param name="message">
@@ -23,4 +23,3 @@ public interface ISwrveTriggeredMessageListener
     void DismissCurrentMessage ();
 }
 }
-

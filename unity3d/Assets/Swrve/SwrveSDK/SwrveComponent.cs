@@ -16,9 +16,9 @@ public class SwrveComponent : MonoBehaviour
     public SwrveSDK SDK;
 
     /// <summary>
-    /// ID for your game, as supplied by Swrve.
+    /// ID for your app, as supplied by Swrve.
     /// </summary>
-    public int GameId = 0;
+    public int AppId = 0;
 
     /// <summary>
     /// Secret API key, as supplied by Swrve.
@@ -76,15 +76,15 @@ public class SwrveComponent : MonoBehaviour
     /// <summary>
     /// Manually initialize the SDK.
     /// </summary>
-    /// <param name="gameId">
-    /// ID for your game, as supplied by Swrve.
+    /// <param name="appId">
+    /// ID for your app, as supplied by Swrve.
     /// </param>
     /// <param name="apiKey">
-    /// Scret API key for your game, as supplied by Swrve.
+    /// Scret API key for your app, as supplied by Swrve.
     /// </param>
-    public void Init (int gameId, string apiKey)
+    public void Init (int appId, string apiKey)
     {
-        SDK.Init (this, gameId, apiKey, Config);
+        SDK.Init (this, appId, apiKey, Config);
     }
 
     /// <summary>
@@ -94,7 +94,7 @@ public class SwrveComponent : MonoBehaviour
     {
         useGUILayout = false;
         if (InitialiseOnStart) {
-            Init (GameId, ApiKey);
+            Init (AppId, ApiKey);
         }
     }
 

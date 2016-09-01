@@ -12,7 +12,7 @@ using SwrveUnity.IAP;
 
 public class DemoGUI : BaseDemoGUI
 {
-    /// Enable or disable the game UI.
+    /// Enable or disable the app UI.
     public bool UIEnabled = true;
 
     /// Reference to the Swrve Component in the scene.
@@ -125,7 +125,7 @@ public class DemoGUI : BaseDemoGUI
     }
 
     /// <summary>
-    /// Observe the SDK for in-app messages and pause/resume your game.
+    /// Observe the SDK for in-app messages and pause/resume your app.
     /// </summary>
     private class CustomMessageListener : ISwrveMessageListener
     {
@@ -138,7 +138,7 @@ public class DemoGUI : BaseDemoGUI
 
         public void OnShow (SwrveMessageFormat format)
         {
-            // Pause game
+            // Pause app
             container.UIEnabled = false;
         }
 
@@ -148,7 +148,7 @@ public class DemoGUI : BaseDemoGUI
 
         public void OnDismiss (SwrveMessageFormat format)
         {
-            // Resume game
+            // Resume app
             container.UIEnabled = true;
         }
     }
