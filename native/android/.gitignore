@@ -47,3 +47,4 @@ version.txt
 local.properties
 findbugs-results.html
 packages/
+gradle.properties-e

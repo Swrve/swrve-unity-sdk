@@ -3,7 +3,7 @@
 --- !u!29 &1
 SceneSettings:
   m_ObjectHideFlags: 0
-  m_PVSData: 
+  m_PVSData:
   m_PVSObjectsArray: []
   m_PVSPortalsArray: []
   m_OcclusionBakeSettings:
@@ -198,8 +198,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea7872ee432d340aebd0ee620e3dd2b9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   UIEnabled: 1
 --- !u!196 &18
 NavMeshSettings:
@@ -254,7 +254,7 @@ Prefab:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: GameId
+      propertyPath: AppId
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
@@ -267,7 +267,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
       propertyPath: Config.GCMSenderId
-      value: 
+      value:
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
       propertyPath: Config.PushNotificationEnabled
@@ -279,11 +279,11 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
       propertyPath: Config.AppStore
-      value: 
+      value:
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
       propertyPath: Config.Language
-      value: 
+      value:
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
       propertyPath: Config.AutomaticallySendQueuedEvents

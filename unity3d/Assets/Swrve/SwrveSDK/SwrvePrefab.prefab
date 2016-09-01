@@ -43,7 +43,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 47a6e343a3a6a47659f180ae8178ccf7, type: 3}
   m_Name:
-  GameId: 0
+  AppId: 0
   ApiKey: your_api_key_here
   Config:
     UserId:
@@ -56,7 +56,7 @@ MonoBehaviour:
     Orientation: 2
     EventsServer:
     UseHttpsForEventsServer: 1
-    ContentServer: 
+    ContentServer:
     UseHttpsForContentServer: 1
     AutomaticSessionManagement: 1
     NewSessionInterval: 30

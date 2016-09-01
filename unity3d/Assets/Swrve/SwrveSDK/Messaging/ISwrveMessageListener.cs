@@ -10,7 +10,7 @@ namespace Swrve.Messaging
 public interface ISwrveMessageListener
 {
     /// <summary>
-    /// Called once per message being shown. Pause your game
+    /// Called once per message being shown. Pause your app
     /// here if necessary.
     /// </summary>
     /// <param name="format">
@@ -28,7 +28,7 @@ public interface ISwrveMessageListener
 
     /// <summary>
     /// Called when the message has been dismissed. Resume
-    /// your game here if necessary.
+    /// your app here if necessary.
     /// </summary>
     /// <param name="format">
     /// In-app message information.
@@ -36,4 +36,3 @@ public interface ISwrveMessageListener
     void OnDismiss (SwrveMessageFormat format);
 }
 }
-

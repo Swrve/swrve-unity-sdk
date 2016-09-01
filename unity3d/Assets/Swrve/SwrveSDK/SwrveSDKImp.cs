@@ -94,7 +94,7 @@ public partial class SwrveSDK
     protected Dictionary<int, SwrveCampaignState> campaignsState = new Dictionary<int, SwrveCampaignState>();
     protected List<SwrveBaseCampaign> campaigns = new List<SwrveBaseCampaign> ();
     protected Dictionary<string, object> campaignSettings = new Dictionary<string, object> ();
-    protected Dictionary<string, string> gameStoreLinks = new Dictionary<string, string> ();
+    protected Dictionary<string, string> appStoreLinks = new Dictionary<string, string> ();
     protected SwrveMessageFormat currentMessage = null;
     protected SwrveMessageFormat currentDisplayingMessage = null;
     protected SwrveOrientation currentOrientation;
@@ -911,9 +911,9 @@ public partial class SwrveSDK
 
             try {
               if (clickedButton.ActionType == SwrveActionType.Install) {
-                  string gameId = clickedButton.GameId.ToString ();
-                  if (gameStoreLinks.ContainsKey (gameId)) {
-                      string appStoreUrl = gameStoreLinks [gameId];
+                  string appId = clickedButton.AppId.ToString ();
+                  if (appStoreLinks.ContainsKey (appId)) {
+                      string appStoreUrl = appStoreLinks [appId];
                       if (!string.IsNullOrEmpty(appStoreUrl)) {
                           bool normalFlow = true;
                           if (currentMessage.InstallButtonListener != null) {
@@ -926,7 +926,7 @@ public partial class SwrveSDK
                               OpenURL(appStoreUrl);
                           }
                       } else {
-                          SwrveLog.LogError("No app store url for game " + gameId);
+                          SwrveLog.LogError("No app store url for app " + appId);
                       }
                   } else {
                       SwrveLog.LogError("Install button app store url empty!");
@@ -1252,19 +1252,19 @@ public partial class SwrveSDK
                 if (version == CampaignResponseVersion) {
                     cdn = (string)root ["cdn_root"];
 
-                    // Game data
-                    Dictionary<string, object> gameData = (Dictionary<string, object>)root ["game_data"];
-                    Dictionary<string, object>.Enumerator gameDataEnumerator = gameData.GetEnumerator();
-                    while (gameDataEnumerator.MoveNext()) {
-                        string appId = gameDataEnumerator.Current.Key;
-                        if (gameStoreLinks.ContainsKey (appId)) {
-                            gameStoreLinks.Remove (appId);
+                    // App data
+                    Dictionary<string, object> appData = (Dictionary<string, object>)root ["game_data"];
+                    Dictionary<string, object>.Enumerator appDataEnumerator = appData.GetEnumerator();
+                    while (appDataEnumerator.MoveNext()) {
+                        string appId = appDataEnumerator.Current.Key;
+                        if (appStoreLinks.ContainsKey (appId)) {
+                            appStoreLinks.Remove (appId);
                         }
-                        Dictionary<string, object> gameAppStore = (Dictionary<string, object>)gameData [appId];
-                        if (gameAppStore != null && gameAppStore.ContainsKey ("app_store_url")) {
-                            object appStoreLink = gameAppStore ["app_store_url"];
+                        Dictionary<string, object> appAppStore = (Dictionary<string, object>)appData [appId];
+                        if (appAppStore != null && appAppStore.ContainsKey ("app_store_url")) {
+                            object appStoreLink = appAppStore ["app_store_url"];
                             if (appStoreLink != null && appStoreLink is string) {
-                                gameStoreLinks.Add (appId, (string)appStoreLink);
+                                appStoreLinks.Add (appId, (string)appStoreLink);
                             }
                         }
                     }
@@ -1280,7 +1280,7 @@ public partial class SwrveSDK
                     this.messagesLeftToShow = maxShows;
                     this.showMessagesAfterLaunch = initialisedTime + TimeSpan.FromSeconds (delayFirstMessage);
 
-                    SwrveLog.Log ("Game rules OK: Delay Seconds: " + delayFirstMessage + " Max shows: " + maxShows);
+                    SwrveLog.Log ("App rules OK: Delay Seconds: " + delayFirstMessage + " Max shows: " + maxShows);
                     SwrveLog.Log ("Time is " + now.ToString () + " show messages after " + this.showMessagesAfterLaunch.ToString ());
 
                     Dictionary<int, string> campaignsDownloaded = null;
@@ -1703,7 +1703,7 @@ public partial class SwrveSDK
         Dictionary<string, object> currentDetails = new Dictionary<string, object> {
             {"sdkVersion", SwrveSDK.SdkVersion},
             {"apiKey", apiKey},
-            {"appId", gameId},
+            {"appId", appId},
             {"userId", userId},
             {"deviceId", GetDeviceId()},
             {"appVersion", GetAppVersion()},
