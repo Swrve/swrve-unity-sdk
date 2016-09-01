@@ -1,8 +1,8 @@
 ﻿#if UNITY_WSA_10_0
 using System.Collections.Generic;
 using System;
-using Swrve.IAP;
-using Swrve.Messaging;
+using SwrveUnity.IAP;
+using SwrveUnity.Messaging;
 
 public partial class SwrveSDK
 {
