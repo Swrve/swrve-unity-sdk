@@ -37,7 +37,7 @@ public class SwrveConfig
     public string AppVersion;
 
     /// <summary>
-    /// App store where the game will be submitted.
+    /// App store where the app will be submitted.
     /// </summary>
 #if UNITY_ANDROID
     public string AppStore = SwrveAppStore.Google;
@@ -75,17 +75,17 @@ public class SwrveConfig
     /// Enable or disable Talk features for in-app campaigns/
     /// </summary>
     public bool TalkEnabled = true;
-    
+
     /// <summary>
     /// Enable or disable Conversations features for in-app campaigns/
     /// </summary>
     public bool ConversationsEnabled = true;
-    
+
     /// <summary>
     /// Enable or disable Location features for in-app campaigns/
     /// </summary>
     public bool LocationEnabled = false;
-    
+
     /// <summary>
     /// Set whether Location (plot) will autostart, or whether you want to enable it manually (after asking for permission)
     /// </summary>
@@ -97,7 +97,7 @@ public class SwrveConfig
     public bool AutoDownloadCampaignsAndResources = true;
 
     /// <summary>
-    /// Orientations supported by the game.
+    /// Orientations supported by the app.
     /// </summary>
     public SwrveOrientation Orientation = SwrveOrientation.Both;
 
@@ -144,12 +144,12 @@ public class SwrveConfig
 #endif
 
     /// <summary>
-    /// The SDK will send a session start on init and manage game pauses and resumes.
+    /// The SDK will send a session start on init and manage app pauses and resumes.
     /// </summary>
     public bool AutomaticSessionManagement = true;
 
     /// <summary>
-    /// Threshold in seconds to send a new session start after the game lost focus and regained it again.
+    /// Threshold in seconds to send a new session start after the app lost focus and regained it again.
     /// </summary>
     public int NewSessionInterval = 30;
 
@@ -177,7 +177,7 @@ public class SwrveConfig
     public Stack SelectedStack = Stack.US;
 
     /// <summary>
-    /// Enable push notification on this game.
+    /// Enable push notification on this app.
     /// </summary>
     public bool PushNotificationEnabled = false;
 
