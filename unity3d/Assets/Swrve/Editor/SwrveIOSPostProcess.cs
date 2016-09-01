@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 using UnityEditor.iOS.Xcode;
 
 /// <summary>
-/// Integrates the native code required for Conversations and Location campaigns support.
+/// Integrates the native code required for Conversations and Location campaigns support on iOS.
 /// </summary>
 public class SwrveIOSPostProcess : SwrveCommonBuildComponent
 {
