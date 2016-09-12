@@ -172,6 +172,11 @@ public static class SwrveHelper
     #elif UNITY_ANDROID
         return IsAvailableOn(UnityEngine.RuntimePlatform.Android);
 
+    #elif UNITY_WSA_10_0
+        return IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerARM) ||
+            IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerX86) ||
+            IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerX64);
+
     #else
         return false;
 

@@ -1,4 +1,5 @@
 ﻿#if UNITY_WSA_10_0
+
 using System.Collections.Generic;
 using System;
 using SwrveUnity.IAP;
@@ -9,11 +10,26 @@ public partial class SwrveSDK
     private void setNativeInfo (Dictionary<string, string> deviceInfo) {}
     private string getNativeLanguage () { return null; }
     private void setNativeAppVersion () {}
-    private void showNativeConversation (string conversation) {}
+
+    private void showNativeConversation (string conversation)
+    {
+#if SWRVE_CONVERSATION_SDK
+        UnityEngine.WSA.Application.InvokeOnUIThread(() =>
+            {
+                Swrve.Conversation.SwrveUnityBridge.ShowConversation(1, conversation);
+            },
+        true);
+#endif
+    }
     private void initNative () {}
     private void startNativeLocation () {}
     private void startNativeLocationAfterPermission () {}
-    private void setNativeConversationVersion () {}
+    private void setNativeConversationVersion ()
+    {
+#if SWRVE_CONVERSATION_SDK
+        SetConversationVersion(3);
+#endif
+    }
     private bool NativeIsBackPressed () { return false; }
 
     /// <summary>
