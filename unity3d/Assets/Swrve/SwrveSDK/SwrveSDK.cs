@@ -24,8 +24,7 @@ using System.Runtime.InteropServices;
 #endif
 
 #if (UNITY_WP8 || UNITY_METRO) && !UNITY_WSA_10_0
-#error "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk."
-+ "It is not covered by any performance warranty otherwise offered by Swrve"
+#warning "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk.  It is not covered by any performance warranty otherwise offered by Swrve"
 #endif
 
 #if (UNITY_2_6 || UNITY_2_6_1 || UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5)
