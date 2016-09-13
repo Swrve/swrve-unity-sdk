@@ -1,35 +1,48 @@
-﻿#if UNITY_WSA_10_0
+﻿#if SWRVE_WINDOWS_SDK
 
 using System.Collections.Generic;
 using System;
 using SwrveUnity.IAP;
 using SwrveUnity.Messaging;
+using Windows.ApplicationModel;
+using Windows.Globalization;
+using SwrveUnityBridge;
 
 public partial class SwrveSDK
 {
     private void setNativeInfo (Dictionary<string, string> deviceInfo) {}
-    private string getNativeLanguage () { return null; }
-    private void setNativeAppVersion () {}
 
-    private void showNativeConversation (string conversation)
-    {
-#if SWRVE_CONVERSATION_SDK
+    private string getNativeLanguage () {
+        if (ApplicationLanguages.Languages.Count > 0) {
+            return ApplicationLanguages.Languages[0];
+        }
+        return null;
+    }
+
+    private void setNativeAppVersion () {
+        Package package = Package.Current;
+        PackageId packageId = package.Id;
+        PackageVersion version = packageId.Version;
+
+        config.AppVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
+    }
+
+    private void showNativeConversation (string conversation) {
         UnityEngine.WSA.Application.InvokeOnUIThread(() =>
             {
-                Swrve.Conversation.SwrveUnityBridge.ShowConversation(1, conversation);
+                SwrveUnityBridge.ShowConversation(1, conversation);
             },
-        true);
-#endif
+            true
+        );
     }
+
+    private void setNativeConversationVersion () {
+        SetConversationVersion (SwrveUnityBridge.GetConversationVersion ());
+    }
+
     private void initNative () {}
     private void startNativeLocation () {}
     private void startNativeLocationAfterPermission () {}
-    private void setNativeConversationVersion ()
-    {
-#if SWRVE_CONVERSATION_SDK
-        SetConversationVersion(3);
-#endif
-    }
     private bool NativeIsBackPressed () { return false; }
 
     /// <summary>

@@ -1,11 +1,13 @@
-﻿using System;
+﻿using Swrve;
+using Swrve.Conversation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Data.Json;
 
-namespace Swrve.Conversation
+namespace SwrveUnityBridge
 {
     public static class SwrveUnityBridge
     {
@@ -23,9 +25,13 @@ namespace Swrve.Conversation
             SDK = new SwrveCommon();
             _conversationUI = new SwrveConversationUI(SDK, false);
             
-            SwrveConversationCampaign campaign = new SwrveConversationCampaign(campaignId);
-            SwrveConversation conversation = new SwrveConversation(campaign, (JsonObject)conversationJson);
+            SwrveConversation conversation = new SwrveConversation(new SwrveConversationCampaign(), (JsonObject)conversationJson);
             LaunchConversationAsync(conversation);
+        }
+
+        public static int GetConversationVersion()
+        {
+            return SwrveConversation.ConversationVersionSupported;
         }
 
         static async Task<bool> LaunchConversationAsync(SwrveConversation conversation)
@@ -60,19 +66,11 @@ namespace Swrve.Conversation
 
         class SwrveConversationCampaign : ISwrveConversationCampaign
         {
-            private int _Id;
-
-            public SwrveConversationCampaign(int id)
-            {
-                _Id = id;
-            }
-
             public int Id
             {
                 get
                 {
-                    SwrveLog.i("" + _Id);
-                    return _Id;
+                    return 0;
                 }
             }
         }

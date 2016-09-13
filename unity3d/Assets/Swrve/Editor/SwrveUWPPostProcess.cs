@@ -27,7 +27,7 @@ public class SwrveUWPPostProcess : SwrveCommonBuildComponent
         SwrveCommonBuildComponent.AddCompilerFlagToCSProj (
             pathToBuiltProject,
             PlayerSettings.productName,
-            "SWRVE_CONVERSATION_SDK");
+            "SWRVE_WINDOWS_SDK");
     }
 }
 
