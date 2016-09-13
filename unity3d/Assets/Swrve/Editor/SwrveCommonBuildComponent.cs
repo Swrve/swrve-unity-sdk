@@ -3,6 +3,7 @@ using UnityEditor;
 using System.Diagnostics;
 using UnityEngine;
 using System.IO;
+using System.Xml;
 
 public class SwrveCommonBuildComponent
 {
@@ -121,6 +122,36 @@ public class SwrveCommonBuildComponent
             }
 
             UnityEngine.Debug.Log ("Android build installed successfully");
+        }
+    }
+
+    public static void AddCompilerFlagToCSProj(string projRoot, string proj, string flag)
+    {
+        string csprojPath = Path.Combine (projRoot, Path.Combine (proj, string.Format ("{0}.csproj", proj)));
+
+        XmlDocument doc = new XmlDocument();
+        doc.Load(csprojPath);
+        XmlNode root = doc.DocumentElement;
+        bool save = false;
+
+        for (int i = 0; i < root.ChildNodes.Count; i++) {
+            XmlNode parent = root.ChildNodes [i];
+            if (parent.Name == "PropertyGroup") {
+                for (int j = 0; j < parent.ChildNodes.Count; j++) {
+                    XmlNode child = parent.ChildNodes [j];
+                    if (child.Name == "DefineConstants") {
+                        string text = child.InnerText;
+                        if (!text.Contains (flag)) {
+                            save = true;
+                            child.InnerText = text + string.Format("{0}{1};", (text.EndsWith (";") ? "" : ";"), flag);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (save) {
+            doc.Save (csprojPath);
         }
     }
 

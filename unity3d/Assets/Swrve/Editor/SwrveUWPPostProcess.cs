@@ -14,9 +14,6 @@ public class SwrveUWPPostProcess : SwrveCommonBuildComponent
     public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
     {
         SwrveLog.Log ("SwrvePostProcess (UWP)");
-        DirectoryCopy("extras", Path.Combine(pathToBuiltProject, "extras"), false, true);
-        CopyFile(Path.Combine(pathToBuiltProject, "UnityCommon.props"), "UWP/Assembly-CSharp/UnityCommon.props");
-        CopyFile(Path.Combine(pathToBuiltProject, "UnityCommon.props"), "UWP/Assembly-CSharp-firstpass/UnityCommon.props");
 
         string filePath = "UWP/Assembly-CSharp/project.json";
         string projectJson = File.ReadAllText(filePath);
@@ -26,6 +23,11 @@ public class SwrveUWPPostProcess : SwrveCommonBuildComponent
         dependencies["SwrveSDKCommon"] = "4.6.0";
         dependencies["SwrveUnityBridge"] = "4.6.0";
         File.WriteAllText(filePath, Json.Serialize(json));
+
+        SwrveCommonBuildComponent.AddCompilerFlagToCSProj (
+            pathToBuiltProject,
+            PlayerSettings.productName,
+            "SWRVE_CONVERSATION_SDK");
     }
 }
 
