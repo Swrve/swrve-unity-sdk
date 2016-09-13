@@ -6,7 +6,6 @@ using SwrveUnity.IAP;
 using SwrveUnity.Messaging;
 using Windows.ApplicationModel;
 using Windows.Globalization;
-using SwrveUnityBridge;
 
 public partial class SwrveSDK
 {
@@ -30,14 +29,14 @@ public partial class SwrveSDK
     private void showNativeConversation (string conversation) {
         UnityEngine.WSA.Application.InvokeOnUIThread(() =>
             {
-                SwrveUnityBridge.ShowConversation(1, conversation);
+                SwrveUnityBridge.SwrveUnityBridge.ShowConversation(1, conversation);
             },
             true
         );
     }
 
     private void setNativeConversationVersion () {
-        SetConversationVersion (SwrveUnityBridge.GetConversationVersion ());
+        SetConversationVersion (SwrveUnityBridge.SwrveUnityBridge.GetConversationVersion ());
     }
 
     private void initNative () {}
