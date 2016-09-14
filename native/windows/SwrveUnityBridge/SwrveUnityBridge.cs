@@ -14,13 +14,13 @@ namespace SwrveUnityWindows
         static SwrveConversationUI _conversationUI;
         static SwrveCommon SDK;
 
-        public static void ShowConversation(int campaignId, string conversationJson)
-        {
-            ShowConversation(campaignId, JsonObject.Parse(conversationJson));
-        }
-
         public static void ShowConversation(object conversationJson)
         {
+            if(conversationJson is string)
+            {
+                conversationJson = JsonObject.Parse((string)conversationJson);
+            }
+
             SDK = new SwrveCommon();
             _conversationUI = new SwrveConversationUI(SDK, false);
             

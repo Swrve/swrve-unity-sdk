@@ -1,4 +1,4 @@
-﻿#if !UNITY_ANDROID && !UNITY_IOS && !SWRVE_WINDOWS_SDK
+﻿#if !UNITY_ANDROID && !UNITY_IOS && !(UNITY_WSA_10_0 && SWRVE_WINDOWS_SDK)
 using System.Collections.Generic;
 
 public partial class SwrveSDK
