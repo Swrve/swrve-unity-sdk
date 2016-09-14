@@ -1,42 +1,34 @@
 ﻿#if SWRVE_WINDOWS_SDK
 
+using SwrveUnityWindows;
 using System.Collections.Generic;
 using System;
 using SwrveUnity.IAP;
 using SwrveUnity.Messaging;
-using Windows.ApplicationModel;
-using Windows.Globalization;
 
 public partial class SwrveSDK
 {
     private void setNativeInfo (Dictionary<string, string> deviceInfo) {}
 
     private string getNativeLanguage () {
-        if (ApplicationLanguages.Languages.Count > 0) {
-            return ApplicationLanguages.Languages[0];
-        }
-        return null;
+        return SwrveUnityBridge.GetAppLanguage (null);
     }
 
     private void setNativeAppVersion () {
-        Package package = Package.Current;
-        PackageId packageId = package.Id;
-        PackageVersion version = packageId.Version;
+        config.AppVersion = SwrveUnityBridge.GetAppVersion ();
+    }
 
-        config.AppVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
+    private void setNativeConversationVersion () {
+        SetConversationVersion (SwrveUnityBridge.GetConversationVersion ());
     }
 
     private void showNativeConversation (string conversation) {
         UnityEngine.WSA.Application.InvokeOnUIThread(() =>
             {
-                SwrveUnityBridge.SwrveUnityBridge.ShowConversation(1, conversation);
+                SwrveUnityBridge.ShowConversation(conversation);
             },
             true
         );
-    }
-
-    private void setNativeConversationVersion () {
-        SetConversationVersion (SwrveUnityBridge.SwrveUnityBridge.GetConversationVersion ());
     }
 
     private void initNative () {}

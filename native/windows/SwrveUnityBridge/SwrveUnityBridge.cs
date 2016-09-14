@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Data.Json;
 
-namespace SwrveUnityBridge
+namespace SwrveUnityWindows
 {
     public static class SwrveUnityBridge
     {
@@ -19,19 +19,26 @@ namespace SwrveUnityBridge
             ShowConversation(campaignId, JsonObject.Parse(conversationJson));
         }
 
-        public static void ShowConversation(int campaignId, object conversationJson)
+        public static void ShowConversation(object conversationJson)
         {
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             SDK = new SwrveCommon();
             _conversationUI = new SwrveConversationUI(SDK, false);
             
             SwrveConversation conversation = new SwrveConversation(new SwrveConversationCampaign(), (JsonObject)conversationJson);
+
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             LaunchConversationAsync(conversation);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
         public static int GetConversationVersion()
         {
             return SwrveConversation.ConversationVersionSupported;
+        }
+
+        public static string GetAppLanguage(string defaultLanguage)
+        {
+            return SwrveHelper.GetAppLanguage(defaultLanguage);
         }
 
         static async Task<bool> LaunchConversationAsync(SwrveConversation conversation)
@@ -51,6 +58,11 @@ namespace SwrveUnityBridge
             public void EventInternal(string eventName, Dictionary<string, string> payload)
             {
                 SwrveLog.i("" + eventName);
+            }
+
+            public void PushNotificationWasEngaged(string pushId, Dictionary<string, string> payload)
+            {
+                SwrveLog.i("" + pushId + ", " + payload);
             }
 
             public void TriggerConversationClosed(ISwrveConversationCampaign conversationCampaign)
