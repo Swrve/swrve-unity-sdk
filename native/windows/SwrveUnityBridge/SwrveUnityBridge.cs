@@ -41,6 +41,11 @@ namespace SwrveUnityWindows
             return SwrveHelper.GetAppLanguage(defaultLanguage);
         }
 
+        public static string GetAppVersion()
+        {
+            return SwrveHelper.GetAppVersion ();
+        }
+
         static async Task<bool> LaunchConversationAsync(SwrveConversation conversation)
         {
             SwrveLog.i("");
