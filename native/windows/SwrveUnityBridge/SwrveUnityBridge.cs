@@ -11,8 +11,6 @@ namespace SwrveUnityWindows
 {
     public static class SwrveUnityBridge
     {
-        static SwrveConversationUI _conversationUI;
-
         public static void ShowConversation(ISwrveCommon sdk, object conversationJson)
         {
             if(conversationJson is string)
@@ -20,12 +18,12 @@ namespace SwrveUnityWindows
                 conversationJson = JsonObject.Parse((string)conversationJson);
             }
             
-            _conversationUI = new SwrveConversationUI(sdk, false);
+            SwrveConversationUI conversationUI = new SwrveConversationUI(sdk, false);
             
             SwrveConversation conversation = new SwrveConversation(new SwrveConversationCampaign(), (JsonObject)conversationJson);
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-            LaunchConversationAsync(conversation);
+            conversationUI.PresentConversation (sdk, conversation);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
@@ -47,7 +45,6 @@ namespace SwrveUnityWindows
         static async Task<bool> LaunchConversationAsync(SwrveConversation conversation)
         {
             SwrveLog.i("");
-            await _conversationUI.PresentConversation(SDK, conversation);
             return true;
         }
 
