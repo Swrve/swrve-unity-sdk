@@ -1,18 +1,19 @@
 ﻿#if (UNITY_WSA_10_0 && SWRVE_WINDOWS_SDK)
 
 using SwrveUnityWindows;
+using Swrve.Conversation;
 using System.Collections.Generic;
 using System;
 using SwrveUnity.IAP;
 using SwrveUnity.Messaging;
 
 public partial class SwrveSDK
-{
+{   
     private SwrveCommon _sdk;
-
-    private void setNativeInfo (Dictionary<string, string> deviceInfo)
+    
+    private void initNative()
     {
-        _sdk = new SwrveCommon();
+        _sdk = new SwrveCommon(proxyEvent);
     }
 
     private string getNativeLanguage () {
@@ -27,28 +28,16 @@ public partial class SwrveSDK
         SetConversationVersion (SwrveUnityBridge.GetConversationVersion ());
     }
 
-    private void callOnUnity(Action lambda, bool waitUntilDone=false) {
-    #if UNITY_WSA
-        UnityEngine.WSA.Application.InvokeOnAppThread(lambda, waitUntilDone);
-    #endif
-    }
-
-    private void callOnWindows(Action lambda, bool waitUntilDone=true) {
-    #if UNITY_WSA
-        UnityEngine.WSA.Application.InvokeOnUIThread(lambda, waitUntilDone);
-    #endif
-    }
-
     private void showNativeConversation (string conversation) {
-        callOnWindows(() =>
-            {
-                SwrveUnityBridge.ShowConversation(_sdk, conversation);
-            },
-            true
-        );
+        NativeCommunicationHelper.CallOnWindows (() => SwrveUnityBridge.ShowConversation (_sdk, conversation));
     }
 
-    private void initNative () {}
+    private void proxyEvent(string name, Dictionary<string, string> payload)
+    {
+        NativeCommunicationHelper.CallOnUnity(() => NamedEventInternal(name, payload, false));
+    }
+
+    private void setNativeInfo(Dictionary<string, string> deviceInfo) { }
     private void startNativeLocation () {}
     private void startNativeLocationAfterPermission () {}
     private bool NativeIsBackPressed () { return false; }
@@ -124,9 +113,16 @@ public partial class SwrveSDK
 
     class SwrveCommon : Swrve.ISwrveCommon
     {
+        private Action<string, Dictionary<string, string>> _proxyEvent;
+
+        public SwrveCommon(Action<string, Dictionary<string, string>> proxyEvent)
+        {
+            _proxyEvent = proxyEvent;
+        }
+
         public void EventInternal(string eventName, Dictionary<string, string> payload)
         {
-            SwrveLog.Log("" + eventName);
+            _proxyEvent.Invoke(eventName, payload);
         }
 
         public void ConversationWasShownToUser(ISwrveConversationCampaign campaign)
@@ -146,7 +142,20 @@ public partial class SwrveSDK
 
         public void TriggerConversationOpened(ISwrveConversationCampaign conversationCampaign)
         {
-            SwrveLog.i("" + conversationCampaign);
+            SwrveLog.Log("" + conversationCampaign);
+        }
+    }
+
+    static class NativeCommunicationHelper
+    {
+        public static void CallOnWindows(Action lambda, bool waitUntilDone = true)
+        {
+            UnityEngine.WSA.Application.InvokeOnUIThread(() => lambda(), waitUntilDone);
+        }
+
+        public static void CallOnUnity(Action lambda, bool waitUntilDone = false)
+        {
+            UnityEngine.WSA.Application.InvokeOnAppThread(() => lambda(), waitUntilDone);
         }
     }
 }

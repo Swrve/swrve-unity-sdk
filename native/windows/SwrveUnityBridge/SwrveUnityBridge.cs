@@ -42,12 +42,6 @@ namespace SwrveUnityWindows
             return SwrveHelper.GetAppVersion ();
         }
 
-        static async Task<bool> LaunchConversationAsync(SwrveConversation conversation)
-        {
-            SwrveLog.i("");
-            return true;
-        }
-
         class SwrveConversationCampaign : ISwrveConversationCampaign
         {
             public int Id
