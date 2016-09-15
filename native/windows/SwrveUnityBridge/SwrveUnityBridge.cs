@@ -12,17 +12,15 @@ namespace SwrveUnityWindows
     public static class SwrveUnityBridge
     {
         static SwrveConversationUI _conversationUI;
-        static SwrveCommon SDK;
 
-        public static void ShowConversation(object conversationJson)
+        public static void ShowConversation(ISwrveCommon sdk, object conversationJson)
         {
             if(conversationJson is string)
             {
                 conversationJson = JsonObject.Parse((string)conversationJson);
             }
-
-            SDK = new SwrveCommon();
-            _conversationUI = new SwrveConversationUI(SDK, false);
+            
+            _conversationUI = new SwrveConversationUI(sdk, false);
             
             SwrveConversation conversation = new SwrveConversation(new SwrveConversationCampaign(), (JsonObject)conversationJson);
 
@@ -51,34 +49,6 @@ namespace SwrveUnityWindows
             SwrveLog.i("");
             await _conversationUI.PresentConversation(SDK, conversation);
             return true;
-        }
-
-        class SwrveCommon : ISwrveCommon
-        {
-            public void ConversationWasShownToUser(ISwrveConversationCampaign campaign)
-            {
-                SwrveLog.i("" + campaign);
-            }
-
-            public void EventInternal(string eventName, Dictionary<string, string> payload)
-            {
-                SwrveLog.i("" + eventName);
-            }
-
-            public void PushNotificationWasEngaged(string pushId, Dictionary<string, string> payload)
-            {
-                SwrveLog.i("" + pushId + ", " + payload);
-            }
-
-            public void TriggerConversationClosed(ISwrveConversationCampaign conversationCampaign)
-            {
-                SwrveLog.i("" + conversationCampaign);
-            }
-
-            public void TriggerConversationOpened(ISwrveConversationCampaign conversationCampaign)
-            {
-                SwrveLog.i("" + conversationCampaign);
-            }
         }
 
         class SwrveConversationCampaign : ISwrveConversationCampaign

@@ -8,7 +8,12 @@ using SwrveUnity.Messaging;
 
 public partial class SwrveSDK
 {
-    private void setNativeInfo (Dictionary<string, string> deviceInfo) {}
+    private SwrveCommon _sdk;
+
+    private void setNativeInfo (Dictionary<string, string> deviceInfo)
+    {
+        _sdk = new SwrveCommon();
+    }
 
     private string getNativeLanguage () {
         return SwrveUnityBridge.GetAppLanguage (null);
@@ -22,10 +27,22 @@ public partial class SwrveSDK
         SetConversationVersion (SwrveUnityBridge.GetConversationVersion ());
     }
 
+    private void callOnUnity(Action lambda, bool waitUntilDone=false) {
+    #if UNITY_WSA
+        UnityEngine.WSA.Application.InvokeOnAppThread(lambda, waitUntilDone);
+    #endif
+    }
+
+    private void callOnWindows(Action lambda, bool waitUntilDone=true) {
+    #if UNITY_WSA
+        UnityEngine.WSA.Application.InvokeOnUIThread(lambda, waitUntilDone);
+    #endif
+    }
+
     private void showNativeConversation (string conversation) {
-        UnityEngine.WSA.Application.InvokeOnUIThread(() =>
+        callOnWindows(() =>
             {
-                SwrveUnityBridge.ShowConversation(conversation);
+                SwrveUnityBridge.ShowConversation(_sdk, conversation);
             },
             true
         );
@@ -102,6 +119,34 @@ public partial class SwrveSDK
                 // Send events automatically and check for changes
                 CheckForCampaignsAndResourcesUpdates(false);
             }
+        }
+    }
+
+    class SwrveCommon : Swrve.ISwrveCommon
+    {
+        public void EventInternal(string eventName, Dictionary<string, string> payload)
+        {
+            SwrveLog.Log("" + eventName);
+        }
+
+        public void ConversationWasShownToUser(ISwrveConversationCampaign campaign)
+        {
+            SwrveLog.Log("" + campaign);
+        }
+
+        public void PushNotificationWasEngaged(string pushId, Dictionary<string, string> payload)
+        {
+            SwrveLog.Log("" + pushId + ", " + payload);
+        }
+
+        public void TriggerConversationClosed(ISwrveConversationCampaign conversationCampaign)
+        {
+            SwrveLog.Log("" + conversationCampaign);
+        }
+
+        public void TriggerConversationOpened(ISwrveConversationCampaign conversationCampaign)
+        {
+            SwrveLog.i("" + conversationCampaign);
         }
     }
 }
