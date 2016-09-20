@@ -155,8 +155,11 @@ public class SwrveCommonBuildComponent
         }
     }
 
-    protected static void CopyFile(string src, string dst)
+    protected static void CopyFile(string src, string dst, bool dstIsPath=false)
     {
+        if (dstIsPath) {
+            dst = Path.Combine (dst, Path.GetFileName (src));
+        }
         if (!File.Exists(src)) {
             throw new Exception("File " + src + " does not exist");
         }

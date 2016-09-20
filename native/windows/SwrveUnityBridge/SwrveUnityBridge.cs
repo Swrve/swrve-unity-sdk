@@ -35,18 +35,8 @@ namespace SwrveUnityWindows
         public static async Task<string> RegisterForPush (ISwrveCommon sdk)
         {
             SwrvePush push = new SwrvePush (sdk);
-
-            string uri = null;
-            // Get the latest uri, this is stored in local settings
-            var wasUpdated = await push.UpdateUriAsync ();
-            if (wasUpdated) {
-                SwrveLog.i ("Uri updated. Sending to swrve");
-                var attributes = new Dictionary<string, string> ();
-                if (!push.GetStoredUri (out uri)) {
-                    SwrveLog.i ("Unable to find the stored uri!");
-                }
-            }
-            return uri;
+            await push.UpdateUriAsync ();
+            return push.GetStoredUri (out uri);
         }
 
         public static string GetAppLanguage(string defaultLanguage)
