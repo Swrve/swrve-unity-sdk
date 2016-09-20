@@ -36,7 +36,9 @@ namespace SwrveUnityWindows
         {
             SwrvePush push = new SwrvePush (sdk);
             await push.UpdateUriAsync ();
-            return push.GetStoredUri (out uri);
+            string uri;
+            push.GetStoredUri (out uri);
+            return uri;
         }
 
         public static string GetAppLanguage(string defaultLanguage)
