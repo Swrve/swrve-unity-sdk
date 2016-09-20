@@ -410,6 +410,10 @@ static dispatch_once_t sharedInstanceToken = 0;
 -(void)plotHandleNotification:(UILocalNotification*)localNotification data:(NSString*)data {
     [SwrvePlot engageLocationCampaign:localNotification withData:data];
 }
+
+-(void)plotNotificationSentEvent:(PlotSentNotification*)notification {
+    [SwrvePlot sentLocationCampaign:notification];
+}
 #endif
 
 @end

@@ -17,7 +17,7 @@ How to run the demo
 - Open the project 'unity3d' from the repository.
 - Open the demo scene under 'Assets/Swrve/UnitySwrveDemo/DemoScene.unity'.
 - Under the Hierarchy view, click on SwrvePrefab. This is the SDK component in your scene.
-- Input your gameId and apiKey in the Inspector view with the values provided by Swrve.
+- Input your appId and apiKey in the Inspector view with the values provided by Swrve.
 - Click the Play button at the top.
 
 How to build the SDK
@@ -40,4 +40,3 @@ License
 © Copyright Swrve Mobile Inc or its licensors. Distributed under the [Apache 2.0 License](LICENSE).  
 Google Play Services Library Copyright © 2012 The Android Open Source Project. Licensed under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0).  
 SharpZipLib Copyright © David Pierson, Mike Krueger. Distributed under the [GPL License](http://www.gnu.org/licenses/gpl.txt) with the [GPL Classpath exception](http://www.gnu.org/software/classpath/license.html).
- 
