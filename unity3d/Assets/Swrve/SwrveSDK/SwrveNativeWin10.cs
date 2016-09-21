@@ -14,6 +14,27 @@ public partial class SwrveSDK
     private void initNative()
     {
         _sdk = new SwrveCommon(proxyEvent);
+
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        if(config.PushNotificationEnabled)
+        {
+            RegisterForPush();
+        }
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+
+    }
+
+    private async void RegisterForPush()
+    {
+        string uri = await SwrveUnityBridge.RegisterForPush(_sdk);
+        if(!string.IsNullOrEmpty(uri))
+        {
+            NativeCommunicationHelper.CallOnUnity(() =>
+            {
+                UserUpdate(new Dictionary<string, string> { { "swrve.wns_uri", uri } });
+                SendQueuedEvents();
+            });
+        }
     }
 
     private string getNativeLanguage () {
