@@ -1,4 +1,4 @@
-﻿#if UNITY_WSA
+﻿//#if UNITY_WSA
 
 using UnityEngine;
 using UnityEditor.Callbacks;
@@ -15,20 +15,20 @@ public class SwrveUWPPostProcess : SwrveCommonBuildComponent
     {
         SwrveLog.Log ("SwrvePostProcess (UWP)");
 
-        string filePath = "UWP/Assembly-CSharp/project.json";
-        string projectJson = File.ReadAllText(filePath);
-        Dictionary<string, object> json = (Dictionary<string, object>)Json.Deserialize(projectJson);
-        Dictionary<string, object> dependencies = (Dictionary<string, object>)json["dependencies"];
-        dependencies["SwrveConversationsSDK"] = "4.6.0";
-        dependencies["SwrveSDKCommon"] = "4.6.0";
-        dependencies["SwrveUnityBridge"] = "4.6.0";
-        File.WriteAllText(filePath, Json.Serialize(json));
-
         SwrveCommonBuildComponent.AddCompilerFlagToCSProj (
             pathToBuiltProject,
             PlayerSettings.productName,
             "SWRVE_WINDOWS_SDK");
+
+        string pathToApp = Path.Combine (pathToBuiltProject, PlayerSettings.productName);
+
+        SwrveCommonBuildComponent.SetDependenciesForProjectJSON (
+            pathToApp,
+            new Dictionary<string, string> {
+                {"Microsoft.NETCore.UniversalWindowsPlatform", "5.1.0"}
+            }
+        );
     }
 }
 
-#endif
+//#endif

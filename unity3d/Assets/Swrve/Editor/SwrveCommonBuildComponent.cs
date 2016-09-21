@@ -4,6 +4,8 @@ using System.Diagnostics;
 using UnityEngine;
 using System.IO;
 using System.Xml;
+using System.Collections.Generic;
+using SwrveUnityMiniJSON;
 
 public class SwrveCommonBuildComponent
 {
@@ -123,6 +125,20 @@ public class SwrveCommonBuildComponent
 
             UnityEngine.Debug.Log ("Android build installed successfully");
         }
+    }
+
+    public static void SetDependenciesForProjectJSON(string projRoot, Dictionary<string, string> dependencies, string filename="project.json")
+    {
+        string filePath = Path.Combine(projRoot, filename);
+        string projectJson = File.ReadAllText(filePath);
+        Dictionary<string, object> json = (Dictionary<string, object>)Json.Deserialize(projectJson);
+        Dictionary<string, object> _dependencies = (Dictionary<string, object>)json["dependencies"];
+
+        Dictionary<string, string>.Enumerator it = dependencies.GetEnumerator();
+        while (it.MoveNext ()) {
+            _dependencies [it.Current.Key] = it.Current.Value;
+        }
+        File.WriteAllText(filePath, Json.Serialize(json));
     }
 
     public static void AddCompilerFlagToCSProj(string projRoot, string proj, string flag)
