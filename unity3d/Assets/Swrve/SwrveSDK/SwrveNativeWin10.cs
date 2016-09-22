@@ -13,7 +13,7 @@ public partial class SwrveSDK
     
     private void initNative()
     {
-        _sdk = new SwrveCommon(proxyEvent, GlobalConversationListener);
+        _sdk = new SwrveCommon (proxyEvent);
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         if(config.PushNotificationEnabled)
@@ -50,6 +50,7 @@ public partial class SwrveSDK
     }
 
     private void showNativeConversation (string conversation) {
+        _sdk.ConversationListener = GlobalConversationListener;
         NativeCommunicationHelper.CallOnWindows (() => SwrveUnityBridge.ShowConversation (_sdk, conversation));
     }
 
@@ -135,12 +136,11 @@ public partial class SwrveSDK
     class SwrveCommon : Swrve.ISwrveCommon
     {
         private Action<string, Dictionary<string, string>> ProxyEvent;
-        private ISwrveConversationListener ConversationListener;
+        internal ISwrveConversationListener ConversationListener;
 
-        public SwrveCommon(Action<string, Dictionary<string, string>> proxyEvent, ISwrveConversationListener conversationListener)
+        public SwrveCommon(Action<string, Dictionary<string, string>> proxyEvent)
         {
             ProxyEvent = proxyEvent;
-            ConversationListener = conversationListener;
         }
 
         public void EventInternal(string eventName, Dictionary<string, string> payload)
