@@ -13,7 +13,7 @@ public partial class SwrveSDK
     
     private void initNative()
     {
-        _sdk = new SwrveCommon(proxyEvent);
+        _sdk = new SwrveCommon(proxyEvent, GlobalConversationListener);
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         if(config.PushNotificationEnabled)
@@ -135,10 +135,12 @@ public partial class SwrveSDK
     class SwrveCommon : Swrve.ISwrveCommon
     {
         private Action<string, Dictionary<string, string>> _proxyEvent;
+        private ISwrveConversationListener ConversationListener;
 
-        public SwrveCommon(Action<string, Dictionary<string, string>> proxyEvent)
+        public SwrveCommon(Action<string, Dictionary<string, string>> proxyEvent, ISwrveConversationListener conversationListener)
         {
             _proxyEvent = proxyEvent;
+            ConversationListener = conversationListener;
         }
 
         public void EventInternal(string eventName, Dictionary<string, string> payload)
@@ -156,14 +158,18 @@ public partial class SwrveSDK
             SwrveLog.Log("" + pushId + ", " + payload);
         }
 
-        public void TriggerConversationClosed(ISwrveConversationCampaign conversationCampaign)
-        {
-            SwrveLog.Log("" + conversationCampaign);
-        }
-
         public void TriggerConversationOpened(ISwrveConversationCampaign conversationCampaign)
         {
-            SwrveLog.Log("" + conversationCampaign);
+            if (ConversationListener != null) {
+                NativeCommunicationHelper.CallOnUnity (() => ConversationListener.OnShow ());
+            }
+        }
+
+        public void TriggerConversationClosed(ISwrveConversationCampaign conversationCampaign)
+        {
+            if (ConversationListener != null) {
+                NativeCommunicationHelper.CallOnUnity (() => ConversationListener.OnDismiss ());
+            }
         }
     }
 

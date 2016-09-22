@@ -109,6 +109,11 @@ public partial class SwrveSDK : ISwrveAssetController
     public ISwrveMessageListener GlobalMessageListener = null;
 
     /// <summary>
+    /// Global in-app conversation listener (used for Windows UWP devices only)
+    /// </summary>
+    public ISwrveConversationListener GlobalConversationListener = null;
+
+    /// <summary>
     /// Listener for push notifications received in the app.
     /// </summary>
     public ISwrvePushNotificationListener PushNotificationListener = null;
