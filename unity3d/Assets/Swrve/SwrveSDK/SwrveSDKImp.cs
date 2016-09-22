@@ -158,11 +158,13 @@ public partial class SwrveSDK
         }
 #if UNITY_IPHONE
         path = path + "/com.ngt.msgs";
+#elif UNITY_WSA_10_0
+        path = path + "/swrveTemp";
 #endif
-		if (!File.Exists (path))
-		{
-			Directory.CreateDirectory (path);
-		}
+    		if (!File.Exists (path))
+    		{
+    			Directory.CreateDirectory (path);
+    		}
         return path;
     }
 
@@ -1155,9 +1157,13 @@ public partial class SwrveSDK
         return format;
     }
 
+    private string GetTemporaryPathFileName(string fileName) {
+        return Path.Combine (swrveTemporaryPath, fileName);
+    }
+
     private IEnumerator LoadAsset (string fileName, CoroutineReference<Texture2D> texture)
     {
-        string filePath = swrveTemporaryPath + "/" + fileName;
+        string filePath = GetTemporaryPathFileName (fileName);
 
         WWW www = new WWW ("file://" + filePath);
         yield return www;
@@ -1186,7 +1192,7 @@ public partial class SwrveSDK
 
     protected virtual bool CheckAsset (string fileName)
     {
-        if (CrossPlatformFile.Exists (swrveTemporaryPath + "/" + fileName)) {
+        if (CrossPlatformFile.Exists (GetTemporaryPathFileName(fileName))) {
             return true;
         }
         return false;
@@ -1202,7 +1208,7 @@ public partial class SwrveSDK
         if (www != null && WwwDeducedError.NoError == err && www.isDone) {
             Texture2D loadedTexture = www.texture;
             if (loadedTexture != null) {
-                string filePath = swrveTemporaryPath + "/" + fileName;
+                string filePath = GetTemporaryPathFileName (fileName);
                 SwrveLog.Log ("Saving to " + filePath);
                 byte[] bytes = loadedTexture.EncodeToPNG ();
                 CrossPlatformFile.SaveBytes (filePath, bytes);
