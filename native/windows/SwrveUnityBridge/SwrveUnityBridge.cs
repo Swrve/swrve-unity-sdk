@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Data.Json;
+using Windows.System.Profile;
 
 namespace SwrveUnityWindows
 {
@@ -17,8 +18,9 @@ namespace SwrveUnityWindows
             {
                 conversationJson = JsonObject.Parse((string)conversationJson);
             }
-            
-            SwrveConversationUI conversationUI = new SwrveConversationUI(sdk, false);
+
+            string os = AnalyticsInfo.VersionInfo.DeviceFamily.ToLower ();
+            SwrveConversationUI conversationUI = new SwrveConversationUI(sdk, os.Contains("desktop"));
             
             SwrveConversation conversation = new SwrveConversation(new SwrveConversationCampaign(), (JsonObject)conversationJson);
 
