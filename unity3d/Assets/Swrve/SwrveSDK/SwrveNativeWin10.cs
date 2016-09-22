@@ -134,23 +134,23 @@ public partial class SwrveSDK
 
     class SwrveCommon : Swrve.ISwrveCommon
     {
-        private Action<string, Dictionary<string, string>> _proxyEvent;
+        private Action<string, Dictionary<string, string>> ProxyEvent;
         private ISwrveConversationListener ConversationListener;
 
         public SwrveCommon(Action<string, Dictionary<string, string>> proxyEvent, ISwrveConversationListener conversationListener)
         {
-            _proxyEvent = proxyEvent;
+            ProxyEvent = proxyEvent;
             ConversationListener = conversationListener;
         }
 
         public void EventInternal(string eventName, Dictionary<string, string> payload)
         {
-            _proxyEvent.Invoke(eventName, payload);
+            ProxyEvent.Invoke(eventName, payload);
         }
 
         public void ConversationWasShownToUser(ISwrveConversationCampaign campaign)
         {
-            SwrveLog.Log("" + campaign);
+             SwrveLog.Log("" + campaign);
         }
 
         public void PushNotificationWasEngaged(string pushId, Dictionary<string, string> payload)
