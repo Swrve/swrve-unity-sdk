@@ -46,8 +46,11 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
 
         if (checkCampaignLimits (triggerEvent, payload, qaUser)) {
             SwrveLog.Log (string.Format ("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
-
-            return Conversation;
+            if (AreAssetsReady ()) {
+                return Conversation;
+            } else {
+                LogAndAddReason ("Assets not downloaded to show conversation in campaign " + Id, qaUser);
+            }
         }
         return null;
     }
