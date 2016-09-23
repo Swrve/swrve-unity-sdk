@@ -975,9 +975,8 @@ public partial class SwrveSDK
             return;
         }
 
-        bool conversationShown = false;
+        SwrveBaseMessage baseMessage = null;
         // Process only Conversation campaign types first
-
         for(int ci = 0; ci < campaigns.Count; ci++) {
             if(!campaigns[ci].IsA<SwrveConversationCampaign>()) {
                 continue;
@@ -988,7 +987,7 @@ public partial class SwrveSDK
             if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
                 if (campaign.AreAssetsReady ()) {
                     Container.StartCoroutine (LaunchConversation (campaign.Conversation));
-                    conversationShown = true;
+                    baseMessage = campaign.Conversation;
                     break;
                 } else if(qaUser != null) {
                     int campaignId = campaign.Id;
@@ -998,37 +997,40 @@ public partial class SwrveSDK
             }
         }
 
-        if(conversationShown)
-        {
-            return;
-        }
+        if(baseMessage == null) {
+            for(int ci = 0; ci < campaigns.Count; ci++) {
+                if(!campaigns[ci].IsA<SwrveMessagesCampaign>()) {
+                    continue;
+                }
 
-        for(int ci = 0; ci < campaigns.Count; ci++) {
-            if(!campaigns[ci].IsA<SwrveMessagesCampaign>()) {
-                continue;
-            }
+                SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)campaigns[ci];
 
-            SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)campaigns[ci];
-
-            if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
-                if (TriggeredMessageListener != null) {
-                    // They are using a custom listener
-                    SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
-                    if (message != null) {
-                        autoShowMessagesEnabled = false;
-                        TriggeredMessageListener.OnMessageTriggered (message);
-                    }
-                } else {
-                    if (currentMessage == null) {
+                if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
+                    if (TriggeredMessageListener != null) {
+                        // They are using a custom listener
                         SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
                         if (message != null) {
                             autoShowMessagesEnabled = false;
-                            Container.StartCoroutine (LaunchMessage (message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+                            TriggeredMessageListener.OnMessageTriggered (message);
+                            baseMessage = message;
+                        }
+                    } else {
+                        if (currentMessage == null) {
+                            SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
+                            if (message != null) {
+                                autoShowMessagesEnabled = false;
+                                Container.StartCoroutine (LaunchMessage (message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+                                baseMessage = message;
+                            }
                         }
                     }
+                    break;
                 }
-                break;
             }
+        }
+
+        if (qaUser != null) {
+            qaUser.Trigger (DefaultAutoShowMessagesTrigger, baseMessage);
         }
     }
 
