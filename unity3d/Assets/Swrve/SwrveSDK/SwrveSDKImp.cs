@@ -986,9 +986,15 @@ public partial class SwrveSDK
             SwrveConversationCampaign campaign = (SwrveConversationCampaign)campaigns[ci];
 
             if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
-                Container.StartCoroutine (LaunchConversation (campaign.Conversation));
-                conversationShown = true;
-                break;
+                if (campaign.AreAssetsReady ()) {
+                    Container.StartCoroutine (LaunchConversation (campaign.Conversation));
+                    conversationShown = true;
+                    break;
+                } else if(qaUser != null) {
+                    int campaignId = campaign.Id;
+                    qaUser.campaignMessages[campaignId] = otherMessage;
+                    qaUser.campaignReasons[campaignId] = "Campaign " + campaignId + " was selected to autoshow, but assets aren't fully downloaded";
+                }
             }
         }
 
