@@ -992,7 +992,7 @@ public partial class SwrveSDK
                     break;
                 } else if(qaUser != null) {
                     int campaignId = campaign.Id;
-                    qaUser.campaignMessages[campaignId] = otherMessage;
+                    qaUser.campaignMessages[campaignId] = campaign.Conversation;
                     qaUser.campaignReasons[campaignId] = "Campaign " + campaignId + " was selected to autoshow, but assets aren't fully downloaded";
                 }
             }
