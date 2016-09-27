@@ -10,6 +10,7 @@ using SwrveUnity.Messaging;
 public partial class SwrveSDK
 {   
     private SwrveCommon _sdk;
+    private string uwpPushURI;
     
     private void initNative()
     {
