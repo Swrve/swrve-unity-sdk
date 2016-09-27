@@ -3,12 +3,12 @@
 #endif
 
 using System;
-using Swrve.Messaging;
+using SwrveUnity.Messaging;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 
-namespace Swrve
+namespace SwrveUnity
 {
 
   /// <summary>

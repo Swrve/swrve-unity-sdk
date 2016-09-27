@@ -1,6 +1,6 @@
 using System;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Implement this to use your own rendering code for in-app messages.

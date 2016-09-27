@@ -11,13 +11,13 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Globalization;
-using Swrve;
-using SwrveMiniJSON;
-using Swrve.Messaging;
-using Swrve.Helpers;
-using Swrve.ResourceManager;
-using Swrve.Device;
-using Swrve.IAP;
+using SwrveUnity;
+using SwrveUnityMiniJSON;
+using SwrveUnity.Messaging;
+using SwrveUnity.Helpers;
+using SwrveUnity.ResourceManager;
+using SwrveUnity.Device;
+using SwrveUnity.IAP;
 
 #if UNITY_WP8 || UNITY_METRO
 #error "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk."
@@ -225,7 +225,7 @@ public partial class SwrveSDK : ISwrveAssetController
     public virtual void Init (MonoBehaviour container, int appId, string apiKey, SwrveConfig config)
     {
         this.Container = container;
-        this.ResourceManager = new Swrve.ResourceManager.SwrveResourceManager ();
+        this.ResourceManager = new SwrveUnity.ResourceManager.SwrveResourceManager ();
         this.config = config;
         this.prefabName = container.name;
 

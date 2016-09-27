@@ -1,6 +1,6 @@
 using System;
 
-namespace Swrve.Device
+namespace SwrveUnity.Device
 {
 public interface ICarrierInfo
 {

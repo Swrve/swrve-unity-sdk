@@ -4,12 +4,12 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
-using Swrve.IAP;
+using SwrveUnity.IAP;
 using System;
 using System.Linq;
 using UnityEngine.Events;
-using Swrve.Messaging;
-using SwrveMiniJSON;
+using SwrveUnity.Messaging;
+using SwrveUnityMiniJSON;
 using System.Text.RegularExpressions;
 
 public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {

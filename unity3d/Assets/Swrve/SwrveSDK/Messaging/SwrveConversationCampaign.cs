@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Collections;
 using System;
 using System.Linq;
-using Swrve.Helpers;
-using SwrveMiniJSON;
+using SwrveUnity.Helpers;
+using SwrveUnityMiniJSON;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Swrve Talk campaign.

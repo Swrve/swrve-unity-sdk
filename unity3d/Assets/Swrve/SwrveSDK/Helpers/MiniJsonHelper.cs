@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Swrve.Helpers
+namespace SwrveUnity.Helpers
 {
 /// <summary>
 /// Used internally to extend the functionality of MiniJSON.

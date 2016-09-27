@@ -2,12 +2,12 @@ using UnityEngine;
 using System.Collections;
 using System;
 using System.Collections.Generic;
-using Swrve.Messaging;
+using SwrveUnity.Messaging;
 
 /// <summary>
 /// Swrve SDK demo.
 /// </summary>
-using Swrve.IAP;
+using SwrveUnity.IAP;
 
 
 public class DemoGUI : BaseDemoGUI
