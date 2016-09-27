@@ -1,4 +1,4 @@
-﻿//#if UNITY_WSA
+﻿#if UNITY_WSA
 
 using UnityEngine;
 using UnityEditor.Callbacks;
@@ -31,4 +31,4 @@ public class SwrveUWPPostProcess : SwrveCommonBuildComponent
     }
 }
 
-//#endif
+#endif
