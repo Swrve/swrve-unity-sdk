@@ -23,17 +23,29 @@ public partial class SwrveSDK
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
     }
-
+    
     private async void RegisterForPush()
     {
+        this.uwpPushURI = storage.Load(WindowsDeviceTokenSave);
         string uri = await SwrveUnityBridge.RegisterForPush(_sdk);
-        if(!string.IsNullOrEmpty(uri))
+
+        if (!string.IsNullOrEmpty(uri))
         {
-            NativeCommunicationHelper.CallOnUnity(() =>
+            bool sendDeviceInfo = (this.uwpPushURI != uri);
+
+            if (sendDeviceInfo)
             {
-                UserUpdate(new Dictionary<string, string> { { "swrve.wns_uri", uri } });
-                SendQueuedEvents();
-            });
+                NativeCommunicationHelper.CallOnUnity(() =>
+                {
+                    this.uwpPushURI = uri;
+                    storage.Save(WindowsDeviceTokenSave, uwpPushURI);
+                    if (qaUser != null)
+                    {
+                        qaUser.UpdateDeviceInfo();
+                    }
+                    SendDeviceInfo();
+                });
+            }
         }
     }
 
@@ -59,7 +71,14 @@ public partial class SwrveSDK
         NativeCommunicationHelper.CallOnUnity(() => NamedEventInternal(name, payload, false));
     }
 
-    private void setNativeInfo(Dictionary<string, string> deviceInfo) { }
+    private void setNativeInfo(Dictionary<string, string> deviceInfo)
+    {
+        if (!string.IsNullOrEmpty(uwpPushURI))
+        {
+            deviceInfo["swrve.wns_uri"] = uwpPushURI;
+        }
+    }
+
     private void startNativeLocation () {}
     private void startNativeLocationAfterPermission () {}
     private bool NativeIsBackPressed () { return false; }
