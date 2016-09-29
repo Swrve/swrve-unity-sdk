@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -66,6 +67,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     private String sessionKey;
 
     private File cacheDir;
+    SwrveUnityPush swrveUnityPush;
 
     /***
      * This is the automatically called Constructor from SwrveUnityApplication
@@ -117,6 +119,16 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 
                 this.cacheDir = new File(getSwrveTemporaryPath());
                 sessionKey = SwrveHelper.generateSessionToken(this.getApiKey(), this.getAppId(), getUserId());
+
+                //Start the push bridge code
+                //TODO verify this is safe and early enough.
+                //Should only initialise this late if push couldn't happen anyway.
+                //But lets not assume that's always true.
+                boolean invokedFromUnity = false;
+                if (context instanceof Activity) {
+                    invokedFromUnity = true;
+                }
+                swrveUnityPush = new SwrveUnityPush(this.context.get(), "", invokedFromUnity);
             } catch (Exception e) {
                 SwrveLogger.e(LOG_TAG, "Error loading settings from JSON", e);
             }
@@ -413,4 +425,20 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     public int getNextSequenceNumber() {
         return 0; //
     }
+
+    //ISwrvePushSDKListener callbacks
+    @Override
+    public void onPushTokenUpdated(String pushToken) {
+        this.pushToken = pushToken;
+        if (!SwrveHelper.isNullOrEmpty(this.pushToken)) {
+            SwrveLogger.i(LOG_TAG, "Unity Bridge received updated push token: " + pushToken);
+
+            //Tell Unity layer about new push token. Note method value changes per flavour
+            sendMessageUp(UnityBridgeConstants.SWRVE_PUSH_TOKEN_UNITY_METHOD, pushToken);
+
+        } else {
+            SwrveLogger.e(LOG_TAG, "Push token is null.");
+        }
+    }
+
 }
