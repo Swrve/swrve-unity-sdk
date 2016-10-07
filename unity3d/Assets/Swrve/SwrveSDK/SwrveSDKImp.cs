@@ -27,6 +27,7 @@ public partial class SwrveSDK
     protected const string InstallTimeEpochSave = "Swrve_JoinedDate";
     protected const string iOSdeviceTokenSave = "Swrve_iOSDeviceToken";
     protected const string GcmDeviceTokenSave = "Swrve_gcmDeviceToken";
+    protected const string AdmDeviceTokenSave = "Swrve_admDeviceToken";
     protected const string GoogleAdvertisingIdSave = "Swrve_googleAdvertisingId";
     protected const string AbTestUserResourcesSave = "srcngt2"; // Saved securely
     protected const string AbTestUserResourcesDiffSave = "rsdfngt2"; // Saved securely

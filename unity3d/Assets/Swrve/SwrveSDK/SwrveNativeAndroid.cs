@@ -4,10 +4,12 @@ using System;
 using UnityEngine;
 using SwrveUnity.Helpers;
 using SwrveUnityMiniJSON;
+using SwrveUnity;
 
 public partial class SwrveSDK
 {
-    private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
+    private const string SwrveAndroidGCMPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
+    private const string SwrveAndroidADMPushPluginPackageName = "com.swrve.unity.adm.SwrveAdmPushSupport";
     private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
     private const string SwrveAndroidPlotName = "com.swrve.sdk.SwrvePlot";
 
@@ -19,7 +21,7 @@ public partial class SwrveSDK
     private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
     private const string UnityCurrentActivityName = "currentActivity";
 
-    private string gcmDeviceToken;
+    private string registrationToken;
     private static AndroidJavaObject androidPlugin;
     private static bool androidPluginInitialized = false;
     private static bool androidPluginInitializedSuccessfully = false;
@@ -27,11 +29,16 @@ public partial class SwrveSDK
     private static bool startedPlot;
 
     private const int GooglePlayPushPluginVersion = 4;
+    private const int ADMPushPluginVersion = 1;
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)
     {
-        if (!string.IsNullOrEmpty(gcmDeviceToken)) {
-            deviceInfo["swrve.gcm_token"] = gcmDeviceToken;
+        if (!string.IsNullOrEmpty(registrationToken)) {
+            if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
+  	            deviceInfo["swrve.gcm_token"] = registrationToken;
+            } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
+                deviceInfo["swrve.adm_token"] = registrationToken;
+            }
         }
 
         string timezone = AndroidGetTimezone();
@@ -85,17 +92,16 @@ public partial class SwrveSDK
     {
         try {
             bool registered = false;
-            this.gcmDeviceToken = storage.Load (GcmDeviceTokenSave);
+            this.registrationToken = storage.Load (GcmDeviceTokenSave);
 
             if (!androidPluginInitialized) {
                 androidPluginInitialized = true;
 
                 using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
-                    string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
+                    string jniPluginClassName = SwrveAndroidGCMPushPluginPackageName.Replace(".", "/");
 
                     if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
-                        androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
-
+                        androidPlugin = new AndroidJavaClass(SwrveAndroidGCMPushPluginPackageName);
                         if (androidPlugin != null) {
                             // Check that the version is the same
                             int pluginVersion = androidPlugin.CallStatic<int>("getVersion");
@@ -107,8 +113,12 @@ public partial class SwrveSDK
                             } else {
                                 androidPluginInitializedSuccessfully = true;
                             }
-                        }
-                    }
+						} else {
+	                		SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
+						}
+					} else {
+                		SwrveLog.LogError("Could not find class: " + jniPluginClassName);
+					}
                 }
             }
 
@@ -124,6 +134,58 @@ public partial class SwrveSDK
         }
     }
 
+    private void InitialiseADM(MonoBehaviour container)
+    {
+        try {
+            bool registered = false;
+            this.registrationToken = storage.Load(AdmDeviceTokenSave);
+
+            if (!androidPluginInitialized) {
+                androidPluginInitialized = true;
+
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
+                    string jniPluginClassName = SwrveAndroidADMPushPluginPackageName.Replace(".", "/");
+
+                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
+                        androidPlugin = new AndroidJavaClass(SwrveAndroidADMPushPluginPackageName);
+                        if (androidPlugin != null) {
+                            // Check that the version is the same
+                            int pluginVersion = androidPlugin.CallStatic<int>("getVersion");
+                            if (pluginVersion != ADMPushPluginVersion) {
+                                // Plugin with changes to the public API not supported
+                                androidPlugin = null;
+                                throw new Exception("The version of the Swrve Android ADM Push plugin is different. This Swrve SDK needs version " + ADMPushPluginVersion);
+                            } else {
+                                androidPluginInitializedSuccessfully = true;
+                            }
+						} else {
+	                		SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
+						}
+					} else {
+                		SwrveLog.LogError("Could not find class: " + jniPluginClassName);
+					}
+                }
+            }
+
+            if (androidPluginInitializedSuccessfully) {
+                registered = androidPlugin.CallStatic<bool>(
+                    "initialiseAdm", 
+                    container.name, 
+                    config.ADMPushNotificationTitle, 
+                    config.ADMPushNotificationIconId, 
+                    config.ADMPushNotificationMaterialIconId, 
+                    config.ADMPushNotificationLargeIconId, 
+                    config.ADMPushNotificationAccentColor);
+            }
+
+            if (!registered) {
+                SwrveLog.LogError("Could not communicate with the Swrve Android ADM Push plugin.");
+            }
+        } catch (Exception exp) {
+            SwrveLog.LogError("Could not initialise the android ADM Push plugin: " + exp.ToString());
+        }
+    }
+
     public void SetGooglePlayAdvertisingId(string advertisingId)
     {
         this.googlePlayAdvertisingId = advertisingId;
@@ -136,10 +198,10 @@ public partial class SwrveSDK
             try {
                 this.googlePlayAdvertisingId = storage.Load(GoogleAdvertisingIdSave);
                 using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
-                    string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
+                    string jniPluginClassName = SwrveAndroidGCMPushPluginPackageName.Replace(".", "/");
 
                     if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
-                        androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
+                        androidPlugin = new AndroidJavaClass(SwrveAndroidGCMPushPluginPackageName);
                         if (androidPlugin != null) {
                             androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
                         }
@@ -215,7 +277,7 @@ public partial class SwrveSDK
     }
 
     /// <summary>
-    /// Used internally by the Google Cloud Messaging plugin to notify
+    /// Used internally by the Android Push plugin to notify
     /// of a device registration id.
     /// </summary>
     /// <param name="registrationId">
@@ -224,11 +286,14 @@ public partial class SwrveSDK
     public void RegistrationIdReceived(string registrationId)
     {
         if (!string.IsNullOrEmpty(registrationId)) {
-            bool sendDeviceInfo = (this.gcmDeviceToken != registrationId);
-
+            bool sendDeviceInfo = (this.registrationToken != registrationId);
             if (sendDeviceInfo) {
-                this.gcmDeviceToken = registrationId;
-                storage.Save (GcmDeviceTokenSave, gcmDeviceToken);
+                this.registrationToken = registrationId;
+	            if (config.AndroidPushProvider == SwrveUnity.AndroidPushProvider.AMAZON_ADM) {
+	                storage.Save(AdmDeviceTokenSave, this.registrationToken);
+            	} else if (config.AndroidPushProvider == SwrveUnity.AndroidPushProvider.GOOGLE_GCM) {
+	                storage.Save(GcmDeviceTokenSave, this.registrationToken);
+            	}
                 if (qaUser != null) {
                     qaUser.UpdateDeviceInfo();
                 }
@@ -238,7 +303,7 @@ public partial class SwrveSDK
     }
 
     /// <summary>
-    /// Used internally by the Google Cloud Messaging plugin to notify
+    /// Used internally by the Android Push plugin to notify
     /// of a received push notification, without any user interaction.
     /// </summary>
     /// <param name="notificationJson">
@@ -282,7 +347,7 @@ public partial class SwrveSDK
     }
 
     /// <summary>
-    /// Used internally by the Google Cloud Messaging plugin to notify
+    /// Used internally by the Android Push plugin to notify
     /// of a received push notification when the app was opened from it.
     /// </summary>
     /// <param name="notificationJson">
