@@ -57,6 +57,24 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         }
     }
 
+    @Override
+    protected void onRegistrationError(final String string) {
+        //This is considered fatal for ADM
+        Log.e(TAG, "ADM Registration Error. Error string: " + string);
+    }
+
+    @Override
+    protected void onRegistered(final String registrationId) {
+        Log.i(TAG, "ADM Registered. RegistrationId: " + registrationId);
+        Context context = getApplicationContext();
+        SwrveAdmPushSupport.onPushTokenUpdated(context, registrationId);
+    }
+
+    @Override
+    protected void onUnregistered(final String registrationId) {
+        Log.i(TAG, "ADM Unregistered. RegistrationId: " + registrationId);
+    }
+
     private static boolean isSwrveRemoteNotification(final Bundle msg) {
         Object rawId = msg.get(SwrveAdmHelper.SWRVE_TRACKING_KEY);
         String msgId = (rawId != null) ? rawId.toString() : null;
@@ -314,24 +332,6 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         } catch(Exception ex) {
             Log.e(TAG, "Could not process push notification intent", ex);
         }
-    }
-
-    @Override
-    protected void onRegistrationError(final String string) {
-        //This is considered fatal for ADM
-        Log.e(TAG, "ADM Registration Error. Error string: " + string);
-    }
-
-    @Override
-    protected void onRegistered(final String registrationId) {
-        Log.i(TAG, "ADM Registered. RegistrationId: " + registrationId);
-        Context context = getApplicationContext();
-        SwrveAdmPushSupport.onPushTokenUpdated(context, registrationId);
-    }
-
-    @Override
-    protected void onUnregistered(final String registrationId) {
-        Log.i(TAG, "ADM Unregistered. RegistrationId: " + registrationId);
     }
 }
 

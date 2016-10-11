@@ -88,40 +88,47 @@ public partial class SwrveSDK
         return language;
     }
 
+    private void InitialiseAndroidPlugin(string pluginPackageName, int pluginVersion) {
+        //Only execute this once
+        if (androidPluginInitialized) {
+            return;
+        }
+        androidPluginInitialized = true;
+
+        using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
+            string jniPluginClassName = pluginPackageName.Replace(".", "/");
+
+            if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
+                SwrveLog.LogError("Could not find class: " + jniPluginClassName);
+                return;
+            }
+
+            androidPlugin = new AndroidJavaClass(pluginPackageName);
+            if (androidPlugin == null) {
+                SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
+                return;
+            }
+
+            // Check that the version is the same
+            int testPluginVersion = androidPlugin.CallStatic<int>("getVersion");
+
+            if (testPluginVersion != pluginVersion) {
+                // Plugin with changes to the public API not supported
+                androidPlugin = null;
+                throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
+            } else {
+                androidPluginInitializedSuccessfully = true;
+            }
+        }
+    }
+
     private void GooglePlayRegisterForPushNotification(MonoBehaviour container, string senderId)
     {
         try {
-            bool registered = false;
             this.registrationToken = storage.Load (GcmDeviceTokenSave);
+            InitialiseAndroidPlugin(SwrveAndroidGCMPushPluginPackageName, GooglePlayPushPluginVersion);
 
-            if (!androidPluginInitialized) {
-                androidPluginInitialized = true;
-
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
-                    string jniPluginClassName = SwrveAndroidGCMPushPluginPackageName.Replace(".", "/");
-
-                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
-                        androidPlugin = new AndroidJavaClass(SwrveAndroidGCMPushPluginPackageName);
-                        if (androidPlugin != null) {
-                            // Check that the version is the same
-                            int pluginVersion = androidPlugin.CallStatic<int>("getVersion");
-
-                            if (pluginVersion != GooglePlayPushPluginVersion) {
-                                // Plugin with changes to the public API not supported
-                                androidPlugin = null;
-                                throw new Exception("The version of the Swrve Android Push plugin is different. This Swrve SDK needs version " + GooglePlayPushPluginVersion);
-                            } else {
-                                androidPluginInitializedSuccessfully = true;
-                            }
-						} else {
-	                		SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
-						}
-					} else {
-                		SwrveLog.LogError("Could not find class: " + jniPluginClassName);
-					}
-                }
-            }
-
+            bool registered = false;
             if (androidPluginInitializedSuccessfully) {
                 registered = androidPlugin.CallStatic<bool>("registerDevice", container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
             }
@@ -137,36 +144,10 @@ public partial class SwrveSDK
     private void InitialiseADM(MonoBehaviour container)
     {
         try {
-            bool registered = false;
             this.registrationToken = storage.Load(AdmDeviceTokenSave);
+            InitialiseAndroidPlugin(SwrveAndroidADMPushPluginPackageName, ADMPushPluginVersion);
 
-            if (!androidPluginInitialized) {
-                androidPluginInitialized = true;
-
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
-                    string jniPluginClassName = SwrveAndroidADMPushPluginPackageName.Replace(".", "/");
-
-                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
-                        androidPlugin = new AndroidJavaClass(SwrveAndroidADMPushPluginPackageName);
-                        if (androidPlugin != null) {
-                            // Check that the version is the same
-                            int pluginVersion = androidPlugin.CallStatic<int>("getVersion");
-                            if (pluginVersion != ADMPushPluginVersion) {
-                                // Plugin with changes to the public API not supported
-                                androidPlugin = null;
-                                throw new Exception("The version of the Swrve Android ADM Push plugin is different. This Swrve SDK needs version " + ADMPushPluginVersion);
-                            } else {
-                                androidPluginInitializedSuccessfully = true;
-                            }
-						} else {
-	                		SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
-						}
-					} else {
-                		SwrveLog.LogError("Could not find class: " + jniPluginClassName);
-					}
-                }
-            }
-
+            bool registered = false;
             if (androidPluginInitializedSuccessfully) {
                 registered = androidPlugin.CallStatic<bool>(
                     "initialiseAdm", 

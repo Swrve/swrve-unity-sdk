@@ -64,14 +64,6 @@ public class SwrveAdmPushSupport {
             saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
             Context context = activity.getApplicationContext();
 
-            //TODO remove this (ADM documentation says this is not for final release).
-            try {
-                ADMManifest.checkManifestAuthoredProperly(context);
-            } catch(Exception e) {
-                Log.w(TAG, "ADM Manifest is not authored properly:", e);
-                return false;
-            }
-
             try {
                 final ADM adm = new ADM(context);
                 String registrationId = adm.getRegistrationId();
@@ -87,7 +79,7 @@ public class SwrveAdmPushSupport {
                 return false;
             }
         } catch (Throwable ex) {
-            Log.e(TAG, "Couldn't obtain the GCM registration id for the device", ex);
+            Log.e(TAG, "Couldn't obtain the ADM registration id for the device", ex);
             return false;
         }
         return true;
