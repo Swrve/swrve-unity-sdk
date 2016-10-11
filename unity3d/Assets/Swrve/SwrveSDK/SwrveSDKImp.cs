@@ -550,7 +550,6 @@ public partial class SwrveSDK
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
         }
-#endif
 
         // Generate random string if all fails
         string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
