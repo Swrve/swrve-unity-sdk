@@ -35,7 +35,7 @@ using Swrve.IAP;
 /// </remarks>
 public partial class SwrveSDK : ISwrveAssetController
 {
-    public const string SdkVersion = "4.5.2";
+    public const string SdkVersion = "4.5.3";
 
     private int appId;
     /// <summary>
