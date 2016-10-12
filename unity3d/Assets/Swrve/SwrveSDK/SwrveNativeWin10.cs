@@ -146,6 +146,15 @@ public partial class SwrveSDK
         }
     }
 
+    public void PushNotificationWasEngaged(string pushId, Dictionary<string, string> payload)
+    {
+        NamedEventInternal("Swrve.Messages.Push-" + pushId + ".engaged");
+        if (PushNotificationListener != null)
+        {
+            PushNotificationListener.OnOpenedFromPushNotification(payload);
+        }
+    }
+
     class SwrveCommon : Swrve.ISwrveCommon
     {
         private SwrveSDK _unitySDK;
@@ -167,14 +176,7 @@ public partial class SwrveSDK
 
         public void PushNotificationWasEngaged(string pushId, Dictionary<string, string> payload)
         {
-            EventInternal("Swrve.Messages.Push-" + pushId + ".engaged", null);
-            NativeCommunicationHelper.CallOnUnity(() =>
-            {
-                if (_unitySDK.PushNotificationListener != null)
-                {
-                    _unitySDK.PushNotificationListener.OnOpenedFromPushNotification(payload);
-                }
-            });
+            NativeCommunicationHelper.CallOnUnity(() => _unitySDK.PushNotificationWasEngaged(pushId, payload));
         }
 
         public void TriggerConversationOpened(ISwrveConversationCampaign conversationCampaign)
