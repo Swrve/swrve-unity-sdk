@@ -9,12 +9,12 @@ using SwrveUnity.Messaging;
 
 public partial class SwrveSDK
 {   
-    private SwrveCommon _sdk;
+    private SwrveCommon _nativeSDK;
     private string uwpPushURI;
     
     private void initNative()
     {
-        _sdk = new SwrveCommon (proxyEvent);
+        _nativeSDK = new SwrveCommon (this);
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         if(config.PushNotificationEnabled)
@@ -22,13 +22,12 @@ public partial class SwrveSDK
             RegisterForPush();
         }
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-
     }
     
     private async void RegisterForPush()
     {
         this.uwpPushURI = storage.Load(WindowsDeviceTokenSave);
-        string uri = await SwrveUnityBridge.RegisterForPush(_sdk);
+        string uri = await SwrveUnityBridge.RegisterForPush(_nativeSDK);
 
         if (!string.IsNullOrEmpty(uri))
         {
@@ -63,13 +62,7 @@ public partial class SwrveSDK
     }
 
     private void showNativeConversation (string conversation) {
-        _sdk.ConversationListener = GlobalConversationListener;
-        NativeCommunicationHelper.CallOnWindows (() => SwrveUnityBridge.ShowConversation (_sdk, conversation));
-    }
-
-    private void proxyEvent(string name, Dictionary<string, string> payload)
-    {
-        NativeCommunicationHelper.CallOnUnity(() => NamedEventInternal(name, payload, false));
+        NativeCommunicationHelper.CallOnWindows (() => SwrveUnityBridge.ShowConversation (_nativeSDK, conversation));
     }
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)
@@ -155,17 +148,16 @@ public partial class SwrveSDK
 
     class SwrveCommon : Swrve.ISwrveCommon
     {
-        private Action<string, Dictionary<string, string>> ProxyEvent;
-        internal ISwrveConversationListener ConversationListener;
+        private SwrveSDK _unitySDK;
 
-        public SwrveCommon(Action<string, Dictionary<string, string>> proxyEvent)
+        public SwrveCommon(SwrveSDK sdk)
         {
-            ProxyEvent = proxyEvent;
+            _unitySDK = sdk;
         }
 
         public void EventInternal(string eventName, Dictionary<string, string> payload)
         {
-            ProxyEvent.Invoke(eventName, payload);
+            NativeCommunicationHelper.CallOnUnity(() => _unitySDK.NamedEventInternal(eventName, payload, false));
         }
 
         public void ConversationWasShownToUser(ISwrveConversationCampaign campaign)
@@ -175,21 +167,36 @@ public partial class SwrveSDK
 
         public void PushNotificationWasEngaged(string pushId, Dictionary<string, string> payload)
         {
-            SwrveLog.Log("" + pushId + ", " + payload);
+            EventInternal("Swrve.Messages.Push-" + pushId + ".engaged", null);
+            NativeCommunicationHelper.CallOnUnity(() =>
+            {
+                if (_unitySDK.PushNotificationListener != null)
+                {
+                    _unitySDK.PushNotificationListener.OnOpenedFromPushNotification(payload);
+                }
+            });
         }
 
         public void TriggerConversationOpened(ISwrveConversationCampaign conversationCampaign)
         {
-            if (ConversationListener != null) {
-                NativeCommunicationHelper.CallOnUnity (() => ConversationListener.OnShow ());
-            }
+            NativeCommunicationHelper.CallOnUnity(() =>
+            {
+                if (_unitySDK.GlobalConversationListener != null)
+                {
+                    _unitySDK.GlobalConversationListener.OnShow();
+                }
+            });
         }
 
         public void TriggerConversationClosed(ISwrveConversationCampaign conversationCampaign)
         {
-            if (ConversationListener != null) {
-                NativeCommunicationHelper.CallOnUnity (() => ConversationListener.OnDismiss ());
-            }
+            NativeCommunicationHelper.CallOnUnity(() =>
+            {
+                if (_unitySDK.GlobalConversationListener != null)
+                {
+                    _unitySDK.GlobalConversationListener.OnDismiss();
+                }
+            });
         }
     }
 

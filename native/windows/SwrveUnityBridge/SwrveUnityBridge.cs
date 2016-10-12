@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Activation;
 using Windows.Data.Json;
 using Windows.System.Profile;
 
@@ -12,6 +13,8 @@ namespace SwrveUnityWindows
 {
     public static class SwrveUnityBridge
     {
+        private static SwrvePush push;
+
         public static void ShowConversation(ISwrveCommon sdk, object conversationJson)
         {
             if(conversationJson is string)
@@ -36,11 +39,16 @@ namespace SwrveUnityWindows
 
         public static async Task<string> RegisterForPush (ISwrveCommon sdk)
         {
-            SwrvePush push = new SwrvePush (sdk);
+            push = new SwrvePush (sdk);
             await push.UpdateUriAsync ();
             string uri;
             push.GetStoredUri (out uri);
             return uri;
+        }
+
+        public static void OnActivated (IActivatedEventArgs args)
+        {
+            push.OnActivated (args);
         }
 
         public static string GetAppLanguage(string defaultLanguage)
