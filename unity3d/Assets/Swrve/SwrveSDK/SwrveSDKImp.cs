@@ -53,6 +53,8 @@ public partial class SwrveSDK
     private long lastSessionTick;
     private ICarrierInfo deviceCarrierInfo;
 
+    private System.Random rnd = new System.Random();
+
     // Events buffer
     protected StringBuilder eventBufferStringBuilder;
     protected string eventsPostString;
@@ -526,8 +528,11 @@ public partial class SwrveSDK
     private string GetRandomUUID ()
     {
 #if UNITY_IPHONE
-        getNativeRandomUUID();
-#else
+        string randomUUID = getNativeRandomUUID();
+        if (!string.IsNullOrEmpty (randomUUID)) {
+            return randomUUID;
+        }
+#endif
         try {
             Type type = System.Type.GetType ("System.Guid");
             if (type != null) {
@@ -545,13 +550,13 @@ public partial class SwrveSDK
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
         }
-#endif
 
         // Generate random string if all fails
         string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         string randomString = string.Empty;
         for (int i = 0; i < 128; i++) {
-            randomString += chars[UnityEngine.Random.Range (0, chars.Length - 1)];
+            int rndInt = rnd.Next (chars.Length);
+            randomString += chars[rndInt];
         }
         return randomString;
     }
