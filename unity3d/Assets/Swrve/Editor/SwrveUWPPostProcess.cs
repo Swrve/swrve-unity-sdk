@@ -20,11 +20,12 @@ public class SwrveUWPPostProcess : SwrveCommonBuildComponent
             PlayerSettings.productName,
             "SWRVE_WINDOWS_SDK");
 
-        string pathToApp = Path.Combine (pathToBuiltProject, PlayerSettings.productName);
-
         SwrveCommonBuildComponent.SetDependenciesForProjectJSON (
-            pathToApp,
+            Path.Combine (pathToBuiltProject, PlayerSettings.productName),
             new Dictionary<string, string> {
+                {"SwrveConversationsSDK", "4.6.0"},
+                {"SwrveSDKCommon", "4.6.0"},
+                {"SwrveUnityBridge", "4.6.0"},
                 {"Microsoft.NETCore.UniversalWindowsPlatform", "5.1.0"}
             }
         );
