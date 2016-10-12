@@ -6,6 +6,7 @@ using System.IO;
 using System.Xml;
 using System.Collections.Generic;
 using SwrveUnityMiniJSON;
+using System.Linq;
 
 public class SwrveCommonBuildComponent
 {
@@ -169,6 +170,36 @@ public class SwrveCommonBuildComponent
         if (save) {
             doc.Save (csprojPath);
         }
+    }
+
+    public static void AddWindowsPushCallback(string path)
+    {
+        int STATE_BEGIN = 0;
+        int STATE_IN_FUNC = 1;
+        int STATE_FOUND_LINE = 2;
+        int STATE_FINISHED = 9999;
+
+        int curState = STATE_BEGIN;
+        string toAdd = "SwrveUnityWindows.SwrveUnityBridge.OnActivated(args);";
+        string filePath = Path.Combine (path, "App.xaml.cs");
+        string[] lines = File.ReadAllLines (filePath);
+        List<string> newLines = new List<string> ();
+
+        foreach (string line in lines) {
+            if (curState == STATE_BEGIN && line.Contains ("OnActivated(IActivatedEventArgs")) {
+                curState = STATE_IN_FUNC;
+            } else if (curState == STATE_IN_FUNC && line.Contains ("InitializeUnity(appArgs);")) {
+                curState = STATE_FOUND_LINE;
+            } else if (curState == STATE_FOUND_LINE && line.Contains (toAdd)) {
+                return;
+            } else if (curState == STATE_FOUND_LINE && line.Trim () == "}") {
+                newLines.Add (line.Replace ("}", toAdd));
+                curState = STATE_FINISHED;
+            }
+
+            newLines.Add (line);
+        }
+        File.WriteAllLines (filePath, newLines.ToArray());
     }
 
     protected static void CopyFile(string src, string dst, bool dstIsPath=false)

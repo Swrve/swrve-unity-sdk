@@ -20,8 +20,9 @@ public class SwrveUWPPostProcess : SwrveCommonBuildComponent
             PlayerSettings.productName,
             "SWRVE_WINDOWS_SDK");
 
+        string projectPath = Path.Combine (pathToBuiltProject, PlayerSettings.productName);
         SwrveCommonBuildComponent.SetDependenciesForProjectJSON (
-            Path.Combine (pathToBuiltProject, PlayerSettings.productName),
+            projectPath,
             new Dictionary<string, string> {
                 {"SwrveConversationsSDK", "4.6.0"},
                 {"SwrveSDKCommon", "4.6.0"},
@@ -29,6 +30,7 @@ public class SwrveUWPPostProcess : SwrveCommonBuildComponent
                 {"Microsoft.NETCore.UniversalWindowsPlatform", "5.1.0"}
             }
         );
+        SwrveCommonBuildComponent.AddWindowsPushCallback (projectPath);
     }
 }
 
