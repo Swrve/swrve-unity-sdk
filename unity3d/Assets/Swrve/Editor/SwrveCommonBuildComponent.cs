@@ -190,6 +190,8 @@ public class SwrveCommonBuildComponent
                 curState = STATE_IN_FUNC;
             } else if (curState == STATE_IN_FUNC && line.Contains ("InitializeUnity(appArgs);")) {
                 curState = STATE_FOUND_LINE;
+            } else if (curState == STATE_IN_FUNC && line.Trim () == "}") {
+                curState = STATE_FINISHED;
             } else if (curState == STATE_FOUND_LINE && line.Contains (toAdd)) {
                 return;
             } else if (curState == STATE_FOUND_LINE && line.Trim () == "}") {
