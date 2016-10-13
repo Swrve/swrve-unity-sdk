@@ -153,7 +153,7 @@ public partial class SwrveSDK
         }
     }
 
-    private void InitialisePushADM(MonoBehaviour container, string senderId) {
+    private void InitialisePushADM(MonoBehaviour container) {
         try {
             this.registrationToken = storage.Load(AdmDeviceTokenSave);
             bool registered = false;

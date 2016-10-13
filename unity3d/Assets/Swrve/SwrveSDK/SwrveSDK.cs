@@ -330,7 +330,7 @@ public partial class SwrveSDK : ISwrveAssetController
             }
         } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
             if (config.PushNotificationEnabled) {
-                InitialisePushADM(Container, "");
+				InitialisePushADM(Container);
             }
         }
 #endif
