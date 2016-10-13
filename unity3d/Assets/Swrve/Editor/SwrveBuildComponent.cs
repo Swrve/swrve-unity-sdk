@@ -145,6 +145,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
                 );
             }
         }
+        AssetDatabase.Refresh ();
     }
 }
 

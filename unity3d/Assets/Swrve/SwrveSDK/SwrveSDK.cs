@@ -11,13 +11,13 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Globalization;
-using Swrve;
-using SwrveMiniJSON;
-using Swrve.Messaging;
-using Swrve.Helpers;
-using Swrve.ResourceManager;
-using Swrve.Device;
-using Swrve.IAP;
+using SwrveUnity;
+using SwrveUnityMiniJSON;
+using SwrveUnity.Messaging;
+using SwrveUnity.Helpers;
+using SwrveUnity.ResourceManager;
+using SwrveUnity.Device;
+using SwrveUnity.IAP;
 
 #if UNITY_WP8 || UNITY_METRO
 #error "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk."
@@ -37,14 +37,14 @@ public partial class SwrveSDK : ISwrveAssetController
 {
     public const string SdkVersion = "4.6";
 
-    private int gameId;
+    private int appId;
     /// <summary>
-    /// Game ID used to initialize the SDK.
+    /// App ID used to initialize the SDK.
     /// </summary>
-    public int GameId
+    public int AppId
     {
         get {
-            return gameId;
+            return appId;
         }
     }
 
@@ -73,7 +73,7 @@ public partial class SwrveSDK : ISwrveAssetController
     protected SwrveConfig config;
 
     /// <summary>
-    /// Current language of the game or device.
+    /// Current language of the app or device.
     /// </summary>
     public string Language;
 
@@ -145,55 +145,55 @@ public partial class SwrveSDK : ISwrveAssetController
     public bool Destroyed = false;
 
     /// <summary>
-    /// Initialise the SDK with the given game id, api key.
+    /// Initialise the SDK with the given app id, api key.
     /// </summary>
     /// <param name="container">
     /// MonoBehaviour objecto to act as a container.
     /// </param>
-    /// <param name="gameId">
-    /// Game ID for your game, as provided by Swrve.
+    /// <param name="appId">
+    /// App ID for your app, as provided by Swrve.
     /// </param>
     /// <param name="apiKey">
-    /// API key for your game, as provided by Swrve.
+    /// API key for your app, as provided by Swrve.
     /// </param>
-    public void Init (MonoBehaviour container, int gameId, string apiKey)
+    public void Init (MonoBehaviour container, int appId, string apiKey)
     {
-        Init (container, gameId, apiKey, new SwrveConfig());
+        Init (container, appId, apiKey, new SwrveConfig());
     }
 
     /// <summary>
-    /// Initialise the SDK with the given game id, api key and user id.
+    /// Initialise the SDK with the given app id, api key and user id.
     /// </summary>
     /// <param name="container">
     /// MonoBehaviour objecto to act as a container.
     /// </param>
-    /// <param name="gameId">
-    /// Game ID for your game, as provided by Swrve.
+    /// <param name="appId">
+    /// App ID for your app, as provided by Swrve.
     /// </param>
     /// <param name="apiKey">
-    /// API key for your game, as provided by Swrve.
+    /// API key for your app, as provided by Swrve.
     /// </param>
     /// <param name="userId">
     /// Custom unique identifier for this user.
     /// </param>
-    public void Init (MonoBehaviour container, int gameId, string apiKey, string userId)
+    public void Init (MonoBehaviour container, int appId, string apiKey, string userId)
     {
         SwrveConfig config = new SwrveConfig();
         config.UserId = userId;
-        Init (container, gameId, apiKey, config);
+        Init (container, appId, apiKey, config);
     }
 
     /// <summary>
-    /// Initialise the SDK with the given game id, api key, user id and config.
+    /// Initialise the SDK with the given app id, api key, user id and config.
     /// </summary>
     /// <param name="container">
     /// MonoBehaviour objecto to act as a container.
     /// </param>
-    /// <param name="gameId">
-    /// Game ID for your game, as provided by Swrve.
+    /// <param name="appId">
+    /// App ID for your app, as provided by Swrve.
     /// </param>
     /// <param name="apiKey">
-    /// API key for your game, as provided by Swrve.
+    /// API key for your app, as provided by Swrve.
     /// </param>
     /// <param name="userId">
     /// Custom unique identifier for this user.
@@ -201,35 +201,35 @@ public partial class SwrveSDK : ISwrveAssetController
     /// <param name="config">
     /// Configuration object with advanced settings.
     /// </param>
-    public virtual void Init (MonoBehaviour container, int gameId, string apiKey, string userId, SwrveConfig config)
+    public virtual void Init (MonoBehaviour container, int appId, string apiKey, string userId, SwrveConfig config)
     {
         config.UserId = userId;
-        Init (container, gameId, apiKey, config);
+        Init (container, appId, apiKey, config);
     }
 
     /// <summary>
-    /// Initialise the SDK with the given game id, api key and config.
+    /// Initialise the SDK with the given app id, api key and config.
     /// </summary>
     /// <param name="container">
     /// MonoBehaviour objecto to act as a container.
     /// </param>
-    /// <param name="gameId">
-    /// Game ID for your game, as provided by Swrve.
+    /// <param name="appId">
+    /// App ID for your app, as provided by Swrve.
     /// </param>
     /// <param name="apiKey">
-    /// API key for your game, as provided by Swrve.
+    /// API key for your app, as provided by Swrve.
     /// </param>
     /// <param name="config">
     /// Configuration object with advanced settings.
     /// </param>
-    public virtual void Init (MonoBehaviour container, int gameId, string apiKey, SwrveConfig config)
+    public virtual void Init (MonoBehaviour container, int appId, string apiKey, SwrveConfig config)
     {
         this.Container = container;
-        this.ResourceManager = new Swrve.ResourceManager.SwrveResourceManager ();
+        this.ResourceManager = new SwrveUnity.ResourceManager.SwrveResourceManager ();
         this.config = config;
         this.prefabName = container.name;
 
-        this.gameId = gameId;
+        this.appId = appId;
         this.apiKey = apiKey;
         this.userId = config.UserId;
         this.Language = config.Language;
@@ -271,7 +271,7 @@ public partial class SwrveSDK : ISwrveAssetController
         }
 
         // End points
-        config.CalculateEndpoints(gameId);
+        config.CalculateEndpoints(appId);
         string abTestServer = config.ContentServer;
         eventsUrl = config.EventsServer + "/1/batch";
         abTestResourcesDiffUrl = abTestServer + "/api/1/user_resources_diff";
@@ -317,13 +317,21 @@ public partial class SwrveSDK : ISwrveAssetController
         }
 
 #if UNITY_ANDROID
-        // Ask for Android registration id
-        if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
-            GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
-        }
+		//Start the push plugin
+		InitialiseAndroidPushPlugin();
 
-        if (config.LogGoogleAdvertisingId) {
-            RequestGooglePlayAdvertisingId(Container);
+        if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
+            if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
+				InitialisePushGCM(Container, config.GCMSenderId);
+            }
+
+            if (config.LogGoogleAdvertisingId) {
+                RequestGooglePlayAdvertisingId(Container);
+            }
+        } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
+            if (config.PushNotificationEnabled) {
+				InitialisePushADM(Container);
+            }
         }
 #endif
         QueueDeviceInfo ();
@@ -619,16 +627,16 @@ public partial class SwrveSDK : ISwrveAssetController
 #endif
 
     /// <summary>
-    /// Buffer the event of a gift of in-game currency.
+    /// Buffer the event of a gift of in-app currency.
     /// </summary>
     /// <remarks>
     /// See the REST API documentation for the "currency_given" event.
     /// </remarks>
     /// <param name="givenCurrency">
-    /// The name of the in-game currency that the player was rewarded with.
+    /// The name of the in-app currency that the player was rewarded with.
     /// </param>
     /// <param name="amount">
-    /// The amount of in-game currency that the player was rewarded with.
+    /// The amount of in-app currency that the player was rewarded with.
     /// </param>
     public void CurrencyGiven (string givenCurrency, double amount)
     {
@@ -657,7 +665,7 @@ public partial class SwrveSDK : ISwrveAssetController
 
                 if (eventsPostString.Length > 0) {
                     long time = SwrveHelper.GetSeconds ();
-                    eventsPostEncodedData = PostBodyBuilder.Build (apiKey, gameId, userId, GetDeviceId(),
+                    eventsPostEncodedData = PostBodyBuilder.Build (apiKey, appId, userId, GetDeviceId(),
                                             GetAppVersion(), time, eventsPostString);
                 }
 
@@ -976,7 +984,7 @@ public partial class SwrveSDK : ISwrveAssetController
 #if SWRVE_SUPPORTED_PLATFORM
         if (button != null) {
             try {
-                SwrveLog.Log("Button " + button.ActionType + ": " + button.Action + " game id: " + button.GameId);
+                SwrveLog.Log("Button " + button.ActionType + ": " + button.Action + " app id: " + button.AppId);
 
                 if (button.ActionType != SwrveActionType.Dismiss) {
                     // Button other than dismiss pressed
@@ -1059,21 +1067,21 @@ public partial class SwrveSDK : ISwrveAssetController
     }
 
     /// <summary>
-    /// Gets the app store link of a given game, that was
+    /// Gets the app store link of a given app, that was
     /// setup in the dashboard for the current app store.
     /// </summary>
-    /// <param name="gameId">
-    /// Game identifier.
+    /// <param name="appId">
+    /// App identifier.
     /// </param>
     /// <returns>
-    /// The app store link for a given game.
+    /// The app store link for a given app.
     /// </returns>
-    public string GetAppStoreLink (int gameId)
+    public string GetAppStoreLink (int appId)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         string appStoreLink = null;
-        if (gameStoreLinks != null) {
-            gameStoreLinks.TryGetValue (gameId.ToString (), out appStoreLink);
+        if (appStoreLinks != null) {
+            appStoreLinks.TryGetValue (appId.ToString (), out appStoreLink);
         }
         return appStoreLink;
 #else

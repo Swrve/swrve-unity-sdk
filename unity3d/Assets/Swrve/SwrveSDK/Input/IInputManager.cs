@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Swrve.Input
+namespace SwrveUnity.Input
 {
 /// <summary
 /// Used internally to react to input.

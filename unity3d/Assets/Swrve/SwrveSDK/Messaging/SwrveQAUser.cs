@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Text;
 using System.Collections;
-using SwrveMiniJSON;
-using Swrve.REST;
-using Swrve.Helpers;
+using SwrveUnityMiniJSON;
+using SwrveUnity.REST;
+using SwrveUnity.Helpers;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Used internally to offer QA user functionality.
@@ -115,7 +115,7 @@ public class SwrveQAUser
     {
         json.Add ("version", ApiVersion);
         json.Add ("client_time", DateTime.UtcNow.ToString (@"yyyy-MM-ddTHH\:mm\:ss.fffffffzzz"));
-        string qaPostData = SwrveMiniJSON.Json.Serialize (json);
+        string qaPostData = SwrveUnityMiniJSON.Json.Serialize (json);
 
         byte[] qaPostEncodedData = Encoding.UTF8.GetBytes (qaPostData);
         Dictionary<string, string> requestHeaders = new Dictionary<string, string> {

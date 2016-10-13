@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Collections;
 using System;
 using UnityEngine;
-using Swrve.Helpers;
+using SwrveUnity.Helpers;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// In-app message.

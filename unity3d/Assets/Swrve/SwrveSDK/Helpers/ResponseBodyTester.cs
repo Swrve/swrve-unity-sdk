@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace Swrve.Helpers
+namespace SwrveUnity.Helpers
 {
 /// <summary>
 /// Used internally to test the content of HTTP responses.

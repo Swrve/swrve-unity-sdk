@@ -3,12 +3,12 @@
 #endif
 
 using System;
-using Swrve.Messaging;
+using SwrveUnity.Messaging;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 
-namespace Swrve
+namespace SwrveUnity
 {
 
   /// <summary>
@@ -18,6 +18,17 @@ namespace Swrve
   {
       US, EU
   }
+
+  /// <summary>
+  /// Available stacks to choose from
+  /// </summary>
+  public enum AndroidPushProvider
+  {
+      GOOGLE_GCM, 
+      AMAZON_ADM,
+      NONE
+  }
+
 
 /// <summary>
 /// Configuration for the Swrve SDK.
@@ -37,7 +48,7 @@ public class SwrveConfig
     public string AppVersion;
 
     /// <summary>
-    /// App store where the game will be submitted.
+    /// App store where the app will be submitted.
     /// </summary>
 #if UNITY_ANDROID
     public string AppStore = SwrveAppStore.Google;
@@ -97,7 +108,7 @@ public class SwrveConfig
     public bool AutoDownloadCampaignsAndResources = true;
 
     /// <summary>
-    /// Orientations supported by the game.
+    /// Orientations supported by the app.
     /// </summary>
     public SwrveOrientation Orientation = SwrveOrientation.Both;
 
@@ -144,12 +155,12 @@ public class SwrveConfig
 #endif
 
     /// <summary>
-    /// The SDK will send a session start on init and manage game pauses and resumes.
+    /// The SDK will send a session start on init and manage app pauses and resumes.
     /// </summary>
     public bool AutomaticSessionManagement = true;
 
     /// <summary>
-    /// Threshold in seconds to send a new session start after the game lost focus and regained it again.
+    /// Threshold in seconds to send a new session start after the app lost focus and regained it again.
     /// </summary>
     public int NewSessionInterval = 30;
 
@@ -177,7 +188,7 @@ public class SwrveConfig
     public Stack SelectedStack = Stack.US;
 
     /// <summary>
-    /// Enable push notification on this game.
+    /// Enable push notification on this app.
     /// </summary>
     public bool PushNotificationEnabled = false;
 
@@ -220,6 +231,40 @@ public class SwrveConfig
     /// </summary>
     public int GCMPushNotificationAccentColor = -1;
 
+
+    /// <summary>
+    /// The title that will appear for each push notification received through Amazon Device Messaging.
+    /// </summary>
+    public string ADMPushNotificationTitle = "#Your App Title";
+
+    /// <summary>
+    /// The resource identifier for the icon that will be displayed on your ADM notifications.
+    /// </summary>
+    public string ADMPushNotificationIconId = null;
+
+    /// <summary>
+    /// The resource identifier for the Material icon that will be displayed on your ADM notifications
+    /// on Android L+.
+    /// https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorNotifications
+    /// </summary>
+    public string ADMPushNotificationMaterialIconId = null;
+
+    /// <summary>
+    /// The resource identifier for the large icon that will be displayed on your ADM notifications.
+    /// </summary>
+    public string ADMPushNotificationLargeIconId = null;
+
+    /// <summary>
+    /// The color (argb) that will be used as accent color for your GCM notifications.
+    /// </summary>
+    public int ADMPushNotificationAccentColor = -1;
+
+    /// <summary>
+    /// Push provider type. GCM is the default. Set to AMAZON_ADM if using Kindle
+    /// Requires the use of the correct native Android plugin (Google or Amazon variant).
+    /// </summary>
+    public AndroidPushProvider AndroidPushProvider = AndroidPushProvider.GOOGLE_GCM;
+
     /// <summary>
     /// Maximum delay in seconds for in-app messages to appear after initialization.
     /// </summary>
@@ -231,7 +276,7 @@ public class SwrveConfig
     public Color? DefaultBackgroundColor = null;
 
     /// <summary>
-    /// Log Google's Advertising ID as "swrve.GAID". Requires the use of the native Android plugin.
+    /// Log Google's Advertising ID as "swrve.GAID". Requires the use of the native google Android plugin.
     /// </summary>
     public bool LogGoogleAdvertisingId = false;
 

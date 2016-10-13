@@ -17,7 +17,7 @@ How to run the demo
 - Open the project 'unity3d' from the repository.
 - Open the demo scene under 'Assets/Swrve/UnitySwrveDemo/DemoScene.unity'.
 - Under the Hierarchy view, click on SwrvePrefab. This is the SDK component in your scene.
-- Input your gameId and apiKey in the Inspector view with the values provided by Swrve.
+- Input your appId and apiKey in the Inspector view with the values provided by Swrve.
 - Click the Play button at the top.
 
 How to build the SDK
