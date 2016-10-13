@@ -88,82 +88,84 @@ public partial class SwrveSDK
         return language;
     }
 
-    private void InitialiseAndroidPlugin(string pluginPackageName, int pluginVersion) {
+    private void InitialiseAndroidPushPlugin() {
         //Only execute this once
         if (androidPluginInitialized) {
             return;
         }
         androidPluginInitialized = true;
 
-        using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
-            string jniPluginClassName = pluginPackageName.Replace(".", "/");
+        string pluginPackageName = "";
+        int pluginVersion = -1;
+        if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
+            pluginPackageName = SwrveAndroidGCMPushPluginPackageName;
+            pluginVersion = GooglePlayPushPluginVersion;
+        } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
+            pluginPackageName = SwrveAndroidADMPushPluginPackageName;
+            pluginVersion = ADMPushPluginVersion;
+		} else if (config.AndroidPushProvider == AndroidPushProvider.NONE) {
+            return;
+        }
 
-            if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
-                SwrveLog.LogError("Could not find class: " + jniPluginClassName);
-                return;
-            }
+        string jniPluginClassName = pluginPackageName.Replace(".", "/");
+        if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
+            SwrveLog.LogError("Could not find class: " 
+                + jniPluginClassName + 
+                " Are you using the correct SwrveSDKPushSupport plugin given the swrve config.AndroidPushProvider setting?");
 
-            androidPlugin = new AndroidJavaClass(pluginPackageName);
-            if (androidPlugin == null) {
-                SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
-                return;
-            }
+            //Force crash by calling another JNI call without clearing exceptions.
+            //This is to enforce proper integration
+            AndroidJNI.FindClass(jniPluginClassName); 
+            return;
+        }
 
-            // Check that the version is the same
-            int testPluginVersion = androidPlugin.CallStatic<int>("getVersion");
+        androidPlugin = new AndroidJavaClass(pluginPackageName);
+        if (androidPlugin == null) {
+            SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
+            return;
+        }
 
-            if (testPluginVersion != pluginVersion) {
-                // Plugin with changes to the public API not supported
-                androidPlugin = null;
-                throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
-            } else {
-                androidPluginInitializedSuccessfully = true;
-            }
+        // Check that the version is the same
+        int testPluginVersion = androidPlugin.CallStatic<int>("getVersion");
+
+        if (testPluginVersion != pluginVersion) {
+            // Plugin with changes to the public API not supported
+            androidPlugin = null;
+            throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
+        } else {
+            androidPluginInitializedSuccessfully = true;
         }
     }
 
-    private void GooglePlayRegisterForPushNotification(MonoBehaviour container, string senderId)
-    {
+    private void InitialisePushGCM(MonoBehaviour container, string senderId) {
         try {
-            this.registrationToken = storage.Load (GcmDeviceTokenSave);
-            InitialiseAndroidPlugin(SwrveAndroidGCMPushPluginPackageName, GooglePlayPushPluginVersion);
-
-            bool registered = false;
-            if (androidPluginInitializedSuccessfully) {
-                registered = androidPlugin.CallStatic<bool>("registerDevice", container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
-            }
-
-            if (!registered) {
-                SwrveLog.LogError("Could not communicate with the Swrve Android Push plugin. Have you copied all the jars to the directory?");
-            }
-        } catch (Exception exp) {
-            SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
-        }
-    }
-
-    private void InitialiseADM(MonoBehaviour container)
-    {
-        try {
-            this.registrationToken = storage.Load(AdmDeviceTokenSave);
-            InitialiseAndroidPlugin(SwrveAndroidADMPushPluginPackageName, ADMPushPluginVersion);
-
+            this.registrationToken = storage.Load(GcmDeviceTokenSave);
             bool registered = false;
             if (androidPluginInitializedSuccessfully) {
                 registered = androidPlugin.CallStatic<bool>(
-                    "initialiseAdm", 
-                    container.name, 
-                    config.ADMPushNotificationTitle, 
-                    config.ADMPushNotificationIconId, 
-                    config.ADMPushNotificationMaterialIconId, 
-                    config.ADMPushNotificationLargeIconId, 
-                    config.ADMPushNotificationAccentColor);
+                    "registerDevice", container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
             }
-
             if (!registered) {
-                SwrveLog.LogError("Could not communicate with the Swrve Android ADM Push plugin.");
+                SwrveLog.LogError("Could not communicate with the Swrve Android Push plugin.");
             }
         } catch (Exception exp) {
-            SwrveLog.LogError("Could not initialise the android ADM Push plugin: " + exp.ToString());
+            SwrveLog.LogError("Could not initalise push: " + exp.ToString());
+        }
+    }
+
+    private void InitialisePushADM(MonoBehaviour container, string senderId) {
+        try {
+            this.registrationToken = storage.Load(AdmDeviceTokenSave);
+            bool registered = false;
+            if (androidPluginInitializedSuccessfully) {
+                registered = androidPlugin.CallStatic<bool>(
+                    "initialiseAdm", container.name, config.ADMPushNotificationTitle, config.ADMPushNotificationIconId, config.ADMPushNotificationMaterialIconId, config.ADMPushNotificationLargeIconId, config.ADMPushNotificationAccentColor);
+            }
+            if (!registered) {
+                SwrveLog.LogError("Could not communicate with the Swrve Android Push plugin.");
+            }
+        } catch (Exception exp) {
+            SwrveLog.LogError("Could not initalise push: " + exp.ToString());
         }
     }
 
@@ -178,18 +180,16 @@ public partial class SwrveSDK
         if (SwrveHelper.IsOnDevice ()) {
             try {
                 this.googlePlayAdvertisingId = storage.Load(GoogleAdvertisingIdSave);
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
-                    string jniPluginClassName = SwrveAndroidGCMPushPluginPackageName.Replace(".", "/");
+                string jniPluginClassName = SwrveAndroidGCMPushPluginPackageName.Replace(".", "/");
 
-                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
-                        androidPlugin = new AndroidJavaClass(SwrveAndroidGCMPushPluginPackageName);
-                        if (androidPlugin != null) {
-                            androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
-                        }
+                if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
+                    androidPlugin = new AndroidJavaClass(SwrveAndroidGCMPushPluginPackageName);
+                    if (androidPlugin != null) {
+                        androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
                     }
                 }
             } catch (Exception exp) {
-                SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
+                SwrveLog.LogError("Could not request Advertising Id: " + exp.ToString());
             }
         }
     }

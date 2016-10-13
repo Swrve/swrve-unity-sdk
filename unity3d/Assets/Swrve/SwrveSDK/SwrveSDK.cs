@@ -317,19 +317,20 @@ public partial class SwrveSDK : ISwrveAssetController
         }
 
 #if UNITY_ANDROID
+		//Start the push plugin
+		InitialiseAndroidPushPlugin();
+
         if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
-            // Ask for Android GCM registration id
             if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
-                GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
+				InitialisePushGCM(Container, config.GCMSenderId);
             }
 
             if (config.LogGoogleAdvertisingId) {
                 RequestGooglePlayAdvertisingId(Container);
             }
         } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
-            // Ask for Android ADM registration id
             if (config.PushNotificationEnabled) {
-                InitialiseADM(Container);
+                InitialisePushADM(Container, "");
             }
         }
 #endif

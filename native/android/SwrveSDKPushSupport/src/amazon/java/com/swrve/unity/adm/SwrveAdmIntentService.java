@@ -27,7 +27,7 @@ import com.google.gson.reflect.TypeToken;
 import com.unity3d.player.UnityPlayer;
 
 public class SwrveAdmIntentService extends ADMMessageHandlerBase {
-    private static final String TAG = "SwrveAdmIntentService";
+    private final static String TAG = "SwrveAdm";
     private final static String AMAZON_RECENT_PUSH_IDS = "recent_push_ids";
     private final static String AMAZON_PREFERENCES = "swrve_amazon_unity_pref";
 
@@ -50,6 +50,11 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
 
     @Override
     protected void onMessage(final Intent intent) {
+        if (intent == null) {
+            Log.w(TAG, "Unexpected null intent");
+            return;
+        }
+
         final Bundle extras = intent.getExtras();
         if (extras != null && !extras.isEmpty()) {  // has effect of unparcelling Bundle
             Log.i(TAG, "Received ADM notification: " + extras.toString());
@@ -78,7 +83,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     private static boolean isSwrveRemoteNotification(final Bundle msg) {
         Object rawId = msg.get(SwrveAdmHelper.SWRVE_TRACKING_KEY);
         String msgId = (rawId != null) ? rawId.toString() : null;
-        return msgId != null && !msgId.equals("");
+        return !SwrveAdmHelper.isNullOrEmpty(msgId)
     }
 
     private void processRemoteNotification(Bundle msg) {
@@ -170,6 +175,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         try {
             // Put the message into a notification and post it.
             final NotificationManager mNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+            
             final PendingIntent contentIntent = createPendingIntent(msg, activityClassName);
             if (contentIntent == null) {
                 Log.e(TAG, "Error processing ADM push notification. Unable to create intent");
@@ -190,13 +196,24 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     }
 
     private int showNotification(NotificationManager notificationManager, Notification notification) {
-        int notificationId = generateTimestampId();
-        notificationManager.notify(notificationId, notification);
-        return notificationId;
+        int id = generateTimestampId();
+        notificationManager.notify(id, notification);
+        return id;
     }
 
     private int generateTimestampId() {
         return (int)(new Date().getTime() % Integer.MAX_VALUE);
+    }
+
+    private Notification createNotification(Bundle msg, PendingIntent contentIntent) {
+        String msgText = msg.getString("text");
+        if (!SwrveAdmHelper.isNullOrEmpty(msgText)) {
+            // Build notification
+            NotificationCompat.Builder mBuilder = createNotificationBuilder(msgText, msg);
+            mBuilder.setContentIntent(contentIntent);
+            return mBuilder.build();
+        }
+        return null;
     }
 
     private NotificationCompat.Builder createNotificationBuilder(String msgText, Bundle msg) {
@@ -282,17 +299,6 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
             mBuilder.setSound(soundUri);
         }
         return mBuilder;
-    }
-
-    private Notification createNotification(Bundle msg, PendingIntent contentIntent) {
-        String msgText = msg.getString("text");
-        if (!SwrveAdmHelper.isNullOrEmpty(msgText)) {
-            // Build notification
-            NotificationCompat.Builder mBuilder = createNotificationBuilder(msgText, msg);
-            mBuilder.setContentIntent(contentIntent);
-            return mBuilder.build();
-        }
-        return null;
     }
 
     private PendingIntent createPendingIntent(Bundle msg, String activityClassName) {

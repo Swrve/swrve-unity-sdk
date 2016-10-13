@@ -10,7 +10,6 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.amazon.device.messaging.ADM;
-import com.amazon.device.messaging.development.ADMManifest;
 import com.unity3d.player.UnityPlayer;
 
 public class SwrveAdmPushSupport {
