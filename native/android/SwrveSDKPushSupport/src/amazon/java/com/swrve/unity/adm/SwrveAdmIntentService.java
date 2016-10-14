@@ -83,7 +83,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     private static boolean isSwrveRemoteNotification(final Bundle msg) {
         Object rawId = msg.get(SwrveAdmHelper.SWRVE_TRACKING_KEY);
         String msgId = (rawId != null) ? rawId.toString() : null;
-        return !SwrveAdmHelper.isNullOrEmpty(msgId)
+        return !SwrveAdmHelper.isNullOrEmpty(msgId);
     }
 
     private void processRemoteNotification(Bundle msg) {
