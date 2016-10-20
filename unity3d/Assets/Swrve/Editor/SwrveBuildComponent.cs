@@ -121,6 +121,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
     }
 
+#if !UNITY_5_4_OR_NEWER
     public static void TestBuildWebPlayer ()
     {
         string outputPath = "../../buildtemp/tmp_WebPlayer";
@@ -130,6 +131,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
             throw new Exception (error);
         }
     }
+#endif
 
     [MenuItem ("Swrve/Correct ${applicationId} in AndroidManifests")]
     public static void CorrectApplicationId()
