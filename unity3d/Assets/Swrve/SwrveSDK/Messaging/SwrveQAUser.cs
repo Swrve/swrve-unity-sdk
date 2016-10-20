@@ -25,7 +25,7 @@ public class SwrveQAUser
     private readonly string loggingUrl;
     private long lastSessionRequestTime;
     private long lastTriggerRequestTime;
-    private long lastPushNotificationRequestTime;
+    private long lastPushNotificationRequestTime = 0;
 
     public readonly bool ResetDevice;
     public readonly bool Logging;
