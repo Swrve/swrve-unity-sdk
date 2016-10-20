@@ -24,7 +24,6 @@ public partial class SwrveSDK
     private static bool androidPluginInitialized = false;
     private static bool androidPluginInitializedSuccessfully = false;
     private string googlePlayAdvertisingId;
-    private static bool startedPlot;
 
     private const int GooglePlayPushPluginVersion = 4;
 
@@ -367,7 +366,6 @@ public partial class SwrveSDK
                     AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
                     swrvePlotClass.CallStatic (SwrvePlotOnCreateName, context);
                 }
-                startedPlot = true;
             } catch (Exception exp) {
                 SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
             }

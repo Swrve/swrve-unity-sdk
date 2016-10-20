@@ -53,7 +53,7 @@ public class UnityWwwHelper
                     }
                 }
                 catch(Exception e) {
-                    
+                    SwrveLog.LogError(e.Message);
                 }
                 return WwwDeducedError.ApplicationErrorHeader;
             }

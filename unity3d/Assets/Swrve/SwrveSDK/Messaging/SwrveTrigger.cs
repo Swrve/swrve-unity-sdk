@@ -35,7 +35,7 @@ public class SwrveTrigger
         try {
             dict = (IDictionary<string, object>)json;
         } catch (Exception e) {
-            SwrveLog.LogError (string.Format ("Invalid object passed in to LoadFromJson, expected Dictionary<string, object>, received {0}", json));
+                SwrveLog.LogError (string.Format ("Invalid object passed in to LoadFromJson, expected Dictionary<string, object>, received {0}, exception: {1}", json, e.Message));
             return null;
         }
 

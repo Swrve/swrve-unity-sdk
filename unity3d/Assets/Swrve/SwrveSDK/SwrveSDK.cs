@@ -8,7 +8,6 @@ using System.Collections;
 
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Globalization;
 using Swrve;
@@ -1207,7 +1206,6 @@ public partial class SwrveSDK : ISwrveAssetController
 #if SWRVE_SUPPORTED_PLATFORM
         SwrveConversation result = null;
         SwrveBaseCampaign campaign = null;
-        DateTime now = SwrveHelper.GetNow();
 
         SwrveLog.Log("Trying to get conversation for: " + eventName);
 

@@ -150,7 +150,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         }
     }
 
-    new public static SwrveMessagesCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, SwrveQAUser qaUser)
+    public static SwrveMessagesCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, SwrveQAUser qaUser)
     {
         SwrveMessagesCampaign campaign = new SwrveMessagesCampaign (initialisedTime);
 

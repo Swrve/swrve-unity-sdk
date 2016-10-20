@@ -86,7 +86,6 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
     {
         string pattern = string.Format (@"{0} = .*;$", grouping);
         string replacement = string.Format (@"{0} = {1};", grouping, replacewith);
-        Match match = Regex.Match (project, pattern, RegexOptions.Multiline);
         project = Regex.Replace (project, pattern, replacement, RegexOptions.Multiline);
         return project;
     }
