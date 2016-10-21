@@ -67,8 +67,10 @@ public class SwrveAdmPushSupport {
                 final ADM adm = new ADM(context);
                 String registrationId = adm.getRegistrationId();
                 if (SwrveAdmHelper.isNullOrEmpty(registrationId)) {
+                    Log.i(TAG, "adm.getRegistrationId() returned null. Will call adm.startRegister().");
                     adm.startRegister();
                 } else {
+                    Log.i(TAG, "adm.getRegistrationId() returned: " + registrationId);
                     notifySDKOfRegistrationId(gameObject, registrationId);
                 }
                 sdkIsReadyToReceivePushNotifications(activity);
