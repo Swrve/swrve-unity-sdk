@@ -51,7 +51,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     @Override
     protected void onMessage(final Intent intent) {
         if (intent == null) {
-            Log.w(TAG, "Unexpected null intent");
+            Log.e(TAG, "Unexpected null intent");
             return;
         }
 
@@ -89,7 +89,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     private void processRemoteNotification(Bundle msg) {
         try {
             if (!isSwrveRemoteNotification(msg)) {
-                Log.i(TAG, "ADM notification: but not processing as it's missing " + SwrveAdmHelper.SWRVE_TRACKING_KEY);
+                Log.i(TAG, "ADM notification: but not processing as it doesn't contain:" + SwrveAdmHelper.SWRVE_TRACKING_KEY);
                 return;
             }
 
@@ -191,7 +191,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
             //Time to show notification
             showNotification(mNotificationManager, notification);
         } catch (Exception ex) {
-            Log.e(TAG, "Error processing ADM push notification", ex);
+            Log.e(TAG, "Error processing ADM push notification:", ex);
         }
     }
 

@@ -35,7 +35,7 @@ public partial class SwrveSDK
     {
         if (!string.IsNullOrEmpty(registrationToken)) {
             if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
-  	            deviceInfo["swrve.gcm_token"] = registrationToken;
+                deviceInfo["swrve.gcm_token"] = registrationToken;
             } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
                 deviceInfo["swrve.adm_token"] = registrationToken;
             }
@@ -103,7 +103,7 @@ public partial class SwrveSDK
         } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
             pluginPackageName = SwrveAndroidADMPushPluginPackageName;
             pluginVersion = ADMPushPluginVersion;
-		} else if (config.AndroidPushProvider == AndroidPushProvider.NONE) {
+        } else if (config.AndroidPushProvider == AndroidPushProvider.NONE) {
             return;
         }
 
@@ -111,7 +111,7 @@ public partial class SwrveSDK
         if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
             SwrveLog.LogError("Could not find class: " 
                 + jniPluginClassName + 
-                " Are you using the correct SwrveSDKPushSupport plugin given the swrve config.AndroidPushProvider setting?");
+                              " Are you using the correct SwrveSDKPushSupport plugin given the swrve config.AndroidPushProvider setting?");
 
             //Force crash by calling another JNI call without clearing exceptions.
             //This is to enforce proper integration
@@ -134,16 +134,20 @@ public partial class SwrveSDK
             throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
         } else {
             androidPluginInitializedSuccessfully = true;
+            SwrveLog.LogInfo("Android Push Plugin initialised successfully: " + jniPluginClassName);
         }
     }
 
-    private void InitialisePushGCM(MonoBehaviour container, string senderId) {
+    private void InitialisePushGCM(MonoBehaviour container, string senderId)
+    {
+        InitialiseAndroidPushPlugin();
+
         try {
             this.registrationToken = storage.Load(GcmDeviceTokenSave);
             bool registered = false;
             if (androidPluginInitializedSuccessfully) {
                 registered = androidPlugin.CallStatic<bool>(
-                    "registerDevice", container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
+                                 "registerDevice", container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
             }
             if (!registered) {
                 SwrveLog.LogError("Could not communicate with the Swrve Android Push plugin.");
@@ -153,13 +157,16 @@ public partial class SwrveSDK
         }
     }
 
-    private void InitialisePushADM(MonoBehaviour container) {
+    private void InitialisePushADM(MonoBehaviour container)
+    {
+        InitialiseAndroidPushPlugin();
+
         try {
             this.registrationToken = storage.Load(AdmDeviceTokenSave);
             bool registered = false;
             if (androidPluginInitializedSuccessfully) {
                 registered = androidPlugin.CallStatic<bool>(
-                    "initialiseAdm", container.name, config.ADMPushNotificationTitle, config.ADMPushNotificationIconId, config.ADMPushNotificationMaterialIconId, config.ADMPushNotificationLargeIconId, config.ADMPushNotificationAccentColor);
+                                 "initialiseAdm", container.name, config.ADMPushNotificationTitle, config.ADMPushNotificationIconId, config.ADMPushNotificationMaterialIconId, config.ADMPushNotificationLargeIconId, config.ADMPushNotificationAccentColor);
             }
             if (!registered) {
                 SwrveLog.LogError("Could not communicate with the Swrve Android Push plugin.");
@@ -228,7 +235,7 @@ public partial class SwrveSDK
                     AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject> (UnityCurrentActivityName);
                     string packageName = context.Call<string> ("getPackageName");
                     string versionName = context.Call<AndroidJavaObject> ("getPackageManager")
-                    .Call<AndroidJavaObject> ("getPackageInfo", packageName, 0).Get<string> ("versionName");
+                                         .Call<AndroidJavaObject> ("getPackageInfo", packageName, 0).Get<string> ("versionName");
                     return versionName;
                 }
             } catch (Exception exp) {
@@ -270,11 +277,11 @@ public partial class SwrveSDK
             bool sendDeviceInfo = (this.registrationToken != registrationId);
             if (sendDeviceInfo) {
                 this.registrationToken = registrationId;
-	            if (config.AndroidPushProvider == SwrveUnity.AndroidPushProvider.AMAZON_ADM) {
-	                storage.Save(AdmDeviceTokenSave, this.registrationToken);
-            	} else if (config.AndroidPushProvider == SwrveUnity.AndroidPushProvider.GOOGLE_GCM) {
-	                storage.Save(GcmDeviceTokenSave, this.registrationToken);
-            	}
+                if (config.AndroidPushProvider == SwrveUnity.AndroidPushProvider.AMAZON_ADM) {
+                    storage.Save(AdmDeviceTokenSave, this.registrationToken);
+                } else if (config.AndroidPushProvider == SwrveUnity.AndroidPushProvider.GOOGLE_GCM) {
+                    storage.Save(GcmDeviceTokenSave, this.registrationToken);
+                }
                 if (qaUser != null) {
                     qaUser.UpdateDeviceInfo();
                 }

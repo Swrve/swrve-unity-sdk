@@ -317,12 +317,10 @@ public partial class SwrveSDK : ISwrveAssetController
         }
 
 #if UNITY_ANDROID
-		//Start the push plugin
-		InitialiseAndroidPushPlugin();
-
+        //Start the push plugin
         if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
             if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
-				InitialisePushGCM(Container, config.GCMSenderId);
+                InitialisePushGCM(Container, config.GCMSenderId);
             }
 
             if (config.LogGoogleAdvertisingId) {
@@ -330,7 +328,7 @@ public partial class SwrveSDK : ISwrveAssetController
             }
         } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
             if (config.PushNotificationEnabled) {
-				InitialisePushADM(Container);
+                InitialisePushADM(Container);
             }
         }
 #endif
@@ -1304,14 +1302,14 @@ public partial class SwrveSDK : ISwrveAssetController
     public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
         if (campaign.IsA<SwrveMessagesCampaign> ()) {
             Container.StartCoroutine (LaunchMessage (
-                ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
-                GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
-            ));
+                                          ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
+                                          GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
+                                      ));
         }
         else if (campaign.IsA<SwrveConversationCampaign> ()) {
             Container.StartCoroutine (LaunchConversation(
-                ((SwrveConversationCampaign)campaign).Conversation
-            ));
+                                          ((SwrveConversationCampaign)campaign).Conversation
+                                      ));
         }
         campaign.Status = SwrveCampaignState.Status.Seen;
         SaveCampaignData(campaign);
