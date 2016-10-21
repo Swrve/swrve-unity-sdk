@@ -181,25 +181,25 @@ public class SwrveCommonBuildComponent
 
         int curState = STATE_BEGIN;
         string toAdd = "SwrveUnityWindows.SwrveUnityBridge.OnActivated(args);";
+        string needle = "InitializeUnity(appArgs);";
         string filePath = Path.Combine (path, "App.xaml.cs");
         string[] lines = File.ReadAllLines (filePath);
         List<string> newLines = new List<string> ();
 
-        foreach (string line in lines) {
-            if (curState == STATE_BEGIN && line.Contains ("OnActivated(IActivatedEventArgs")) {
+        foreach (string line in lines)
+        {
+            if (curState == STATE_BEGIN && line.Contains ("void OnActivated(IActivatedEventArgs")) {
                 curState = STATE_IN_FUNC;
-            } else if (curState == STATE_IN_FUNC && line.Contains ("InitializeUnity(appArgs);")) {
+            } else if (curState == STATE_IN_FUNC && line.Contains (needle)) {
                 curState = STATE_FOUND_LINE;
-            } else if (curState == STATE_IN_FUNC && line.Trim () == "}") {
-                curState = STATE_FINISHED;
-            } else if (curState == STATE_FOUND_LINE && line.Contains (toAdd)) {
-                return;
-            } else if (curState == STATE_FOUND_LINE && line.Trim () == "}") {
-                newLines.Add (line.Replace ("}", toAdd));
-                curState = STATE_FINISHED;
             }
 
             newLines.Add (line);
+            if(curState == STATE_FOUND_LINE)
+            {
+                curState = STATE_FINISHED;
+                newLines.Add(line.Replace(needle, toAdd));
+            }
         }
         File.WriteAllLines (filePath, newLines.ToArray());
     }
