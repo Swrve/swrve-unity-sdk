@@ -13,7 +13,7 @@ namespace SwrveUnityWindows
 {
     public static class SwrveUnityBridge
     {
-        private static SwrvePush push;
+        private static SwrvePush _push;
 
         public static void ShowConversation(ISwrveCommon sdk, object conversationJson)
         {
@@ -37,9 +37,19 @@ namespace SwrveUnityWindows
             return SwrveConversation.ConversationVersionSupported;
         }
 
+        private static SwrvePush GetPush()
+        {
+            if(_push == null)
+            {
+                _push = new SwrvePush();
+            }
+            return _push;
+        }
+
         public static async Task<string> RegisterForPush (ISwrveCommon sdk)
         {
-            push = new SwrvePush (sdk);
+            SwrvePush push = GetPush ();
+            push.SetCommonSDK (sdk);
             await push.UpdateUriAsync ();
             string uri;
             push.GetStoredUri (out uri);
@@ -48,7 +58,7 @@ namespace SwrveUnityWindows
 
         public static void OnActivated (IActivatedEventArgs args)
         {
-            push.OnActivated (args);
+            GetPush().OnActivated (args);
         }
 
         public static string GetAppLanguage(string defaultLanguage)
