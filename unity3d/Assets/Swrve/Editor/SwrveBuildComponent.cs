@@ -41,7 +41,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     }
 
     [MenuItem ("Swrve/Export unityPackageAmazon")]
-    public static void ExportUnityPackageGoogle ()
+    public static void ExportUnityPackageAmazon ()
     {
 #if UNITY_5
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);

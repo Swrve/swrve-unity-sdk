@@ -28,5 +28,9 @@ dependencies {
     googleCompile 'com.google.android.gms:play-services-gcm:' + project.GOOGLE_GMS_TOOLS_VERSION
     googleCompile 'com.google.android.gms:play-services-ads:' + project.GOOGLE_GMS_TOOLS_VERSION
     compile project(':UnityFacade')
-    amazonProvided files('provided_libs/amazon-device-messaging-1.0.1.jar')
+
+    //This file is not distributed with Swrve source code.
+    //If compiling amazon flavour from source you should download
+    //the adm jar from the Amazon Developer portal: https://developer.amazon.com/device-messaging
+    amazonProvided files('providedLibs/amazon-device-messaging-1.0.1.jar')
 }
