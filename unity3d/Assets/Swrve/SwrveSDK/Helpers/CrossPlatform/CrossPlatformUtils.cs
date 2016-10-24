@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Swrve
+namespace SwrveUnity
 {
 /// <summary>
 /// Used internally to support all platform.

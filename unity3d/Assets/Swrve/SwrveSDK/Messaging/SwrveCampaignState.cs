@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Swrve.Helpers;
+using SwrveUnity.Helpers;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 public class SwrveCampaignState
 {

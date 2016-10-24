@@ -1,6 +1,6 @@
 using System;
 
-namespace Swrve
+namespace SwrveUnity
 {
 /// <summary>
 /// Used internally to define a common storage for events, click thrus and other persistent data.

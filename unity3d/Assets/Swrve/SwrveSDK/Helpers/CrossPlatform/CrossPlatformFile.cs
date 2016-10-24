@@ -11,7 +11,7 @@ using UnityEngine.Windows;
 using System.IO;
 #endif
 
-namespace Swrve
+namespace SwrveUnity
 {
 /// <summary>
 /// Used internally to support all platform IO methods.

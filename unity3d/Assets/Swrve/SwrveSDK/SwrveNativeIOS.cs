@@ -4,9 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Swrve.IAP;
-using Swrve.Helpers;
-using SwrveMiniJSON;
+using SwrveUnity.IAP;
+using SwrveUnity.Helpers;
+using SwrveUnityMiniJSON;
 
 #if UNITY_5
 using UnityEngine.iOS;

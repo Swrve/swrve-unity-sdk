@@ -11,13 +11,13 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Globalization;
-using Swrve;
-using SwrveMiniJSON;
-using Swrve.Messaging;
-using Swrve.Helpers;
-using Swrve.ResourceManager;
-using Swrve.Device;
-using Swrve.IAP;
+using SwrveUnity;
+using SwrveUnityMiniJSON;
+using SwrveUnity.Messaging;
+using SwrveUnity.Helpers;
+using SwrveUnity.ResourceManager;
+using SwrveUnity.Device;
+using SwrveUnity.IAP;
 
 #if UNITY_WP8 || UNITY_METRO
 #error "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk."
@@ -225,7 +225,7 @@ public partial class SwrveSDK : ISwrveAssetController
     public virtual void Init (MonoBehaviour container, int appId, string apiKey, SwrveConfig config)
     {
         this.Container = container;
-        this.ResourceManager = new Swrve.ResourceManager.SwrveResourceManager ();
+        this.ResourceManager = new SwrveUnity.ResourceManager.SwrveResourceManager ();
         this.config = config;
         this.prefabName = container.name;
 
@@ -318,12 +318,18 @@ public partial class SwrveSDK : ISwrveAssetController
 
 #if UNITY_ANDROID
         // Ask for Android registration id
-        if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
-            GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
-        }
+        if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
+            if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
+				GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
+            }
 
-        if (config.LogGoogleAdvertisingId) {
-            RequestGooglePlayAdvertisingId(Container);
+            if (config.LogGoogleAdvertisingId) {
+                RequestGooglePlayAdvertisingId(Container);
+            }
+        } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
+            if (config.PushNotificationEnabled) {
+                InitialisePushADM(Container);
+            }
         }
 #endif
         QueueDeviceInfo ();
@@ -1296,14 +1302,14 @@ public partial class SwrveSDK : ISwrveAssetController
     public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
         if (campaign.IsA<SwrveMessagesCampaign> ()) {
             Container.StartCoroutine (LaunchMessage (
-                ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
-                GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
-            ));
+                                          ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
+                                          GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
+                                      ));
         }
         else if (campaign.IsA<SwrveConversationCampaign> ()) {
             Container.StartCoroutine (LaunchConversation(
-                ((SwrveConversationCampaign)campaign).Conversation
-            ));
+                                          ((SwrveConversationCampaign)campaign).Conversation
+                                      ));
         }
         campaign.Status = SwrveCampaignState.Status.Seen;
         SaveCampaignData(campaign);

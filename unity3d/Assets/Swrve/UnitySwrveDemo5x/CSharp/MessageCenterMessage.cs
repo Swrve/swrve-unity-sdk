@@ -7,7 +7,7 @@ using System.Linq;
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Swrve.Messaging;
+using SwrveUnity.Messaging;
 
 public class MessageCenterMessage : MonoBehaviour
 {

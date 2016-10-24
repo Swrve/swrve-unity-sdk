@@ -3,10 +3,10 @@ using System.Collections;
 using System;
 using System.Linq;
 using UnityEngine;
-using Swrve.Helpers;
-using SwrveMiniJSON;
+using SwrveUnity.Helpers;
+using SwrveUnityMiniJSON;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// In-app message.

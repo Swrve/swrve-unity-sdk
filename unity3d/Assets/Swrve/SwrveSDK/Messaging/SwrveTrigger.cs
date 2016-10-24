@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 public class SwrveTrigger
 {
@@ -76,7 +76,7 @@ public class SwrveTrigger
     public static IEnumerable<SwrveTrigger> LoadFromJson (string json)
     {
         try {
-            object triggers = SwrveMiniJSON.Json.Deserialize (json);
+            object triggers = SwrveUnityMiniJSON.Json.Deserialize (json);
             return LoadFromJson ((List<object>)triggers);
         } catch (Exception e) {
             SwrveLog.LogError (string.Format ("Error parsing a SwrveTrigger from json {0}, ex: {1}", json, e));
