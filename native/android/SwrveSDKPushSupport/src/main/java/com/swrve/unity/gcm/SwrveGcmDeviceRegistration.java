@@ -39,7 +39,7 @@ public class SwrveGcmDeviceRegistration {
 	public static String lastSenderIdUsed;
     public static List<SwrveNotification> receivedNotifications = new ArrayList<SwrveNotification>();
     public static List<SwrveNotification> openedNotifications = new ArrayList<SwrveNotification>();
-    
+
     public static int getVersion() {
     	return VERSION;
     }
@@ -48,7 +48,7 @@ public class SwrveGcmDeviceRegistration {
     	if (UnityPlayer.currentActivity != null) {
 			lastGameObjectRegistered = gameObject;
 			lastSenderIdUsed = senderId;
-    		final Activity activity = UnityPlayer.currentActivity; 
+    		final Activity activity = UnityPlayer.currentActivity;
 	    	// This code needs to be run from the UI thread. Do not trust Unity to run
 	    	// the JNI invoked code from that thread.
     		activity.runOnUiThread(new Runnable() {
@@ -66,19 +66,19 @@ public class SwrveGcmDeviceRegistration {
 				            	notifySDKOfRegistrationId(gameObject, registrationId);
 				            }
 					    }
-						
+
 						sdkIsReadyToReceivePushNotifications(activity);
 			    	} catch (Throwable ex) {
 			            Log.e(LOG_TAG, "Couldn't obtain the GCM registration id for the device", ex);
 			        }
 				}
 			});
-    		
+
     		return true;
     	} else {
     		Log.e(LOG_TAG, "UnityPlayer.currentActivity was null");
     	}
-    	
+
     	return false;
 	}
 
@@ -102,11 +102,11 @@ public class SwrveGcmDeviceRegistration {
 			Log.e(LOG_TAG, "UnityPlayer.currentActivity was null or the plugin was not initialized");
 		}
 	}
-    
+
     private static void saveConfig(String gameObject, Activity activity, String appTitle, String iconId, String materialIconId, String largeIconId, int accentColor) {
     	Context context = activity.getApplicationContext();
     	final SharedPreferences prefs = getGCMPreferences(context);
-    	
+
     	SharedPreferences.Editor editor = prefs.edit();
 	    editor.putString(PROPERTY_ACTIVITY_NAME, activity.getLocalClassName());
 	    editor.putString(PROPERTY_GAME_OBJECT_NAME, gameObject);
@@ -117,10 +117,10 @@ public class SwrveGcmDeviceRegistration {
 	    editor.putInt(PROPERTY_ACCENT_COLOR, accentColor);
 	    editor.commit();
     }
-    
+
     /**
 	 * Gets the current registration ID for application on GCM service.
-	 * 
+	 *
 	 * If result is empty, the app needs to register.
 	 *
 	 * @return registration ID, or empty string if there is no existing
@@ -144,7 +144,7 @@ public class SwrveGcmDeviceRegistration {
 	    }
 	    return registrationId;
 	}
-	
+
 	/**
 	 * Check the device to make sure it has the Google Play Services APK. If
 	 * it doesn't, display a dialog that allows users to download the APK from
@@ -155,7 +155,7 @@ public class SwrveGcmDeviceRegistration {
         int resultCode = googleAPI.isGooglePlayServicesAvailable(context);
 	    return resultCode == ConnectionResult.SUCCESS;
 	}
-	
+
 	/**
 	 * Registers the application with GCM servers asynchronously.
 	 */
@@ -192,7 +192,7 @@ public class SwrveGcmDeviceRegistration {
 	        }
 	    }.execute(null, null, null);
 	}
-	
+
 	/**
 	 * Stores the registration ID and app versionCode in the application's
 	 * {@code SharedPreferences}.
@@ -209,14 +209,14 @@ public class SwrveGcmDeviceRegistration {
 	    editor.putInt(PROPERTY_APP_VERSION, appVersion);
 	    editor.commit();
 	}
-	
+
 	/**
 	 * @return Application's {@code SharedPreferences}.
 	 */
 	public static SharedPreferences getGCMPreferences(Context context) {
 	    return context.getSharedPreferences(context.getPackageName() + "_swrve_push", Context.MODE_PRIVATE);
 	}
-	
+
 	/**
 	 * @return Application's version code from the {@code PackageManager}.
 	 */
@@ -230,16 +230,16 @@ public class SwrveGcmDeviceRegistration {
 	        throw new RuntimeException("Could not get package name: " + e);
 	    }
 	}
-	
+
 	private static boolean isEmptyString(String str) {
 		return (str == null || str.equals(""));
 	}
-	
+
     private static void notifySDKOfRegistrationId(String gameObject, String registrationId) {
     	// Call Unity SDK MonoBehaviour container
     	UnityPlayer.UnitySendMessage(gameObject, "OnDeviceRegistered", registrationId);
 	}
-    
+
 	private static String getGameObject(Context context) {
 		final SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(context);
 		return prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_GAME_OBJECT_NAME, "SwrveComponent");
@@ -265,7 +265,7 @@ public class SwrveGcmDeviceRegistration {
 			openedNotifications.clear();
 		}
 	}
-	
+
 	public static void newReceivedNotification(Context context, SwrveNotification notification) {
 		if (notification != null) {
 			synchronized(receivedNotifications) {
@@ -274,7 +274,7 @@ public class SwrveGcmDeviceRegistration {
 			}
 		}
 	}
-	
+
 	public static void newOpenedNotification(Context context, SwrveNotification notification) {
 		if (notification != null) {
 			synchronized(openedNotifications) {
@@ -291,7 +291,7 @@ public class SwrveGcmDeviceRegistration {
 			UnityPlayer.UnitySendMessage(gameObject, "OnNotificationReceived", serializedNotification.toString());
 		}
 	}
-	
+
 	private static void notifySDKOfOpenedNotification(Context context, SwrveNotification notification) {
 		String gameObject = getGameObject(context);
 		String serializedNotification = notification.toJson();
@@ -299,15 +299,15 @@ public class SwrveGcmDeviceRegistration {
 			UnityPlayer.UnitySendMessage(gameObject, "OnOpenedFromPushNotification", serializedNotification.toString());
 		}
 	}
-	
+
 	public static void sdkAcknowledgeReceivedNotification(String id) {
 		removeFromCollection(id, receivedNotifications);
 	}
-	
+
 	public static void sdkAcknowledgeOpenedNotification(String id) {
-		removeFromCollection(id, receivedNotifications);
+		removeFromCollection(id, openedNotifications);
 	}
-	
+
 	private static void removeFromCollection(String id, List<SwrveNotification> collection) {
 		synchronized(collection) {
 			// Remove acknowledge notification
@@ -347,7 +347,7 @@ public class SwrveGcmDeviceRegistration {
     	} else {
     		Log.e(LOG_TAG, "UnityPlayer.currentActivity was null");
     	}
-    	
+
     	return false;
 	}
 
