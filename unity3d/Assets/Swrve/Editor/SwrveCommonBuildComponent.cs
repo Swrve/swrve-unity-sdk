@@ -186,8 +186,9 @@ public class SwrveCommonBuildComponent
         string[] lines = File.ReadAllLines (filePath);
         List<string> newLines = new List<string> ();
 
-        foreach (string line in lines)
+        for (int i = 0; i < lines.Count(); i++)
         {
+            string line = lines[i];
             if (curState == STATE_BEGIN && line.Contains ("void OnActivated(IActivatedEventArgs")) {
                 curState = STATE_IN_FUNC;
             } else if (curState == STATE_IN_FUNC && line.Contains (needle)) {
