@@ -317,10 +317,10 @@ public partial class SwrveSDK : ISwrveAssetController
         }
 
 #if UNITY_ANDROID
-        //Start the push plugin
+        // Ask for Android registration id
         if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
             if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
-                InitialisePushGCM(Container, config.GCMSenderId);
+				GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
             }
 
             if (config.LogGoogleAdvertisingId) {
