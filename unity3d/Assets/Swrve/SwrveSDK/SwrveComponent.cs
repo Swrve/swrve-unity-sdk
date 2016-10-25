@@ -152,6 +152,33 @@ public class SwrveComponent : MonoBehaviour
         }
     }
 
+    /// Called by the ADM plugin to notify
+    /// of a device registration id.
+    public virtual void OnDeviceRegisteredADM(string registrationId)
+    {
+        if (SDK != null && SDK.Initialised) {
+            SDK.RegistrationIdReceivedADM(registrationId);
+        }
+    }
+
+    /// Called by the ADM plugin to notify
+    /// of a received push notification.
+    public virtual void OnNotificationReceivedADM(string notificationJson)
+    {
+        if (SDK != null && SDK.Initialised) {
+            SDK.NotificationReceivedADM(notificationJson);
+        }
+    }
+
+    /// Called by the ADM plugin to notify
+    /// of the push notification that opened the app.
+    public virtual void OnOpenedFromPushNotificationADM(string notificationJson)
+    {
+        if (SDK != null && SDK.Initialised) {
+            SDK.OpenedFromPushNotificationADM(notificationJson);
+        }
+    }
+
     /// Called by the Google Cloud Messaging plugin to notify
     /// of the Advertising Id.
     public virtual void OnNewAdvertisingId(string advertisingId)

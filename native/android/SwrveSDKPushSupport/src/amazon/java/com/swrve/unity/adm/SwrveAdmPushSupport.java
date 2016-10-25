@@ -160,14 +160,14 @@ public class SwrveAdmPushSupport {
 
     private static void notifySDKOfRegistrationId(String gameObject, String registrationId) {
         // Call Unity SDK MonoBehaviour container
-        UnityPlayer.UnitySendMessage(gameObject, "ADMOnDeviceRegistered", registrationId);
+        UnityPlayer.UnitySendMessage(gameObject, "OnDeviceRegisteredADM", registrationId);
     }
 
     private static void notifySDKOfReceivedNotification(Context context, SwrveNotification notification) {
         String gameObject = getGameObject(context);
         String serializedNotification = notification.toJson();
         if (serializedNotification != null) {
-            UnityPlayer.UnitySendMessage(gameObject, "ADMOnNotificationReceived", serializedNotification.toString());
+            UnityPlayer.UnitySendMessage(gameObject, "OnNotificationReceivedADM", serializedNotification.toString());
         }
     }
 
@@ -175,7 +175,7 @@ public class SwrveAdmPushSupport {
         String gameObject = getGameObject(context);
         String serializedNotification = notification.toJson();
         if (serializedNotification != null) {
-            UnityPlayer.UnitySendMessage(gameObject, "ADMOnOpenedFromPushNotification", serializedNotification.toString());
+            UnityPlayer.UnitySendMessage(gameObject, "OnOpenedFromPushNotificationADM", serializedNotification.toString());
         }
     }
 

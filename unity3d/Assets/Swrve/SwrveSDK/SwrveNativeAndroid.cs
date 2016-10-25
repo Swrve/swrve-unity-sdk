@@ -164,55 +164,56 @@ public partial class SwrveSDK
 
     private void InitialisePushADM(MonoBehaviour container)
     {
-        //Only execute this once
-        if (androidADMPluginInitialized) {
-            return;
-        }
-        androidADMPluginInitialized = true;
-
-        string pluginPackageName = SwrveAndroidADMPushPluginPackageName;
-        int pluginVersion = ADMPushPluginVersion;
-
-        string jniPluginClassName = pluginPackageName.Replace(".", "/");
-        if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
-            SwrveLog.LogError("Could not find class: " 
-                + jniPluginClassName + 
-                              " Are you using the correct SwrveSDKPushSupport plugin given the swrve config.AndroidPushProvider setting?");
-
-            //Force crash by calling another JNI call without clearing exceptions.
-            //This is to enforce proper integration
-            AndroidJNI.FindClass(jniPluginClassName); 
-            return;
-        }
-
-        androidADMPlugin = new AndroidJavaClass(pluginPackageName);
-        if (androidADMPlugin == null) {
-            SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
-            return;
-        }
-
-        // Check that the version is the same
-        int testPluginVersion = androidADMPlugin.CallStatic<int>("getVersion");
-
-        if (testPluginVersion != pluginVersion) {
-            // Plugin with changes to the public API not supported
-            androidADMPlugin = null;
-            throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
-        } else {
-            androidADMPluginInitializedSuccessfully = true;
-            SwrveLog.LogInfo("Android Push Plugin initialised successfully: " + jniPluginClassName);
-        }
-
         try {
-            this.admDeviceToken = storage.Load(AdmDeviceTokenSave);
             bool registered = false;
+            this.admDeviceToken = storage.Load(AdmDeviceTokenSave);
+
+	        //Only execute this once
+	        if (!androidADMPluginInitialized) {
+		        androidADMPluginInitialized = true;
+
+		        string pluginPackageName = SwrveAndroidADMPushPluginPackageName;
+		        int pluginVersion = ADMPushPluginVersion;
+
+		        string jniPluginClassName = pluginPackageName.Replace(".", "/");
+		        if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
+		            SwrveLog.LogError("Could not find class: " + jniPluginClassName +
+		                              " Are you using the correct SwrveSDKPushSupport plugin given the swrve config.AndroidPushProvider setting?");
+
+		            //Force crash by calling another JNI call without clearing exceptions.
+		            //This is to enforce proper integration
+		            AndroidJNI.FindClass(jniPluginClassName); 
+		            return;
+		        }
+
+		        androidADMPlugin = new AndroidJavaClass(pluginPackageName);
+		        if (androidADMPlugin == null) {
+		            SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
+		            return;
+		        }
+
+		        // Check that the version is the same
+		        int testPluginVersion = androidADMPlugin.CallStatic<int>("getVersion");
+
+		        if (testPluginVersion != pluginVersion) {
+		            // Plugin with changes to the public API not supported
+		            androidADMPlugin = null;
+		            throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
+		        } else {
+		            androidADMPluginInitializedSuccessfully = true;
+		            SwrveLog.LogInfo("Android Push Plugin initialised successfully: " + jniPluginClassName);
+		        }
+			}
+
             if (androidADMPluginInitializedSuccessfully) {
                 registered = androidADMPlugin.CallStatic<bool>(
                                  "initialiseAdm", container.name, config.ADMPushNotificationTitle, config.ADMPushNotificationIconId, config.ADMPushNotificationMaterialIconId, config.ADMPushNotificationLargeIconId, config.ADMPushNotificationAccentColor);
             }
+
             if (!registered) {
                 SwrveLog.LogError("Could not communicate with the Swrve Android ADM Push plugin.");
             }
+
         } catch (Exception exp) {
             SwrveLog.LogError("Could not initalise push: " + exp.ToString());
         }
@@ -311,7 +312,7 @@ public partial class SwrveSDK
     /// <param name="registrationId">
     /// The new device registration id.
     /// </param>
-    public void ADMRegistrationIdReceived(string registrationId)
+    public void RegistrationIdReceivedADM(string registrationId)
     {
         if (!string.IsNullOrEmpty(registrationId)) {
             bool sendDeviceInfo = (this.admDeviceToken != registrationId);
@@ -360,7 +361,7 @@ public partial class SwrveSDK
     /// <param name="notificationJson">
     /// Serialized push notification information.
     /// </param>
-    public void ADMNotificationReceived(string notificationJson)
+    public void NotificationReceivedADM(string notificationJson)
     {
         Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
         if (androidADMPlugin != null && notification != null) {
@@ -438,7 +439,7 @@ public partial class SwrveSDK
     /// <param name="notificationJson">
     /// Serialized push notification information.
     /// </param>
-    public void ADMOpenedFromPushNotification(string notificationJson)
+    public void OpenedFromPushNotificationADM(string notificationJson)
     {
         Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
         string pushId = GetPushId(notification);
