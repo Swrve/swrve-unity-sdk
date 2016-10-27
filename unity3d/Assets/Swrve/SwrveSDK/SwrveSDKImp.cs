@@ -27,6 +27,7 @@ public partial class SwrveSDK
     protected const string InstallTimeEpochSave = "Swrve_JoinedDate";
     protected const string iOSdeviceTokenSave = "Swrve_iOSDeviceToken";
     protected const string GcmDeviceTokenSave = "Swrve_gcmDeviceToken";
+    protected const string WindowsDeviceTokenSave = "Swrve_windowsDeviceToken";
     protected const string GoogleAdvertisingIdSave = "Swrve_googleAdvertisingId";
     protected const string AbTestUserResourcesSave = "srcngt2"; // Saved securely
     protected const string AbTestUserResourcesDiffSave = "rsdfngt2"; // Saved securely
@@ -160,11 +161,13 @@ public partial class SwrveSDK
         }
 #if UNITY_IPHONE
         path = path + "/com.ngt.msgs";
+#elif UNITY_WSA_10_0
+        path = path + "/swrveTemp";
 #endif
-		if (!File.Exists (path))
-		{
-			Directory.CreateDirectory (path);
-		}
+    		if (!File.Exists (path))
+    		{
+    			Directory.CreateDirectory (path);
+    		}
         return path;
     }
 
@@ -978,9 +981,8 @@ public partial class SwrveSDK
             return;
         }
 
-        bool conversationShown = false;
+        SwrveBaseMessage baseMessage = null;
         // Process only Conversation campaign types first
-
         for(int ci = 0; ci < campaigns.Count; ci++) {
             if(!campaigns[ci].IsA<SwrveConversationCampaign>()) {
                 continue;
@@ -989,43 +991,52 @@ public partial class SwrveSDK
             SwrveConversationCampaign campaign = (SwrveConversationCampaign)campaigns[ci];
 
             if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
-                Container.StartCoroutine (LaunchConversation (campaign.Conversation));
-                conversationShown = true;
-                break;
+                if (campaign.AreAssetsReady ()) {
+                    Container.StartCoroutine (LaunchConversation (campaign.Conversation));
+                    baseMessage = campaign.Conversation;
+                    break;
+                } else if(qaUser != null) {
+                    int campaignId = campaign.Id;
+                    qaUser.campaignMessages[campaignId] = campaign.Conversation;
+                    qaUser.campaignReasons[campaignId] = "Campaign " + campaignId + " was selected to autoshow, but assets aren't fully downloaded";
+                }
             }
         }
 
-        if(conversationShown)
-        {
-            return;
-        }
+        if(baseMessage == null) {
+            for(int ci = 0; ci < campaigns.Count; ci++) {
+                if(!campaigns[ci].IsA<SwrveMessagesCampaign>()) {
+                    continue;
+                }
 
-        for(int ci = 0; ci < campaigns.Count; ci++) {
-            if(!campaigns[ci].IsA<SwrveMessagesCampaign>()) {
-                continue;
-            }
+                SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)campaigns[ci];
 
-            SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)campaigns[ci];
-
-            if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
-                if (TriggeredMessageListener != null) {
-                    // They are using a custom listener
-                    SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
-                    if (message != null) {
-                        autoShowMessagesEnabled = false;
-                        TriggeredMessageListener.OnMessageTriggered (message);
-                    }
-                } else {
-                    if (currentMessage == null) {
+                if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
+                    if (TriggeredMessageListener != null) {
+                        // They are using a custom listener
                         SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
                         if (message != null) {
                             autoShowMessagesEnabled = false;
-                            Container.StartCoroutine (LaunchMessage (message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+                            TriggeredMessageListener.OnMessageTriggered (message);
+                            baseMessage = message;
+                        }
+                    } else {
+                        if (currentMessage == null) {
+                            SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
+                            if (message != null) {
+                                autoShowMessagesEnabled = false;
+                                Container.StartCoroutine (LaunchMessage (message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+                                baseMessage = message;
+                            }
                         }
                     }
+                    break;
                 }
-                break;
             }
+        }
+
+        if (qaUser != null) {
+            qaUser.Trigger (DefaultAutoShowMessagesTrigger, baseMessage);
         }
     }
 
@@ -1160,9 +1171,13 @@ public partial class SwrveSDK
         return format;
     }
 
+    private string GetTemporaryPathFileName(string fileName) {
+        return Path.Combine (swrveTemporaryPath, fileName);
+    }
+
     private IEnumerator LoadAsset (string fileName, CoroutineReference<Texture2D> texture)
     {
-        string filePath = swrveTemporaryPath + "/" + fileName;
+        string filePath = GetTemporaryPathFileName (fileName);
 
         WWW www = new WWW ("file://" + filePath);
         yield return www;
@@ -1191,7 +1206,7 @@ public partial class SwrveSDK
 
     protected virtual bool CheckAsset (string fileName)
     {
-        if (CrossPlatformFile.Exists (swrveTemporaryPath + "/" + fileName)) {
+        if (CrossPlatformFile.Exists (GetTemporaryPathFileName(fileName))) {
             return true;
         }
         return false;
@@ -1207,7 +1222,7 @@ public partial class SwrveSDK
         if (www != null && WwwDeducedError.NoError == err && www.isDone) {
             Texture2D loadedTexture = www.texture;
             if (loadedTexture != null) {
-                string filePath = swrveTemporaryPath + "/" + fileName;
+                string filePath = GetTemporaryPathFileName (fileName);
                 SwrveLog.Log ("Saving to " + filePath);
                 byte[] bytes = loadedTexture.EncodeToPNG ();
                 CrossPlatformFile.SaveBytes (filePath, bytes);

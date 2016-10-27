@@ -43,6 +43,8 @@ public class SwrveConfig
     public string AppStore = SwrveAppStore.Google;
 #elif UNITY_IPHONE
     public string AppStore = SwrveAppStore.Apple;
+#elif UNITY_WSA_10_0
+    public string AppStore = SwrveAppStore.Windows;
 #else
     public string AppStore = null;
 #endif
