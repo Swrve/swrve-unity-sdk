@@ -21,6 +21,11 @@ namespace SwrveUnityWindows
             {
                 conversationJson = JsonObject.Parse((string)conversationJson);
             }
+            else if(!(conversationJson is JsonObject))
+            {
+                SwrveLog.e(string.Format("Unable to handle object of type {0} for ShowConversation", (conversationJson == null ? "null" : "" + conversationJson.GetType()) ));
+                return;
+            }
 
             string os = AnalyticsInfo.VersionInfo.DeviceFamily.ToLower ();
             SwrveConversationUI conversationUI = new SwrveConversationUI(sdk, os.Contains("desktop"));
