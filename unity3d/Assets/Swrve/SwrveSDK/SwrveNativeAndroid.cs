@@ -115,7 +115,6 @@ public partial class SwrveSDK
             _Iap (1, productId, productPrice, currency, rewards, purchaseData, dataSignature, string.Empty, config.AppStore);
         }
     }
->>>>>>> 42025ddd52a7c805c9284b1236535d192225b78e
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)
     {
