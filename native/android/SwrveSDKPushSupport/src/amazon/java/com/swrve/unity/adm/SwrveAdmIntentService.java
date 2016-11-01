@@ -21,7 +21,6 @@ import java.util.Date;
 import java.util.LinkedList;
 
 import com.amazon.device.messaging.ADMMessageHandlerBase;
-import com.amazon.device.messaging.ADMMessageReceiver;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.unity3d.player.UnityPlayer;
@@ -32,13 +31,6 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     private final static String AMAZON_PREFERENCES = "swrve_amazon_unity_pref";
 
     private final int MAX_ID_CACHE_ITEMS = 16;
-
-    //SwrveMessageReceiver listens for messages from ADM
-    public static class SwrveAdmMessageReceiver extends ADMMessageReceiver {
-        public SwrveAdmMessageReceiver() {
-            super(SwrveAdmIntentService.class);
-        }
-    }
 
     public SwrveAdmIntentService() {
         super(SwrveAdmIntentService.class.getName());

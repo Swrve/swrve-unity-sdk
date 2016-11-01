@@ -32,7 +32,7 @@
             android:exported="false" />
 
         <!-- This permission ensures that only ADM can send your app registration broadcasts. -->
-        <receiver android:name="com.swrve.unity.adm.SwrveAdmIntentService$SwrveAdmMessageReceiver"
+        <receiver android:name="com.swrve.unity.adm.SwrveAdmMessageReceiver"
             android:permission="com.amazon.device.messaging.permission.SEND" >
 
             <!-- To interact with ADM, your app must listen for the following intents. -->
