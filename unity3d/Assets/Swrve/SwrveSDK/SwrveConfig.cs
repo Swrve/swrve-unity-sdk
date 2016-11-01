@@ -255,13 +255,14 @@ public class SwrveConfig
     public string ADMPushNotificationLargeIconId = null;
 
     /// <summary>
-    /// The color (argb) that will be used as accent color for your GCM notifications.
+    /// The color (argb) that will be used as accent color for your ADM notifications.
     /// </summary>
     public int ADMPushNotificationAccentColor = -1;
 
     /// <summary>
     /// Push provider type. GCM is the default. Set to AMAZON_ADM if using Kindle
     /// Requires the use of the correct native Android plugin (Google or Amazon variant).
+    /// See Docs for integration guide.
     /// </summary>
     public AndroidPushProvider AndroidPushProvider = AndroidPushProvider.GOOGLE_GCM;
 
