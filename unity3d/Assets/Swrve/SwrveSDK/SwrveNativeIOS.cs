@@ -248,7 +248,10 @@ public partial class SwrveSDK
     private static extern string _swrveiOSIDFV();
 
     [DllImport ("__Internal")]
-    private static extern void _swrveiOSStartPlot();
+    private static extern void _swrveiOSStartLocation();
+
+    [DllImport ("__Internal")]
+    private static extern void _swrveiOSLocationUserUpdate(string jsonMap);
 
     [DllImport ("__Internal")]
     private static extern void _swrveiOSInitNative(string jsonConfig);
@@ -428,9 +431,18 @@ public partial class SwrveSDK
     private void startNativeLocation()
     {
         try {
-            _swrveiOSStartPlot();
+            _swrveiOSStartLocation();
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't start Location on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
+    }
+
+    public void LocationUserUpdate(Dictionary<string, string> map)
+    {
+        try {
+            _swrveiOSLocationUserUpdate(Json.Serialize(map));
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't update location details from Android: " + exp.ToString ());
         }
     }
 

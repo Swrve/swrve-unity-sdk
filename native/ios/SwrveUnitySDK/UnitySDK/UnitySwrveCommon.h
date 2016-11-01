@@ -17,6 +17,7 @@ void UnitySendMessage(const char *, const char *, const char *);
 +(void) init:(char*)jsonConfig;
 
 -(void) initLocation;
+-(void) LocationUserUpdate:(NSString*)jsonMap;
 
 -(long) appId;
 -(NSString*) apiKey;

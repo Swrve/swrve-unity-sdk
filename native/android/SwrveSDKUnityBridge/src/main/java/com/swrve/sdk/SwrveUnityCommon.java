@@ -143,6 +143,22 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         }
     }
 
+    @CalledByUnity
+    public static void StartLocation() {
+        SwrvePlot.onCreate(UnityPlayer.currentActivity);
+    }
+
+    @CalledByUnity
+    public static void LocationUserUpdate(String jsonString) {
+        Gson gson = new Gson();
+        Map<String, String> map = new HashMap<>();
+        Map<String, Object> _map = gson.fromJson(jsonString, new TypeToken<Map<String, Object>>(){}.getType());
+        for (Map.Entry<String, Object> entry: _map.entrySet()) {
+            map.put(entry.getKey(), (String)entry.getValue());
+        }
+        SwrvePlot.userUpdate(map);
+    }
+
     private String readFile(String dir, String filename) {
         String fileContent = "";
 

@@ -389,6 +389,17 @@ static dispatch_once_t sharedInstanceToken = 0;
 #endif
 }
 
+-(void) LocationUserUpdate:(NSString*) jsonMap
+{
+#ifdef SWRVE_LOCATION_SDK
+    NSError* error = nil;
+    NSDictionary* map =
+        [NSJSONSerialization JSONObjectWithData:[jsonMap dataUsingEncoding:NSUTF8StringEncoding]
+                                        options:NSJSONReadingMutableContainers error:&error];
+    [SwrvePlot userUpdate:map];
+#endif
+}
+
 -(void) setLocationSegmentVersion:(int)version {
     [self sendMessageUp:@"SetLocationSegmentVersion"
                     msg:[NSString stringWithFormat:@"%d", version]];
