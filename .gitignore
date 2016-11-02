@@ -5,3 +5,6 @@
 /unity3d/Assets/Plugins/iOS/SwrveConversationSDK*
 /unity3d/Assets/Plugins/iOS/SwrveSDKCommon*
 .DS_Store
+native/windows/SwrveUnityBridge/bin
+native/windows/SwrveUnityBridge/obj
+project.lock.json
