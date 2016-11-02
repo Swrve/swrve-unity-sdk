@@ -15,6 +15,7 @@ public partial class SwrveSDK
     private const string ShowConversationName = "showConversation";
     private const string SwrveStartLocationName = "StartLocation";
     private const string SwrveLocationUserUpdateName = "LocationUserUpdate";
+    private const string SwrveGetPlotNotificationsName = "GetPlotNotifications";
 
     private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
     private const string UnityCurrentActivityName = "currentActivity";
@@ -448,6 +449,7 @@ public partial class SwrveSDK
             }
         }
     }
+    
     public void LocationUserUpdate(Dictionary<string, string> map)
     {
         if (SwrveHelper.IsOnDevice ()) {
@@ -457,6 +459,18 @@ public partial class SwrveSDK
                 SwrveLog.LogWarning ("Couldn't update location details from Android: " + exp.ToString ());
             }
         }
+    }
+    
+    public string GetPlotNotifications()
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                return AndroidGetBridge ().CallStatic<string>(SwrveGetPlotNotificationsName);
+            } catch (Exception exp) {
+                SwrveLog.LogWarning ("Couldn't get plot notifications from Android: " + exp.ToString ());
+            }
+        }
+        return "";
     }
 
     private void setNativeConversationVersion()
