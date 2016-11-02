@@ -442,7 +442,7 @@ public partial class SwrveSDK
         try {
             _swrveiOSLocationUserUpdate(Json.Serialize(map));
         } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't update location details from Android: " + exp.ToString ());
+            SwrveLog.LogWarning ("Couldn't update location details from iOS: " + exp.ToString ());
         }
     }
 
