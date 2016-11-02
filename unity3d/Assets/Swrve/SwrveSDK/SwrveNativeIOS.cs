@@ -456,7 +456,7 @@ public partial class SwrveSDK
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't get plot notifications from iOS: " + exp.ToString ());
         }
-        return "";
+        return "[]";
     }
 
     private void startNativeLocationAfterPermission()

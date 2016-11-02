@@ -76,7 +76,7 @@ public partial class SwrveSDK
     private void startNativeLocation () {}
     private void startNativeLocationAfterPermission () {}
     public void LocationUserUpdate (Dictionary<string, string> map) {}
-    public string GetPlotNotifications () {}
+    public string GetPlotNotifications () { return "[]" }
     private bool NativeIsBackPressed () { return false; }
 
     /// <summary>

@@ -470,7 +470,7 @@ public partial class SwrveSDK
                 SwrveLog.LogWarning ("Couldn't get plot notifications from Android: " + exp.ToString ());
             }
         }
-        return "";
+        return "[]";
     }
 
     private void setNativeConversationVersion()

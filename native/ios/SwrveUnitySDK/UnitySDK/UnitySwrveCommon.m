@@ -406,7 +406,7 @@ static dispatch_once_t sharedInstanceToken = 0;
 #ifdef SWRVE_LOCATION_SDK
     NSArray* plotNotifications = [Plot loadedNotifications];
     for (uint i = 0; i < [plotNotifications count]; i++) {
-        [notifications addObject:[((UILocalNotification*)plotNotifications[i]) userInfo]];
+        [notifications addObject:[[(UILocalNotification*)plotNotifications[i] userInfo] valueForKey:@"action"]];
     };
 #endif
     NSData* jsonData = [NSJSONSerialization dataWithJSONObject:notifications options:0 error:nil];
