@@ -89,6 +89,11 @@ extern "C"
         [[UnitySwrveCommonDelegate sharedInstance] LocationUserUpdate:[UnitySwrveHelper CStringToNSString:jsonMap]];
     }
     
+    char* _swrveiOSGetPlotNotifications()
+    {
+        return [UnitySwrveHelper NSStringCopy:[[UnitySwrveCommonDelegate sharedInstance] GetPlotNotifications]];
+    }
+    
 #ifdef __cplusplus
 }
 #endif

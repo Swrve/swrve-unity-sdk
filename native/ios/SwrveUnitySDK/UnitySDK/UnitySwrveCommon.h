@@ -18,6 +18,7 @@ void UnitySendMessage(const char *, const char *, const char *);
 
 -(void) initLocation;
 -(void) LocationUserUpdate:(NSString*)jsonMap;
+-(NSString*) GetPlotNotifications;
 
 -(long) appId;
 -(NSString*) apiKey;

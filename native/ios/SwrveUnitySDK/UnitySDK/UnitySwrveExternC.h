@@ -19,6 +19,7 @@ extern "C"
     void _swrveiOSShowConversation(char* conversation);
     void _swrveiOSStartLocation();
     void _swrveiOSLocationUserUpdate(char* jsonMap);
+    char* _swrveiOSGetPlotNotifications();
     
 #ifdef __cplusplus
 }

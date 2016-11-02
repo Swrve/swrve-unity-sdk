@@ -400,6 +400,19 @@ static dispatch_once_t sharedInstanceToken = 0;
 #endif
 }
 
+-(NSString*) GetPlotNotifications
+{
+    NSMutableArray* notifications = [NSMutableArray array];
+#ifdef SWRVE_LOCATION_SDK
+    NSArray* plotNotifications = [Plot loadedNotifications];
+    for (uint i = 0; i < [plotNotifications count]; i++) {
+        [notifications addObject:[((UILocalNotification*)plotNotifications[i]) userInfo]];
+    };
+#endif
+    NSData* jsonData = [NSJSONSerialization dataWithJSONObject:notifications options:0 error:nil];
+    return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+}
+
 -(void) setLocationSegmentVersion:(int)version {
     [self sendMessageUp:@"SetLocationSegmentVersion"
                     msg:[NSString stringWithFormat:@"%d", version]];

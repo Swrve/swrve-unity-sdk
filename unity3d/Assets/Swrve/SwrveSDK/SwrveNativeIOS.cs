@@ -251,6 +251,9 @@ public partial class SwrveSDK
     private static extern void _swrveiOSStartLocation();
 
     [DllImport ("__Internal")]
+    private static extern string _swrveiOSGetPlotNotifications();
+
+    [DllImport ("__Internal")]
     private static extern void _swrveiOSLocationUserUpdate(string jsonMap);
 
     [DllImport ("__Internal")]
@@ -444,6 +447,16 @@ public partial class SwrveSDK
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't update location details from iOS: " + exp.ToString ());
         }
+    }
+
+    public string GetPlotNotifications()
+    {
+        try {
+            return _swrveiOSGetPlotNotifications();
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't get plot notifications from iOS: " + exp.ToString ());
+        }
+        return "";
     }
 
     private void startNativeLocationAfterPermission()
