@@ -17,7 +17,9 @@ extern "C"
     void _swrveiOSRegisterForPushNotifications(char* jsonCategorySet);
     void _swrveiOSInitNative(char* jsonConfig);
     void _swrveiOSShowConversation(char* conversation);
-    void _swrveiOSStartPlot();
+    void _swrveiOSStartLocation();
+    void _swrveiOSLocationUserUpdate(char* jsonMap);
+    char* _swrveiOSGetPlotNotifications();
     
 #ifdef __cplusplus
 }
