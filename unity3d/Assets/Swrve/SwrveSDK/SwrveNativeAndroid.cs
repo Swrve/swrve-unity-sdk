@@ -9,12 +9,13 @@ public partial class SwrveSDK
 {
     private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
     private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
-    private const string SwrveAndroidPlotName = "com.swrve.sdk.SwrvePlot";
 
     private const string IsInitialisedName = "isInitialised";
     private const string GetConversationVersionName = "getConversationVersion";
     private const string ShowConversationName = "showConversation";
-    private const string SwrvePlotOnCreateName = "onCreate";
+    private const string SwrveStartLocationName = "StartLocation";
+    private const string SwrveLocationUserUpdateName = "LocationUserUpdate";
+    private const string SwrveGetPlotNotificationsName = "GetPlotNotifications";
 
     private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
     private const string UnityCurrentActivityName = "currentActivity";
@@ -441,18 +442,35 @@ public partial class SwrveSDK
     {
         if (SwrveHelper.IsOnDevice ()) {
             try {
-                AndroidGetBridge ();
-                AndroidJavaClass swrvePlotClass = new AndroidJavaClass (SwrveAndroidPlotName);
-
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (UnityPlayerName)) {
-                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
-                    swrvePlotClass.CallStatic (SwrvePlotOnCreateName, context);
-                }
+                AndroidGetBridge ().CallStatic(SwrveStartLocationName);
                 startedPlot = true;
             } catch (Exception exp) {
-                SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
+                SwrveLog.LogWarning ("Couldn't start Swrve location from Android: " + exp.ToString ());
             }
         }
+    }
+    
+    public void LocationUserUpdate(Dictionary<string, string> map)
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                AndroidGetBridge ().CallStatic(SwrveLocationUserUpdateName, Json.Serialize(map));
+            } catch (Exception exp) {
+                SwrveLog.LogWarning ("Couldn't update location details from Android: " + exp.ToString ());
+            }
+        }
+    }
+    
+    public string GetPlotNotifications()
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                return AndroidGetBridge ().CallStatic<string>(SwrveGetPlotNotificationsName);
+            } catch (Exception exp) {
+                SwrveLog.LogWarning ("Couldn't get plot notifications from Android: " + exp.ToString ());
+            }
+        }
+        return "[]";
     }
 
     private void setNativeConversationVersion()
@@ -468,7 +486,6 @@ public partial class SwrveSDK
     {
         return Input.GetKeyDown (KeyCode.Escape);
     }
-
 }
 
 #endif
