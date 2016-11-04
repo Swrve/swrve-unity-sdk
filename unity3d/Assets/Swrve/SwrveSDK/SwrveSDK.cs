@@ -457,6 +457,35 @@ public partial class SwrveSDK : ISwrveAssetController
     }
 
     /// <summary>
+    /// Buffer the event of a user update with a Date Object
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "user" event.
+    /// </remarks>
+    /// <param name="name">
+    /// Identifier associated with user update
+    /// </param>
+    /// <param name="date">
+    /// DateTime object for user update
+    /// </param>
+    public void UserUpdate (string name, DateTime date)
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        if (name != null) {
+            Dictionary<string, string> attributes = new Dictionary<string, string> ();
+            string dateAttribute = date.Date.ToString(@"yyyy-MM-ddTHH:mm:ssZ");
+            attributes.Add (name, dateAttribute);
+
+            Dictionary<string,object> json = new Dictionary<string, object> ();
+            json.Add ("attributes", attributes);
+            AppendEventToBuffer ("user", json);
+        } else {
+            SwrveLog.LogError ("Invoked user update with date with no name specified");
+        }
+#endif
+    }
+
+    /// <summary>
     /// Buffer the event of an item purchase.
     /// </summary>
     /// <remarks>
