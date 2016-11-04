@@ -79,9 +79,19 @@ extern "C"
         [[UnitySwrveMessageEventHandler alloc] showConversationFromString:[UnitySwrveHelper CStringToNSString:conversation]];
     }
     
-    void _swrveiOSStartPlot()
+    void _swrveiOSStartLocation()
     {
         [[UnitySwrveCommonDelegate sharedInstance] initLocation];
+    }
+    
+    void _swrveiOSLocationUserUpdate(char* jsonMap)
+    {
+        [[UnitySwrveCommonDelegate sharedInstance] LocationUserUpdate:[UnitySwrveHelper CStringToNSString:jsonMap]];
+    }
+    
+    char* _swrveiOSGetPlotNotifications()
+    {
+        return [UnitySwrveHelper NSStringCopy:[[UnitySwrveCommonDelegate sharedInstance] GetPlotNotifications]];
     }
     
 #ifdef __cplusplus
