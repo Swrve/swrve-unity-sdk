@@ -198,10 +198,10 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
 
 		string plotconfigName = "plotconfig.json";
         string readPath = null;
-        if("android" == readPath) {
+        if("android" == platform) {
             readPath = "Assets/Plugins/iOS/SwrveLocationSDK/assets";
         }
-        else if("ios" == readPath) {
+        else if("ios" == platform) {
             readPath = "Assets/Plugins/iOS/SwrveLocationSDK";
         }
         else {
