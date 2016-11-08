@@ -15,4 +15,5 @@ android {
 dependencies {
     compile project(':SwrveConversationSDK')
     compile project(':UnityFacade')
+    compile project(':SwrveLocationSDK')
 }

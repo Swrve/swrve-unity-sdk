@@ -3,12 +3,12 @@
 #endif
 
 using System;
-using Swrve.Messaging;
+using SwrveUnity.Messaging;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 
-namespace Swrve
+namespace SwrveUnity
 {
 
   /// <summary>
@@ -43,6 +43,8 @@ public class SwrveConfig
     public string AppStore = SwrveAppStore.Google;
 #elif UNITY_IPHONE
     public string AppStore = SwrveAppStore.Apple;
+#elif UNITY_WSA_10_0
+    public string AppStore = SwrveAppStore.Windows;
 #else
     public string AppStore = null;
 #endif

@@ -4,9 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Swrve.IAP;
-using Swrve.Helpers;
-using SwrveMiniJSON;
+using SwrveUnity.IAP;
+using SwrveUnity.Helpers;
+using SwrveUnityMiniJSON;
 
 #if UNITY_5
 using UnityEngine.iOS;
@@ -248,7 +248,13 @@ public partial class SwrveSDK
     private static extern string _swrveiOSIDFV();
 
     [DllImport ("__Internal")]
-    private static extern void _swrveiOSStartPlot();
+    private static extern void _swrveiOSStartLocation();
+
+    [DllImport ("__Internal")]
+    private static extern string _swrveiOSGetPlotNotifications();
+
+    [DllImport ("__Internal")]
+    private static extern void _swrveiOSLocationUserUpdate(string jsonMap);
 
     [DllImport ("__Internal")]
     private static extern void _swrveiOSInitNative(string jsonConfig);
@@ -428,10 +434,29 @@ public partial class SwrveSDK
     private void startNativeLocation()
     {
         try {
-            _swrveiOSStartPlot();
+            _swrveiOSStartLocation();
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't start Location on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
+    }
+
+    public void LocationUserUpdate(Dictionary<string, string> map)
+    {
+        try {
+            _swrveiOSLocationUserUpdate(Json.Serialize(map));
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't update location details from iOS: " + exp.ToString ());
+        }
+    }
+
+    public string GetPlotNotifications()
+    {
+        try {
+            return _swrveiOSGetPlotNotifications();
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't get plot notifications from iOS: " + exp.ToString ());
+        }
+        return "[]";
     }
 
     private void startNativeLocationAfterPermission()

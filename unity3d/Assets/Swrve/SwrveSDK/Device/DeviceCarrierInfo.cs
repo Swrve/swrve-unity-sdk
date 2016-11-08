@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using System.Runtime.InteropServices;
 
-namespace Swrve.Device
+namespace SwrveUnity.Device
 {
 public class DeviceCarrierInfo : ICarrierInfo
 {

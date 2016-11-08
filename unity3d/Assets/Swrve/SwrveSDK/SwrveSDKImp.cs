@@ -2,19 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
-using Swrve;
+using SwrveUnity;
 using System.Collections;
 using UnityEngine;
-using SwrveMiniJSON;
+using SwrveUnityMiniJSON;
 using System.IO;
-using Swrve.REST;
-using Swrve.Messaging;
-using Swrve.Input;
-using Swrve.Helpers;
-using Swrve.Storage;
+using SwrveUnity.REST;
+using SwrveUnity.Messaging;
+using SwrveUnity.Input;
+using SwrveUnity.Helpers;
+using SwrveUnity.Storage;
 using System.Reflection;
 using System.Globalization;
-using Swrve.Device;
+using SwrveUnity.Device;
 
 /// <summary>
 /// Internal base class implementation of the Swrve SDK.
@@ -27,6 +27,7 @@ public partial class SwrveSDK
     protected const string InstallTimeEpochSave = "Swrve_JoinedDate";
     protected const string iOSdeviceTokenSave = "Swrve_iOSDeviceToken";
     protected const string GcmDeviceTokenSave = "Swrve_gcmDeviceToken";
+    protected const string WindowsDeviceTokenSave = "Swrve_windowsDeviceToken";
     protected const string GoogleAdvertisingIdSave = "Swrve_googleAdvertisingId";
     protected const string AbTestUserResourcesSave = "srcngt2"; // Saved securely
     protected const string AbTestUserResourcesDiffSave = "rsdfngt2"; // Saved securely
@@ -52,6 +53,8 @@ public partial class SwrveSDK
     private int deviceHeight;
     private long lastSessionTick;
     private ICarrierInfo deviceCarrierInfo;
+
+    private System.Random rnd = new System.Random();
 
     // Events buffer
     protected StringBuilder eventBufferStringBuilder;
@@ -158,11 +161,13 @@ public partial class SwrveSDK
         }
 #if UNITY_IPHONE
         path = path + "/com.ngt.msgs";
+#elif UNITY_WSA_10_0
+        path = path + "/swrveTemp";
 #endif
-		if (!File.Exists (path))
-		{
-			Directory.CreateDirectory (path);
-		}
+    		if (!File.Exists (path))
+    		{
+    			Directory.CreateDirectory (path);
+    		}
         return path;
     }
 
@@ -526,8 +531,11 @@ public partial class SwrveSDK
     private string GetRandomUUID ()
     {
 #if UNITY_IPHONE
-        getNativeRandomUUID();
-#else
+        string randomUUID = getNativeRandomUUID();
+        if (!string.IsNullOrEmpty (randomUUID)) {
+            return randomUUID;
+        }
+#endif
         try {
             Type type = System.Type.GetType ("System.Guid");
             if (type != null) {
@@ -545,13 +553,13 @@ public partial class SwrveSDK
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
         }
-#endif
 
         // Generate random string if all fails
         string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         string randomString = string.Empty;
         for (int i = 0; i < 128; i++) {
-            randomString += chars[UnityEngine.Random.Range (0, chars.Length - 1)];
+            int rndInt = rnd.Next (chars.Length);
+            randomString += chars[rndInt];
         }
         return randomString;
     }
@@ -973,9 +981,8 @@ public partial class SwrveSDK
             return;
         }
 
-        bool conversationShown = false;
+        SwrveBaseMessage baseMessage = null;
         // Process only Conversation campaign types first
-
         for(int ci = 0; ci < campaigns.Count; ci++) {
             if(!campaigns[ci].IsA<SwrveConversationCampaign>()) {
                 continue;
@@ -984,43 +991,52 @@ public partial class SwrveSDK
             SwrveConversationCampaign campaign = (SwrveConversationCampaign)campaigns[ci];
 
             if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
-                Container.StartCoroutine (LaunchConversation (campaign.Conversation));
-                conversationShown = true;
-                break;
+                if (campaign.AreAssetsReady ()) {
+                    Container.StartCoroutine (LaunchConversation (campaign.Conversation));
+                    baseMessage = campaign.Conversation;
+                    break;
+                } else if(qaUser != null) {
+                    int campaignId = campaign.Id;
+                    qaUser.campaignMessages[campaignId] = campaign.Conversation;
+                    qaUser.campaignReasons[campaignId] = "Campaign " + campaignId + " was selected to autoshow, but assets aren't fully downloaded";
+                }
             }
         }
 
-        if(conversationShown)
-        {
-            return;
-        }
+        if(baseMessage == null) {
+            for(int ci = 0; ci < campaigns.Count; ci++) {
+                if(!campaigns[ci].IsA<SwrveMessagesCampaign>()) {
+                    continue;
+                }
 
-        for(int ci = 0; ci < campaigns.Count; ci++) {
-            if(!campaigns[ci].IsA<SwrveMessagesCampaign>()) {
-                continue;
-            }
+                SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)campaigns[ci];
 
-            SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)campaigns[ci];
-
-            if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
-                if (TriggeredMessageListener != null) {
-                    // They are using a custom listener
-                    SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
-                    if (message != null) {
-                        autoShowMessagesEnabled = false;
-                        TriggeredMessageListener.OnMessageTriggered (message);
-                    }
-                } else {
-                    if (currentMessage == null) {
+                if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
+                    if (TriggeredMessageListener != null) {
+                        // They are using a custom listener
                         SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
                         if (message != null) {
                             autoShowMessagesEnabled = false;
-                            Container.StartCoroutine (LaunchMessage (message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+                            TriggeredMessageListener.OnMessageTriggered (message);
+                            baseMessage = message;
+                        }
+                    } else {
+                        if (currentMessage == null) {
+                            SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
+                            if (message != null) {
+                                autoShowMessagesEnabled = false;
+                                Container.StartCoroutine (LaunchMessage (message, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
+                                baseMessage = message;
+                            }
                         }
                     }
+                    break;
                 }
-                break;
             }
+        }
+
+        if (qaUser != null) {
+            qaUser.Trigger (DefaultAutoShowMessagesTrigger, baseMessage);
         }
     }
 
@@ -1155,9 +1171,13 @@ public partial class SwrveSDK
         return format;
     }
 
+    private string GetTemporaryPathFileName(string fileName) {
+        return Path.Combine (swrveTemporaryPath, fileName);
+    }
+
     private IEnumerator LoadAsset (string fileName, CoroutineReference<Texture2D> texture)
     {
-        string filePath = swrveTemporaryPath + "/" + fileName;
+        string filePath = GetTemporaryPathFileName (fileName);
 
         WWW www = new WWW ("file://" + filePath);
         yield return www;
@@ -1186,7 +1206,7 @@ public partial class SwrveSDK
 
     protected virtual bool CheckAsset (string fileName)
     {
-        if (CrossPlatformFile.Exists (swrveTemporaryPath + "/" + fileName)) {
+        if (CrossPlatformFile.Exists (GetTemporaryPathFileName(fileName))) {
             return true;
         }
         return false;
@@ -1202,7 +1222,7 @@ public partial class SwrveSDK
         if (www != null && WwwDeducedError.NoError == err && www.isDone) {
             Texture2D loadedTexture = www.texture;
             if (loadedTexture != null) {
-                string filePath = swrveTemporaryPath + "/" + fileName;
+                string filePath = GetTemporaryPathFileName (fileName);
                 SwrveLog.Log ("Saving to " + filePath);
                 byte[] bytes = loadedTexture.EncodeToPNG ();
                 CrossPlatformFile.SaveBytes (filePath, bytes);
@@ -1457,7 +1477,7 @@ public partial class SwrveSDK
                         if (root.ContainsKey("user_resources")) {
                             // Process user resources
                             IList<object> userResourcesData = (IList<object>)root["user_resources"];
-                            string userResourcesJson = SwrveMiniJSON.Json.Serialize(userResourcesData);
+                            string userResourcesJson = SwrveUnityMiniJSON.Json.Serialize(userResourcesData);
                             storage.SaveSecure(AbTestUserResourcesSave, userResourcesJson, userId);
                             userResources = ProcessUserResources(userResourcesData);
                             userResourcesRaw = userResourcesJson;
@@ -1470,7 +1490,7 @@ public partial class SwrveSDK
                         if (config.TalkEnabled) {
                             if (root.ContainsKey("campaigns")) {
                                 Dictionary<string, object> campaignsData = (Dictionary<string, object>)root["campaigns"];
-                                string campaignsJson = SwrveMiniJSON.Json.Serialize(campaignsData);
+                                string campaignsJson = SwrveUnityMiniJSON.Json.Serialize(campaignsData);
                                 SaveCampaignsCache (campaignsJson);
 
                                 AutoShowMessages();
@@ -1498,7 +1518,7 @@ public partial class SwrveSDK
                             #if UNITY_IPHONE
                                 locationData = (Dictionary<string, object>)locationData["campaigns"];
                             #endif
-                                string locationJson = SwrveMiniJSON.Json.Serialize(locationData);
+                                string locationJson = SwrveUnityMiniJSON.Json.Serialize(locationData);
                                 SaveLocationCache (locationJson);
                             }
                         }

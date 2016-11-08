@@ -3,6 +3,10 @@ using UnityEditor;
 using System.Diagnostics;
 using UnityEngine;
 using System.IO;
+using System.Xml;
+using System.Collections.Generic;
+using SwrveUnityMiniJSON;
+using System.Linq;
 
 public class SwrveCommonBuildComponent
 {
@@ -124,8 +128,94 @@ public class SwrveCommonBuildComponent
         }
     }
 
-    protected static void CopyFile(string src, string dst)
+    public static void SetDependenciesForProjectJSON(string projRoot, Dictionary<string, string> dependencies, string filename="project.json")
     {
+        string filePath = Path.Combine(projRoot, filename);
+        string projectJson = File.ReadAllText(filePath);
+        Dictionary<string, object> json = (Dictionary<string, object>)Json.Deserialize(projectJson);
+        Dictionary<string, object> _dependencies = (Dictionary<string, object>)json["dependencies"];
+
+        Dictionary<string, string>.Enumerator it = dependencies.GetEnumerator();
+        while (it.MoveNext ()) {
+            _dependencies [it.Current.Key] = it.Current.Value;
+        }
+        File.WriteAllText(filePath, Json.Serialize(json));
+    }
+
+    public static void AddCompilerFlagToCSProj(string projRoot, string proj, string flag)
+    {
+        string csprojPath = Path.Combine (projRoot, Path.Combine (proj, string.Format ("{0}.csproj", proj)));
+
+        XmlDocument doc = new XmlDocument();
+        doc.Load(csprojPath);
+        XmlNode root = doc.DocumentElement;
+        bool save = false;
+
+        for (int i = 0; i < root.ChildNodes.Count; i++) {
+            XmlNode parent = root.ChildNodes [i];
+            if (parent.Name == "PropertyGroup") {
+                for (int j = 0; j < parent.ChildNodes.Count; j++) {
+                    XmlNode child = parent.ChildNodes [j];
+                    if (child.Name == "DefineConstants") {
+                        string text = child.InnerText;
+                        if (!text.Contains (flag)) {
+                            save = true;
+                            child.InnerText = text + string.Format("{0}{1};", (text.EndsWith (";") ? "" : ";"), flag);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (save) {
+            doc.Save (csprojPath);
+        }
+    }
+
+    public static void AddWindowsPushCallback(string path)
+    {
+        int STATE_BEGIN = 0;
+        int STATE_IN_FUNC = 1;
+        int STATE_FOUND_LINE = 2;
+        int STATE_FINISHED = 9999;
+
+        int curState = STATE_BEGIN;
+        string foundLine = null;
+        string toAdd = "SwrveUnityWindows.SwrveUnityBridge.OnActivated(args);";
+        string needle = "InitializeUnity(appArgs);";
+        string filePath = Path.Combine (path, "App.xaml.cs");
+        string[] lines = File.ReadAllLines (filePath);
+        List<string> newLines = new List<string> ();
+
+        for (int i = 0; i < lines.Count(); i++)
+        {
+            string line = lines[i];
+            if (curState == STATE_BEGIN && line.Contains ("void OnActivated(IActivatedEventArgs")) {
+                curState = STATE_IN_FUNC;
+            } else if (curState == STATE_IN_FUNC && line.Contains (needle)) {
+                curState = STATE_FOUND_LINE;
+                foundLine = line;
+            }
+            else if (curState == STATE_FOUND_LINE) {
+                if (line.Contains(toAdd)) {
+                    curState = STATE_FINISHED;
+                }
+                else if(line.Trim() == "}") {
+                    curState = STATE_FINISHED;
+                    newLines.Add(foundLine.Replace(needle, toAdd));
+                }
+            }
+
+            newLines.Add (line);
+        }
+        File.WriteAllLines (filePath, newLines.ToArray());
+    }
+
+    protected static void CopyFile(string src, string dst, bool dstIsPath=false)
+    {
+        if (dstIsPath) {
+            dst = Path.Combine (dst, Path.GetFileName (src));
+        }
         if (!File.Exists(src)) {
             throw new Exception("File " + src + " does not exist");
         }

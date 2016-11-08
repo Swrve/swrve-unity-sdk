@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace Swrve
+namespace SwrveUnity
 {
 /// <summary>
 /// Implement this interface to be notified of any Swrve push notification
@@ -44,6 +44,14 @@ public interface ISwrvePushNotificationListener
     /// Push notification information including custom payloads.
     /// </param>
     void OnOpenedFromPushNotification(Dictionary<string, object> notificationJson);
+#endif
+
+#if UNITY_WSA_10_0
+    /// <summary>
+    /// Represents a method that handles a push notification payload.
+    /// </summary>
+    /// <param name="payload">Push notification payload.</param>
+    void OnOpenedFromPushNotification(Dictionary<string, string> payload);
 #endif
 }
 }

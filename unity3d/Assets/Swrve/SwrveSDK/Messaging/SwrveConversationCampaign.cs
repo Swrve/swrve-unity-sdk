@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Collections;
 using System;
 using System.Linq;
-using Swrve.Helpers;
-using SwrveMiniJSON;
+using SwrveUnity.Helpers;
+using SwrveUnityMiniJSON;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 /// <summary>
 /// Swrve Talk campaign.
@@ -46,8 +46,11 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
 
         if (checkCampaignLimits (triggerEvent, payload, qaUser)) {
             SwrveLog.Log (string.Format ("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
-
-            return Conversation;
+            if (AreAssetsReady ()) {
+                return Conversation;
+            } else {
+                LogAndAddReason ("Assets not downloaded to show conversation in campaign " + Id, qaUser);
+            }
         }
         return null;
     }

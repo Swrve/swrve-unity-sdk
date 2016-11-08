@@ -1,24 +1,22 @@
-#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE
+#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WSA_10_0
 #define SWRVE_SUPPORTED_PLATFORM
 #endif
+
 #if (UNITY_4_5 || UNITY_4_6 || UNITY_4_7 || UNITY_5)
 #define SUPPORTS_GZIP_RESPONSES
 #endif
+
 using System;
 using System.Collections;
 using System.IO;
-
-#if SWRVE_SUPPORTED_PLATFORM
-using ICSharpCode.SharpZipLib.GZip;
-using ICSharpCode.SharpZipLib.Zip;
-#endif
+using System.IO.Compression;
 
 using UnityEngine;
 using System.Collections.Generic;
-using Swrve.Helpers;
+using SwrveUnity.Helpers;
 using System.Text;
 
-namespace Swrve.REST
+namespace SwrveUnity.REST
 {
 /// <summary>
 /// Used internally to connect to REST services.
@@ -74,7 +72,7 @@ public class RESTClient : IRESTClient
     private void AddMetrics (string url, long wwwTime, bool error)
     {
         Uri uri = new Uri (url);
-        url = String.Format ("{0}{1}{2}", uri.Scheme, Uri.SchemeDelimiter, uri.Authority);
+        url = String.Format ("{0}{1}{2}", uri.Scheme, "://", uri.Authority);
 
         string metricString;
         if (error) {
@@ -108,7 +106,7 @@ public class RESTClient : IRESTClient
                         contentEncodingHeader = headers[CONTENT_ENCODING_HEADER_KEY];
                     }
                 }
-
+#if SUPPORTS_GZIP_RESPONSES
                 // BitConverter.ToInt32 needs at least 4 bytes
                 if (www.bytes != null && www.bytes.Length > 4 && contentEncodingHeader != null && string.Equals (contentEncodingHeader, "gzip", StringComparison.OrdinalIgnoreCase)) {
                     // Check if the response is gzipped or json (eg. iOS automatically unzips it already)
@@ -118,17 +116,18 @@ public class RESTClient : IRESTClient
                             var buffer = new byte[dataLength];
 
                             using (var ms = new MemoryStream(www.bytes)) {
-                                using (var gs = new GZipInputStream(ms)) {
+                                using (var gs = new GZipStream(ms, CompressionMode.Decompress)) {
                                     gs.Read (buffer, 0, buffer.Length);
-                                    gs.Close ();
+                                    gs.Dispose ();
                                 }
 
                                 success = ResponseBodyTester.TestUTF8 (buffer, out responseBody);
-                                ms.Close ();
+                                ms.Dispose ();
                             }
                         }
                     }
                 }
+#endif
 
                 if (success) {
                     AddMetrics (url, wwwTime, false);

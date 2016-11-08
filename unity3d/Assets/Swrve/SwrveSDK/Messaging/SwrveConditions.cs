@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 
-namespace Swrve.Messaging
+namespace SwrveUnity.Messaging
 {
 public class SwrveConditions
 {

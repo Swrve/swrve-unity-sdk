@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
 
-namespace Swrve.Helpers
+namespace SwrveUnity.Helpers
 {
 /// <summary
 /// Used internally as a helper for the Swrve SDK.
@@ -16,8 +16,10 @@ public static class SwrveHelper
     public static DateTime? Now = null;
     public static DateTime? UtcNow = null;
 
+#if !UNITY_WSA_10_0 || UNITY_EDITOR
     // Reference to avoid this class from getting stripped
     private static System.Security.Cryptography.MD5CryptoServiceProvider fakeReference = new System.Security.Cryptography.MD5CryptoServiceProvider ();
+#endif
 
     private static Regex rgxNonAlphanumeric = new Regex("[^a-zA-Z0-9]");
 
@@ -77,15 +79,26 @@ public static class SwrveHelper
 
     public static string CreateHMACMD5 (string data, string key)
     {
+        string hmacmd5 = null;
+        // TODO rename method
+#if !UNITY_WSA_10_0 || UNITY_EDITOR
         if (fakeReference != null) {
             byte[] bData = System.Text.Encoding.UTF8.GetBytes (data);
             byte[] bKey = System.Text.Encoding.UTF8.GetBytes (key);
             using (HMACMD5 hmac = new HMACMD5(bKey)) {
                 byte[] signature = hmac.ComputeHash (bData);
-                return System.Convert.ToBase64String (signature);
+                hmacmd5 = System.Convert.ToBase64String (signature);
             }
         }
-        return null;
+#elif NETFX_CORE
+        var alg = Windows.Security.Cryptography.Core.MacAlgorithmProvider.OpenAlgorithm(Windows.Security.Cryptography.Core.MacAlgorithmNames.HmacMd5);
+        var buffMsg = Windows.Security.Cryptography.CryptographicBuffer.ConvertStringToBinary(data, Windows.Security.Cryptography.BinaryStringEncoding.Utf8);
+        var keyBuff = Windows.Security.Cryptography.CryptographicBuffer.ConvertStringToBinary(key, Windows.Security.Cryptography.BinaryStringEncoding.Utf8);
+        var hmacKey = alg.CreateKey(keyBuff);
+        var buffHMAC = Windows.Security.Cryptography.Core.CryptographicEngine.Sign(hmacKey, buffMsg);
+        hmacmd5 = Windows.Security.Cryptography.CryptographicBuffer.EncodeToHexString(buffHMAC);
+#endif
+        return hmacmd5;
     }
 
     public static readonly DateTime UnixEpoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -158,6 +171,11 @@ public static class SwrveHelper
 
     #elif UNITY_ANDROID
         return IsAvailableOn(UnityEngine.RuntimePlatform.Android);
+
+    #elif UNITY_WSA_10_0
+        return IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerARM) ||
+            IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerX86) ||
+            IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerX64);
 
     #else
         return false;

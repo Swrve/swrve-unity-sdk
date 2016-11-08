@@ -1,9 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Swrve.Helpers;
+using SwrveUnity.Helpers;
 
-namespace Swrve.REST
+namespace SwrveUnity.REST
 {
 /// <summary>
 /// Used internally to connect to REST services.

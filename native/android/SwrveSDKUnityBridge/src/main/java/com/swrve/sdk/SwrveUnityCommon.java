@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
+import com.plotprojects.retail.android.Plot;
 import com.swrve.sdk.conversations.ui.ConversationActivity;
 import com.unity3d.player.UnityPlayer;
 
@@ -141,6 +142,28 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
                 SwrveLogger.e(LOG_TAG, "Error while creating device info json object", ex);
             }
         }
+    }
+
+    @CalledByUnity
+    public static void StartLocation() {
+        SwrvePlot.onCreate(UnityPlayer.currentActivity);
+    }
+
+    @CalledByUnity
+    public static void LocationUserUpdate(String jsonString) {
+        Gson gson = new Gson();
+        Map<String, String> map = new HashMap<>();
+        Map<String, Object> _map = gson.fromJson(jsonString, new TypeToken<Map<String, Object>>(){}.getType());
+        for (Map.Entry<String, Object> entry: _map.entrySet()) {
+            map.put(entry.getKey(), (String)entry.getValue());
+        }
+        SwrvePlot.userUpdate(map);
+    }
+
+    @CalledByUnity
+    public static String GetPlotNotifications() {
+        Gson gson = new Gson();
+        return gson.toJson(Plot.getLoadedNotifications());
     }
 
     private String readFile(String dir, String filename) {

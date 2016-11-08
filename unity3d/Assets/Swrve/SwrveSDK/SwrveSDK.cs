@@ -1,4 +1,4 @@
-#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE
+#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WSA_10_0
 #define SWRVE_SUPPORTED_PLATFORM
 #endif
 using UnityEngine;
@@ -11,17 +11,20 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Globalization;
-using Swrve;
-using SwrveMiniJSON;
-using Swrve.Messaging;
-using Swrve.Helpers;
-using Swrve.ResourceManager;
-using Swrve.Device;
-using Swrve.IAP;
+using SwrveUnity;
+using SwrveUnityMiniJSON;
+using SwrveUnity.Messaging;
+using SwrveUnity.Helpers;
+using SwrveUnity.ResourceManager;
+using SwrveUnity.Device;
+using SwrveUnity.IAP;
 
-#if UNITY_WP8 || UNITY_METRO
-#error "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk."
-+ "It is not covered by any performance warranty otherwise offered by Swrve"
+#if UNITY_IPHONE
+using System.Runtime.InteropServices;
+#endif
+
+#if (UNITY_WP8 || UNITY_METRO) && !UNITY_WSA_10_0
+#warning "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk.  It is not covered by any performance warranty otherwise offered by Swrve"
 #endif
 
 #if (UNITY_2_6 || UNITY_2_6_1 || UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5)
@@ -104,6 +107,11 @@ public partial class SwrveSDK : ISwrveAssetController
     /// Global in-app message listener.
     /// </summary>
     public ISwrveMessageListener GlobalMessageListener = null;
+
+    /// <summary>
+    /// Global in-app conversation listener (used for Windows UWP devices only)
+    /// </summary>
+    public ISwrveConversationListener GlobalConversationListener = null;
 
     /// <summary>
     /// Listener for push notifications received in the app.
@@ -225,7 +233,7 @@ public partial class SwrveSDK : ISwrveAssetController
     public virtual void Init (MonoBehaviour container, int appId, string apiKey, SwrveConfig config)
     {
         this.Container = container;
-        this.ResourceManager = new Swrve.ResourceManager.SwrveResourceManager ();
+        this.ResourceManager = new SwrveUnity.ResourceManager.SwrveResourceManager ();
         this.config = config;
         this.prefabName = container.name;
 
@@ -342,6 +350,8 @@ public partial class SwrveSDK : ISwrveAssetController
                 config.AppStore = SwrveAppStore.Google;
 #elif UNITY_IPHONE
                 config.AppStore = SwrveAppStore.Apple;
+#elif UNITY_WSA_10_0
+                config.AppStore = SwrveAppStore.Windows;
 #else
                 throw new Exception ("App store must be apple, google, amazon or a custom app store");
 #endif
@@ -534,89 +544,6 @@ public partial class SwrveSDK : ISwrveAssetController
         _Iap (quantity, productId, productPrice, currency, rewards, string.Empty, string.Empty, string.Empty, "unknown_store");
 #endif
     }
-
-#if UNITY_ANDROID
-    /// <summary>
-    /// Buffer the event of a purchase using real currency, where a single item
-    /// (that isn't an in-app currency) was purchased.
-    /// The receipt provided will be validated against the Google Play Store.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "iap" event.
-    /// Note that this method is currently only supported for the Google Play Store,
-    /// and a valid receipt and signature need to be provided for verification.
-    /// </remarks>
-    /// <param name="productId">
-    /// Unique product identifier for the item bought. This should match the Swrve resource name.
-    /// </param>
-    /// <param name="productPrice">
-    /// Price of the product purchased in real money. Note that this is the price
-    /// per product, not the total price of the transaction (when quantity > 1).
-    /// </param>
-    /// <param name="currency">
-    /// Real world currency used for this transaction. This must be an ISO currency code.
-    /// </param>
-    /// <param name="purchaseData">
-    /// The receipt sent back from the Google Play Store upon successful purchase - this receipt will be verified by Swrve
-    /// </param>
-    /// <param name="dataSignature">
-    /// The receipt signature sent back from the Google Play Store upon successful purchase
-    /// </param>
-    public void IapGooglePlay (string productId, double productPrice, string currency, string purchaseData, string dataSignature)
-    {
-        IapRewards no_rewards = new IapRewards();
-        IapGooglePlay (productId, productPrice, currency, no_rewards, purchaseData, dataSignature);
-    }
-
-    /// <summary>
-    /// Buffer the event of a purchase using real currency, where any in-app
-    /// currencies were purchased, or where multiple items were purchased as part of a bundle.
-    /// The receipt provided will be validated against the Google Play Store.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "iap" event.
-    /// Note that this method is currently only supported for the Google Play Store,
-    /// and a valid receipt and signature need to be provided for verification.
-    /// </remarks>
-    /// <param name="productId">
-    /// Unique product identifier for the item bought. This should match the Swrve resource name.
-    /// </param>
-    /// <param name="productPrice">
-    /// Price of the product purchased in real money. Note that this is the price
-    /// per product, not the total price of the transaction (when quantity > 1).
-    /// </param>
-    /// <param name="currency">
-    /// Real world currency used for this transaction. This must be an ISO currency code.
-    /// </param>
-    /// <param name="rewards">
-    /// SwrveIAPRewards object containing any in-app currency and/or additional items
-    /// included in this purchase that need to be recorded.
-    /// This parameter is optional.
-    /// </param>
-    /// <param name="purchaseData">
-    /// The receipt sent back from the Google Play Store upon successful purchase - this receipt will be verified by Swrve
-    /// </param>
-    /// <param name="dataSignature">
-    /// The receipt signature sent back from the Google Play Store upon successful purchase
-    /// </param>
-    public void IapGooglePlay (string productId, double productPrice, string currency, IapRewards rewards, string purchaseData, string dataSignature)
-    {
-        if (config.AppStore != "google") {
-            throw new Exception("This function can only be called to validate IAP events from Google");
-        } else {
-            if (String.IsNullOrEmpty(purchaseData)) {
-                SwrveLog.LogError("IAP event not sent: purchase data cannot be empty for Google Play Store verification");
-                return;
-            }
-            if (String.IsNullOrEmpty(dataSignature)) {
-                SwrveLog.LogError("IAP event not sent: data signature cannot be empty for Google Play Store verification");
-                return;
-            }
-            // Google IAP is always of quantity 1
-            _Iap (1, productId, productPrice, currency, rewards, purchaseData, dataSignature, string.Empty, config.AppStore);
-        }
-    }
-#endif
 
     /// <summary>
     /// Buffer the event of a gift of in-app currency.

@@ -2,19 +2,20 @@
 using System.Collections.Generic;
 using System;
 using UnityEngine;
-using Swrve.Helpers;
-using SwrveMiniJSON;
+using SwrveUnity.Helpers;
+using SwrveUnityMiniJSON;
 
 public partial class SwrveSDK
 {
     private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
     private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
-    private const string SwrveAndroidPlotName = "com.swrve.sdk.SwrvePlot";
 
     private const string IsInitialisedName = "isInitialised";
     private const string GetConversationVersionName = "getConversationVersion";
     private const string ShowConversationName = "showConversation";
-    private const string SwrvePlotOnCreateName = "onCreate";
+    private const string SwrveStartLocationName = "StartLocation";
+    private const string SwrveLocationUserUpdateName = "LocationUserUpdate";
+    private const string SwrveGetPlotNotificationsName = "GetPlotNotifications";
 
     private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
     private const string UnityCurrentActivityName = "currentActivity";
@@ -27,6 +28,87 @@ public partial class SwrveSDK
     private static bool startedPlot;
 
     private const int GooglePlayPushPluginVersion = 4;
+    
+    /// <summary>
+    /// Buffer the event of a purchase using real currency, where a single item
+    /// (that isn't an in-app currency) was purchased.
+    /// The receipt provided will be validated against the Google Play Store.
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "iap" event.
+    /// Note that this method is currently only supported for the Google Play Store,
+    /// and a valid receipt and signature need to be provided for verification.
+    /// </remarks>
+    /// <param name="productId">
+    /// Unique product identifier for the item bought. This should match the Swrve resource name.
+    /// </param>
+    /// <param name="productPrice">
+    /// Price of the product purchased in real money. Note that this is the price
+    /// per product, not the total price of the transaction (when quantity > 1).
+    /// </param>
+    /// <param name="currency">
+    /// Real world currency used for this transaction. This must be an ISO currency code.
+    /// </param>
+    /// <param name="purchaseData">
+    /// The receipt sent back from the Google Play Store upon successful purchase - this receipt will be verified by Swrve
+    /// </param>
+    /// <param name="dataSignature">
+    /// The receipt signature sent back from the Google Play Store upon successful purchase
+    /// </param>
+    public void IapGooglePlay (string productId, double productPrice, string currency, string purchaseData, string dataSignature)
+    {
+        IapRewards no_rewards = new IapRewards();
+        IapGooglePlay (productId, productPrice, currency, no_rewards, purchaseData, dataSignature);
+    }
+
+    /// <summary>
+    /// Buffer the event of a purchase using real currency, where any in-app
+    /// currencies were purchased, or where multiple items were purchased as part of a bundle.
+    /// The receipt provided will be validated against the Google Play Store.
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "iap" event.
+    /// Note that this method is currently only supported for the Google Play Store,
+    /// and a valid receipt and signature need to be provided for verification.
+    /// </remarks>
+    /// <param name="productId">
+    /// Unique product identifier for the item bought. This should match the Swrve resource name.
+    /// </param>
+    /// <param name="productPrice">
+    /// Price of the product purchased in real money. Note that this is the price
+    /// per product, not the total price of the transaction (when quantity > 1).
+    /// </param>
+    /// <param name="currency">
+    /// Real world currency used for this transaction. This must be an ISO currency code.
+    /// </param>
+    /// <param name="rewards">
+    /// SwrveIAPRewards object containing any in-app currency and/or additional items
+    /// included in this purchase that need to be recorded.
+    /// This parameter is optional.
+    /// </param>
+    /// <param name="purchaseData">
+    /// The receipt sent back from the Google Play Store upon successful purchase - this receipt will be verified by Swrve
+    /// </param>
+    /// <param name="dataSignature">
+    /// The receipt signature sent back from the Google Play Store upon successful purchase
+    /// </param>
+    public void IapGooglePlay (string productId, double productPrice, string currency, IapRewards rewards, string purchaseData, string dataSignature)
+    {
+        if (config.AppStore != "google") {
+            throw new Exception("This function can only be called to validate IAP events from Google");
+        } else {
+            if (String.IsNullOrEmpty(purchaseData)) {
+                SwrveLog.LogError("IAP event not sent: purchase data cannot be empty for Google Play Store verification");
+                return;
+            }
+            if (String.IsNullOrEmpty(dataSignature)) {
+                SwrveLog.LogError("IAP event not sent: data signature cannot be empty for Google Play Store verification");
+                return;
+            }
+            // Google IAP is always of quantity 1
+            _Iap (1, productId, productPrice, currency, rewards, purchaseData, dataSignature, string.Empty, config.AppStore);
+        }
+    }
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)
     {
@@ -360,18 +442,35 @@ public partial class SwrveSDK
     {
         if (SwrveHelper.IsOnDevice ()) {
             try {
-                AndroidGetBridge ();
-                AndroidJavaClass swrvePlotClass = new AndroidJavaClass (SwrveAndroidPlotName);
-
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (UnityPlayerName)) {
-                    AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
-                    swrvePlotClass.CallStatic (SwrvePlotOnCreateName, context);
-                }
+                AndroidGetBridge ().CallStatic(SwrveStartLocationName);
                 startedPlot = true;
             } catch (Exception exp) {
-                SwrveLog.LogWarning ("Couldn't StartPlot from Android: " + exp.ToString ());
+                SwrveLog.LogWarning ("Couldn't start Swrve location from Android: " + exp.ToString ());
             }
         }
+    }
+    
+    public void LocationUserUpdate(Dictionary<string, string> map)
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                AndroidGetBridge ().CallStatic(SwrveLocationUserUpdateName, Json.Serialize(map));
+            } catch (Exception exp) {
+                SwrveLog.LogWarning ("Couldn't update location details from Android: " + exp.ToString ());
+            }
+        }
+    }
+    
+    public string GetPlotNotifications()
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                return AndroidGetBridge ().CallStatic<string>(SwrveGetPlotNotificationsName);
+            } catch (Exception exp) {
+                SwrveLog.LogWarning ("Couldn't get plot notifications from Android: " + exp.ToString ());
+            }
+        }
+        return "[]";
     }
 
     private void setNativeConversationVersion()
@@ -387,7 +486,6 @@ public partial class SwrveSDK
     {
         return Input.GetKeyDown (KeyCode.Escape);
     }
-
 }
 
 #endif
