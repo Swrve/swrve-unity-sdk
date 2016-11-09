@@ -189,17 +189,11 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     }
 
     public static void SetPlotConfigKey(string platform, string writePath=null) {
-        string plotToken = SwrveBuildComponent.GetPostProcessString(SwrveBuildComponent.PLOT_TOKEN_KEY);
-		if(string.IsNullOrEmpty(plotToken)) {
-			SwrveLog.Log(string.Format("No plot token set in postprocess file, not adding plotconfig.json for {0}", platform));
-			return;
-		}
         platform = platform.ToLower();
 
-		string plotconfigName = "plotconfig.json";
         string readPath = null;
         if("android" == platform) {
-            readPath = "Assets/Plugins/iOS/SwrveLocationSDK/assets";
+            readPath = "Assets/Plugins/Android/SwrveLocationSDK/assets";
         }
         else if("ios" == platform) {
             readPath = "Assets/Plugins/iOS/SwrveLocationSDK";
@@ -208,8 +202,17 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
 			SwrveLog.Log(string.Format("{0} is an unknown platform, returning", platform));
 			return;
         }
-        readPath = Path.Combine(readPath, plotconfigName);
+        if(!Directory.Exists(readPath)) {
+            return;
+        }
+        readPath = Path.Combine(readPath, "plotconfig.json");
 
+        string plotToken = SwrveBuildComponent.GetPostProcessString(SwrveBuildComponent.PLOT_TOKEN_KEY);
+		if(string.IsNullOrEmpty(plotToken)) {
+			SwrveLog.Log(string.Format("No plot token set in postprocess file, not adding plotconfig.json for {0}", platform));
+			return;
+		}
+        
         if(string.IsNullOrEmpty(writePath)) {
             writePath = readPath;
         }
