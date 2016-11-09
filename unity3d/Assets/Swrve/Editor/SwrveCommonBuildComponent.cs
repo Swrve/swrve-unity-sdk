@@ -43,7 +43,7 @@ public class SwrveCommonBuildComponent
         UnityEngine.Debug.Log ("[####] Building " + fileName);
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.Android);
         PlayerSettings.bundleIdentifier = packageName;
-        SwrveBuildComponent.CorrectApplicationId ();
+        SwrveBuildComponent.AndroidPreBuild ();
 
         // Fix for ANDROID_HOME Unity bug
         FixAndroidHomeNotFound ();
