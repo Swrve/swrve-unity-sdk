@@ -28,7 +28,7 @@ public partial class SwrveSDK
     private static bool startedPlot;
 
     private const int GooglePlayPushPluginVersion = 4;
-    
+
     /// <summary>
     /// Buffer the event of a purchase using real currency, where a single item
     /// (that isn't an in-app currency) was purchased.
@@ -374,7 +374,7 @@ public partial class SwrveSDK
     {
         Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
         string pushId = GetPushId(notification);
-        SendPushNotificationEngagedEvent(pushId);
+        SendPushEngagedEvent(pushId);
         if (pushId != null && androidPlugin != null) {
             // Acknowledge the received notification
             androidPlugin.CallStatic("sdkAcknowledgeOpenedNotification", pushId);
@@ -449,7 +449,7 @@ public partial class SwrveSDK
             }
         }
     }
-    
+
     public void LocationUserUpdate(Dictionary<string, string> map)
     {
         if (SwrveHelper.IsOnDevice ()) {
@@ -460,7 +460,7 @@ public partial class SwrveSDK
             }
         }
     }
-    
+
     public string GetPlotNotifications()
     {
         if (SwrveHelper.IsOnDevice ()) {
