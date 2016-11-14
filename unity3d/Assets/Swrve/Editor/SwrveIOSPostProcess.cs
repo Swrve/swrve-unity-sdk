@@ -25,6 +25,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         if(target == BuildTarget.iPhone)
 #endif
         {
+            SwrveLog.Log("SwrveIOSPostProcess");
             CorrectXCodeProject (pathToBuiltProject, true);
         }
     }

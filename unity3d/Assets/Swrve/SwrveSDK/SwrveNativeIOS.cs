@@ -316,7 +316,7 @@ public partial class SwrveSDK
                 if (rawId is Int64) {
                     pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
                 }
-                SendPushNotificationEngagedEvent(pushId);
+                SendPushEngagedEvent(pushId);
             } else {
                 SwrveLog.Log("Swrve remote notification received while in the foreground");
             }

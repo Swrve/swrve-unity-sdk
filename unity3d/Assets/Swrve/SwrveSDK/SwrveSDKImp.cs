@@ -1619,7 +1619,7 @@ public partial class SwrveSDK
         }
     }
 
-    private void SendPushNotificationEngagedEvent (string pushId)
+    public void SendPushEngagedEvent (string pushId)
     {
         if (pushId != lastPushEngagedId) {
             lastPushEngagedId = pushId;
