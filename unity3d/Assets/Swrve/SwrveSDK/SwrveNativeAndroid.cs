@@ -231,12 +231,12 @@ public partial class SwrveSDK
                 using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
                     string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
 
-                if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
+                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
                         androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
-                    if (androidPlugin != null) {
-                        androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
+                        if (androidPlugin != null) {
+                            androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
+                        }
                     }
-                }
                 }
             } catch (Exception exp) {
                 SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
@@ -335,7 +335,7 @@ public partial class SwrveSDK
                     AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject> (UnityCurrentActivityName);
                     string packageName = context.Call<string> ("getPackageName");
                     string versionName = context.Call<AndroidJavaObject> ("getPackageManager")
-                                         .Call<AndroidJavaObject> ("getPackageInfo", packageName, 0).Get<string> ("versionName");
+                    .Call<AndroidJavaObject> ("getPackageInfo", packageName, 0).Get<string> ("versionName");
                     return versionName;
                 }
             } catch (Exception exp) {
