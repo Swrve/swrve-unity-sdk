@@ -378,7 +378,7 @@ public partial class SwrveSDK
 
             if (sendDeviceInfo) {
                 this.gcmDeviceToken = registrationId;
-                    storage.Save (GcmDeviceTokenSave, gcmDeviceToken);
+                storage.Save (GcmDeviceTokenSave, gcmDeviceToken);
                 if (qaUser != null) {
                     qaUser.UpdateDeviceInfo();
                 }
