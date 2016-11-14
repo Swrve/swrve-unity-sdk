@@ -38,7 +38,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK : ISwrveAssetController
 {
-    public const string SdkVersion = "4.6";
+    public const string SdkVersion = "4.7";
 
     private int appId;
     /// <summary>

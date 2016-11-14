@@ -25,6 +25,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         if(target == BuildTarget.iPhone)
 #endif
         {
+            SwrveLog.Log("SwrveIOSPostProcess");
             CorrectXCodeProject (pathToBuiltProject, true);
         }
     }
@@ -55,7 +56,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
 
         // 5. Add conversations resources to bundle (to project and to a new PBXResourcesBuildPhase)
         string resourcesProjectPath = "Libraries/Plugins/iOS/SwrveConversationSDK/Resources";
-        string resourcesPath = pathToProject + Path.DirectorySeparatorChar + resourcesProjectPath;
+        string resourcesPath = Path.Combine(pathToProject, resourcesProjectPath);
         System.IO.Directory.CreateDirectory (resourcesPath);
         string[] resources = System.IO.Directory.GetFiles ("Assets/Plugins/iOS/SwrveConversationSDK/Resources");
 
@@ -67,9 +68,9 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
             string resourcePath = resources [i];
             if (!resourcesPath.EndsWith (".meta")) {
                 string resourceFileName = System.IO.Path.GetFileName (resourcePath);
-                string newPath = resourcesPath + Path.DirectorySeparatorChar + resourceFileName;
+                string newPath = Path.Combine(resourcesPath, resourceFileName);
                 System.IO.File.Copy (resourcePath, newPath);
-                string resourceGuid = project.AddFile (resourcesProjectPath + Path.DirectorySeparatorChar + resourceFileName, resourcesProjectPath + Path.DirectorySeparatorChar + resourceFileName, PBXSourceTree.Source);
+                string resourceGuid = project.AddFile (Path.Combine(resourcesProjectPath, resourceFileName), Path.Combine(resourcesProjectPath, resourceFileName), PBXSourceTree.Source);
                 project.AddFileToBuild (targetGuid, resourceGuid);
             }
         }

@@ -43,7 +43,7 @@ public class SwrveCommonBuildComponent
         UnityEngine.Debug.Log ("[####] Building " + fileName);
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.Android);
         PlayerSettings.bundleIdentifier = packageName;
-        SwrveBuildComponent.CorrectApplicationId ();
+        SwrveBuildComponent.AndroidPreBuild ();
 
         // Fix for ANDROID_HOME Unity bug
         FixAndroidHomeNotFound ();
@@ -180,6 +180,7 @@ public class SwrveCommonBuildComponent
         int STATE_FINISHED = 9999;
 
         int curState = STATE_BEGIN;
+        string foundLine = null;
         string toAdd = "SwrveUnityWindows.SwrveUnityBridge.OnActivated(args);";
         string needle = "InitializeUnity(appArgs);";
         string filePath = Path.Combine (path, "App.xaml.cs");
@@ -193,14 +194,19 @@ public class SwrveCommonBuildComponent
                 curState = STATE_IN_FUNC;
             } else if (curState == STATE_IN_FUNC && line.Contains (needle)) {
                 curState = STATE_FOUND_LINE;
+                foundLine = line;
+            }
+            else if (curState == STATE_FOUND_LINE) {
+                if (line.Contains(toAdd)) {
+                    curState = STATE_FINISHED;
+                }
+                else if(line.Trim() == "}") {
+                    curState = STATE_FINISHED;
+                    newLines.Add(foundLine.Replace(needle, toAdd));
+                }
             }
 
             newLines.Add (line);
-            if(curState == STATE_FOUND_LINE)
-            {
-                curState = STATE_FINISHED;
-                newLines.Add(line.Replace(needle, toAdd));
-            }
         }
         File.WriteAllLines (filePath, newLines.ToArray());
     }
