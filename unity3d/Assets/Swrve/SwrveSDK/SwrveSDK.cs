@@ -328,7 +328,7 @@ public partial class SwrveSDK : ISwrveAssetController
         // Ask for Android registration id
         if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
             if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
-				GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
+                GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
             }
 
             if (config.LogGoogleAdvertisingId) {
