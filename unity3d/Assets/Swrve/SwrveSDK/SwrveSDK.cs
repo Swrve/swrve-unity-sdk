@@ -473,7 +473,8 @@ public partial class SwrveSDK : ISwrveAssetController
 #if SWRVE_SUPPORTED_PLATFORM
         if (name != null) {
             Dictionary<string, string> attributes = new Dictionary<string, string> ();
-            string dateAttribute = date.Date.ToString(@"yyyy-MM-ddTHH:mm:ssZ");
+            var dateUTC = date.Date.ToUniversalTime();
+            string dateAttribute = dateUTC.ToString(@"yyyy-MM-ddTHH:mm:ss.fffZ");
             attributes.Add (name, dateAttribute);
 
             Dictionary<string,object> json = new Dictionary<string, object> ();
