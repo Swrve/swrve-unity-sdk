@@ -27,6 +27,11 @@ public class SwrveAdmPushSupport {
     public static final String PROPERTY_PUSH_CONFIG_VERSION = "push_config_version";
     public static final String PROPERTY_PUSH_CONFIG_VERSION_VAL = "1";
 
+    //Method names used when sending message from this plugin to Unity class "SwrveSDK/SwrveComponent.cs"
+    public static final String ON_DEVICE_REGISTERED_METHOD = "OnDeviceRegisteredADM";
+    public static final String ON_NOTIFICATION_RECEIVED_METHOD = "OnNotificationReceivedADM";
+    public static final String ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD = "OnOpenedFromPushNotificationADM";
+
     public static String lastGameObjectRegistered;
     public static List<SwrveNotification> receivedNotifications = new ArrayList<SwrveNotification>();
     public static List<SwrveNotification> openedNotifications = new ArrayList<SwrveNotification>();
@@ -154,14 +159,14 @@ public class SwrveAdmPushSupport {
 
     private static void notifySDKOfRegistrationId(String gameObject, String registrationId) {
         // Call Unity SDK MonoBehaviour container
-        UnityPlayer.UnitySendMessage(gameObject, "OnDeviceRegisteredADM", registrationId);
+        UnityPlayer.UnitySendMessage(gameObject, ON_DEVICE_REGISTERED_METHOD, registrationId);
     }
 
     private static void notifySDKOfReceivedNotification(Context context, SwrveNotification notification) {
         String gameObject = getGameObject(context);
         String serializedNotification = notification.toJson();
         if (serializedNotification != null) {
-            UnityPlayer.UnitySendMessage(gameObject, "OnNotificationReceivedADM", serializedNotification.toString());
+            UnityPlayer.UnitySendMessage(gameObject, ON_NOTIFICATION_RECEIVED_METHOD, serializedNotification.toString());
         }
     }
 
@@ -169,7 +174,7 @@ public class SwrveAdmPushSupport {
         String gameObject = getGameObject(context);
         String serializedNotification = notification.toJson();
         if (serializedNotification != null) {
-            UnityPlayer.UnitySendMessage(gameObject, "OnOpenedFromPushNotificationADM", serializedNotification.toString());
+            UnityPlayer.UnitySendMessage(gameObject, ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD, serializedNotification.toString());
         }
     }
 
