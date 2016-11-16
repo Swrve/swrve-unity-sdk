@@ -63,23 +63,17 @@ public class SwrveAdmPushSupport {
             saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
             Context context = activity.getApplicationContext();
 
-            try {
-                final ADM adm = new ADM(context);
-                String registrationId = adm.getRegistrationId();
-                if (SwrveAdmHelper.isNullOrEmpty(registrationId)) {
-                    Log.i(TAG, "adm.getRegistrationId() returned null. Will call adm.startRegister().");
-                    adm.startRegister();
-                } else {
-                    Log.i(TAG, "adm.getRegistrationId() returned: " + registrationId);
-                    notifySDKOfRegistrationId(gameObject, registrationId);
-                }
-                sdkIsReadyToReceivePushNotifications(activity);
-            } catch (Throwable exp) {
-                // Don't trust Amazon and all the moving parts to work as expected
-                Log.e(TAG, "Couldn't obtain the registration key for the device.", exp);
-                return false;
+            final ADM adm = new ADM(context);
+            String registrationId = adm.getRegistrationId();
+            if (SwrveAdmHelper.isNullOrEmpty(registrationId)) {
+                Log.i(TAG, "adm.getRegistrationId() returned null. Will call adm.startRegister().");
+                adm.startRegister();
+            } else {
+                Log.i(TAG, "adm.getRegistrationId() returned: " + registrationId);
+                notifySDKOfRegistrationId(gameObject, registrationId);
             }
-        } catch (Throwable ex) {
+            sdkIsReadyToReceivePushNotifications(activity);
+        } catch (Exception ex) {
             Log.e(TAG, "Couldn't obtain the ADM registration id for the device", ex);
             return false;
         }
