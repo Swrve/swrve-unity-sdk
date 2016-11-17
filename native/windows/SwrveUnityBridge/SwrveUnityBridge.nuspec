@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>4.6.0</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>http://github.com/Swrve/swrve-unity-sdk/blob/release-4_6/LICENSE</licenseUrl>
+    <projectUrl>http://github.com/Swrve/swrve-unity-sdk</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <iconUrl>https://d1itv3pe3j6hl2.cloudfront.net/media/nuget_icon.png</iconUrl>
+    <description>$description$</description>
+    <copyright>Copyright Swrve Mobile Inc or its licensors</copyright>
+    <tags>Swrve SDK engagement push notifications IAP</tags>
+  </metadata>
+  <files>
+    <file src="bin\Release\SwrveUnityBridge**" target="lib\uap10.0"/>
+  </files>
+</package>
