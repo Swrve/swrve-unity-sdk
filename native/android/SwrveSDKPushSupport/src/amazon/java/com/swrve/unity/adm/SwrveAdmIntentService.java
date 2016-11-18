@@ -29,6 +29,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     private final static String TAG = "SwrveAdm";
     private final static String AMAZON_RECENT_PUSH_IDS = "recent_push_ids";
     private final static String AMAZON_PREFERENCES = "swrve_amazon_unity_pref";
+    private final static String UNITY_ACTIVITY_CLASS_NAME = "com.unity3d.player.UnityPlayerNativeActivity";
 
     protected final int DEFAULT_PUSH_ID_CACHE_SIZE = 16;
 
@@ -118,7 +119,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
             final SharedPreferences prefs = SwrveAdmPushSupport.getAdmPreferences(getApplicationContext());
             String activityClassName = prefs.getString(SwrveAdmPushSupport.PROPERTY_ACTIVITY_NAME, null);
             if (SwrveAdmHelper.isNullOrEmpty(activityClassName)) {
-                activityClassName = "com.unity3d.player.UnityPlayerNativeActivity";
+                activityClassName = UNITY_ACTIVITY_CLASS_NAME;
             }
 
             // Process activity name (could be local or a class with a package name)
@@ -208,9 +209,9 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         String msgText = msg.getString("text");
         if (!SwrveAdmHelper.isNullOrEmpty(msgText)) {
             // Build notification
-            NotificationCompat.Builder mBuilder = createNotificationBuilder(msgText, msg);
-            mBuilder.setContentIntent(contentIntent);
-            return mBuilder.build();
+            NotificationCompat.Builder builder = createNotificationBuilder(msgText, msg);
+            builder.setContentIntent(contentIntent);
+            return builder.build();
         }
         return null;
     }
@@ -268,7 +269,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         }
 
         // Build notification
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setSmallIcon(finalIconId)
                 .setContentTitle(pushTitle)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(msgText))
@@ -279,11 +280,11 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         if (largeIconName != null) {
             int largeIconId = res.getIdentifier(largeIconName, "drawable", getPackageName());
             Bitmap largeIconBitmap = BitmapFactory.decodeResource(getResources(), largeIconId);
-            mBuilder.setLargeIcon(largeIconBitmap);
+            builder.setLargeIcon(largeIconBitmap);
         }
 
         if (accentColor >= 0) {
-            mBuilder.setColor(accentColor);
+            builder.setColor(accentColor);
         }
 
         String msgSound = msg.getString("sound");
@@ -295,9 +296,9 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
                 String packageName = getApplicationContext().getPackageName();
                 soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + packageName + "/raw/" + msgSound);
             }
-            mBuilder.setSound(soundUri);
+            builder.setSound(soundUri);
         }
-        return mBuilder;
+        return builder;
     }
 
     private PendingIntent createPendingIntent(Bundle msg, String activityClassName) {

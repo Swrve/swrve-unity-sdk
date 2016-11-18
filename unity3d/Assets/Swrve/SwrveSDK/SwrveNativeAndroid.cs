@@ -34,7 +34,14 @@ public partial class SwrveSDK
     private static bool startedPlot;
 
     private const int GooglePlayPushPluginVersion = 4;
-    private const int ADMPushPluginVersion = 1;
+    private const int AdmPushPluginVersion = 1;
+	private const string InitialiseAdmName = "initialiseAdm";
+
+	private const string GetVersionName = "getVersion";
+	private const string AckReceivedNotificationName = "sdkAcknowledgeReceivedNotification";
+	private const string AckOpenedNotificationName = "sdkAcknowledgeOpenedNotification";
+	private const string RegisterDeviceName = "registerDevice";
+	private const string RequestAdvertisingIdName = "requestAdvertisingId";
 
     /// <summary>
     /// Buffer the event of a purchase using real currency, where a single item
@@ -191,7 +198,7 @@ public partial class SwrveSDK
 
                         if (androidPlugin != null) {
                             // Check that the version is the same
-                            int pluginVersion = androidPlugin.CallStatic<int>("getVersion");
+                            int pluginVersion = androidPlugin.CallStatic<int>(GetVersionName);
 
                             if (pluginVersion != GooglePlayPushPluginVersion) {
                                 // Plugin with changes to the public API not supported
@@ -206,7 +213,7 @@ public partial class SwrveSDK
             }
 
             if (androidPluginInitializedSuccessfully) {
-                registered = androidPlugin.CallStatic<bool>("registerDevice", container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
+                registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
             }
 
             if (!registered) {
@@ -234,7 +241,7 @@ public partial class SwrveSDK
                     if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
                         androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
                         if (androidPlugin != null) {
-                            androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
+                            androidPlugin.CallStatic<bool>(RequestAdvertisingIdName, container.name);
                         }
                     }
                 }
@@ -255,7 +262,6 @@ public partial class SwrveSDK
 		        androidADMPluginInitialized = true;
 
 		        string pluginPackageName = SwrveAndroidADMPushPluginPackageName;
-		        int pluginVersion = ADMPushPluginVersion;
 
 		        string jniPluginClassName = pluginPackageName.Replace(".", "/");
 		        if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
@@ -274,10 +280,9 @@ public partial class SwrveSDK
 		            return;
 		        }
 
-		        // Check that the version is the same
-		        int testPluginVersion = androidADMPlugin.CallStatic<int>("getVersion");
-
-		        if (testPluginVersion != pluginVersion) {
+		        // Check that the plugin version is correct
+		        int pluginVersion = androidADMPlugin.CallStatic<int>(GetVersionName);
+		        if (pluginVersion != AdmPushPluginVersion) {
 		            // Plugin with changes to the public API not supported
 		            androidADMPlugin = null;
 		            throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
@@ -289,7 +294,7 @@ public partial class SwrveSDK
 
             if (androidADMPluginInitializedSuccessfully) {
                 registered = androidADMPlugin.CallStatic<bool>(
-                                 "initialiseAdm", container.name, config.ADMPushNotificationTitle, config.ADMPushNotificationIconId, config.ADMPushNotificationMaterialIconId, config.ADMPushNotificationLargeIconId, config.ADMPushNotificationAccentColor);
+                                 InitialiseAdmName, container.name, config.ADMPushNotificationTitle, config.ADMPushNotificationIconId, config.ADMPushNotificationMaterialIconId, config.ADMPushNotificationLargeIconId, config.ADMPushNotificationAccentColor);
             }
 
             if (!registered) {
@@ -423,7 +428,7 @@ public partial class SwrveSDK
             string pushId = GetPushId(notification);
             if (pushId != null) {
                 // Acknowledge the received notification
-                androidPlugin.CallStatic("sdkAcknowledgeReceivedNotification", pushId);
+                androidPlugin.CallStatic(AckReceivedNotificationName, pushId);
             }
         }
 
@@ -450,7 +455,7 @@ public partial class SwrveSDK
             string pushId = GetPushId(notification);
             if (pushId != null) {
                 // Acknowledge the received notification
-                androidADMPlugin.CallStatic("sdkAcknowledgeReceivedNotification", pushId);
+                androidADMPlugin.CallStatic(AckReceivedNotificationName, pushId);
             }
         }
 
@@ -493,8 +498,8 @@ public partial class SwrveSDK
         string pushId = GetPushId(notification);
         SendPushEngagedEvent(pushId);
         if (pushId != null && androidPlugin != null) {
-            // Acknowledge the received notification
-            androidPlugin.CallStatic("sdkAcknowledgeOpenedNotification", pushId);
+            // Acknowledge the opened notification
+            androidPlugin.CallStatic(AckOpenedNotificationName, pushId);
         }
 
         // Process push deeplink
@@ -527,8 +532,8 @@ public partial class SwrveSDK
         string pushId = GetPushId(notification);
         SendPushEngagedEvent(pushId);
         if (pushId != null && androidADMPlugin != null) {
-            // Acknowledge the received notification
-            androidADMPlugin.CallStatic("sdkAcknowledgeOpenedNotification", pushId);
+            // Acknowledge the opened notification
+            androidADMPlugin.CallStatic(AckOpenedNotificationName, pushId);
         }
 
         // Process push deeplink
