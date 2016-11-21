@@ -326,12 +326,18 @@ public partial class SwrveSDK : ISwrveAssetController
 
 #if UNITY_ANDROID
         // Ask for Android registration id
-        if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
-            GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
-        }
+        if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
+            if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
+                GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
+            }
 
-        if (config.LogGoogleAdvertisingId) {
-            RequestGooglePlayAdvertisingId(Container);
+            if (config.LogGoogleAdvertisingId) {
+                RequestGooglePlayAdvertisingId(Container);
+            }
+        } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
+            if (config.PushNotificationEnabled) {
+                InitialisePushADM(Container);
+            }
         }
 #endif
         QueueDeviceInfo ();
@@ -1223,14 +1229,14 @@ public partial class SwrveSDK : ISwrveAssetController
     public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
         if (campaign.IsA<SwrveMessagesCampaign> ()) {
             Container.StartCoroutine (LaunchMessage (
-                ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
-                GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
-            ));
+                                          ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
+                                          GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
+                                      ));
         }
         else if (campaign.IsA<SwrveConversationCampaign> ()) {
             Container.StartCoroutine (LaunchConversation(
-                ((SwrveConversationCampaign)campaign).Conversation
-            ));
+                                          ((SwrveConversationCampaign)campaign).Conversation
+                                      ));
         }
         campaign.Status = SwrveCampaignState.Status.Seen;
         SaveCampaignData(campaign);

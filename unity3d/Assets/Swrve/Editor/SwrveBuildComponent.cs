@@ -58,6 +58,28 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         AssetDatabase.ExportPackage (assets, "../../buildtemp/Swrve.unityPackage", ExportPackageOptions.Recurse);
     }
 
+    [MenuItem ("Swrve/Export unityPackageGoogle")]
+    public static void ExportUnityPackageGoogle ()
+    {
+#if UNITY_5
+        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
+#else
+        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);
+#endif
+        AssetDatabase.ExportPackage (assets, "../../buildtemp/Swrve.unityPackage", ExportPackageOptions.Recurse);
+    }
+
+    [MenuItem ("Swrve/Export unityPackageAmazon")]
+    public static void ExportUnityPackageAmazon ()
+    {
+#if UNITY_5
+        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
+#else
+        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);
+#endif
+        AssetDatabase.ExportPackage (assets, "../../buildtemp/SwrveAmazon.unityPackage", ExportPackageOptions.Recurse);
+    }
+
     [MenuItem ("Swrve/iOS/Build Demo (Xcode project)")]
     public static void BuildDemoiOS ()
     {

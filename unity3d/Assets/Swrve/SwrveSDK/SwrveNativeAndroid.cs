@@ -4,10 +4,12 @@ using System;
 using UnityEngine;
 using SwrveUnity.Helpers;
 using SwrveUnityMiniJSON;
+using SwrveUnity;
 
 public partial class SwrveSDK
 {
     private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
+    private const string SwrveAndroidADMPushPluginPackageName = "com.swrve.unity.adm.SwrveAdmPushSupport";
     private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
 
     private const string IsInitialisedName = "isInitialised";
@@ -24,10 +26,22 @@ public partial class SwrveSDK
     private static AndroidJavaObject androidPlugin;
     private static bool androidPluginInitialized = false;
     private static bool androidPluginInitializedSuccessfully = false;
+    private string admDeviceToken;
+    private static AndroidJavaObject androidADMPlugin;
+    private static bool androidADMPluginInitialized = false;
+    private static bool androidADMPluginInitializedSuccessfully = false;
     private string googlePlayAdvertisingId;
     private static bool startedPlot;
 
     private const int GooglePlayPushPluginVersion = 4;
+    private const int AdmPushPluginVersion = 1;
+	private const string InitialiseAdmName = "initialiseAdm";
+
+	private const string GetVersionName = "getVersion";
+	private const string AckReceivedNotificationName = "sdkAcknowledgeReceivedNotification";
+	private const string AckOpenedNotificationName = "sdkAcknowledgeOpenedNotification";
+	private const string RegisterDeviceName = "registerDevice";
+	private const string RequestAdvertisingIdName = "requestAdvertisingId";
 
     /// <summary>
     /// Buffer the event of a purchase using real currency, where a single item
@@ -116,6 +130,10 @@ public partial class SwrveSDK
             deviceInfo["swrve.gcm_token"] = gcmDeviceToken;
         }
 
+        if (!string.IsNullOrEmpty(admDeviceToken)) {
+            deviceInfo["swrve.adm_token"] = admDeviceToken;
+        }
+
         string timezone = AndroidGetTimezone();
         if (!string.IsNullOrEmpty(timezone)) {
             deviceInfo ["swrve.timezone_name"] = timezone;
@@ -180,7 +198,7 @@ public partial class SwrveSDK
 
                         if (androidPlugin != null) {
                             // Check that the version is the same
-                            int pluginVersion = androidPlugin.CallStatic<int>("getVersion");
+                            int pluginVersion = androidPlugin.CallStatic<int>(GetVersionName);
 
                             if (pluginVersion != GooglePlayPushPluginVersion) {
                                 // Plugin with changes to the public API not supported
@@ -195,7 +213,7 @@ public partial class SwrveSDK
             }
 
             if (androidPluginInitializedSuccessfully) {
-                registered = androidPlugin.CallStatic<bool>("registerDevice", container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
+                registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId, config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor);
             }
 
             if (!registered) {
@@ -223,13 +241,68 @@ public partial class SwrveSDK
                     if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
                         androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
                         if (androidPlugin != null) {
-                            androidPlugin.CallStatic<bool>("requestAdvertisingId", container.name);
+                            androidPlugin.CallStatic<bool>(RequestAdvertisingIdName, container.name);
                         }
                     }
                 }
             } catch (Exception exp) {
                 SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
             }
+        }
+    }
+
+    private void InitialisePushADM(MonoBehaviour container)
+    {
+        try {
+            bool registered = false;
+            this.admDeviceToken = storage.Load(AdmDeviceTokenSave);
+
+	        //Only execute this once
+	        if (!androidADMPluginInitialized) {
+		        androidADMPluginInitialized = true;
+
+		        string pluginPackageName = SwrveAndroidADMPushPluginPackageName;
+
+		        string jniPluginClassName = pluginPackageName.Replace(".", "/");
+		        if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
+		            SwrveLog.LogError("Could not find class: " + jniPluginClassName +
+		                              " Are you using the correct SwrveSDKPushSupport plugin given the swrve config.AndroidPushProvider setting?");
+
+		            //Force crash by calling another JNI call without clearing exceptions.
+		            //This is to enforce proper integration
+		            AndroidJNI.FindClass(jniPluginClassName);
+		            return;
+		        }
+
+		        androidADMPlugin = new AndroidJavaClass(pluginPackageName);
+		        if (androidADMPlugin == null) {
+		            SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
+		            return;
+		        }
+
+		        // Check that the plugin version is correct
+		        int pluginVersion = androidADMPlugin.CallStatic<int>(GetVersionName);
+		        if (pluginVersion != AdmPushPluginVersion) {
+		            // Plugin with changes to the public API not supported
+		            androidADMPlugin = null;
+		            throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
+		        } else {
+		            androidADMPluginInitializedSuccessfully = true;
+		            SwrveLog.LogInfo("Android Push Plugin initialised successfully: " + jniPluginClassName);
+		        }
+			}
+
+            if (androidADMPluginInitializedSuccessfully) {
+                registered = androidADMPlugin.CallStatic<bool>(
+                                 InitialiseAdmName, container.name, config.ADMPushNotificationTitle, config.ADMPushNotificationIconId, config.ADMPushNotificationMaterialIconId, config.ADMPushNotificationLargeIconId, config.ADMPushNotificationAccentColor);
+            }
+
+            if (!registered) {
+                SwrveLog.LogError("Could not communicate with the Swrve Android ADM Push plugin.");
+            }
+
+        } catch (Exception exp) {
+            SwrveLog.LogError("Could not initalise push: " + exp.ToString());
         }
     }
 
@@ -320,6 +393,28 @@ public partial class SwrveSDK
     }
 
     /// <summary>
+    /// Used internally by the ADM Android Push plugin to notify
+    /// of a device registration id.
+    /// </summary>
+    /// <param name="registrationId">
+    /// The new device registration id.
+    /// </param>
+    public void RegistrationIdReceivedADM(string registrationId)
+    {
+        if (!string.IsNullOrEmpty(registrationId)) {
+            bool sendDeviceInfo = (this.admDeviceToken != registrationId);
+            if (sendDeviceInfo) {
+                this.admDeviceToken = registrationId;
+                storage.Save(AdmDeviceTokenSave, this.admDeviceToken);
+                if (qaUser != null) {
+                    qaUser.UpdateDeviceInfo();
+                }
+                SendDeviceInfo();
+            }
+        }
+    }
+
+    /// <summary>
     /// Used internally by the Google Cloud Messaging plugin to notify
     /// of a received push notification, without any user interaction.
     /// </summary>
@@ -333,7 +428,34 @@ public partial class SwrveSDK
             string pushId = GetPushId(notification);
             if (pushId != null) {
                 // Acknowledge the received notification
-                androidPlugin.CallStatic("sdkAcknowledgeReceivedNotification", pushId);
+                androidPlugin.CallStatic(AckReceivedNotificationName, pushId);
+            }
+        }
+
+        if (PushNotificationListener != null) {
+            try {
+                PushNotificationListener.OnNotificationReceived(notification);
+            } catch (Exception exp) {
+                SwrveLog.LogError("Error processing the push notification: " + exp.Message);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Used internally by the ADM plugin to notify
+    /// of a received push notification, without any user interaction.
+    /// </summary>
+    /// <param name="notificationJson">
+    /// Serialized push notification information.
+    /// </param>
+    public void NotificationReceivedADM(string notificationJson)
+    {
+        Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
+        if (androidADMPlugin != null && notification != null) {
+            string pushId = GetPushId(notification);
+            if (pushId != null) {
+                // Acknowledge the received notification
+                androidADMPlugin.CallStatic(AckReceivedNotificationName, pushId);
             }
         }
 
@@ -376,8 +498,42 @@ public partial class SwrveSDK
         string pushId = GetPushId(notification);
         SendPushEngagedEvent(pushId);
         if (pushId != null && androidPlugin != null) {
-            // Acknowledge the received notification
-            androidPlugin.CallStatic("sdkAcknowledgeOpenedNotification", pushId);
+            // Acknowledge the opened notification
+            androidPlugin.CallStatic(AckOpenedNotificationName, pushId);
+        }
+
+        // Process push deeplink
+        if (notification != null && notification.ContainsKey (PushDeeplinkKey)) {
+            object deeplinkUrl = notification[PushDeeplinkKey];
+            if (deeplinkUrl != null) {
+                OpenURL(deeplinkUrl.ToString());
+            }
+        }
+
+        if (PushNotificationListener != null) {
+            try {
+                PushNotificationListener.OnOpenedFromPushNotification(notification);
+            } catch (Exception exp) {
+                SwrveLog.LogError("Error processing the push notification: " + exp.Message);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Used internally by the ADM plugin to notify
+    /// of a received push notification when the app was opened from it.
+    /// </summary>
+    /// <param name="notificationJson">
+    /// Serialized push notification information.
+    /// </param>
+    public void OpenedFromPushNotificationADM(string notificationJson)
+    {
+        Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
+        string pushId = GetPushId(notification);
+        SendPushEngagedEvent(pushId);
+        if (pushId != null && androidADMPlugin != null) {
+            // Acknowledge the opened notification
+            androidADMPlugin.CallStatic(AckOpenedNotificationName, pushId);
         }
 
         // Process push deeplink
