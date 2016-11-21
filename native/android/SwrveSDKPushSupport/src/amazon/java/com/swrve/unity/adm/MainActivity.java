@@ -31,12 +31,8 @@ public class MainActivity extends UnityPlayerActivity {
 
     public static void processIntent(Context context, Intent intent) {
         if (lastIntent != intent) {
-            if (SwrveAdmPushSupport.isAdmAvailable()) {
-                // Process intent that launched resumed activity
-                SwrveAdmIntentService.processIntent(context, intent);
-            } else {
-                Log.w("SwrveAdm", "SwrveAdmPushSupport not available. Is this a First Gen Kindle Fire?");
-            }
+            // Process intent that launched resumed activity
+            SwrveAdmPushSupport.processIntent(context, intent);
             lastIntent = intent;
         }
     }

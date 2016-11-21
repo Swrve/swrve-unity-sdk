@@ -321,23 +321,5 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         }
         return null;
     }
-
-    protected static void processIntent(Context context, Intent intent) {
-        if (intent == null) {
-           return;
-        }
-        try {
-            Bundle extras = intent.getExtras();
-            if (extras != null && !extras.isEmpty()) {
-                Bundle msg = extras.getBundle("notification");
-                if (msg != null) {
-                    SwrveNotification notification = SwrveNotification.Builder.build(msg);
-                    SwrveAdmPushSupport.newOpenedNotification(context, notification);
-                }
-            }
-        } catch(Exception ex) {
-            Log.e(TAG, "Could not process push notification intent", ex);
-        }
-    }
 }
 
