@@ -40,7 +40,7 @@ public class SwrveAdmPushSupport {
         return VERSION;
     }
 
-    private static boolean IsAdmAvailable() {
+    public static boolean isAdmAvailable() {
         boolean admAvailable = false;
         try {
             Class.forName("com.amazon.device.messaging.ADM");
@@ -52,7 +52,7 @@ public class SwrveAdmPushSupport {
     }
 
     public static boolean initialiseAdm(final String gameObject, final String appTitle, final String iconId, final String materialIconId, final String largeIconId, final int accentColor) {
-        if (!IsAdmAvailable()) {
+        if (!isAdmAvailable()) {
             Log.e(TAG, "Won't initialise ADM. ADM class not found.");
             return false;
         }

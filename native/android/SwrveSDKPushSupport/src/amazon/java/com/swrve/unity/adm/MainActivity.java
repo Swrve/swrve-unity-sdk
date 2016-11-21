@@ -3,6 +3,7 @@ package com.swrve.unity.adm;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.unity3d.player.UnityPlayerActivity;
 
@@ -30,8 +31,12 @@ public class MainActivity extends UnityPlayerActivity {
 
     public static void processIntent(Context context, Intent intent) {
         if (lastIntent != intent) {
-            // Process intent that launched resumed activity
-            SwrveAdmIntentService.processIntent(context, intent);
+            if (SwrveAdmPushSupport.isAdmAvailable()) {
+                // Process intent that launched resumed activity
+                SwrveAdmIntentService.processIntent(context, intent);
+            } else {
+                Log.w("SwrveAdm", "SwrveAdmPushSupport not available. Is this a First Gen Kindle Fire?");
+            }
             lastIntent = intent;
         }
     }
