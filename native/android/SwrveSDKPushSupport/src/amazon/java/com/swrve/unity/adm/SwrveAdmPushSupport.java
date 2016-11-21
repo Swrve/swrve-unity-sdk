@@ -6,7 +6,9 @@ import java.util.List;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.amazon.device.messaging.ADM;
@@ -40,7 +42,7 @@ public class SwrveAdmPushSupport {
         return VERSION;
     }
 
-    private static boolean IsAdmAvailable() {
+    private static boolean isAdmAvailable() {
         boolean admAvailable = false;
         try {
             Class.forName("com.amazon.device.messaging.ADM");
@@ -52,7 +54,7 @@ public class SwrveAdmPushSupport {
     }
 
     public static boolean initialiseAdm(final String gameObject, final String appTitle, final String iconId, final String materialIconId, final String largeIconId, final int accentColor) {
-        if (!IsAdmAvailable()) {
+        if (!isAdmAvailable()) {
             Log.e(TAG, "Won't initialise ADM. ADM class not found.");
             return false;
         }
@@ -196,6 +198,24 @@ public class SwrveAdmPushSupport {
                     it.remove();
                 }
             }
+        }
+    }
+
+    protected static void processIntent(Context context, Intent intent) {
+        if (intent == null) {
+            return;
+        }
+        try {
+            Bundle extras = intent.getExtras();
+            if (extras != null && !extras.isEmpty()) {
+                Bundle msg = extras.getBundle("notification");
+                if (msg != null) {
+                    SwrveNotification notification = SwrveNotification.Builder.build(msg);
+                    SwrveAdmPushSupport.newOpenedNotification(context, notification);
+                }
+            }
+        } catch(Exception ex) {
+            Log.e(TAG, "Could not process push notification intent", ex);
         }
     }
 }
