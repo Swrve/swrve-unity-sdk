@@ -42,7 +42,7 @@ public class SwrveAdmPushSupport {
         return VERSION;
     }
 
-    public static boolean isAdmAvailable() {
+    private static boolean isAdmAvailable() {
         boolean admAvailable = false;
         try {
             Class.forName("com.amazon.device.messaging.ADM");
