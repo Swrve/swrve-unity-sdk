@@ -104,7 +104,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             }
         }
 
-        SwrveLogger.d(LOG_TAG, "UnitySwrveCommon constructor called with jsonString \"" + jsonString + "\"");
+        SwrveLogger.d(LOG_TAG, "UnitySwrveCommon constructor called");
 
         if(null != jsonString) {
             try {
