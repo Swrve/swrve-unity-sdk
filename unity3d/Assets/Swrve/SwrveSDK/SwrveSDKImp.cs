@@ -1622,11 +1622,12 @@ public partial class SwrveSDK
 
     public void SendPushEngagedEvent (string pushId)
     {
-        if (pushId != lastPushEngagedId) {
+        if (("0" == pushId) || (pushId != lastPushEngagedId)) {
             lastPushEngagedId = pushId;
             string eventName = "Swrve.Messages.Push-" + pushId + ".engaged";
             NamedEventInternal (eventName);
             SwrveLog.Log ("Got Swrve notification with ID " + pushId);
+            SendQueuedEvents();
         }
     }
 
