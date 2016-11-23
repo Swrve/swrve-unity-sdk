@@ -1627,7 +1627,6 @@ public partial class SwrveSDK
             string eventName = "Swrve.Messages.Push-" + pushId + ".engaged";
             NamedEventInternal (eventName);
             SwrveLog.Log ("Got Swrve notification with ID " + pushId);
-            SendQueuedEvents();
         }
     }
 
