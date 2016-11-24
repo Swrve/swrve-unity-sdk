@@ -43,6 +43,10 @@ public partial class SwrveSDK
 	private const string RegisterDeviceName = "registerDevice";
 	private const string RequestAdvertisingIdName = "requestAdvertisingId";
 
+    private const string GCMIdentKey = "google.message_id";
+    private const string ADMIdentKey = "adm_message_md5";
+    private static string LastOpenedNotification;
+
     /// <summary>
     /// Buffer the event of a purchase using real currency, where a single item
     /// (that isn't an in-app currency) was purchased.
@@ -495,6 +499,12 @@ public partial class SwrveSDK
     public void OpenedFromPushNotification(string notificationJson)
     {
         Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
+        string gcmIdent = (string)notification[GCMIdentKey];
+        if(!string.IsNullOrEmpty(gcmIdent) && (gcmIdent == LastOpenedNotification)) {
+            return;
+        }
+        LastOpenedNotification = gcmIdent;
+
         string pushId = GetPushId(notification);
         SendPushEngagedEvent(pushId);
         if (pushId != null && androidPlugin != null) {
@@ -529,6 +539,12 @@ public partial class SwrveSDK
     public void OpenedFromPushNotificationADM(string notificationJson)
     {
         Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
+        string admIdent = (string)notification[ADMIdentKey];
+        if(!string.IsNullOrEmpty(admIdent) && (admIdent == LastOpenedNotification)) {
+            return;
+        }
+        LastOpenedNotification = admIdent;
+
         string pushId = GetPushId(notification);
         SendPushEngagedEvent(pushId);
         if (pushId != null && androidADMPlugin != null) {
