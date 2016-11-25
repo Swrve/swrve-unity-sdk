@@ -326,12 +326,18 @@ public partial class SwrveSDK : ISwrveAssetController
 
 #if UNITY_ANDROID
         // Ask for Android registration id
-        if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
-            GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
-        }
+        if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
+            if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
+                GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
+            }
 
-        if (config.LogGoogleAdvertisingId) {
-            RequestGooglePlayAdvertisingId(Container);
+            if (config.LogGoogleAdvertisingId) {
+                RequestGooglePlayAdvertisingId(Container);
+            }
+        } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
+            if (config.PushNotificationEnabled) {
+                InitialisePushADM(Container);
+            }
         }
 #endif
         QueueDeviceInfo ();
@@ -452,6 +458,36 @@ public partial class SwrveSDK : ISwrveAssetController
             AppendEventToBuffer ("user", json);
         } else {
             SwrveLog.LogError ("Invoked user update with no update attributes");
+        }
+#endif
+    }
+
+    /// <summary>
+    /// Buffer the event of a user update with a Date Object
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "user" event.
+    /// </remarks>
+    /// <param name="name">
+    /// Identifier associated with user update
+    /// </param>
+    /// <param name="date">
+    /// DateTime object for user update
+    /// </param>
+    public void UserUpdate (string name, DateTime date)
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        if (name != null) {
+            Dictionary<string, string> attributes = new Dictionary<string, string> ();
+            var dateUTC = date.Date.ToUniversalTime();
+            string dateAttribute = dateUTC.ToString(@"yyyy-MM-ddTHH:mm:ss.fffZ");
+            attributes.Add (name, dateAttribute);
+
+            Dictionary<string,object> json = new Dictionary<string, object> ();
+            json.Add ("attributes", attributes);
+            AppendEventToBuffer ("user", json);
+        } else {
+            SwrveLog.LogError ("Invoked user update with date with no name specified");
         }
 #endif
     }
@@ -1223,14 +1259,14 @@ public partial class SwrveSDK : ISwrveAssetController
     public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
         if (campaign.IsA<SwrveMessagesCampaign> ()) {
             Container.StartCoroutine (LaunchMessage (
-                ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
-                GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
-            ));
+                                          ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
+                                          GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
+                                      ));
         }
         else if (campaign.IsA<SwrveConversationCampaign> ()) {
             Container.StartCoroutine (LaunchConversation(
-                ((SwrveConversationCampaign)campaign).Conversation
-            ));
+                                          ((SwrveConversationCampaign)campaign).Conversation
+                                      ));
         }
         campaign.Status = SwrveCampaignState.Status.Seen;
         SaveCampaignData(campaign);
