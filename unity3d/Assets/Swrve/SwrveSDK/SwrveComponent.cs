@@ -64,10 +64,10 @@ public class SwrveComponent : MonoBehaviour
     }
 
     /// <summary>
-    /// Default constructor. Will be called by Unity when
-    /// placing this script in your scene.
+    /// Reset is invoked when the component is added to the Game Object
+    /// and is always called on the main thread.
     /// </summary>
-    public SwrveComponent ()
+    public void Reset ()
     {
         Config = new SwrveConfig ();
         SDK = new SwrveSDK ();
