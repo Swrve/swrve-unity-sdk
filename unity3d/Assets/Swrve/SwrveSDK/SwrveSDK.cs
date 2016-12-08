@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 /// </summary>
 /// <remarks>
 /// </remarks>
-public partial class SwrveSDK : ISwrveAssetController
+public partial class SwrveSDK
 {
     public const string SdkVersion = "4.7";
 
@@ -85,6 +85,8 @@ public partial class SwrveSDK : ISwrveAssetController
     /// and values for this user.
     /// </summary>
     public SwrveResourceManager ResourceManager;
+
+    protected ISwrveAssetsManager SwrveAssetsManager;
 
     /// <summary>
     /// Container MonoBehaviour object in the scene. Used
@@ -247,8 +249,9 @@ public partial class SwrveSDK : ISwrveAssetController
         initialisedTime = SwrveHelper.GetNow();
         this.campaignsAndResourcesInitialized = false;
         this.autoShowMessagesEnabled = true;
-        this.assetsOnDisk = new HashSet<string> ();
-        this.assetsCurrentlyDownloading = false;
+
+        swrveTemporaryPath = GetSwrveTemporaryCachePath();
+        this.InitAssetsManager(container, swrveTemporaryPath);
 
         // Check API key
         if (string.IsNullOrEmpty(apiKey)) {
@@ -364,7 +367,6 @@ public partial class SwrveSDK : ISwrveAssetController
             }
 
             try {
-                swrveTemporaryPath = GetSwrveTemporaryCachePath();
                 LoadTalkData ();
 
 #if UNITY_IPHONE
@@ -387,6 +389,11 @@ public partial class SwrveSDK : ISwrveAssetController
 
         StartCampaignsAndResourcesTimer();
 #endif
+    }
+
+    protected virtual void InitAssetsManager(MonoBehaviour container, String swrveTemporaryPath)
+    {
+        this.SwrveAssetsManager = new SwrveAssetsManager(container, swrveTemporaryPath);
     }
 
     /// <summary>
@@ -1295,12 +1302,14 @@ public partial class SwrveSDK : ISwrveAssetController
         SaveCampaignData(campaign);
     }
 
+    [Obsolete("This method is for internal use only and will be removed in later version.")]
     public bool IsAssetInCache(string asset) {
         return asset != null && this.GetAssetsOnDisk ().Contains (asset);
     }
 
+    [Obsolete("This method is for internal use only and will be removed in later version.")]
     public HashSet<string> GetAssetsOnDisk() {
-        return this.assetsOnDisk;
+        return this.SwrveAssetsManager.AssetsOnDisk;
     }
 
     /// <summary>
@@ -1419,15 +1428,5 @@ public partial class SwrveSDK : ISwrveAssetController
 #if SWRVE_SUPPORTED_PLATFORM
         LoadResourcesAndCampaigns ();
 #endif
-    }
-
-    /// <summary>
-    ///  Used internally to obtain the configured default background for in-app messages.
-    /// </summary>
-    public Color? DefaultBackgroundColor
-    {
-        get {
-            return config.DefaultBackgroundColor;
-        }
     }
 }

@@ -1,9 +1,5 @@
 using System.Collections.Generic;
-using System.Collections;
 using System;
-using System.Linq;
-using SwrveUnity.Helpers;
-using SwrveUnityMiniJSON;
 
 namespace SwrveUnity.Messaging
 {
@@ -71,15 +67,15 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
     /// <returns>
     /// All the assets in the in-app campaign.
     /// </returns>
-    public override List<string> ListOfAssets ()
+    public override HashSet<SwrveAssetsQueueItem> SetOfAssets ()
     {
-        return new List<string> ( Conversation.ListOfAssets() );
+        return Conversation.SetOfAssets();
     }
 
-    new public static SwrveConversationCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int campaignId, DateTime initialisedTime)
+    new public static SwrveConversationCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int campaignId, DateTime initialisedTime)
     {
         SwrveConversationCampaign campaign = new SwrveConversationCampaign (initialisedTime);
-        campaign.Conversation = SwrveConversation.LoadFromJSON (sdk, campaign, (Dictionary<string, object>)campaignData ["conversation"]);
+        campaign.Conversation = SwrveConversation.LoadFromJSON (swrveAssetsManager, campaign, (Dictionary<string, object>)campaignData ["conversation"]);
         return campaign;
     }
 }

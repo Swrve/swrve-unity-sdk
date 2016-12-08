@@ -93,8 +93,6 @@ public partial class SwrveSDK
     protected string swrveTemporaryPath;
     protected bool campaignsConnecting;
     protected bool autoShowMessagesEnabled;
-    protected bool assetsCurrentlyDownloading;
-    protected HashSet<string> assetsOnDisk;
     protected Dictionary<int, SwrveCampaignState> campaignsState = new Dictionary<int, SwrveCampaignState>();
     protected List<SwrveBaseCampaign> campaigns = new List<SwrveBaseCampaign> ();
     protected Dictionary<string, object> campaignSettings = new Dictionary<string, object> ();
@@ -103,7 +101,6 @@ public partial class SwrveSDK
     protected SwrveMessageFormat currentDisplayingMessage = null;
     protected SwrveOrientation currentOrientation;
     protected IInputManager inputManager = NativeInputManager.Instance;
-    private string cdn = "https://swrve-content.s3.amazonaws.com/messaging/message_image/";
     protected string prefabName;
 
     // Talk rules
@@ -1205,73 +1202,17 @@ public partial class SwrveSDK
         TaskFinished ("LoadAsset");
     }
 
-    protected virtual bool CheckAsset (string fileName)
-    {
-        if (CrossPlatformFile.Exists (GetTemporaryPathFileName(fileName))) {
-            return true;
-        }
-        return false;
-    }
-
-    protected virtual IEnumerator DownloadAsset (string fileName, CoroutineReference<Texture2D> texture)
-    {
-        string url = cdn + fileName;
-        SwrveLog.Log ("Downloading asset: " + url);
-        WWW www = new WWW (url);
-        yield return www;
-        WwwDeducedError err = UnityWwwHelper.DeduceWwwError (www);
-        if (www != null && WwwDeducedError.NoError == err && www.isDone) {
-            Texture2D loadedTexture = www.texture;
-            if (loadedTexture != null) {
-                string filePath = GetTemporaryPathFileName (fileName);
-                SwrveLog.Log ("Saving to " + filePath);
-                byte[] bytes = loadedTexture.EncodeToPNG ();
-                CrossPlatformFile.SaveBytes (filePath, bytes);
-                bytes = null;
-
-                // Assign texture
-                texture.Value (loadedTexture);
-            }
-        }
-        TaskFinished ("DownloadAsset");
-    }
-
-    protected IEnumerator DownloadAssets (List<string> assetsQueue)
-    {
-        assetsCurrentlyDownloading = true;
-        for(int ai = 0; ai < assetsQueue.Count; ai++) {
-            string asset = assetsQueue[ai];
-            if (!CheckAsset (asset)) {
-                CoroutineReference<Texture2D> resultTexture = new CoroutineReference<Texture2D> ();
-                yield return StartTask ("DownloadAsset", DownloadAsset (asset, resultTexture));
-                Texture2D texture = resultTexture.Value ();
-                if (texture != null) {
-                    assetsOnDisk.Add (asset);
-                    Texture2D.Destroy (texture);
-                }
-            } else {
-                // Already downloaded
-                assetsOnDisk.Add (asset);
-            }
-        }
-
-        assetsCurrentlyDownloading = false;
-        AutoShowMessages ();
-
-        TaskFinished ("DownloadAssets");
-    }
-
     protected virtual void ProcessCampaigns (Dictionary<string, object> root)
     {
         List<SwrveBaseCampaign> newCampaigns = new List<SwrveBaseCampaign> ();
-        List<string> assetsQueue = new List<string> ();
+        HashSet<SwrveAssetsQueueItem> assetsQueueImages = new HashSet<SwrveAssetsQueueItem>();
 
         try {
             // Stop if we got an empty json
             if (root != null && root.ContainsKey ("version")) {
                 int version = MiniJsonHelper.GetInt (root, "version");
                 if (version == CampaignResponseVersion) {
-                    cdn = (string)root ["cdn_root"];
+                    this.SwrveAssetsManager.CdnImages = (string)root ["cdn_root"];
 
                     // App data
                     Dictionary<string, object> appData = (Dictionary<string, object>)root ["game_data"];
@@ -1336,13 +1277,14 @@ public partial class SwrveSDK
 
                     for (int i = 0, j = jsonCampaigns.Count; i < j; i++) {
                         Dictionary<string, object> campaignData = (Dictionary<string, object>)jsonCampaigns [i];
-                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (this, campaignData, initialisedTime, qaUser);
+                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (SwrveAssetsManager, campaignData, initialisedTime, qaUser, config.DefaultBackgroundColor);
                         if(campaign == null) {
                             continue;
                         }
 
                         SwrveLog.Log( "added campaign id: " + campaign.Id + " type: " + campaign.GetType() + " triggers: " + campaign.GetTriggers() );
-                        assetsQueue.AddRange (campaign.ListOfAssets ());
+                        assetsQueueImages.UnionWith(campaign.SetOfAssets());
+
                         // Do we have to make retrieve the previous state?
                         if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
                             SwrveCampaignState campaignState = null;
@@ -1372,7 +1314,7 @@ public partial class SwrveSDK
             SwrveLog.LogError ("Could not process campaigns: " + exp.ToString ());
         }
 
-        StartTask ("DownloadAssets", DownloadAssets (assetsQueue));
+        StartTask ("SwrveAssetsManager.DownloadAssets", this.SwrveAssetsManager.DownloadAssets(assetsQueueImages, AutoShowMessages));
         campaigns = new List<SwrveBaseCampaign> (newCampaigns);
     }
 
@@ -1667,30 +1609,6 @@ public partial class SwrveSDK
     private void SetInputManager (IInputManager inputManager)
     {
         this.inputManager = inputManager;
-    }
-
-    protected class CoroutineReference<T>
-    {
-        private T val;
-
-        public CoroutineReference ()
-        {
-        }
-
-        public CoroutineReference (T val)
-        {
-            this.val = val;
-        }
-
-        public T Value ()
-        {
-            return val;
-        }
-
-        public void Value (T val)
-        {
-            this.val = val;
-        }
     }
 
     protected void StartCampaignsAndResourcesTimer ()

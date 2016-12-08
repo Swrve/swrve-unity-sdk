@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using System.Collections;
-using System;
 using UnityEngine;
+using System.Collections.Generic;
 using SwrveUnity.Helpers;
+using System.Linq;
 
 namespace SwrveUnity.Messaging
 {
@@ -46,11 +45,11 @@ public class SwrveMessage : SwrveBaseMessage
     /// </summary>
     public float AnimationScale = 1f;
 
-    public ISwrveAssetController assetController;
+    private ISwrveAssetsManager SwrveAssetsManager;
 
-    private SwrveMessage (ISwrveAssetController assetController, SwrveMessagesCampaign campaign)
+    private SwrveMessage (ISwrveAssetsManager swrveAssetsManager, SwrveMessagesCampaign campaign)
     {
-        this.assetController = assetController;
+        this.SwrveAssetsManager = swrveAssetsManager;
         this.Campaign = campaign;
         this.Formats = new List<SwrveMessageFormat> ();
     }
@@ -88,9 +87,9 @@ public class SwrveMessage : SwrveBaseMessage
     /// <returns>
     /// Parsed in-app message.
     /// </returns>
-    public static SwrveMessage LoadFromJSON (SwrveSDK sdk, SwrveMessagesCampaign campaign, Dictionary<string, object> messageData)
+    public static SwrveMessage LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, SwrveMessagesCampaign campaign, Dictionary<string, object> messageData, Color? defaultBackgroundColor)
     {
-        SwrveMessage message = new SwrveMessage (sdk, campaign);
+        SwrveMessage message = new SwrveMessage (swrveAssetsManager, campaign);
         message.Id = MiniJsonHelper.GetInt (messageData, "id");
         message.Name = (string)messageData ["name"];
 
@@ -103,7 +102,7 @@ public class SwrveMessage : SwrveBaseMessage
 
         for (int i = 0, j = jsonFormats.Count; i < j; i++) {
             Dictionary<string, object> messageFormatData = (Dictionary<string, object>)jsonFormats [i];
-            SwrveMessageFormat messageFormat = SwrveMessageFormat.LoadFromJSON (sdk, message, messageFormatData);
+            SwrveMessageFormat messageFormat = SwrveMessageFormat.LoadFromJSON (swrveAssetsManager, message, messageFormatData, defaultBackgroundColor);
             message.Formats.Add (messageFormat);
         }
 
@@ -130,22 +129,22 @@ public class SwrveMessage : SwrveBaseMessage
     /// <returns>
     /// All the assets in the in-app message.
     /// </returns>
-    public List<string> ListOfAssets ()
+    public HashSet<SwrveAssetsQueueItem> SetOfAssets ()
     {
-        List<string> messageAssets = new List<string> ();
+        HashSet<SwrveAssetsQueueItem> messageAssets = new HashSet<SwrveAssetsQueueItem> ();
         for(int fi = 0; fi < Formats.Count; fi++) {
             SwrveMessageFormat format = Formats[fi];
             for(int ii = 0; ii < format.Images.Count; ii++) {
                 SwrveImage image = format.Images[ii];
                 if (!string.IsNullOrEmpty (image.File)) {
-                    messageAssets.Add (image.File);
+                    messageAssets.Add (new SwrveAssetsQueueItem(image.File, image.File));
                 }
             }
 
             for(int bi = 0; bi < format.Buttons.Count; bi++) {
                 SwrveButton button = format.Buttons[bi];
                 if (!string.IsNullOrEmpty (button.Image)) {
-                    messageAssets.Add (button.Image);
+                    messageAssets.Add (new SwrveAssetsQueueItem(button.Image, button.Image));
                 }
             }
         }
@@ -160,15 +159,8 @@ public class SwrveMessage : SwrveBaseMessage
     /// </returns>
     public bool IsDownloaded ()
     {
-        List<string> assets = this.ListOfAssets ();
-        for(int ai = 0; ai < assets.Count; ai++) {
-            string asset = assets[ai];
-            if(!assetController.IsAssetInCache (asset)) {
-                return false;
-            }
-        }
-
-        return true;
+        HashSet<SwrveAssetsQueueItem> assets = this.SetOfAssets ();
+        return assets.All (asset => this.SwrveAssetsManager.AssetsOnDisk.Contains(asset.Name));
     }
 
     override public string GetBaseFormattedMessageType() {
