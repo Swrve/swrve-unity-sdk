@@ -36,8 +36,10 @@ namespace SwrveUnity
 
         private IEnumerator DownloadAssetQueue(HashSet<SwrveAssetsQueueItem> assetsQueueImages)
         {
-            foreach (SwrveAssetsQueueItem item in assetsQueueImages)
+            IEnumerator<SwrveAssetsQueueItem> enumerator = assetsQueueImages.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                SwrveAssetsQueueItem item = enumerator.Current;
                 string asset = item.Name;
                 if (!CheckAsset(asset))
                 {
