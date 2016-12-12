@@ -1,8 +1,5 @@
 using System.Collections.Generic;
-using System.Collections;
-using System;
 using System.Linq;
-using UnityEngine;
 using SwrveUnity.Helpers;
 using SwrveUnityMiniJSON;
 
@@ -18,20 +15,20 @@ public class SwrveConversation : SwrveBaseMessage
     /// </summary>
     public string Conversation;
     
-    public List<string> ConversationAssets;
+    public HashSet<SwrveAssetsQueueItem> ConversationAssets;
 
-    public ISwrveAssetController assetController;
+    public ISwrveAssetsManager SwrveAssetsManager;
 
     /// <summary>
     /// Priority of the message.
     /// </summary>
     public int Priority = 9999;
 
-    private SwrveConversation (ISwrveAssetController assetController, SwrveConversationCampaign campaign)
+    private SwrveConversation (ISwrveAssetsManager swrveAssetsManager, SwrveConversationCampaign campaign)
     {
-        this.assetController = assetController;
+        this.SwrveAssetsManager = swrveAssetsManager;
         this.Campaign = campaign;
-        this.ConversationAssets = new List<string> ();
+        this.ConversationAssets = new HashSet<SwrveAssetsQueueItem> ();
     }
 
     /// <summary>
@@ -46,9 +43,9 @@ public class SwrveConversation : SwrveBaseMessage
     /// <returns>
     /// Parsed conversation wrapper for native layer.
     /// </returns>
-    public static SwrveConversation LoadFromJSON (SwrveSDK sdk, SwrveConversationCampaign campaign, Dictionary<string, object> conversationData)
+    public static SwrveConversation LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, SwrveConversationCampaign campaign, Dictionary<string, object> conversationData)
     {
-        SwrveConversation conversation = new SwrveConversation (sdk, campaign);
+        SwrveConversation conversation = new SwrveConversation (swrveAssetsManager, campaign);
         conversation.Id = MiniJsonHelper.GetInt (conversationData, "id");
         List<object> pages = (List<object>)conversationData ["pages"];
         for(int i = 0; i < pages.Count; i++) {
@@ -57,7 +54,8 @@ public class SwrveConversation : SwrveBaseMessage
             for(int j = 0; j < contents.Count; j++) {
                 Dictionary<string, object> content = (Dictionary<string, object>)contents[j];
                 if ("image" == (string)content ["type"]) {
-                    conversation.ConversationAssets.Add ((string)content ["value"]);
+                    string asset = (string)content ["value"];
+                    conversation.ConversationAssets.Add (new SwrveAssetsQueueItem(asset, asset));
                 }
             }
         }
@@ -75,7 +73,7 @@ public class SwrveConversation : SwrveBaseMessage
     /// <returns>
     /// All the assets in the in-app message.
     /// </returns>
-    public List<string> ListOfAssets ()
+    public HashSet<SwrveAssetsQueueItem> SetOfAssets ()
     {
         return this.ConversationAssets;
     }
@@ -88,8 +86,8 @@ public class SwrveConversation : SwrveBaseMessage
     /// </returns>
     public bool IsDownloaded ()
     {
-        List<string> assets = this.ListOfAssets ();
-        return assets.All (asset => assetController.IsAssetInCache (asset));
+        HashSet<SwrveAssetsQueueItem> assets = this.SetOfAssets ();
+        return assets.All (asset => this.SwrveAssetsManager.AssetsOnDisk.Contains(asset.Name));
     }
 
   	override public string GetBaseFormattedMessageType() {

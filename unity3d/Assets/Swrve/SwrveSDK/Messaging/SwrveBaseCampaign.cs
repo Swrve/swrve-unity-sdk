@@ -1,5 +1,5 @@
+using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 using System;
 using System.Linq;
 using SwrveUnity.Helpers;
@@ -33,7 +33,7 @@ public abstract class SwrveBaseCampaign
 
     const string END_DATE_KEY = "end_date";
 
-    protected readonly Random rnd = new Random ();
+    protected readonly System.Random rnd = new System.Random ();
     protected const string WaitTimeFormat = @"HH\:mm\:ss zzz";
     protected const int DefaultDelayFirstMessage = 180;
     protected const long DefaultMaxShows = 99999;
@@ -236,18 +236,18 @@ public abstract class SwrveBaseCampaign
     /// <returns>
     /// Parsed in-app campaign.
     /// </returns>
-    public static SwrveBaseCampaign LoadFromJSON(SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, SwrveQAUser qaUser)
+    public static SwrveBaseCampaign LoadFromJSON(ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, DateTime initialisedTime, SwrveQAUser qaUser, UnityEngine.Color? defaultBackgroundColor)
     {
         int id = MiniJsonHelper.GetInt(campaignData, ID_KEY);
         SwrveBaseCampaign campaign = null;
 
         if(campaignData.ContainsKey(CONVERSATION_KEY))
         {
-            campaign = SwrveConversationCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime);
+            campaign = SwrveConversationCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime);
         }
         else if(campaignData.ContainsKey(MESSAGES_KEY))
         {
-            campaign = SwrveMessagesCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime, qaUser);
+            campaign = SwrveMessagesCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime, qaUser, defaultBackgroundColor);
         }
 
         if(campaign == null)
@@ -286,8 +286,8 @@ public abstract class SwrveBaseCampaign
     /// </summary>
     /// <returns>
     /// All the assets in the in-app campaign.
-    /// </returns>
-    public abstract List<string> ListOfAssets ();
+    /// </returns>    
+    public abstract HashSet<SwrveAssetsQueueItem> SetOfAssets ();
 
     protected static void AssignCampaignTriggers (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {

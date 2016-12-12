@@ -104,7 +104,7 @@ public class SwrveMessageFormat
     /// <returns>
     /// Parsed in-app message format.
     /// </returns>
-    public static SwrveMessageFormat LoadFromJSON (SwrveSDK sdk, SwrveMessage message, Dictionary<string, object> messageFormatData)
+    public static SwrveMessageFormat LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, SwrveMessage message, Dictionary<string, object> messageFormatData, Color? defaultBackgroundColor)
     {
         SwrveMessageFormat messageFormat = new SwrveMessageFormat (message);
 
@@ -118,7 +118,7 @@ public class SwrveMessageFormat
             messageFormat.Orientation = SwrveOrientationHelper.Parse ((string)messageFormatData ["orientation"]);
         }
 
-        messageFormat.BackgroundColor = sdk.DefaultBackgroundColor;
+        messageFormat.BackgroundColor = defaultBackgroundColor;
         if (messageFormatData.ContainsKey ("color")) {
             string strColor = (string)messageFormatData ["color"];
             Color? c = messageFormat.BackgroundColor;
