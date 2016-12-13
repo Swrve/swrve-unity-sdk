@@ -1205,14 +1205,14 @@ public partial class SwrveSDK
     protected virtual void ProcessCampaigns (Dictionary<string, object> root)
     {
         List<SwrveBaseCampaign> newCampaigns = new List<SwrveBaseCampaign> ();
-        HashSet<SwrveAssetsQueueItem> assetsQueueImages = new HashSet<SwrveAssetsQueueItem>();
+        HashSet<SwrveAssetsQueueItem> assetsQueue = new HashSet<SwrveAssetsQueueItem>();
 
         try {
             // Stop if we got an empty json
             if (root != null && root.ContainsKey ("version")) {
                 int version = MiniJsonHelper.GetInt (root, "version");
                 if (version == CampaignResponseVersion) {
-                    this.SwrveAssetsManager.CdnImages = (string)root ["cdn_root"];
+                    UpdateCdnPaths(root);
 
                     // App data
                     Dictionary<string, object> appData = (Dictionary<string, object>)root ["game_data"];
@@ -1283,7 +1283,16 @@ public partial class SwrveSDK
                         }
 
                         SwrveLog.Log( "added campaign id: " + campaign.Id + " type: " + campaign.GetType() + " triggers: " + campaign.GetTriggers() );
-                        assetsQueueImages.UnionWith(campaign.SetOfAssets());
+                        if (campaign.GetType() == typeof(SwrveConversationCampaign))
+                        {
+                            SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign) campaign;
+                            assetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);    
+                        }
+                        else if (campaign.GetType() == typeof(SwrveMessagesCampaign))
+                        {
+                            SwrveMessagesCampaign messageCampaign = (SwrveMessagesCampaign) campaign;
+                            assetsQueue.UnionWith(messageCampaign.GetImageAssets());    
+                        }
 
                         // Do we have to make retrieve the previous state?
                         if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
@@ -1314,8 +1323,27 @@ public partial class SwrveSDK
             SwrveLog.LogError ("Could not process campaigns: " + exp.ToString ());
         }
 
-        StartTask ("SwrveAssetsManager.DownloadAssets", this.SwrveAssetsManager.DownloadAssets(assetsQueueImages, AutoShowMessages));
+        StartTask ("SwrveAssetsManager.DownloadAssets", this.SwrveAssetsManager.DownloadAssets(assetsQueue, AutoShowMessages));
         campaigns = new List<SwrveBaseCampaign> (newCampaigns);
+    }
+
+    private void UpdateCdnPaths (Dictionary<string, object> root) 
+    {
+        if(root.ContainsKey("cdn_root"))
+        {
+            string cdnRoot = (string)root ["cdn_root"];
+            this.SwrveAssetsManager.CdnImages = cdnRoot;
+            SwrveLog.Log ("CDN URL " + cdnRoot);
+        }
+        else if(root.ContainsKey("cdn_paths"))
+        {
+            Dictionary<string, object> cdnPaths = (Dictionary<string, object>)root ["cdn_paths"];
+            string cdnImages = (string)cdnPaths ["message_images"];
+            string cdnFonts = (string)cdnPaths ["message_fonts"];
+            this.SwrveAssetsManager.CdnImages = cdnImages;
+            this.SwrveAssetsManager.CdnFonts = cdnFonts;
+            SwrveLog.Log ("CDN URL images:" + cdnImages + " fonts:" + cdnFonts);
+        }
     }
 
     private void LoadResourcesAndCampaigns ()

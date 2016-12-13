@@ -53,23 +53,12 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
 
     public override bool AreAssetsReady()
     {
-        return this.Conversation.IsDownloaded ();
+        return this.Conversation.AreAssetsReady ();
     }
 
     public override bool SupportsOrientation(SwrveOrientation orientation)
     {
         return true;
-    }
-
-    /// <summary>
-    /// Get all the assets in the in-app campaign messages.
-    /// </summary>
-    /// <returns>
-    /// All the assets in the in-app campaign.
-    /// </returns>
-    public override HashSet<SwrveAssetsQueueItem> SetOfAssets ()
-    {
-        return Conversation.SetOfAssets();
     }
 
     new public static SwrveConversationCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int campaignId, DateTime initialisedTime)
