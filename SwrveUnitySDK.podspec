@@ -14,6 +14,6 @@ Pod::Spec.new do |s|
   s.source_files = "native/ios/#{s.name}/UnitySDK/**/*.{mm,m,h}"
   s.public_header_files = "native/ios/#{s.name}/UnitySDK/**/*.h"
 
-  s.dependency "SwrveSDKCommon", s.version.to_s
-  s.dependency "SwrveConversationSDK", s.version.to_s
+  s.dependency "SwrveSDKCommon", "4.7.1"
+  s.dependency "SwrveConversationSDK", "4.7.1"
 end
