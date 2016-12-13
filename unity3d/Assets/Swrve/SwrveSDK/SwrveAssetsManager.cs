@@ -22,65 +22,57 @@ namespace SwrveUnity
 
         public string CdnImages { get; set; }
 
+        public string CdnFonts { get; set; }
+
         public HashSet<string> AssetsOnDisk { get; set; }
 
-        public delegate void MyDelegateType();
-
-		public IEnumerator DownloadAssets(HashSet<SwrveAssetsQueueItem> assetsQueueImages, Action callBack)
+        public IEnumerator DownloadAssets(HashSet<SwrveAssetsQueueItem> assetsQueue, Action callBack)
 		{
-			yield return StartTask ("SwrveAssetsManager.DownloadAssetQueue", DownloadAssetQueue (assetsQueueImages));
+			yield return StartTask ("SwrveAssetsManager.DownloadAssetQueue", DownloadAssetQueue (assetsQueue));
 
-            callBack.Invoke(); // AutoShowMessages;
+            if(callBack!=null)
+            {
+                callBack.Invoke(); // AutoShowMessages;
+            }
             TaskFinished("SwrveAssetsManager.DownloadAssets");
 		}
 
-        private IEnumerator DownloadAssetQueue(HashSet<SwrveAssetsQueueItem> assetsQueueImages)
+        private IEnumerator DownloadAssetQueue(HashSet<SwrveAssetsQueueItem> assetsQueue)
         {
-            IEnumerator<SwrveAssetsQueueItem> enumerator = assetsQueueImages.GetEnumerator();
+            IEnumerator<SwrveAssetsQueueItem> enumerator = assetsQueue.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 SwrveAssetsQueueItem item = enumerator.Current;
-                string asset = item.Name;
-                if (!CheckAsset(asset))
+                if (!CheckAsset(item.Name))
                 {
-                    CoroutineReference<Texture2D> resultTexture = new CoroutineReference<Texture2D>();
-                    yield return StartTask("SwrveAssetsManager.DownloadAsset", DownloadAsset(asset, resultTexture));
-                    Texture2D texture = resultTexture.Value();
-                    if (texture != null)
-                    {
-                        AssetsOnDisk.Add(asset);
-                        Texture2D.Destroy(texture);
-                    }
+                    yield return StartTask("SwrveAssetsManager.DownloadAsset", DownloadAsset(item));
                 }
                 else
                 {
-                    AssetsOnDisk.Add(asset); // Already downloaded
+                    AssetsOnDisk.Add(item.Name); // Already downloaded
                 }
             }
             
             TaskFinished("SwrveAssetsManager.DownloadAssetQueue");
         }
 
-        protected virtual IEnumerator DownloadAsset(string fileName, CoroutineReference<Texture2D> texture)
+        protected virtual IEnumerator DownloadAsset(SwrveAssetsQueueItem item)
         {
-            string url = CdnImages + fileName;
+            string cdn = item.IsImage ? CdnImages : CdnFonts;
+            string url = cdn + item.Name;
             SwrveLog.Log("Downloading asset: " + url);
             WWW www = new WWW(url);
             yield return www;
             WwwDeducedError err = UnityWwwHelper.DeduceWwwError(www);
             if (www != null && WwwDeducedError.NoError == err && www.isDone)
             {
-                Texture2D loadedTexture = www.texture;
-                if (loadedTexture != null)
+                if(item.IsImage)
                 {
-                    string filePath = GetTemporaryPathFileName(fileName);
-                    SwrveLog.Log("Saving to " + filePath);
-                    byte[] bytes = loadedTexture.EncodeToPNG();
-                    CrossPlatformFile.SaveBytes(filePath, bytes);
-                    bytes = null;
-
-                    // Assign texture
-                    texture.Value(loadedTexture);
+                    SaveImageAsset(item, www);
+                } 
+                else
+                {
+                    SaveBinaryAsset(item, www);
                 }
             }
             TaskFinished("SwrveAssetsManager.DownloadAsset");
@@ -98,6 +90,41 @@ namespace SwrveUnity
         private string GetTemporaryPathFileName(string fileName)
         {
             return Path.Combine(SwrveTemporaryPath, fileName);
+        }
+
+        private void SaveImageAsset(SwrveAssetsQueueItem item, WWW www)
+        {
+            Texture2D loadedTexture = www.texture;
+            if (loadedTexture != null)
+            {
+                byte[] bytes = loadedTexture.EncodeToPNG();
+                // todo this will be uncommentted in SWRVE-11352
+                // string sha1 = SwrveHelper.sha1(bytes);
+                // if(sha1 == item.Digest)
+                // {
+                    string filePath = GetTemporaryPathFileName(item.Name);
+                    SwrveLog.Log("Saving to " + filePath);
+                    CrossPlatformFile.SaveBytes(filePath, bytes);
+                    bytes = null;
+                    Texture2D.Destroy(loadedTexture);
+                    AssetsOnDisk.Add(item.Name);
+                // }
+            }
+        }
+
+        private void SaveBinaryAsset(SwrveAssetsQueueItem item, WWW www)
+        {
+            byte[] bytes = www.bytes;
+            // todo this will be uncommentted in SWRVE-11352
+            // string sha1 = SwrveHelper.sha1(bytes);
+            // if(sha1 == item.Digest)
+            // {
+                string filePath = GetTemporaryPathFileName(item.Name);
+                SwrveLog.Log("Saving to " + filePath);
+                CrossPlatformFile.SaveBytes(filePath, bytes);
+                bytes = null;
+                AssetsOnDisk.Add(item.Name);
+            // }
         }
 
         protected virtual Coroutine StartTask (string tag, IEnumerator task)

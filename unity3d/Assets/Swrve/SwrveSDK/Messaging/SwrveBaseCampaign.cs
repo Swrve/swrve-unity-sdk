@@ -281,14 +281,6 @@ public abstract class SwrveBaseCampaign
 
     public abstract bool SupportsOrientation (SwrveOrientation orientation);
 
-    /// <summary>
-    /// Get all the assets in the in-app campaign messages.
-    /// </summary>
-    /// <returns>
-    /// All the assets in the in-app campaign.
-    /// </returns>    
-    public abstract HashSet<SwrveAssetsQueueItem> SetOfAssets ();
-
     protected static void AssignCampaignTriggers (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
         IList<object> jsonTriggers = (IList<object>)campaignData [TRIGGERS_KEY];

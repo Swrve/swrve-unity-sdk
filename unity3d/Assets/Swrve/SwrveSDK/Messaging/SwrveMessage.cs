@@ -137,14 +137,14 @@ public class SwrveMessage : SwrveBaseMessage
             for(int ii = 0; ii < format.Images.Count; ii++) {
                 SwrveImage image = format.Images[ii];
                 if (!string.IsNullOrEmpty (image.File)) {
-                    messageAssets.Add (new SwrveAssetsQueueItem(image.File, image.File));
+                    messageAssets.Add (new SwrveAssetsQueueItem(image.File, image.File, true));
                 }
             }
 
             for(int bi = 0; bi < format.Buttons.Count; bi++) {
                 SwrveButton button = format.Buttons[bi];
                 if (!string.IsNullOrEmpty (button.Image)) {
-                    messageAssets.Add (new SwrveAssetsQueueItem(button.Image, button.Image));
+                    messageAssets.Add (new SwrveAssetsQueueItem(button.Image, button.Image, true));
                 }
             }
         }

@@ -115,7 +115,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
     /// <returns>
     /// All the assets in the in-app campaign.
     /// </returns>
-    public override HashSet<SwrveAssetsQueueItem> SetOfAssets ()
+    public HashSet<SwrveAssetsQueueItem> GetImageAssets ()
     {
         HashSet<SwrveAssetsQueueItem> assetsQueueImages = new HashSet<SwrveAssetsQueueItem>();
         for(int mi = 0; mi < Messages.Count; mi++) {
