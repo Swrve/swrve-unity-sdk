@@ -2,6 +2,7 @@
 #import "UnitySwrveHelper.h"
 #import "SwrveSignatureProtectedFile.h"
 #import "SwrveCommonConnectionDelegate.h"
+#import "SwrveRESTClient.h"
 
 #include <sys/time.h>
 #import <CommonCrypto/CommonHMAC.h>
@@ -22,6 +23,8 @@ static dispatch_once_t sharedInstanceToken = 0;
 
 @property (atomic) NSDictionary* deviceInfo;
 
+@property(atomic) SwrveRESTClient *restClient;
+
 @end
 
 @implementation UnitySwrveCommonDelegate
@@ -31,6 +34,7 @@ static dispatch_once_t sharedInstanceToken = 0;
 @synthesize eventBufferBytes;
 @synthesize deviceToken;
 @synthesize deviceInfo;
+@synthesize restClient;
 
 -(id) init {
     self = [super init];
@@ -80,6 +84,7 @@ static dispatch_once_t sharedInstanceToken = 0;
         swrve.deviceInfo = [swrve.configDict objectForKey:@"deviceInfo"];
         [preferences setObject:jsonConfig forKey:spKey];
         [preferences synchronize];
+        [swrve setRestClient:[[SwrveRESTClient alloc] initWithTimeoutInterval:swrve.httpTimeout]];
     }
 }
 
@@ -224,7 +229,7 @@ static dispatch_once_t sharedInstanceToken = 0;
 
     NSData* json_data = [json_string dataUsingEncoding:NSUTF8StringEncoding];
 
-    [self sendHttpPOSTRequest:[self getBatchUrl]
+    [restClient sendHttpPOSTRequest:[self getBatchUrl]
                      jsonData:json_data
             completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
 
@@ -239,47 +244,6 @@ static dispatch_once_t sharedInstanceToken = 0;
                     NSLog(@"data: %@", data);
                 }
             }];
-}
-
-- (void) sendHttpPOSTRequest:(NSURL*)url jsonData:(NSData*)json
-{
-    [self sendHttpPOSTRequest:url jsonData:json completionHandler:nil];
-}
-
-- (void) sendHttpPOSTRequest:(NSURL*)url jsonData:(NSData*)json completionHandler:(void (^)(NSURLResponse*, NSData*, NSError*))handler
-{
-    NSMutableURLRequest* request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:[self httpTimeout]];
-    [request setHTTPMethod:@"POST"];
-    [request setHTTPBody:json];
-    [request setValue:@"application/json; charset=utf-8" forHTTPHeaderField:@"Content-Type"];
-    [request setValue:[NSString stringWithFormat:@"%lu", (unsigned long)[json length]] forHTTPHeaderField:@"Content-Length"];
-
-    [self sendHttpRequest:request completionHandler:handler];
-}
-
-- (void) sendHttpRequest:(NSMutableURLRequest*)request completionHandler:(void (^)(NSURLResponse*, NSData*, NSError*))handler
-{
-    // Add http request performance metrics for any previous requests into the header of this request (see JIRA SWRVE-5067 for more details)
-    NSArray* allMetricsToSend;
-
-    if (allMetricsToSend != nil && [allMetricsToSend count] > 0) {
-        NSString* fullHeader = [allMetricsToSend componentsJoinedByString:@";"];
-        [request addValue:fullHeader forHTTPHeaderField:@"Swrve-Latency-Metrics"];
-    }
-
-    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"9.0")) {
-        NSURLSession *session = [NSURLSession sharedSession];
-        NSURLSessionDataTask *task = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-            handler(response, data, error);
-        }];
-        [task resume];
-    } else {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        SwrveCommonConnectionDelegate* connectionDelegate = [[SwrveCommonConnectionDelegate alloc] init:handler];
-        [NSURLConnection connectionWithRequest:request delegate:connectionDelegate];
-#pragma clang diagnostic pop
-    }
 }
 
 - (void) initBuffer {
