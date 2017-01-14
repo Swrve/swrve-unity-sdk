@@ -324,7 +324,7 @@ public partial class SwrveSDK : ISwrveAssetController
             NamedEventInternal("Swrve.first_session");
         }
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
         // Ask for Android registration id
         if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
             if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
