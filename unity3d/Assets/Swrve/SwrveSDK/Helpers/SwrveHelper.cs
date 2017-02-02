@@ -101,6 +101,19 @@ public static class SwrveHelper
         return hmacmd5;
     }
 
+    private static SHA1Managed sha1Managed = new SHA1Managed();
+
+    public static string sha1 (byte[] bytes)
+    {
+        byte[] hash = sha1Managed.ComputeHash(bytes);
+        string hashString = "";
+        for (int i = 0; i < hash.Length; i++) {
+            byte b = hash[i];
+            hashString += Convert.ToInt32(b).ToString("x2");
+        }
+        return hashString;
+    }
+
     public static readonly DateTime UnixEpoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     public static long GetSeconds ()
@@ -166,21 +179,21 @@ public static class SwrveHelper
 
     public static bool IsOnDevice()
     {
-    #if UNITY_IOS
+#if UNITY_IOS
         return IsAvailableOn(UnityEngine.RuntimePlatform.IPhonePlayer);
 
-    #elif UNITY_ANDROID
+#elif UNITY_ANDROID
         return IsAvailableOn(UnityEngine.RuntimePlatform.Android);
 
-    #elif UNITY_WSA_10_0
+#elif UNITY_WSA_10_0
         return IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerARM) ||
-            IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerX86) ||
-            IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerX64);
+               IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerX86) ||
+               IsAvailableOn(UnityEngine.RuntimePlatform.WSAPlayerX64);
 
-    #else
+#else
         return false;
 
-    #endif
+#endif
     }
 
     public static bool IsAvailableOn(UnityEngine.RuntimePlatform platform)
@@ -188,7 +201,7 @@ public static class SwrveHelper
         bool available = false;
 
         available = UnityEngine.Application.platform == platform;
-        
+
         return available;
     }
 }

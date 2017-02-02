@@ -29,7 +29,8 @@ public class SwrveCampaignState
     /// </summary>
     public SwrveCampaignState.Status CurStatus;
 
-    public SwrveCampaignState () {
+    public SwrveCampaignState ()
+    {
         ShowMessagesAfterDelay = SwrveHelper.GetNow ();
     }
 
@@ -53,8 +54,7 @@ public class SwrveCampaignState
         curKey = "Status" + campaignId;
         if (savedStatesJson.ContainsKey (curKey)) {
             CurStatus = ParseStatus (MiniJsonHelper.GetString (savedStatesJson, curKey));
-        }
-        else {
+        } else {
             CurStatus = Status.Unseen;
         }
     }
@@ -65,21 +65,23 @@ public class SwrveCampaignState
     * @param status String campaign status.
     * @return SwrveCampaignStatus
     */
-    public static Status ParseStatus(string status) {
+    public static Status ParseStatus(string status)
+    {
         if (status.ToLower().Equals(SEEN_KEY)) {
             return Status.Seen;
         } else if (status.ToLower().Equals(DELETED_KEY)) {
             return Status.Deleted;
         }
-        
+
         return Status.Unseen;
     }
 
-    public override string ToString() {
+    public override string ToString()
+    {
         return string.Format (
-            "[SwrveCampaignState] Impressions: {0}, Next: {1}, ShowMessagesAfterDelay: {2}, CurStatus: {3}",
-            Impressions, Next, ShowMessagesAfterDelay, CurStatus
-        );
+                   "[SwrveCampaignState] Impressions: {0}, Next: {1}, ShowMessagesAfterDelay: {2}, CurStatus: {3}",
+                   Impressions, Next, ShowMessagesAfterDelay, CurStatus
+               );
     }
 }
 }

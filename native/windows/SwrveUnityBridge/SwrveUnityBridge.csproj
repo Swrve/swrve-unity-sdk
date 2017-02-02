@@ -112,11 +112,11 @@
     <EmbeddedResource Include="Properties\SwrveUnityBridge.rd.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\windows\public\SwrveConversationsSDK\SwrveConversationsSDK.csproj">
+    <ProjectReference Include="..\..\..\..\..\windows-sdk\public\SwrveConversationsSDK\SwrveConversationsSDK.csproj">
       <Project>{1b1144ce-09e1-4932-b577-98660c8661b6}</Project>
       <Name>SwrveConversationsSDK</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\windows\public\SwrveSDKCommon\SwrveSDKCommon.csproj">
+    <ProjectReference Include="..\..\..\..\..\windows-sdk\public\SwrveSDKCommon\SwrveSDKCommon.csproj">
       <Project>{39b3bae1-ef55-440e-b333-394a1e7ad664}</Project>
       <Name>SwrveSDKCommon</Name>
     </ProjectReference>

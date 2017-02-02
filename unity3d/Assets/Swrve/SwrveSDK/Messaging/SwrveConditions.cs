@@ -6,8 +6,7 @@ namespace SwrveUnity.Messaging
 {
 public class SwrveConditions
 {
-    public enum TriggerOperatorType
-    {
+    public enum TriggerOperatorType {
         AND,
         EQUALS
     }
@@ -62,18 +61,21 @@ public class SwrveConditions
         this.args = args;
     }
 
-    private bool isEmpty() {
+    private bool isEmpty()
+    {
         return this.op == null;
     }
 
-    private bool matchesEquals(IDictionary<string, string> payload) {
+    private bool matchesEquals(IDictionary<string, string> payload)
+    {
         return (this.op == TriggerOperatorType.EQUALS) &&
-            payload.ContainsKey (this.key) && string.Equals (payload [this.key], this.value, StringComparison.OrdinalIgnoreCase);
+               payload.ContainsKey (this.key) && string.Equals (payload [this.key], this.value, StringComparison.OrdinalIgnoreCase);
     }
 
-    private bool matchesAll(IDictionary<string, string> payload) {
+    private bool matchesAll(IDictionary<string, string> payload)
+    {
         return (this.op == TriggerOperatorType.AND) &&
-            this.args.All (cond => cond.Matches (payload));
+               this.args.All (cond => cond.Matches (payload));
     }
 
     public bool Matches (IDictionary<string, string> payload)
@@ -121,11 +123,11 @@ public class SwrveConditions
     public override string ToString ()
     {
         return "Conditions{" +
-        "key='" + key + '\'' +
-        ", op='" + op + '\'' +
-        ", value='" + value + '\'' +
-        ", args=" + args +
-        '}';
+               "key='" + key + '\'' +
+               ", op='" + op + '\'' +
+               ", value='" + value + '\'' +
+               ", args=" + args +
+               '}';
     }
 }
 }

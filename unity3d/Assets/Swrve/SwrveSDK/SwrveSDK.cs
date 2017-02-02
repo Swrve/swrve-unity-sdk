@@ -8,7 +8,6 @@ using System.Collections;
 
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Globalization;
 using SwrveUnity;
@@ -36,9 +35,9 @@ using System.Runtime.InteropServices;
 /// </summary>
 /// <remarks>
 /// </remarks>
-public partial class SwrveSDK : ISwrveAssetController
+public partial class SwrveSDK
 {
-    public const string SdkVersion = "4.7";
+    public const string SdkVersion = "4.8";
 
     private int appId;
     /// <summary>
@@ -85,6 +84,8 @@ public partial class SwrveSDK : ISwrveAssetController
     /// and values for this user.
     /// </summary>
     public SwrveResourceManager ResourceManager;
+
+    protected ISwrveAssetsManager SwrveAssetsManager;
 
     /// <summary>
     /// Container MonoBehaviour object in the scene. Used
@@ -247,8 +248,9 @@ public partial class SwrveSDK : ISwrveAssetController
         initialisedTime = SwrveHelper.GetNow();
         this.campaignsAndResourcesInitialized = false;
         this.autoShowMessagesEnabled = true;
-        this.assetsOnDisk = new HashSet<string> ();
-        this.assetsCurrentlyDownloading = false;
+
+        swrveTemporaryPath = GetSwrveTemporaryCachePath();
+        this.InitAssetsManager(container, swrveTemporaryPath);
 
         // Check API key
         if (string.IsNullOrEmpty(apiKey)) {
@@ -324,7 +326,7 @@ public partial class SwrveSDK : ISwrveAssetController
             NamedEventInternal("Swrve.first_session");
         }
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
         // Ask for Android registration id
         if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
             if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
@@ -364,7 +366,6 @@ public partial class SwrveSDK : ISwrveAssetController
             }
 
             try {
-                swrveTemporaryPath = GetSwrveTemporaryCachePath();
                 LoadTalkData ();
 
 #if UNITY_IPHONE
@@ -380,13 +381,17 @@ public partial class SwrveSDK : ISwrveAssetController
 
         DisableAutoShowAfterDelay();
 
-        if(SwrveHelper.IsOnDevice())
-        {
+        if(SwrveHelper.IsOnDevice()) {
             InitNative();
         }
 
         StartCampaignsAndResourcesTimer();
 #endif
+    }
+
+    protected virtual void InitAssetsManager(MonoBehaviour container, String swrveTemporaryPath)
+    {
+        this.SwrveAssetsManager = new SwrveAssetsManager(container, swrveTemporaryPath);
     }
 
     /// <summary>
@@ -1011,13 +1016,18 @@ public partial class SwrveSDK : ISwrveAssetController
 
 
     [Obsolete("IsMessageDispaying is deprecated, please use IsMessageDisplaying instead.")]
-    public bool IsMessageDispaying () { return IsMessageDisplaying (); }
+    public bool IsMessageDispaying ()
+    {
+        return IsMessageDisplaying ();
+    }
 
-    public void SetLocationSegmentVersion(int locationSegmentVersion) {
+    public void SetLocationSegmentVersion(int locationSegmentVersion)
+    {
         this.locationSegmentVersion = locationSegmentVersion;
     }
 
-    public void SetConversationVersion(int conversationVersion) {
+    public void SetConversationVersion(int conversationVersion)
+    {
         this.conversationVersion = conversationVersion;
     }
 
@@ -1056,7 +1066,8 @@ public partial class SwrveSDK : ISwrveAssetController
     /// <returns>
     /// In-app message for the given event.
     /// </returns>
-    public SwrveMessage GetMessageForEvent (string eventName, IDictionary<string, string> payload=null) {
+    public SwrveMessage GetMessageForEvent (string eventName, IDictionary<string, string> payload=null)
+    {
         if (!checkCampaignRules (eventName, SwrveHelper.GetNow ())) {
             return null;
         }
@@ -1152,7 +1163,8 @@ public partial class SwrveSDK : ISwrveAssetController
     /// <returns>
     /// Swrve Message for the given event.
     /// </returns>
-    public SwrveConversation GetConversationForEvent (string eventName, IDictionary<string, string> payload=null) {
+    public SwrveConversation GetConversationForEvent (string eventName, IDictionary<string, string> payload=null)
+    {
         if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
             return null;
         }
@@ -1170,7 +1182,6 @@ public partial class SwrveSDK : ISwrveAssetController
 #if SWRVE_SUPPORTED_PLATFORM
         SwrveConversation result = null;
         SwrveBaseCampaign campaign = null;
-        DateTime now = SwrveHelper.GetNow();
 
         SwrveLog.Log("Trying to get conversation for: " + eventName);
 
@@ -1228,7 +1239,8 @@ public partial class SwrveSDK : ISwrveAssetController
 #endif
     }
 
-    private bool checkCampaignRules(string eventName, DateTime now) {
+    private bool checkCampaignRules(string eventName, DateTime now)
+    {
         if ((campaigns == null) || (campaigns.Count == 0)) {
             NoMessagesWereShown (eventName, "No campaigns available");
             return false;
@@ -1252,18 +1264,19 @@ public partial class SwrveSDK : ISwrveAssetController
         return true;
     }
 
-    public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign) {
+    public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign)
+    {
         ShowMessageCenterCampaign (campaign, GetDeviceOrientation ());
     }
 
-    public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
+    public void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation)
+    {
         if (campaign.IsA<SwrveMessagesCampaign> ()) {
             Container.StartCoroutine (LaunchMessage (
                                           ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
                                           GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
                                       ));
-        }
-        else if (campaign.IsA<SwrveConversationCampaign> ()) {
+        } else if (campaign.IsA<SwrveConversationCampaign> ()) {
             Container.StartCoroutine (LaunchConversation(
                                           ((SwrveConversationCampaign)campaign).Conversation
                                       ));
@@ -1290,17 +1303,22 @@ public partial class SwrveSDK : ISwrveAssetController
         return result;
     }
 
-    public void RemoveMessageCenterCampaign(SwrveBaseCampaign campaign) {
+    public void RemoveMessageCenterCampaign(SwrveBaseCampaign campaign)
+    {
         campaign.Status = SwrveCampaignState.Status.Deleted;
         SaveCampaignData(campaign);
     }
 
-    public bool IsAssetInCache(string asset) {
+    [Obsolete("This method is for internal use only and will be removed in later version.")]
+    public bool IsAssetInCache(string asset)
+    {
         return asset != null && this.GetAssetsOnDisk ().Contains (asset);
     }
 
-    public HashSet<string> GetAssetsOnDisk() {
-        return this.assetsOnDisk;
+    [Obsolete("This method is for internal use only and will be removed in later version.")]
+    public HashSet<string> GetAssetsOnDisk()
+    {
+        return this.SwrveAssetsManager.AssetsOnDisk;
     }
 
     /// <summary>
@@ -1419,15 +1437,5 @@ public partial class SwrveSDK : ISwrveAssetController
 #if SWRVE_SUPPORTED_PLATFORM
         LoadResourcesAndCampaigns ();
 #endif
-    }
-
-    /// <summary>
-    ///  Used internally to obtain the configured default background for in-app messages.
-    /// </summary>
-    public Color? DefaultBackgroundColor
-    {
-        get {
-            return config.DefaultBackgroundColor;
-        }
     }
 }

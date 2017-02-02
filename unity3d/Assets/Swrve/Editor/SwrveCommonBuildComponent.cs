@@ -187,20 +187,17 @@ public class SwrveCommonBuildComponent
         string[] lines = File.ReadAllLines (filePath);
         List<string> newLines = new List<string> ();
 
-        for (int i = 0; i < lines.Count(); i++)
-        {
+        for (int i = 0; i < lines.Count(); i++) {
             string line = lines[i];
             if (curState == STATE_BEGIN && line.Contains ("void OnActivated(IActivatedEventArgs")) {
                 curState = STATE_IN_FUNC;
             } else if (curState == STATE_IN_FUNC && line.Contains (needle)) {
                 curState = STATE_FOUND_LINE;
                 foundLine = line;
-            }
-            else if (curState == STATE_FOUND_LINE) {
+            } else if (curState == STATE_FOUND_LINE) {
                 if (line.Contains(toAdd)) {
                     curState = STATE_FINISHED;
-                }
-                else if(line.Trim() == "}") {
+                } else if(line.Trim() == "}") {
                     curState = STATE_FINISHED;
                     newLines.Add(foundLine.Replace(needle, toAdd));
                 }
@@ -276,8 +273,8 @@ public class SwrveCommonBuildComponent
         proc.StartInfo.FileName = filename;
         proc.StartInfo.Arguments = arguments;
         SwrveLog.Log (string.Format ("Executing {0} command: {1} (in: {2} )\n(cd {2}; {0} {1})",
-            filename, arguments, workingDirectory
-        ));
+                                     filename, arguments, workingDirectory
+                                    ));
 
         proc.StartInfo.CreateNoWindow = true;
         proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;

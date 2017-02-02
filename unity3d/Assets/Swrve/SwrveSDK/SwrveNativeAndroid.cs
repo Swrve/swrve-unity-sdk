@@ -8,72 +8,71 @@ using SwrveUnity;
 
 public partial class SwrveSDK
 {
-    private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
-    private const string SwrveAndroidADMPushPluginPackageName = "com.swrve.unity.adm.SwrveAdmPushSupport";
-    private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
+private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
+private const string SwrveAndroidADMPushPluginPackageName = "com.swrve.unity.adm.SwrveAdmPushSupport";
+private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
 
-    private const string IsInitialisedName = "isInitialised";
-    private const string GetConversationVersionName = "getConversationVersion";
-    private const string ShowConversationName = "showConversation";
-    private const string SwrveStartLocationName = "StartLocation";
-    private const string SwrveLocationUserUpdateName = "LocationUserUpdate";
-    private const string SwrveGetPlotNotificationsName = "GetPlotNotifications";
+private const string IsInitialisedName = "isInitialised";
+private const string GetConversationVersionName = "getConversationVersion";
+private const string ShowConversationName = "showConversation";
+private const string SwrveStartLocationName = "StartLocation";
+private const string SwrveLocationUserUpdateName = "LocationUserUpdate";
+private const string SwrveGetPlotNotificationsName = "GetPlotNotifications";
 
-    private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
-    private const string UnityCurrentActivityName = "currentActivity";
+private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
+private const string UnityCurrentActivityName = "currentActivity";
 
-    private string gcmDeviceToken;
-    private static AndroidJavaObject androidPlugin;
-    private static bool androidPluginInitialized = false;
-    private static bool androidPluginInitializedSuccessfully = false;
-    private string admDeviceToken;
-    private static AndroidJavaObject androidADMPlugin;
-    private static bool androidADMPluginInitialized = false;
-    private static bool androidADMPluginInitializedSuccessfully = false;
-    private string googlePlayAdvertisingId;
-    private static bool startedPlot;
+private string gcmDeviceToken;
+private static AndroidJavaObject androidPlugin;
+private static bool androidPluginInitialized = false;
+private static bool androidPluginInitializedSuccessfully = false;
+private string admDeviceToken;
+private static AndroidJavaObject androidADMPlugin;
+private static bool androidADMPluginInitialized = false;
+private static bool androidADMPluginInitializedSuccessfully = false;
+private string googlePlayAdvertisingId;
 
-    private const int GooglePlayPushPluginVersion = 4;
-    private const int AdmPushPluginVersion = 1;
-	private const string InitialiseAdmName = "initialiseAdm";
+private const int GooglePlayPushPluginVersion = 4;
+private const int AdmPushPluginVersion = 1;
+private const string InitialiseAdmName = "initialiseAdm";
 
-	private const string GetVersionName = "getVersion";
-	private const string AckReceivedNotificationName = "sdkAcknowledgeReceivedNotification";
-	private const string AckOpenedNotificationName = "sdkAcknowledgeOpenedNotification";
-	private const string RegisterDeviceName = "registerDevice";
-	private const string RequestAdvertisingIdName = "requestAdvertisingId";
+private const string GetVersionName = "getVersion";
+private const string AckReceivedNotificationName = "sdkAcknowledgeReceivedNotification";
+private const string AckOpenedNotificationName = "sdkAcknowledgeOpenedNotification";
+private const string RegisterDeviceName = "registerDevice";
+private const string RequestAdvertisingIdName = "requestAdvertisingId";
 
-    private const string GCMIdentKey = "google.message_id";
-    private const string ADMIdentKey = "adm_message_md5";
-    private static string LastOpenedNotification;
+private const string GCMIdentKey = "google.message_id";
+private const string ADMIdentKey = "adm_message_md5";
+private static string LastOpenedNotification;
 
-    /// <summary>
-    /// Buffer the event of a purchase using real currency, where a single item
-    /// (that isn't an in-app currency) was purchased.
-    /// The receipt provided will be validated against the Google Play Store.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "iap" event.
-    /// Note that this method is currently only supported for the Google Play Store,
-    /// and a valid receipt and signature need to be provided for verification.
-    /// </remarks>
-    /// <param name="productId">
-    /// Unique product identifier for the item bought. This should match the Swrve resource name.
-    /// </param>
-    /// <param name="productPrice">
-    /// Price of the product purchased in real money. Note that this is the price
-    /// per product, not the total price of the transaction (when quantity > 1).
-    /// </param>
-    /// <param name="currency">
-    /// Real world currency used for this transaction. This must be an ISO currency code.
-    /// </param>
-    /// <param name="purchaseData">
-    /// The receipt sent back from the Google Play Store upon successful purchase - this receipt will be verified by Swrve
-    /// </param>
-    /// <param name="dataSignature">
-    /// The receipt signature sent back from the Google Play Store upon successful purchase
-    /// </param>
-    public void IapGooglePlay (string productId, double productPrice, string currency, string purchaseData, string dataSignature)
+/// <summary>
+/// Buffer the event of a purchase using real currency, where a single item
+/// (that isn't an in-app currency) was purchased.
+/// The receipt provided will be validated against the Google Play Store.
+/// </summary>
+/// <remarks>
+/// See the REST API documentation for the "iap" event.
+/// Note that this method is currently only supported for the Google Play Store,
+/// and a valid receipt and signature need to be provided for verification.
+/// </remarks>
+/// <param name="productId">
+/// Unique product identifier for the item bought. This should match the Swrve resource name.
+/// </param>
+/// <param name="productPrice">
+/// Price of the product purchased in real money. Note that this is the price
+/// per product, not the total price of the transaction (when quantity > 1).
+/// </param>
+/// <param name="currency">
+/// Real world currency used for this transaction. This must be an ISO currency code.
+/// </param>
+/// <param name="purchaseData">
+/// The receipt sent back from the Google Play Store upon successful purchase - this receipt will be verified by Swrve
+/// </param>
+/// <param name="dataSignature">
+/// The receipt signature sent back from the Google Play Store upon successful purchase
+/// </param>
+public void IapGooglePlay (string productId, double productPrice, string currency, string purchaseData, string dataSignature)
     {
         IapRewards no_rewards = new IapRewards();
         IapGooglePlay (productId, productPrice, currency, no_rewards, purchaseData, dataSignature);
@@ -261,40 +260,40 @@ public partial class SwrveSDK
             bool registered = false;
             this.admDeviceToken = storage.Load(AdmDeviceTokenSave);
 
-	        //Only execute this once
-	        if (!androidADMPluginInitialized) {
-		        androidADMPluginInitialized = true;
+            //Only execute this once
+            if (!androidADMPluginInitialized) {
+                androidADMPluginInitialized = true;
 
-		        string pluginPackageName = SwrveAndroidADMPushPluginPackageName;
+                string pluginPackageName = SwrveAndroidADMPushPluginPackageName;
 
-		        string jniPluginClassName = pluginPackageName.Replace(".", "/");
-		        if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
-		            SwrveLog.LogError("Could not find class: " + jniPluginClassName +
-		                              " Are you using the correct SwrveSDKPushSupport plugin given the swrve config.AndroidPushProvider setting?");
+                string jniPluginClassName = pluginPackageName.Replace(".", "/");
+                if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
+                    SwrveLog.LogError("Could not find class: " + jniPluginClassName +
+                                      " Are you using the correct SwrveSDKPushSupport plugin given the swrve config.AndroidPushProvider setting?");
 
-		            //Force crash by calling another JNI call without clearing exceptions.
-		            //This is to enforce proper integration
-		            AndroidJNI.FindClass(jniPluginClassName);
-		            return;
-		        }
+                    //Force crash by calling another JNI call without clearing exceptions.
+                    //This is to enforce proper integration
+                    AndroidJNI.FindClass(jniPluginClassName);
+                    return;
+                }
 
-		        androidADMPlugin = new AndroidJavaClass(pluginPackageName);
-		        if (androidADMPlugin == null) {
-		            SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
-		            return;
-		        }
+                androidADMPlugin = new AndroidJavaClass(pluginPackageName);
+                if (androidADMPlugin == null) {
+                    SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
+                    return;
+                }
 
-		        // Check that the plugin version is correct
-		        int pluginVersion = androidADMPlugin.CallStatic<int>(GetVersionName);
-		        if (pluginVersion != AdmPushPluginVersion) {
-		            // Plugin with changes to the public API not supported
-		            androidADMPlugin = null;
-		            throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
-		        } else {
-		            androidADMPluginInitializedSuccessfully = true;
-		            SwrveLog.LogInfo("Android Push Plugin initialised successfully: " + jniPluginClassName);
-		        }
-			}
+                // Check that the plugin version is correct
+                int pluginVersion = androidADMPlugin.CallStatic<int>(GetVersionName);
+                if (pluginVersion != AdmPushPluginVersion) {
+                    // Plugin with changes to the public API not supported
+                    androidADMPlugin = null;
+                    throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
+                } else {
+                    androidADMPluginInitializedSuccessfully = true;
+                    SwrveLog.LogInfo("Android Push Plugin initialised successfully: " + jniPluginClassName);
+                }
+            }
 
             if (androidADMPluginInitializedSuccessfully) {
                 registered = androidADMPlugin.CallStatic<bool>(
@@ -344,7 +343,7 @@ public partial class SwrveSDK
                     AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject> (UnityCurrentActivityName);
                     string packageName = context.Call<string> ("getPackageName");
                     string versionName = context.Call<AndroidJavaObject> ("getPackageManager")
-                    .Call<AndroidJavaObject> ("getPackageInfo", packageName, 0).Get<string> ("versionName");
+                                         .Call<AndroidJavaObject> ("getPackageInfo", packageName, 0).Get<string> ("versionName");
                     return versionName;
                 }
             } catch (Exception exp) {
@@ -615,7 +614,6 @@ public partial class SwrveSDK
         if (SwrveHelper.IsOnDevice ()) {
             try {
                 AndroidGetBridge ().CallStatic(SwrveStartLocationName);
-                startedPlot = true;
             } catch (Exception exp) {
                 SwrveLog.LogWarning ("Couldn't start Swrve location from Android: " + exp.ToString ());
             }

@@ -14,34 +14,34 @@ using UnityEngine.iOS;
 
 public partial class SwrveSDK
 {
-    /// <summary>
-    /// Buffer the event of a purchase using real currency, where a single item
-    /// (that isn't an in-app currency) was purchased.
-    /// The receipt provided will be validated against the iTunes Store.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "iap" event.
-    /// Note that this method is currently only supported for the Apple App Store,
-    /// and a valid receipt needs to be provided for verification.
-    /// </remarks>
-    /// <param name="quantity">
-    /// Quantity purchased.
-    /// </param>
-    /// <param name="productId">
-    /// Unique product identifier for the item bought. This should match the Swrve resource name.
-    /// </param>
-    /// <param name="productPrice">
-    /// Price of the product purchased in real money. Note that this is the price
-    /// per product, not the total price of the transaction (when quantity > 1).
-    /// </param>
-    /// <param name="currency">
-    /// Real world currency used for this transaction. This must be an ISO currency code.
-    /// </param>
-    /// <param name="receipt">
-    /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
-    /// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
-    /// </param>
-    public void IapApple (int quantity, string productId, double productPrice, string currency, IapReceipt receipt)
+/// <summary>
+/// Buffer the event of a purchase using real currency, where a single item
+/// (that isn't an in-app currency) was purchased.
+/// The receipt provided will be validated against the iTunes Store.
+/// </summary>
+/// <remarks>
+/// See the REST API documentation for the "iap" event.
+/// Note that this method is currently only supported for the Apple App Store,
+/// and a valid receipt needs to be provided for verification.
+/// </remarks>
+/// <param name="quantity">
+/// Quantity purchased.
+/// </param>
+/// <param name="productId">
+/// Unique product identifier for the item bought. This should match the Swrve resource name.
+/// </param>
+/// <param name="productPrice">
+/// Price of the product purchased in real money. Note that this is the price
+/// per product, not the total price of the transaction (when quantity > 1).
+/// </param>
+/// <param name="currency">
+/// Real world currency used for this transaction. This must be an ISO currency code.
+/// </param>
+/// <param name="receipt">
+/// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
+/// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
+/// </param>
+public void IapApple (int quantity, string productId, double productPrice, string currency, IapReceipt receipt)
     {
         IapApple (quantity, productId, productPrice, currency, receipt, string.Empty);
     }
@@ -305,7 +305,8 @@ public partial class SwrveSDK
         }
     }
 
-    protected void ProcessRemoteNotificationUserInfo(IDictionary userInfo) {
+    protected void ProcessRemoteNotificationUserInfo(IDictionary userInfo)
+    {
         if (userInfo != null && userInfo.Contains(PushTrackingKey)) {
             // It is a Swrve push, we need to check if it was sent while the app was in the background
             bool whileInBackground = !userInfo.Contains("_swrveForeground");

@@ -17,7 +17,8 @@ public enum UIUserNotificationActivationMode {
 }
 
 [System.Serializable]
-public class UIUserNotificationAction {
+public class UIUserNotificationAction
+{
     const string IDENTIFIER_KEY = "identifier";
     const string TITLE_KEY = "title";
     const string BEHAVIOUR_KEY = "behaviour";
@@ -62,7 +63,8 @@ public class UIUserNotificationAction {
 }
 
 [System.Serializable]
-public class UIUserNotificationCategory {
+public class UIUserNotificationCategory
+{
     const string IDENTIFIER_KEY = "identifier";
     const string CONTEXT_ACTIONS_KEY = "contextActions";
 
@@ -74,9 +76,9 @@ public class UIUserNotificationCategory {
 
     public Dictionary<string, object> toDict()
     {
-        Dictionary<UIUserNotificationActionContext, List<UIUserNotificationAction>> contextActions = 
+        Dictionary<UIUserNotificationActionContext, List<UIUserNotificationAction>> contextActions =
             new Dictionary<UIUserNotificationActionContext, List<UIUserNotificationAction>>();
-        
+
         if (0 < defaultContextActions.Count) {
             contextActions [UIUserNotificationActionContext.UIUserNotificationActionContextDefault] = defaultContextActions;
         }

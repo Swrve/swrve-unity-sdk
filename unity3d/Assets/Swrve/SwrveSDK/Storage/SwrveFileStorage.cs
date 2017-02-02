@@ -119,41 +119,45 @@ public class SwrveFileStorage : ISwrveStorage
 
         // Read from file
         string loadFileName = GetFileName (tag, userId);
-        string signatureFileName = loadFileName + SIGNATURE_SUFFIX;
-        if (CrossPlatformFile.Exists (loadFileName)) {
-            result = CrossPlatformFile.LoadText (loadFileName);
+        try {
+            string signatureFileName = loadFileName + SIGNATURE_SUFFIX;
+            if (CrossPlatformFile.Exists (loadFileName)) {
+                result = CrossPlatformFile.LoadText (loadFileName);
 
-            if (!string.IsNullOrEmpty (result)) {
-                string signature = null;
-                if (CrossPlatformFile.Exists (signatureFileName)) {
-                    signature = CrossPlatformFile.LoadText (signatureFileName);
-                } else {
-                    SwrveLog.LogError ("Could not read signature file: " + signatureFileName);
-                    result = null;
-                }
-
-                if (!string.IsNullOrEmpty (signature)) {
-                    string computedSignature = SwrveHelper.CreateHMACMD5 (result, uniqueKey);
-
-                    if (string.IsNullOrEmpty (computedSignature)) {
-                        SwrveLog.LogError ("Could not compute signature for data in file " + loadFileName);
-                        result = null;
+                if (!string.IsNullOrEmpty (result)) {
+                    string signature = null;
+                    if (CrossPlatformFile.Exists (signatureFileName)) {
+                        signature = CrossPlatformFile.LoadText (signatureFileName);
                     } else {
-                        if (!signature.Equals (computedSignature)) {
-                            // Notify of invalid signature
-                            if (callback != null) {
-                                callback.Invoke ();
-                            }
-                            SwrveLog.LogError ("Signature validation failed for " + loadFileName);
+                        SwrveLog.LogError ("Could not read signature file: " + signatureFileName);
+                        result = null;
+                    }
+
+                    if (!string.IsNullOrEmpty (signature)) {
+                        string computedSignature = SwrveHelper.CreateHMACMD5 (result, uniqueKey);
+
+                        if (string.IsNullOrEmpty (computedSignature)) {
+                            SwrveLog.LogError ("Could not compute signature for data in file " + loadFileName);
                             result = null;
+                        } else {
+                            if (!signature.Equals (computedSignature)) {
+                                // Notify of invalid signature
+                                if (callback != null) {
+                                    callback.Invoke ();
+                                }
+                                SwrveLog.LogError ("Signature validation failed for " + loadFileName);
+                                result = null;
+                            }
                         }
                     }
+                } else {
+                    SwrveLog.LogError ("Could not read file " + loadFileName);
                 }
             } else {
-                SwrveLog.LogError ("Could not read file " + loadFileName);
+                // No cache available
             }
-        } else {
-            // No cache available
+        } catch (Exception e) {
+            SwrveLog.LogError (e.ToString (), "storage");
         }
 
         return result;
@@ -166,4 +170,3 @@ public class SwrveFileStorage : ISwrveStorage
     }
 }
 }
-

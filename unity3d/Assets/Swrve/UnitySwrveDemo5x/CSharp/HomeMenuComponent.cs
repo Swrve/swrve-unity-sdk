@@ -12,85 +12,94 @@ using SwrveUnity.Messaging;
 using SwrveUnityMiniJSON;
 using System.Text.RegularExpressions;
 
-public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
-    enum ViewPages {
-        MainMenu,
-        MessageCenter
-    }
+public class HomeMenuComponent : MonoBehaviour, IGameController, IGame
+{
+enum ViewPages {
+    MainMenu,
+    MessageCenter
+}
 
-    enum PositionState {
-        Moving,
-        Left,
-        Centre,
-        Right
-    }
+enum PositionState {
+    Moving,
+    Left,
+    Centre,
+    Right
+}
 
-    public Image modalImage;
-    public Transform footerPanel;
+public Image modalImage;
+public Transform footerPanel;
 
-    public GameObject _buttonPrefab;
-    public GameObject _modalQuestionPrefab;
-    public GameObject _demoConversationPrefab;
+public GameObject _buttonPrefab;
+public GameObject _modalQuestionPrefab;
+public GameObject _demoConversationPrefab;
 
-    public GameObject _mainMenu;
-    public GameObject _messageCenter;
+public GameObject _mainMenu;
+public GameObject _messageCenter;
 
-    public List<GameObject> movableTargets;
+public List<GameObject> movableTargets;
 
-    private static GameObject ButtonPrefab;
-    private static GameObject ModalQuestionPrefab;
+private static GameObject ButtonPrefab;
+private static GameObject ModalQuestionPrefab;
 
-    /// Reference to the Swrve Component in the scene.
-    private SwrveComponent swrveComponent;
+/// Reference to the Swrve Component in the scene.
+private SwrveComponent swrveComponent;
 
-    void Awake() {
+void Awake()
+    {
         ModalQuestionPrefab = _modalQuestionPrefab;
         ButtonPrefab = _buttonPrefab;
     }
 
-  	// Use this for initialization
-    void Start () {
+    // Use this for initialization
+    void Start ()
+    {
         swrveComponent = (SwrveComponent)FindObjectOfType (typeof(SwrveComponent));
 
         // In-app messaging setup
         swrveComponent.SDK.GlobalMessageListener = new CustomMessageListener (this);
         swrveComponent.SDK.GlobalCustomButtonListener = new CustomButtonListener ();
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
         swrveComponent.SDK.ConversationEditorCallback = OnConversation;
-    #endif
-        
+#endif
+
         new Dictionary<string, UnityAction> {
             { "Main Menu", ToMainMenu },
             { "Message Center", ToMessageCenter }
-        }.ToList ().ForEach (kvp => SetButton (kvp, footerPanel));
+        } .ToList ().ForEach (kvp => SetButton (kvp, footerPanel));
     }
 
-    public static void SetButton(KeyValuePair<string, UnityAction> kvp, Transform transform) {
+    public static void SetButton(KeyValuePair<string, UnityAction> kvp, Transform transform)
+    {
         CustomButtonComponent button = GameObject.Instantiate (ButtonPrefab).GetComponent<CustomButtonComponent> ();
         button.label.text = kvp.Key;
         button.GetComponent<Button> ().onClick.AddListener (kvp.Value);
         button.transform.SetParent (transform, false);
     }
 
-    public IGame getGame() {
+    public IGame getGame()
+    {
         return this;
     }
 
-    public void pauseGame() {
+    public void pauseGame()
+    {
         modalImage.gameObject.SetActive (true);
     }
-    public void resumeGame() {
+    public void resumeGame()
+    {
         modalImage.gameObject.SetActive (false);
     }
 
-    class MoveInfo {
+    class MoveInfo
+    {
         public GameObject target;
         public float stepTarget;
         public Vector2 position;
         public float originalX;
 
-        public MoveInfo(GameObject target, PositionState state, bool shift=false) {
+        public MoveInfo(GameObject target, PositionState state, bool shift=false)
+        {
             bool left = PositionState.Left == state;
             position = target.transform.position;
             originalX = position.x;
@@ -103,11 +112,13 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
         }
     }
 
-    void ToMainMenu() {
+    void ToMainMenu()
+    {
         MoveTo (_mainMenu);
     }
 
-    void ToMessageCenter() {
+    void ToMessageCenter()
+    {
         MoveTo (_messageCenter);
     }
 
@@ -116,7 +127,8 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
     PositionState nextState;
     GameObject nextInactive;
 
-    void MoveTo(GameObject target) {
+    void MoveTo(GameObject target)
+    {
         if (state == PositionState.Moving || target.activeSelf) {
             return;
         }
@@ -132,9 +144,9 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
         moves.Add (new MoveInfo (target, nextState, true));
     }
 
-    void Update() {
-        if(PositionState.Moving == state)
-        {
+    void Update()
+    {
+        if(PositionState.Moving == state) {
             List<MoveInfo> toDelete = null;
             moves.ForEach (info => {
                 if (1 > Math.Abs (info.position.x - info.stepTarget)) {
@@ -169,7 +181,8 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
         }
     }
 
-    void OnConversation(string conversation) {
+    void OnConversation(string conversation)
+    {
         DemoEditorConversation view = GameObject.Instantiate(_demoConversationPrefab).GetComponent<DemoEditorConversation>();
 
         string pattern = @"<[^>]+>";
@@ -183,8 +196,7 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
 
                     Regex rgx = new Regex(pattern, RegexOptions.IgnoreCase);
                     MatchCollection matches = rgx.Matches(value);
-                    if (matches.Count > 0)
-                    {
+                    if (matches.Count > 0) {
                         UnityEngine.Debug.Log (string.Format ("{0} ({1} matches):", value, matches.Count));
                         for(int i = 0; i < matches.Count; i++) {
                             Match match = matches[i];
@@ -203,7 +215,8 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
         string title, string text, UnityAction positiveCallback,
         string positiveText="OK", string negativeText="Cancel",
         UnityAction negativeCallback=null
-    ) {
+    )
+    {
         ModalQuestionComponent modal = GameObject.Instantiate(ModalQuestionPrefab).GetComponent<ModalQuestionComponent>();
 
         modal.titleText.text = title;
@@ -212,8 +225,7 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
             Destroy (modal.gameObject);
             if(positive) {
                 positiveCallback.Invoke();
-            }
-            else if(null != negativeCallback) {
+            } else if(null != negativeCallback) {
                 negativeCallback.Invoke();
             }
         };
@@ -225,7 +237,7 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
     /// <summary>
     /// Process in-app message custom button clicks.
     /// </summary>
-    private class CustomButtonListener : ISwrveCustomButtonListener/// 
+    private class CustomButtonListener : ISwrveCustomButtonListener///
     {
         public void OnAction (string customAction)
         {
@@ -240,7 +252,7 @@ public class HomeMenuComponent : MonoBehaviour, IGameController, IGame {
     private class CustomMessageListener : ISwrveMessageListener
     {
         IGameController gameController;
-        
+
         public CustomMessageListener (IGameController gameController)
         {
             this.gameController = gameController;

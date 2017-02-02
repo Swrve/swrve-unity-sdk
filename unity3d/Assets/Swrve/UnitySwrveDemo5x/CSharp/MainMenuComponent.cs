@@ -7,15 +7,17 @@ using UnityEngine.Events;
 using SwrveUnity.IAP;
 using System.Linq;
 
-public class MainMenuComponent : MonoBehaviour {
-    public string eventTriggerName;
+public class MainMenuComponent : MonoBehaviour
+{
+public string eventTriggerName;
 
-    public Transform panel;
+public Transform panel;
 
-    /// Reference to the Swrve Component in the scene.
-    private SwrveComponent swrveComponent;
+/// Reference to the Swrve Component in the scene.
+private SwrveComponent swrveComponent;
 
-    void Start () {
+void Start ()
+    {
         swrveComponent = (SwrveComponent)FindObjectOfType (typeof(SwrveComponent));
 
         new Dictionary<string, UnityAction> {
@@ -30,41 +32,48 @@ public class MainMenuComponent : MonoBehaviour {
             {"Send To Swrve", SendToSwrve},
             {"Trigger Message", TriggerMessage},
             {"Save To Disk", SaveToDisk}
-        }.ToList().ForEach(kvp => {
+        } .ToList().ForEach(kvp => {
             HomeMenuComponent.SetButton (kvp, panel);
         });
     }
 
-    void SendEvent() {
+    void SendEvent()
+    {
         // Trigger a custom event
         swrveComponent.SDK.NamedEvent (@"button pressed", new Dictionary<string, string> () {
-            { "foo", "bar" }
+            { "foo", "bar"
+            }
         });
     }
-    void SendUserAttributes() {
+    void SendUserAttributes()
+    {
         // Update a user property
         swrveComponent.SDK.UserUpdate (new Dictionary<string, string> () {
             { "health", "100"}, { "gold", "20" }
         });
     }
 
-    void PurchaseItem() {
+    void PurchaseItem()
+    {
         // Notify of an item purchase
         swrveComponent.SDK.Purchase (@"someItem", @"gold", 20, 1);
     }
 
-    void InAppItemPurchase() {
+    void InAppItemPurchase()
+    {
         // Notify of an in-app purchase
         swrveComponent.SDK.Iap (1, @"productId", 1.99, @"USD");
     }
 
-    void InAppCurrencyPurchase() {
+    void InAppCurrencyPurchase()
+    {
         // Nofity of an in-app purchase with a some currency reward
         IapRewards rewards = new IapRewards (@"gold", 200);
         swrveComponent.SDK.Iap (1, @"productId", 0.99, @"USD", rewards);
     }
 
-    void RealIap() {
+    void RealIap()
+    {
         IapRewards rewards = new IapRewards (@"gold", 100);
         rewards.AddCurrency (@"keys", 5);
         rewards.AddItem (@"sword", 1);
@@ -80,23 +89,27 @@ public class MainMenuComponent : MonoBehaviour {
 #endif
     }
 
-    void CurrencyGiven() {
+    void CurrencyGiven()
+    {
         // Notify of currency given
         swrveComponent.SDK.CurrencyGiven (@"gold", 20);
     }
 
-    void UserResources() {
+    void UserResources()
+    {
         // Obtain the latest value of the resource item01.attribute or its default value
         int attributeValue = swrveComponent.SDK.ResourceManager.GetResourceAttribute<int> ("item01", "attribute", 99);
         UnityEngine.Debug.Log ("User resource attribute: " + attributeValue);
     }
 
-    void SendToSwrve() {
+    void SendToSwrve()
+    {
         // Send the queued events in the buffer to Swrve
         swrveComponent.SDK.SendQueuedEvents ();
     }
 
-    void TriggerMessage() {
+    void TriggerMessage()
+    {
         // Trigger an in-app message. You will need to setup the campaign
         // in the In-App message section in the dashboard.
         if (!string.IsNullOrEmpty (eventTriggerName)) {
@@ -104,7 +117,8 @@ public class MainMenuComponent : MonoBehaviour {
         }
     }
 
-    void SaveToDisk() {
+    void SaveToDisk()
+    {
         // Flush the queued events to disk
         swrveComponent.SDK.FlushToDisk ();
     }

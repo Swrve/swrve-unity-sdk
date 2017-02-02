@@ -1,9 +1,8 @@
+using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 using System;
 using System.Linq;
 using SwrveUnity.Helpers;
-using SwrveUnityMiniJSON;
 
 namespace SwrveUnity.Messaging
 {
@@ -106,7 +105,8 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         return this.Messages.All (m => m.IsDownloaded ());
     }
 
-    public override bool SupportsOrientation(SwrveOrientation orientation) {
+    public override bool SupportsOrientation(SwrveOrientation orientation)
+    {
         return this.Messages.Any (m => m.SupportsOrientation (orientation));
     }
 
@@ -116,15 +116,14 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
     /// <returns>
     /// All the assets in the in-app campaign.
     /// </returns>
-    public override List<string> ListOfAssets ()
+    public HashSet<SwrveAssetsQueueItem> GetImageAssets ()
     {
-        List<string> allAssets = new List<string> ();
+        HashSet<SwrveAssetsQueueItem> assetsQueueImages = new HashSet<SwrveAssetsQueueItem>();
         for(int mi = 0; mi < Messages.Count; mi++) {
             SwrveMessage message = Messages[mi];
-            allAssets.AddRange (message.ListOfAssets ());
+            assetsQueueImages.UnionWith(message.SetOfAssets());
         }
-
-        return allAssets;
+        return assetsQueueImages;
     }
 
     /// <summary>
@@ -150,7 +149,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         }
     }
 
-    new public static SwrveMessagesCampaign LoadFromJSON (SwrveSDK sdk, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, SwrveQAUser qaUser)
+    public static SwrveMessagesCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, SwrveQAUser qaUser, Color? defaultBackgroundColor)
     {
         SwrveMessagesCampaign campaign = new SwrveMessagesCampaign (initialisedTime);
 
@@ -159,8 +158,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         IList<object> messages = null;
         try {
             messages = (IList<object>)_messages;
-        }
-        catch(Exception e) {
+        } catch(Exception e) {
             campaign.LogAndAddReason ("Campaign [" + id + "] invalid messages found, skipping.  Error: " + e, qaUser);
         }
 
@@ -171,7 +169,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
 
         for (int k = 0, t = messages.Count; k < t; k++) {
             Dictionary<string, object> messageData = (Dictionary<string, object>)messages [k];
-            SwrveMessage message = SwrveMessage.LoadFromJSON (sdk, campaign, messageData);
+            SwrveMessage message = SwrveMessage.LoadFromJSON (swrveAssetsManager, campaign, messageData, defaultBackgroundColor);
             if (message.Formats.Count > 0) {
                 campaign.AddMessage (message);
             }

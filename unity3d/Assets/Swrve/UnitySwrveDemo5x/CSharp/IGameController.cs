@@ -1,8 +1,10 @@
-﻿public interface IGame {
+﻿public interface IGame
+{
     void pauseGame();
     void resumeGame();
 }
 
-public interface IGameController {
+public interface IGameController
+{
     IGame getGame();
 }

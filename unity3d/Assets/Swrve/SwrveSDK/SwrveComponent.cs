@@ -231,7 +231,8 @@ public class SwrveComponent : MonoBehaviour
 #endif
     }
 
-    public void SetLocationSegmentVersion(string locationSegmentVersion) {
+    public void SetLocationSegmentVersion(string locationSegmentVersion)
+    {
         try {
             SDK.SetLocationSegmentVersion(int.Parse(locationSegmentVersion));
         } catch (System.Exception e) {
@@ -239,7 +240,8 @@ public class SwrveComponent : MonoBehaviour
         }
     }
 
-    public void UserUpdate(string userUpdate) {
+    public void UserUpdate(string userUpdate)
+    {
         try {
             Dictionary<string, object> o = (Dictionary<string, object>)Json.Deserialize (userUpdate);
             Dictionary<string, string> _o = new Dictionary<string, string>();

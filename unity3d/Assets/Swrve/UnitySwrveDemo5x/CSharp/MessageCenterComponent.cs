@@ -8,14 +8,15 @@ using System.Linq;
 
 public class MessageCenterComponent : MonoBehaviour
 {
-    public Transform ContentPanel;
-    public GameObject MessageCenterMessagePrefab;
+public Transform ContentPanel;
+public GameObject MessageCenterMessagePrefab;
 
-    /// Reference to the Swrve Component in the scene.
-    private SwrveComponent swrveComponent;
+/// Reference to the Swrve Component in the scene.
+private SwrveComponent swrveComponent;
 
-    // Use this for initialization
-    void Start () {
+// Use this for initialization
+void Start ()
+    {
         swrveComponent = (SwrveComponent)FindObjectOfType (typeof(SwrveComponent));
 
         swrveComponent.SDK.GetMessageCenterCampaigns(SwrveOrientation.Portrait).ForEach(campaign => {

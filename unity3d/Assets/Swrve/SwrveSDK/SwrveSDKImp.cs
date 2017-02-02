@@ -93,8 +93,6 @@ public partial class SwrveSDK
     protected string swrveTemporaryPath;
     protected bool campaignsConnecting;
     protected bool autoShowMessagesEnabled;
-    protected bool assetsCurrentlyDownloading;
-    protected HashSet<string> assetsOnDisk;
     protected Dictionary<int, SwrveCampaignState> campaignsState = new Dictionary<int, SwrveCampaignState>();
     protected List<SwrveBaseCampaign> campaigns = new List<SwrveBaseCampaign> ();
     protected Dictionary<string, object> campaignSettings = new Dictionary<string, object> ();
@@ -103,7 +101,6 @@ public partial class SwrveSDK
     protected SwrveMessageFormat currentDisplayingMessage = null;
     protected SwrveOrientation currentOrientation;
     protected IInputManager inputManager = NativeInputManager.Instance;
-    private string cdn = "https://swrve-content.s3.amazonaws.com/messaging/message_image/";
     protected string prefabName;
 
     // Talk rules
@@ -165,10 +162,9 @@ public partial class SwrveSDK
 #elif UNITY_WSA_10_0
         path = path + "/swrveTemp";
 #endif
-    		if (!File.Exists (path))
-    		{
-    			Directory.CreateDirectory (path);
-    		}
+        if (!File.Exists (path)) {
+            Directory.CreateDirectory (path);
+        }
         return path;
     }
 
@@ -640,12 +636,12 @@ public partial class SwrveSDK
             eventParameters.TryGetValue("payload", out payload);
             ShowBaseMessage (eventName, (IDictionary<string, string>)payload);
         }
-  	}
+    }
 
-  	protected virtual void AppendEventToBuffer (string eventJson)
-  	{
-      	eventBufferStringBuilder.Append (eventJson);
-  	}
+    protected virtual void AppendEventToBuffer (string eventJson)
+    {
+        eventBufferStringBuilder.Append (eventJson);
+    }
     #endregion
 
     protected virtual Coroutine StartTask (string tag, IEnumerator task)
@@ -664,8 +660,7 @@ public partial class SwrveSDK
         if (null != baseMessage) {
             if (baseMessage.Campaign.IsA<SwrveConversationCampaign> ()) {
                 StartTask ("ShowConversationForEvent", ShowConversationForEvent (eventName, (SwrveConversation)baseMessage));
-            }
-            else {
+            } else {
                 StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, (SwrveMessage)baseMessage, GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener));
             }
         }
@@ -677,8 +672,8 @@ public partial class SwrveSDK
         if (baseMessage != null) {
             NamedEventInternal (
                 baseMessage.GetEventPrefix () + "returned",
-                new Dictionary<string, string> { { "id", baseMessage.Id.ToString () } },
-                false
+            new Dictionary<string, string> { { "id", baseMessage.Id.ToString () } },
+            false
             );
         }
     }
@@ -701,8 +696,8 @@ public partial class SwrveSDK
             SwrveLog.Log ("Not showing message: no candidate for " + eventName);
         } else {
             SwrveLog.Log (string.Format (
-                "[{0}] {1} has been chosen for {2}\nstate: {3}",
-                baseMessage, baseMessage.Campaign.Id, eventName, baseMessage.Campaign.State));
+                              "[{0}] {1} has been chosen for {2}\nstate: {3}",
+                              baseMessage, baseMessage.Campaign.Id, eventName, baseMessage.Campaign.State));
         }
 
         return baseMessage;
@@ -919,39 +914,39 @@ public partial class SwrveSDK
             ButtonWasPressedByUser (clickedButton);
 
             try {
-              if (clickedButton.ActionType == SwrveActionType.Install) {
-                  string appId = clickedButton.AppId.ToString ();
-                  if (appStoreLinks.ContainsKey (appId)) {
-                      string appStoreUrl = appStoreLinks [appId];
-                      if (!string.IsNullOrEmpty(appStoreUrl)) {
-                          bool normalFlow = true;
-                          if (currentMessage.InstallButtonListener != null) {
-                              // Launch custom button listener
-                              normalFlow = currentMessage.InstallButtonListener.OnAction (appStoreUrl);
-                          }
+                if (clickedButton.ActionType == SwrveActionType.Install) {
+                    string appId = clickedButton.AppId.ToString ();
+                    if (appStoreLinks.ContainsKey (appId)) {
+                        string appStoreUrl = appStoreLinks [appId];
+                        if (!string.IsNullOrEmpty(appStoreUrl)) {
+                            bool normalFlow = true;
+                            if (currentMessage.InstallButtonListener != null) {
+                                // Launch custom button listener
+                                normalFlow = currentMessage.InstallButtonListener.OnAction (appStoreUrl);
+                            }
 
-                          if (normalFlow) {
-                              // Open app store
-                              OpenURL(appStoreUrl);
-                          }
-                      } else {
-                          SwrveLog.LogError("No app store url for app " + appId);
-                      }
-                  } else {
-                      SwrveLog.LogError("Install button app store url empty!");
-                  }
-              } else if (clickedButton.ActionType == SwrveActionType.Custom) {
-                  string buttonAction = clickedButton.Action;
-                  if (currentMessage.CustomButtonListener != null) {
-                      // Launch custom button listener
-                      currentMessage.CustomButtonListener.OnAction (buttonAction);
-                  } else {
-                      SwrveLog.Log("No custom button listener, treating action as URL");
-                      if (!string.IsNullOrEmpty(buttonAction)) {
-                          OpenURL (buttonAction);
-                      }
-                  }
-              }
+                            if (normalFlow) {
+                                // Open app store
+                                OpenURL(appStoreUrl);
+                            }
+                        } else {
+                            SwrveLog.LogError("No app store url for app " + appId);
+                        }
+                    } else {
+                        SwrveLog.LogError("Install button app store url empty!");
+                    }
+                } else if (clickedButton.ActionType == SwrveActionType.Custom) {
+                    string buttonAction = clickedButton.Action;
+                    if (currentMessage.CustomButtonListener != null) {
+                        // Launch custom button listener
+                        currentMessage.CustomButtonListener.OnAction (buttonAction);
+                    } else {
+                        SwrveLog.Log("No custom button listener, treating action as URL");
+                        if (!string.IsNullOrEmpty(buttonAction)) {
+                            OpenURL (buttonAction);
+                        }
+                    }
+                }
             } catch(Exception exp) {
                 SwrveLog.LogError("Error processing the clicked button: " + exp.Message);
             }
@@ -1065,12 +1060,13 @@ public partial class SwrveSDK
         }
     }
 
-    private bool isValidMessageCenter(SwrveBaseCampaign campaign, SwrveOrientation orientation) {
+    private bool isValidMessageCenter(SwrveBaseCampaign campaign, SwrveOrientation orientation)
+    {
         return campaign.MessageCenter
-          && campaign.Status != SwrveCampaignState.Status.Deleted
-          && campaign.IsActive (qaUser)
-          && campaign.SupportsOrientation (orientation)
-          && campaign.AreAssetsReady ();
+               && campaign.Status != SwrveCampaignState.Status.Deleted
+               && campaign.IsActive (qaUser)
+               && campaign.SupportsOrientation (orientation)
+               && campaign.AreAssetsReady ();
     }
 
     private IEnumerator LaunchConversation(SwrveConversation conversation)
@@ -1172,7 +1168,8 @@ public partial class SwrveSDK
         return format;
     }
 
-    private string GetTemporaryPathFileName(string fileName) {
+    private string GetTemporaryPathFileName(string fileName)
+    {
         return Path.Combine (swrveTemporaryPath, fileName);
     }
 
@@ -1205,73 +1202,17 @@ public partial class SwrveSDK
         TaskFinished ("LoadAsset");
     }
 
-    protected virtual bool CheckAsset (string fileName)
-    {
-        if (CrossPlatformFile.Exists (GetTemporaryPathFileName(fileName))) {
-            return true;
-        }
-        return false;
-    }
-
-    protected virtual IEnumerator DownloadAsset (string fileName, CoroutineReference<Texture2D> texture)
-    {
-        string url = cdn + fileName;
-        SwrveLog.Log ("Downloading asset: " + url);
-        WWW www = new WWW (url);
-        yield return www;
-        WwwDeducedError err = UnityWwwHelper.DeduceWwwError (www);
-        if (www != null && WwwDeducedError.NoError == err && www.isDone) {
-            Texture2D loadedTexture = www.texture;
-            if (loadedTexture != null) {
-                string filePath = GetTemporaryPathFileName (fileName);
-                SwrveLog.Log ("Saving to " + filePath);
-                byte[] bytes = loadedTexture.EncodeToPNG ();
-                CrossPlatformFile.SaveBytes (filePath, bytes);
-                bytes = null;
-
-                // Assign texture
-                texture.Value (loadedTexture);
-            }
-        }
-        TaskFinished ("DownloadAsset");
-    }
-
-    protected IEnumerator DownloadAssets (List<string> assetsQueue)
-    {
-        assetsCurrentlyDownloading = true;
-        for(int ai = 0; ai < assetsQueue.Count; ai++) {
-            string asset = assetsQueue[ai];
-            if (!CheckAsset (asset)) {
-                CoroutineReference<Texture2D> resultTexture = new CoroutineReference<Texture2D> ();
-                yield return StartTask ("DownloadAsset", DownloadAsset (asset, resultTexture));
-                Texture2D texture = resultTexture.Value ();
-                if (texture != null) {
-                    assetsOnDisk.Add (asset);
-                    Texture2D.Destroy (texture);
-                }
-            } else {
-                // Already downloaded
-                assetsOnDisk.Add (asset);
-            }
-        }
-
-        assetsCurrentlyDownloading = false;
-        AutoShowMessages ();
-
-        TaskFinished ("DownloadAssets");
-    }
-
     protected virtual void ProcessCampaigns (Dictionary<string, object> root)
     {
         List<SwrveBaseCampaign> newCampaigns = new List<SwrveBaseCampaign> ();
-        List<string> assetsQueue = new List<string> ();
+        HashSet<SwrveAssetsQueueItem> assetsQueue = new HashSet<SwrveAssetsQueueItem>();
 
         try {
             // Stop if we got an empty json
             if (root != null && root.ContainsKey ("version")) {
                 int version = MiniJsonHelper.GetInt (root, "version");
                 if (version == CampaignResponseVersion) {
-                    cdn = (string)root ["cdn_root"];
+                    UpdateCdnPaths(root);
 
                     // App data
                     Dictionary<string, object> appData = (Dictionary<string, object>)root ["game_data"];
@@ -1336,13 +1277,20 @@ public partial class SwrveSDK
 
                     for (int i = 0, j = jsonCampaigns.Count; i < j; i++) {
                         Dictionary<string, object> campaignData = (Dictionary<string, object>)jsonCampaigns [i];
-                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (this, campaignData, initialisedTime, qaUser);
+                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (SwrveAssetsManager, campaignData, initialisedTime, qaUser, config.DefaultBackgroundColor);
                         if(campaign == null) {
                             continue;
                         }
 
                         SwrveLog.Log( "added campaign id: " + campaign.Id + " type: " + campaign.GetType() + " triggers: " + campaign.GetTriggers() );
-                        assetsQueue.AddRange (campaign.ListOfAssets ());
+                        if (campaign.GetType() == typeof(SwrveConversationCampaign)) {
+                            SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign) campaign;
+                            assetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
+                        } else if (campaign.GetType() == typeof(SwrveMessagesCampaign)) {
+                            SwrveMessagesCampaign messageCampaign = (SwrveMessagesCampaign) campaign;
+                            assetsQueue.UnionWith(messageCampaign.GetImageAssets());
+                        }
+
                         // Do we have to make retrieve the previous state?
                         if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
                             SwrveCampaignState campaignState = null;
@@ -1372,8 +1320,24 @@ public partial class SwrveSDK
             SwrveLog.LogError ("Could not process campaigns: " + exp.ToString ());
         }
 
-        StartTask ("DownloadAssets", DownloadAssets (assetsQueue));
+        StartTask ("SwrveAssetsManager.DownloadAssets", this.SwrveAssetsManager.DownloadAssets(assetsQueue, AutoShowMessages));
         campaigns = new List<SwrveBaseCampaign> (newCampaigns);
+    }
+
+    private void UpdateCdnPaths (Dictionary<string, object> root)
+    {
+        if(root.ContainsKey("cdn_root")) {
+            string cdnRoot = (string)root ["cdn_root"];
+            this.SwrveAssetsManager.CdnImages = cdnRoot;
+            SwrveLog.Log ("CDN URL " + cdnRoot);
+        } else if(root.ContainsKey("cdn_paths")) {
+            Dictionary<string, object> cdnPaths = (Dictionary<string, object>)root ["cdn_paths"];
+            string cdnImages = (string)cdnPaths ["message_images"];
+            string cdnFonts = (string)cdnPaths ["message_fonts"];
+            this.SwrveAssetsManager.CdnImages = cdnImages;
+            this.SwrveAssetsManager.CdnFonts = cdnFonts;
+            SwrveLog.Log ("CDN URL images:" + cdnImages + " fonts:" + cdnFonts);
+        }
     }
 
     private void LoadResourcesAndCampaigns ()
@@ -1516,9 +1480,9 @@ public partial class SwrveSDK
                         if (config.LocationEnabled) {
                             if (root.ContainsKey("location_campaigns")) {
                                 Dictionary<string, object> locationData = (Dictionary<string, object>)root["location_campaigns"];
-                            #if UNITY_IPHONE
+#if UNITY_IPHONE
                                 locationData = (Dictionary<string, object>)locationData["campaigns"];
-                            #endif
+#endif
                                 string locationJson = SwrveUnityMiniJSON.Json.Serialize(locationData);
                                 SaveLocationCache (locationJson);
                             }
@@ -1654,12 +1618,12 @@ public partial class SwrveSDK
 
     private void ShowConversation (string conversation)
     {
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
         if(null != ConversationEditorCallback) {
             ConversationEditorCallback(conversation);
             return;
         }
-    #endif
+#endif
 
         showNativeConversation (conversation);
     }
@@ -1667,30 +1631,6 @@ public partial class SwrveSDK
     private void SetInputManager (IInputManager inputManager)
     {
         this.inputManager = inputManager;
-    }
-
-    protected class CoroutineReference<T>
-    {
-        private T val;
-
-        public CoroutineReference ()
-        {
-        }
-
-        public CoroutineReference (T val)
-        {
-            this.val = val;
-        }
-
-        public T Value ()
-        {
-            return val;
-        }
-
-        public void Value (T val)
-        {
-            this.val = val;
-        }
     }
 
     protected void StartCampaignsAndResourcesTimer ()
@@ -1720,7 +1660,8 @@ public partial class SwrveSDK
         autoShowMessagesEnabled = false;
     }
 
-    private string GetNativeDetails() {
+    private string GetNativeDetails()
+    {
         Dictionary<string, object> currentDetails = new Dictionary<string, object> {
             {"sdkVersion", SwrveSDK.SdkVersion},
             {"apiKey", apiKey},
@@ -1758,7 +1699,8 @@ public partial class SwrveSDK
         }
     }
 
-    protected void startLocation() {
+    protected void startLocation()
+    {
         if (config.LocationEnabled) {
             startNativeLocation ();
         }

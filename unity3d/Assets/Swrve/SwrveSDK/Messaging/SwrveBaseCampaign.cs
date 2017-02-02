@@ -1,5 +1,5 @@
+using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 using System;
 using System.Linq;
 using SwrveUnity.Helpers;
@@ -33,7 +33,7 @@ public abstract class SwrveBaseCampaign
 
     const string END_DATE_KEY = "end_date";
 
-    protected readonly Random rnd = new Random ();
+    protected readonly System.Random rnd = new System.Random ();
     protected const string WaitTimeFormat = @"HH\:mm\:ss zzz";
     protected const int DefaultDelayFirstMessage = 180;
     protected const long DefaultMaxShows = 99999;
@@ -47,7 +47,8 @@ public abstract class SwrveBaseCampaign
     /// <summary>
     // Flag indicating if it is a MessageCenter campaign
     /// </summary>
-    public bool MessageCenter {
+    public bool MessageCenter
+    {
         get;
         protected set;
     }
@@ -76,11 +77,11 @@ public abstract class SwrveBaseCampaign
     /// Number of impressions of this campaign. Used to disable the campaign if
     /// it reaches total impressions.
     /// </summary>
-    public int Impressions {
+    public int Impressions
+    {
         get {
             return this.State.Impressions;
-        }
-        set {
+        } set {
             this.State.Impressions = value;
         }
     }
@@ -88,36 +89,41 @@ public abstract class SwrveBaseCampaign
     /// <summary>
     /// Next message to be shown if round robin campaign.
     /// </summary>
-    public int Next {
+    public int Next
+    {
         get {
             return this.State.Next;
-        }
-        set {
+        } set {
             this.State.Next = value;
         }
     }
-     
+
     /// <summary>
     /// Get the status of the campaign.
     /// </summary>
     /// <returns>
     /// Status of the campaign.
     /// </returns>
-    public SwrveCampaignState.Status Status {
+    public SwrveCampaignState.Status Status
+    {
         get {
             return this.State.CurStatus;
-        }
-        set {
+        } set {
             this.State.CurStatus = value;
         }
     }
-        
+
     /**
      * @return the name of the campaign.
      */
-    public string Subject {
-        get { return subject; }
-        protected set { this.subject = value; }
+    public string Subject
+    {
+        get {
+            return subject;
+        }
+        protected set {
+            this.subject = value;
+        }
     }
 
     /// <summary>
@@ -132,11 +138,11 @@ public abstract class SwrveBaseCampaign
 
     protected readonly DateTime swrveInitialisedTime;
     protected DateTime showMessagesAfterLaunch;
-    protected DateTime showMessagesAfterDelay {
+    protected DateTime showMessagesAfterDelay
+    {
         get {
             return this.State.ShowMessagesAfterDelay;
-        }
-        set {
+        } set {
             this.State.ShowMessagesAfterDelay = value;
         }
     }
@@ -236,31 +242,26 @@ public abstract class SwrveBaseCampaign
     /// <returns>
     /// Parsed in-app campaign.
     /// </returns>
-    public static SwrveBaseCampaign LoadFromJSON(SwrveSDK sdk, Dictionary<string, object> campaignData, DateTime initialisedTime, SwrveQAUser qaUser)
+    public static SwrveBaseCampaign LoadFromJSON(ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, DateTime initialisedTime, SwrveQAUser qaUser, UnityEngine.Color? defaultBackgroundColor)
     {
         int id = MiniJsonHelper.GetInt(campaignData, ID_KEY);
         SwrveBaseCampaign campaign = null;
 
-        if(campaignData.ContainsKey(CONVERSATION_KEY))
-        {
-            campaign = SwrveConversationCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime);
-        }
-        else if(campaignData.ContainsKey(MESSAGES_KEY))
-        {
-            campaign = SwrveMessagesCampaign.LoadFromJSON(sdk, campaignData, id, initialisedTime, qaUser);
+        if(campaignData.ContainsKey(CONVERSATION_KEY)) {
+            campaign = SwrveConversationCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime);
+        } else if(campaignData.ContainsKey(MESSAGES_KEY)) {
+            campaign = SwrveMessagesCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime, qaUser, defaultBackgroundColor);
         }
 
-        if(campaign == null)
-        {
+        if(campaign == null) {
             return null;
         }
         campaign.Id = id;
-		
+
         AssignCampaignTriggers(campaign, campaignData);
         campaign.MessageCenter = campaignData.ContainsKey(MESSAGE_CENTER_KEY) && (bool)campaignData[MESSAGE_CENTER_KEY];
 
-        if((!campaign.MessageCenter) && (campaign.GetTriggers().Count == 0))
-        {
+        if((!campaign.MessageCenter) && (campaign.GetTriggers().Count == 0)) {
             campaign.LogAndAddReason("Campaign [" + campaign.Id + "], has no triggers. Skipping this campaign.", qaUser);
             return null;
         }
@@ -269,8 +270,7 @@ public abstract class SwrveBaseCampaign
         AssignCampaignDates(campaign, campaignData);
         campaign.Subject = campaignData.ContainsKey(SUBJECT_KEY) ? (string)campaignData[SUBJECT_KEY] : "";
 
-        if(campaign.MessageCenter)
-        {
+        if(campaign.MessageCenter) {
             SwrveLog.Log(string.Format("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
         }
 
@@ -280,14 +280,6 @@ public abstract class SwrveBaseCampaign
     public abstract bool AreAssetsReady ();
 
     public abstract bool SupportsOrientation (SwrveOrientation orientation);
-
-    /// <summary>
-    /// Get all the assets in the in-app campaign messages.
-    /// </summary>
-    /// <returns>
-    /// All the assets in the in-app campaign.
-    /// </returns>
-    public abstract List<string> ListOfAssets ();
 
     protected static void AssignCampaignTriggers (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {

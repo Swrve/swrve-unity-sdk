@@ -89,11 +89,11 @@ public static class CrossPlatformFile
 #else
         using (FileStream fs = File.Open(path, FileMode.Create)) {
             using (BinaryWriter binary = new BinaryWriter(fs)) {
-              try {
-                binary.Write (bytes);
-              } catch (System.Exception ex) {
-                UnityEngine.Debug.LogError (ex);
-              }
+                try {
+                    binary.Write (bytes);
+                } catch (System.Exception ex) {
+                    UnityEngine.Debug.LogError (ex);
+                }
             }
         }
 #endif
@@ -107,11 +107,11 @@ public static class CrossPlatformFile
 #else
         using (FileStream fs = new FileStream(path, FileMode.Create)) {
             using (StreamWriter sw = new StreamWriter(fs)) {
-              try {
-                sw.Write (data);
-              } catch (System.Exception ex) {
-                UnityEngine.Debug.LogError (ex);
-              }
+                try {
+                    sw.Write (data);
+                } catch (System.Exception ex) {
+                    UnityEngine.Debug.LogError (ex);
+                }
             }
         }
 #endif

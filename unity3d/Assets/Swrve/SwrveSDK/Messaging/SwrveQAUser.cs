@@ -25,7 +25,7 @@ public class SwrveQAUser
     private readonly string loggingUrl;
     private long lastSessionRequestTime;
     private long lastTriggerRequestTime;
-    private long lastPushNotificationRequestTime;
+    private long lastPushNotificationRequestTime = 0;
 
     public readonly bool ResetDevice;
     public readonly bool Logging;
@@ -53,7 +53,8 @@ public class SwrveQAUser
         campaignMessages = new Dictionary<int, SwrveBaseMessage> ();
     }
 
-    protected string getEndpoint(string path) {
+    protected string getEndpoint(string path)
+    {
         while (path.StartsWith ("/")) {
             path = path.Substring (1);
         }
@@ -149,7 +150,7 @@ public class SwrveQAUser
         try {
             if (CanMakeTriggerRequest ()) {
                 lastTriggerRequestTime = SwrveHelper.GetMilliseconds ();
-                
+
                 Dictionary<int, string> _reasons = campaignReasons;
                 Dictionary<int, SwrveBaseMessage> _messages = campaignMessages;
                 campaignReasons = new Dictionary<int, string>();
@@ -187,7 +188,7 @@ public class SwrveQAUser
                     campaignInfo.Add ("displayed", true);
                     campaignInfo.Add (baseMessage.GetBaseMessageType() + "_id", baseMessage.Id);
                     campaignInfo.Add ("reason", string.Empty);
-                    
+
                     campaignsJson.Add (campaignInfo);
                 }
                 triggerJson.Add ("campaigns", campaignsJson);
@@ -235,13 +236,14 @@ public class SwrveQAUser
         return (swrve != null && Logging);
     }
 
-    private bool CanMakeTimedRequest(long lastTime, long intervalTime) {
+    private bool CanMakeTimedRequest(long lastTime, long intervalTime)
+    {
         if (CanMakeRequest ()) {
             if (lastTime == 0 || (SwrveHelper.GetMilliseconds () - lastTime) > SessionInterval) {
                 return true;
             }
         }
-    
+
         return false;
     }
 
@@ -268,4 +270,3 @@ public class SwrveQAUser
     }
 }
 }
-

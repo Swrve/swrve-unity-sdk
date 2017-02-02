@@ -1,6 +1,6 @@
 ﻿#if (UNITY_WSA_10_0 && SWRVE_WINDOWS_SDK)
 
-using SwrveUnityWindows;
+    using SwrveUnityWindows;
 using Swrve.Conversation;
 using System.Collections.Generic;
 using System;
@@ -8,39 +8,34 @@ using SwrveUnity.IAP;
 using SwrveUnity.Messaging;
 
 public partial class SwrveSDK
-{   
+{
     private SwrveCommon _nativeSDK;
     private string uwpPushURI;
-    
+
     private void initNative()
     {
         _nativeSDK = new SwrveCommon (this);
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-        if(config.PushNotificationEnabled)
-        {
+        if(config.PushNotificationEnabled) {
             RegisterForPush();
         }
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
     }
-    
+
     private async void RegisterForPush()
     {
         this.uwpPushURI = storage.Load(WindowsDeviceTokenSave);
         string uri = await SwrveUnityBridge.RegisterForPush(_nativeSDK);
 
-        if (!string.IsNullOrEmpty(uri))
-        {
+        if (!string.IsNullOrEmpty(uri)) {
             bool sendDeviceInfo = (this.uwpPushURI != uri);
 
-            if (sendDeviceInfo)
-            {
-                NativeCommunicationHelper.CallOnUnity(() =>
-                {
+            if (sendDeviceInfo) {
+                NativeCommunicationHelper.CallOnUnity(() => {
                     this.uwpPushURI = uri;
                     storage.Save(WindowsDeviceTokenSave, uwpPushURI);
-                    if (qaUser != null)
-                    {
+                    if (qaUser != null) {
                         qaUser.UpdateDeviceInfo();
                     }
                     SendDeviceInfo();
@@ -49,26 +44,29 @@ public partial class SwrveSDK
         }
     }
 
-    private string getNativeLanguage () {
+    private string getNativeLanguage ()
+    {
         return SwrveUnityBridge.GetAppLanguage (null);
     }
 
-    private void setNativeAppVersion () {
+    private void setNativeAppVersion ()
+    {
         config.AppVersion = SwrveUnityBridge.GetAppVersion ();
     }
 
-    private void setNativeConversationVersion () {
+    private void setNativeConversationVersion ()
+    {
         SetConversationVersion (SwrveUnityBridge.GetConversationVersion ());
     }
 
-    private void showNativeConversation (string conversation) {
+    private void showNativeConversation (string conversation)
+    {
         NativeCommunicationHelper.CallOnWindows (() => SwrveUnityBridge.ShowConversation (_nativeSDK, conversation));
     }
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)
     {
-        if (!string.IsNullOrEmpty(uwpPushURI))
-        {
+        if (!string.IsNullOrEmpty(uwpPushURI)) {
             deviceInfo["swrve.wns_uri"] = uwpPushURI;
         }
     }
@@ -76,8 +74,14 @@ public partial class SwrveSDK
     private void startNativeLocation () {}
     private void startNativeLocationAfterPermission () {}
     public void LocationUserUpdate (Dictionary<string, string> map) {}
-    public string GetPlotNotifications () { return "[]"; }
-    private bool NativeIsBackPressed () { return false; }
+    public string GetPlotNotifications ()
+    {
+        return "[]";
+    }
+    private bool NativeIsBackPressed ()
+    {
+        return false;
+    }
 
     /// <summary>
     /// Buffer the event of a purchase using real currency, where a single item
@@ -118,30 +122,24 @@ public partial class SwrveSDK
     /// </param>
     public void IapWindows(IapReceipt receipt, IapRewards rewards)
     {
-        if (config.AppStore != SwrveAppStore.Windows)
-        {
+        if (config.AppStore != SwrveAppStore.Windows) {
             throw new Exception ("This function can only be called to validate IAP events from Windows Store");
-        }
-        else
-        {
+        } else {
             string encodedReceipt = (receipt != null) ? receipt.GetBase64EncodedReceipt() : null;
-            if (receipt != null && string.IsNullOrEmpty(encodedReceipt))
-            {
+            if (receipt != null && string.IsNullOrEmpty(encodedReceipt)) {
                 SwrveLog.LogError("IAP event not sent: receipt cannot be empty for Windows Store verification");
                 return;
             }
             // Windows Store IAP is always of quantity 1
             Dictionary<string, object> json = new Dictionary<string, object>();
             json.Add("app_store", config.AppStore);
-            if (!string.IsNullOrEmpty(GetAppVersion()))
-            {
+            if (!string.IsNullOrEmpty(GetAppVersion())) {
                 json.Add("app_version", GetAppVersion());
             }
             json.Add("receipt", encodedReceipt);
             AppendEventToBuffer("iap", json);
 
-            if (config.AutoDownloadCampaignsAndResources)
-            {
+            if (config.AutoDownloadCampaignsAndResources) {
                 // Send events automatically and check for changes
                 CheckForCampaignsAndResourcesUpdates(false);
             }
@@ -151,8 +149,7 @@ public partial class SwrveSDK
     public void PushNotificationWasEngaged(string pushId, Dictionary<string, string> payload)
     {
         NamedEventInternal("Swrve.Messages.Push-" + pushId + ".engaged");
-        if (PushNotificationListener != null)
-        {
+        if (PushNotificationListener != null) {
             PushNotificationListener.OnOpenedFromPushNotification(payload);
         }
     }
@@ -173,7 +170,7 @@ public partial class SwrveSDK
 
         public void ConversationWasShownToUser(ISwrveConversationCampaign campaign)
         {
-             SwrveLog.Log("" + campaign);
+            SwrveLog.Log("" + campaign);
         }
 
         public void PushNotificationWasEngaged(string pushId, Dictionary<string, string> payload)
@@ -183,10 +180,8 @@ public partial class SwrveSDK
 
         public void TriggerConversationOpened(ISwrveConversationCampaign conversationCampaign)
         {
-            NativeCommunicationHelper.CallOnUnity(() =>
-            {
-                if (_unitySDK.GlobalConversationListener != null)
-                {
+            NativeCommunicationHelper.CallOnUnity(() => {
+                if (_unitySDK.GlobalConversationListener != null) {
                     _unitySDK.GlobalConversationListener.OnShow();
                 }
             });
@@ -194,10 +189,8 @@ public partial class SwrveSDK
 
         public void TriggerConversationClosed(ISwrveConversationCampaign conversationCampaign)
         {
-            NativeCommunicationHelper.CallOnUnity(() =>
-            {
-                if (_unitySDK.GlobalConversationListener != null)
-                {
+            NativeCommunicationHelper.CallOnUnity(() => {
+                if (_unitySDK.GlobalConversationListener != null) {
                     _unitySDK.GlobalConversationListener.OnDismiss();
                 }
             });

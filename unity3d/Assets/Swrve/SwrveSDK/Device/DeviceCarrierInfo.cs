@@ -19,7 +19,7 @@ public class DeviceCarrierInfo : ICarrierInfo
     private static readonly string PluginError = "Couldn't invoke native code to get carrier information, make sure you have the iOS plugin inside your project and you are running on a iOS device: ";
 #endif
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
     private AndroidJavaObject androidTelephonyManager;
 
     public DeviceCarrierInfo()
@@ -59,7 +59,7 @@ public class DeviceCarrierInfo : ICarrierInfo
             SwrveLog.LogWarning(PluginError + exp.ToString());
             return null;
         }
-#elif UNITY_ANDROID
+#elif UNITY_ANDROID && !UNITY_EDITOR
         return AndroidGetTelephonyManagerAttribute("getSimOperatorName");
 #else
         return null;
@@ -75,7 +75,7 @@ public class DeviceCarrierInfo : ICarrierInfo
             SwrveLog.LogWarning(PluginError + exp.ToString());
             return null;
         }
-#elif UNITY_ANDROID
+#elif UNITY_ANDROID && !UNITY_EDITOR
         return AndroidGetTelephonyManagerAttribute("getSimCountryIso");
 #else
         return null;
@@ -91,7 +91,7 @@ public class DeviceCarrierInfo : ICarrierInfo
             SwrveLog.LogWarning(PluginError + exp.ToString());
             return null;
         }
-#elif UNITY_ANDROID
+#elif UNITY_ANDROID && !UNITY_EDITOR
         return AndroidGetTelephonyManagerAttribute("getSimOperator");
 #else
         return null;
@@ -99,4 +99,3 @@ public class DeviceCarrierInfo : ICarrierInfo
     }
 }
 }
-

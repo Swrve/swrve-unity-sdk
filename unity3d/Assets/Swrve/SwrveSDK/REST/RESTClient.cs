@@ -16,6 +16,11 @@ using System.Collections.Generic;
 using SwrveUnity.Helpers;
 using System.Text;
 
+#if SUPPORTS_GZIP_RESPONSES
+using ICSharpCode.SharpZipLib.GZip;
+using ICSharpCode.SharpZipLib.Zip;
+#endif
+
 namespace SwrveUnity.REST
 {
 /// <summary>
@@ -116,7 +121,7 @@ public class RESTClient : IRESTClient
                             var buffer = new byte[dataLength];
 
                             using (var ms = new MemoryStream(www.bytes)) {
-                                using (var gs = new GZipStream(ms, CompressionMode.Decompress)) {
+                                using (var gs = new GZipInputStream(ms)) {
                                     gs.Read (buffer, 0, buffer.Length);
                                     gs.Dispose ();
                                 }
@@ -147,4 +152,3 @@ public class RESTClient : IRESTClient
     }
 }
 }
-

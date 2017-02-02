@@ -11,23 +11,21 @@ using UnityEngine;
 namespace SwrveUnity
 {
 
-  /// <summary>
-  /// Available stacks to choose from
-  /// </summary>
-  public enum Stack
-  {
-      US, EU
-  }
+/// <summary>
+/// Available stacks to choose from
+/// </summary>
+public enum Stack {
+    US, EU
+}
 
-  /// <summary>
-  /// Available stacks to choose from
-  /// </summary>
-  public enum AndroidPushProvider
-  {
-      GOOGLE_GCM, 
-      AMAZON_ADM,
-      NONE
-  }
+/// <summary>
+/// Available stacks to choose from
+/// </summary>
+public enum AndroidPushProvider {
+    GOOGLE_GCM,
+    AMAZON_ADM,
+    NONE
+}
 
 
 /// <summary>
@@ -294,7 +292,7 @@ public class SwrveConfig
     public bool LogAppleIDFV = false;
 
     /// <summary>
-    /// Log iOS IDFV as "swrve.IDFA"
+    /// Log iOS IDFV as "swrve.IDFA". This also requires the addition of the custom define 'SWRVE_LOG_IDFA' in your project settings.
     /// </summary>
     public bool LogAppleIDFA = false;
 

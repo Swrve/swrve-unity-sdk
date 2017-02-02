@@ -49,11 +49,10 @@ public class UnityWwwHelper
                 try {
                     if (!string.IsNullOrEmpty (request.text)) {
                         SwrveLog.LogError (@"Request response headers [""X-Swrve-Error""]: " +
-                            ((IDictionary<string, object>)Json.Deserialize(request.text))["message"]);
+                                           ((IDictionary<string, object>)Json.Deserialize(request.text))["message"]);
                     }
-                }
-                catch(Exception e) {
-                    
+                } catch(Exception e) {
+                    SwrveLog.LogError(e.Message);
                 }
                 return WwwDeducedError.ApplicationErrorHeader;
             }

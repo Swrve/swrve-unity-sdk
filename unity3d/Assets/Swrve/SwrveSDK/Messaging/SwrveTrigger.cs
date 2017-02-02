@@ -26,7 +26,7 @@ public class SwrveTrigger
     public bool CanTrigger (string eventName, IDictionary<string, string> payload)
     {
         return string.Equals (this.eventName, eventName, StringComparison.OrdinalIgnoreCase) &&
-            (conditions == null || conditions.Matches (payload));
+               (conditions == null || conditions.Matches (payload));
     }
 
     public static SwrveTrigger LoadFromJson (object json)
@@ -35,7 +35,7 @@ public class SwrveTrigger
         try {
             dict = (IDictionary<string, object>)json;
         } catch (Exception e) {
-            SwrveLog.LogError (string.Format ("Invalid object passed in to LoadFromJson, expected Dictionary<string, object>, received {0}", json));
+            SwrveLog.LogError (string.Format ("Invalid object passed in to LoadFromJson, expected Dictionary<string, object>, received {0}, exception: {1}", json, e.Message));
             return null;
         }
 
@@ -65,8 +65,8 @@ public class SwrveTrigger
     {
         try {
             return triggers
-                .Select (dict => LoadFromJson (dict))
-                .Where (dict => dict != null);
+                   .Select (dict => LoadFromJson (dict))
+                   .Where (dict => dict != null);
         } catch (Exception e) {
             SwrveLog.LogError (string.Format ("Error creating a list of SwrveTriggers, ex: {0}", e));
         }
@@ -87,9 +87,9 @@ public class SwrveTrigger
     public override string ToString ()
     {
         return "Trigger{" +
-        "eventName='" + eventName + '\'' +
-        ", conditions=" + conditions +
-        '}';
+               "eventName='" + eventName + '\'' +
+               ", conditions=" + conditions +
+               '}';
     }
 }
 }
