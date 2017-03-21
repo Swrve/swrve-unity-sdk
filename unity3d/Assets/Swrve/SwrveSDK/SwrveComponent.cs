@@ -70,7 +70,22 @@ public class SwrveComponent : MonoBehaviour
     public SwrveComponent ()
     {
         Config = new SwrveConfig ();
-        SDK = new SwrveSDK ();
+        bool supportedOSVersion = true;
+
+#if !UNITY_EDITOR
+#if UNITY_IPHONE
+        supportedOSVersion = SwrveSDK.IsSupportediOSVersion();
+#endif
+
+#if UNITY_ANDROID
+        supportedOSVersion = SwrveSDK.IsSupportedAndroidVersion();
+#endif
+#endif
+        if (supportedOSVersion) {
+            SDK = new SwrveSDK();
+        } else {
+            SDK = new SwrveEmpty();
+        }
     }
 
     /// <summary>
@@ -231,6 +246,7 @@ public class SwrveComponent : MonoBehaviour
 #endif
     }
 
+    // Used by the native internals. Please use the SDK object directly.
     public void SetLocationSegmentVersion(string locationSegmentVersion)
     {
         try {
@@ -240,6 +256,7 @@ public class SwrveComponent : MonoBehaviour
         }
     }
 
+    // Used by the native internals. Please use the SDK object directly.
     public void UserUpdate(string userUpdate)
     {
         try {

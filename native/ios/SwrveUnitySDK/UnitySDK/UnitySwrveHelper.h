@@ -16,5 +16,6 @@
 +(char*) GetIDFA;
 +(void) RegisterForPushNotifications:(NSString*)jsonCategorySet;
 +(void) InitPlot;
++(bool) IsSupportediOSVersion;
 
 @end

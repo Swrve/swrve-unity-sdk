@@ -1,5 +1,6 @@
 #import "UnitySwrveHelper.h"
 #import "UnitySwrveCommon.h"
+#import "ISHPermissionRequestNotificationsRemote.h"
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #import <CoreTelephony/CTCarrier.h>
 #ifdef SWRVE_LOG_IDFA
@@ -206,57 +207,29 @@
 
 +(void) RegisterForPushNotifications:(NSString*)jsonCategorySet
 {
-    UIApplication* appDelegate = [UIApplication sharedApplication];
-    NSSet* pushCategories = nil;
-#ifdef __IPHONE_8_0
-#if __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_8_0
-    // Check if the new push API is not available
-    if (![appDelegate respondsToSelector:@selector(registerUserNotificationSettings:)])
-    {
-        // Does not have iOS8 APIs
-    }
-    else
-#endif
-    {
-        pushCategories = [self categorySetFromJson:jsonCategorySet];
-        // NSLog(@"pushCategories: %@", pushCategories);
-    }
-#endif //defined(__IPHONE_8_0)
+    NSSet* pushCategories = [self categorySetFromJson:jsonCategorySet];
 
+    UIUserNotificationSettings* settings = nil;
 #if defined(__IPHONE_8_0)
 #if __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_8_0
     // Check if the new push API is not available
-    if (![appDelegate respondsToSelector:@selector(registerUserNotificationSettings:)])
+    UIApplication* app = [UIApplication sharedApplication];
+    if ([app respondsToSelector:@selector(registerUserNotificationSettings:)])
+#endif //__IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_8_0
     {
-        // Use the old API
-        [appDelegate registerForRemoteNotificationTypes:(UIUserNotificationTypeSound |
-                                                         UIUserNotificationTypeAlert |
-                                                         UIUserNotificationTypeBadge)];
+        settings = [UIUserNotificationSettings settingsForTypes:(UIUserNotificationTypeSound | UIUserNotificationTypeAlert | UIUserNotificationTypeBadge) categories:pushCategories];
     }
-    else
-#endif
-    //__IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_8_0
-    {
-        UIUserNotificationType notifType = (UIUserNotificationTypeSound |
-                                            UIUserNotificationTypeAlert |
-                                            UIUserNotificationTypeBadge);
-        // NSLog(@"\n\nregisterFornNotifications:\n\n%lu\n\n%@\n", (unsigned long)notifType, pushCategories);
-        [appDelegate registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:notifType
-                                                                                        categories:pushCategories]];
-        [appDelegate registerForRemoteNotifications];
-    }
-#else
-
-    // Not building with the latest XCode that contains iOS 8 definitions
-    [appDelegate registerForRemoteNotificationTypes:(UIUserNotificationTypeSound |
-                                                     UIUserNotificationTypeAlert |
-                                                     UIUserNotificationTypeBadge)];
 #endif //defined(__IPHONE_8_0)
+    [ISHPermissionRequestNotificationsRemote registerForRemoteNotifications:settings];
 }
 
 +(void) InitPlot
 {
     [[UnitySwrveCommonDelegate sharedInstance] initLocation];
+}
+
++ (bool) IsSupportediOSVersion {
+    return [SwrveCommon supportedOS];
 }
 
 @end

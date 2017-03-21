@@ -10,6 +10,7 @@ import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import com.plotprojects.retail.android.Plot;
 import com.swrve.sdk.conversations.ui.ConversationActivity;
+import com.swrve.sdk.messaging.SwrveOrientation;
 import com.unity3d.player.UnityPlayer;
 
 import org.json.JSONException;
@@ -52,6 +53,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     public final static String EVENT_KEY = "event";
     public final static String NAME_KEY = "name";
     public final static String CONVERSATION_KEY = "conversation";
+    public final static String ORIENTATION_KEY = "orientation";
     public final static String PAGE_KEY = "page";
 
     public final static String SHARED_PREFERENCE_FILENAME = "swrve_unity_json_data";
@@ -334,6 +336,11 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         sendMessageUp(UNITY_USER_UPDATE, gson.toJson(attributes));
     }
 
+    @Override
+    public void sendQueuedEvents() {
+        // no operation, events will be send when the game is focused again
+    }
+
     private void sendMessageUp(String method, String msg)
     {
         UnityPlayer.UnitySendMessage(getPrefabName(), method, msg);
@@ -415,21 +422,23 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     }
 
     @CalledByUnity
-    public void showConversation(String conversation) {
+    public void showConversation(String conversationJson, String orientation) {
         try {
-            Intent intent = new Intent(context.get(), ConversationActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.putExtra(CONVERSATION_KEY, new SwrveBaseConversation(new JSONObject(conversation), cacheDir));
-            context.get().startActivity(intent);
-        }
-        catch (JSONException exc) {
-            SwrveLogger.e(LOG_TAG, "Could not JSONify conversation, conversation string didn't have the correct structure.");
+            SwrveBaseConversation conversation = new SwrveBaseConversation(new JSONObject(conversationJson), cacheDir);
+            ConversationActivity.showConversation(context.get(), conversation, SwrveOrientation.parse(orientation));
+        } catch (Exception exc) {
+            SwrveLogger.e(LOG_TAG, "Could not JSONify conversation (or another error), conversation string didn't have the correct structure.");
         }
     }
 
     @CalledByUnity
     public int getConversationVersion() {
         return ISwrveConversationSDK.CONVERSATION_VERSION;
+    }
+
+    @CalledByUnity
+    public static boolean sdkAvailable() {
+      return SwrveHelper.sdkAvailable();
     }
 
     @Override

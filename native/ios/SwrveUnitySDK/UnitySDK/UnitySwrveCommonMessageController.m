@@ -44,50 +44,19 @@
     return [SwrveBaseConversation fromJSON:jsonDict forController:self];
 }
 
--(void) showConversationFromString:(NSString*)conversation
-{
-    [self showConversation:[self conversationFromString:conversation]];
-}
-
--(void) showConversation:(SwrveBaseConversation*)conversation
-{
-    @synchronized(self) {
-        if ( conversation && self.conversationWindow == nil ) {
-            // Create a view to show the conversation
-            
-            @try {
-                UIStoryboard* storyBoard = [SwrveBaseConversation loadStoryboard];
-                SwrveConversationItemViewController* scivc = [storyBoard instantiateViewControllerWithIdentifier:@"SwrveConversationItemViewController"];
-                self.swrveConversationItemViewController = scivc;
-            }
-            @catch (NSException *exception) {
-                DebugLog(@"Unable to load Conversation Item View Controller. %@", exception);
-                return;
-            }
-            
+- (void)showConversationFromString:(NSString *)conversationJson {
+    @synchronized (self) {
+        SwrveBaseConversation *conversation = [self conversationFromString:conversationJson];
+        if (conversation && self.conversationWindow == nil) {
             self.conversationWindow = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-            [self.swrveConversationItemViewController setConversation:conversation
-                                                 andMessageController:self];
-            
-            // Create a navigation controller in which to push the conversation, and choose iPad presentation style
-            SwrveConversationsNavigationController *svnc =
-                [[SwrveConversationsNavigationController alloc] initWithRootViewController:self.swrveConversationItemViewController];
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wselector"
-            // Attach cancel button to the conversation navigation options
-            UIBarButtonItem *cancelButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
-                                                                                          target:self.swrveConversationItemViewController
-                                                                                          action:@selector(cancelButtonTapped:)];
-#pragma clang diagnostic pop
-            self.swrveConversationItemViewController.navigationItem.leftBarButtonItem = cancelButton;
-            
-            dispatch_async(dispatch_get_main_queue(), ^{
-                SwrveConversationContainerViewController* rootController = [[SwrveConversationContainerViewController alloc] initWithChildViewController:svnc];
-                self.conversationWindow.rootViewController = rootController;
-                [self.conversationWindow makeKeyAndVisible];
-                [self.conversationWindow.rootViewController.view endEditing:YES];
-            });
-            
+            self.swrveConversationItemViewController = [SwrveConversationItemViewController initFromStoryboard];
+            bool success = [SwrveConversationItemViewController showConversation:conversation
+                                                              withItemController:self.swrveConversationItemViewController
+                                                                withEventHandler:(id <SwrveMessageEventHandler>) self
+                                                                        inWindow:self.conversationWindow];
+            if (!success) {
+                self.conversationWindow = nil;
+            }
         }
     }
 }

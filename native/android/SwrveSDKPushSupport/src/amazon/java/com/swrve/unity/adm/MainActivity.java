@@ -1,6 +1,5 @@
 package com.swrve.unity.adm;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -11,18 +10,17 @@ public class MainActivity extends UnityPlayerActivity {
     @Override
     protected void onCreate(Bundle arg0) {
         super.onCreate(arg0);
-        processIntent(getApplicationContext(), getIntent());
+        processIntent(getIntent());
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        processIntent(getApplicationContext(), intent);
+        processIntent(intent);
     }
 
-    public static void processIntent(Context context, Intent intent) {
+    public static void processIntent(Intent intent) {
         // Process intent that launched resumed activity
-        SwrveAdmPushSupport.processIntent(context, intent);
+        SwrveAdmIntentService.processIntent(intent);
     }
 }
-

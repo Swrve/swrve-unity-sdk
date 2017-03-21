@@ -23,11 +23,13 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:support-v4:' + project.ANDROID_DESIGN_TOOLS_VERSION
     compile 'com.google.code.gson:gson:2.2.+'
+    compile project(':SwrveSDKPush')
+    compile project(':UnityFacade')
+
     googleCompile 'com.google.android.gms:play-services-base:' + project.GOOGLE_GMS_TOOLS_VERSION
     googleCompile 'com.google.android.gms:play-services-basement:' + project.GOOGLE_GMS_TOOLS_VERSION
     googleCompile 'com.google.android.gms:play-services-gcm:' + project.GOOGLE_GMS_TOOLS_VERSION
     googleCompile 'com.google.android.gms:play-services-ads:' + project.GOOGLE_GMS_TOOLS_VERSION
-    compile project(':UnityFacade')
 
     //This file is not distributed with Swrve source code.
     //If compiling amazon flavour from source you should download

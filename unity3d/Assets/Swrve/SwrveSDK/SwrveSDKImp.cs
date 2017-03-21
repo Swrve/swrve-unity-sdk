@@ -1282,7 +1282,6 @@ public partial class SwrveSDK
                             continue;
                         }
 
-                        SwrveLog.Log( "added campaign id: " + campaign.Id + " type: " + campaign.GetType() + " triggers: " + campaign.GetTriggers() );
                         if (campaign.GetType() == typeof(SwrveConversationCampaign)) {
                             SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign) campaign;
                             assetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);

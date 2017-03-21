@@ -23,13 +23,16 @@ import java.util.LinkedList;
 import com.amazon.device.messaging.ADMMessageHandlerBase;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.swrve.sdk.SwrvePushConstants;
+import com.swrve.sdk.SwrvePushSDK;
+import com.swrve.unity.SwrveNotification;
+import com.swrve.unity.SwrvePushSupport;
 import com.unity3d.player.UnityPlayer;
 
 public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     private final static String TAG = "SwrveAdm";
     private final static String AMAZON_RECENT_PUSH_IDS = "recent_push_ids";
     private final static String AMAZON_PREFERENCES = "swrve_amazon_unity_pref";
-    private final static String UNITY_ACTIVITY_CLASS_NAME = "com.unity3d.player.UnityPlayerNativeActivity";
 
     protected final int DEFAULT_PUSH_ID_CACHE_SIZE = 16;
 
@@ -57,7 +60,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
 
     @Override
     protected void onRegistrationError(final String string) {
-        //This is considered fatal for ADM
+        // This is considered fatal for ADM
         Log.e(TAG, "ADM Registration Error. Error string: " + string);
     }
 
@@ -73,35 +76,29 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         Log.i(TAG, "ADM Unregistered. RegistrationId: " + registrationId);
     }
 
-    private static boolean isSwrveRemoteNotification(final Bundle msg) {
-        Object rawId = msg.get(SwrveAdmHelper.SWRVE_TRACKING_KEY);
-        String msgId = (rawId != null) ? rawId.toString() : null;
-        return !SwrveAdmHelper.isNullOrEmpty(msgId);
-    }
-
     private void processRemoteNotification(Bundle msg) {
         try {
-            if (!isSwrveRemoteNotification(msg)) {
-                Log.i(TAG, "ADM notification: but not processing as it doesn't contain:" + SwrveAdmHelper.SWRVE_TRACKING_KEY);
+            if (!SwrvePushSDK.isSwrveRemoteNotification(msg)) {
+                Log.i(TAG, "ADM notification: but not processing as it doesn't contain:" + SwrvePushConstants.SWRVE_TRACKING_KEY);
                 return;
             }
 
-            //Deduplicate notification
-            //Get tracking key
-            Object rawId = msg.get(SwrveAdmHelper.SWRVE_TRACKING_KEY);
+            // Deduplicate notification
+            // Get tracking key
+            Object rawId = msg.get(SwrvePushConstants.SWRVE_TRACKING_KEY);
             String msgId = (rawId != null) ? rawId.toString() : null;
 
-            final String timestamp = msg.getString(SwrveAdmHelper.TIMESTAMP_KEY);
+            final String timestamp = msg.getString(SwrvePushConstants.TIMESTAMP_KEY);
             if (SwrveAdmHelper.isNullOrEmpty(timestamp)) {
-                Log.e(TAG, "ADM notification: but not processing as it's missing " + SwrveAdmHelper.TIMESTAMP_KEY);
+                Log.e(TAG, "ADM notification: but not processing as it's missing " + SwrvePushConstants.TIMESTAMP_KEY);
                 return;
             }
 
-            //Check for duplicates. This is a necessary part of using ADM which might clone
-            //a message as part of attempting to deliver it. We de-dupe by
-            //checking against the tracking id and timestamp. (Multiple pushes with the same
-            //tracking id are possible in some scenarios from Swrve).
-            //Id is concatenation of tracking key and timestamp "$_p:$_s.t"
+            // Check for duplicates. This is a necessary part of using ADM which might clone
+            // a message as part of attempting to deliver it. We de-dupe by
+            // checking against the tracking id and timestamp. (Multiple pushes with the same
+            // tracking id are possible in some scenarios from Swrve).
+            // Id is concatenation of tracking key and timestamp "$_p:$_s.t"
             String curId = msgId + ":" + timestamp;
             LinkedList<String> recentIds = getRecentNotificationIdCache();
             if (recentIds.contains(curId)) {
@@ -110,28 +107,20 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
                 return;
             }
 
-            //Try get de-dupe cache size
-            int pushIdCacheSize = msg.getInt(SwrveAdmHelper.PUSH_ID_CACHE_SIZE_KEY, DEFAULT_PUSH_ID_CACHE_SIZE);
+            // Try get de-dupe cache size
+            int pushIdCacheSize = msg.getInt(SwrvePushConstants.PUSH_ID_CACHE_SIZE_KEY, DEFAULT_PUSH_ID_CACHE_SIZE);
 
-            //No duplicate found. Update the cache.
+            // No duplicate found. Update the cache.
             updateRecentNotificationIdCache(recentIds, curId, pushIdCacheSize);
 
             final SharedPreferences prefs = SwrveAdmPushSupport.getAdmPreferences(getApplicationContext());
-            String activityClassName = prefs.getString(SwrveAdmPushSupport.PROPERTY_ACTIVITY_NAME, null);
-            if (SwrveAdmHelper.isNullOrEmpty(activityClassName)) {
-                activityClassName = UNITY_ACTIVITY_CLASS_NAME;
-            }
-
-            // Process activity name (could be local or a class with a package name)
-            if(!activityClassName.contains(".")) {
-                activityClassName = getPackageName() + "." + activityClassName;
-            }
+            String activityClassName = SwrvePushSupport.getActivityClassName(getApplicationContext(), prefs);
 
             // Only call this listener if there is an activity running
             if (UnityPlayer.currentActivity != null) {
                 // Call Unity SDK MonoBehaviour container
                 SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
-                SwrveAdmPushSupport.newReceivedNotification(UnityPlayer.currentActivity, swrveNotification);
+                SwrveAdmPushSupport.newReceivedNotification(SwrveAdmPushSupport.getGameObject(UnityPlayer.currentActivity), SwrveAdmPushSupport.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
             }
 
             // Process notification
@@ -152,18 +141,18 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     }
 
     private void updateRecentNotificationIdCache(LinkedList<String> recentIds, String newId, int maxCacheSize) {
-        //Update queue
+        // Update queue
         recentIds.add(newId);
 
-        //This must be at least zero;
+        // This must be at least zero;
         maxCacheSize = Math.max(0, maxCacheSize);
 
-        //Maintain cache size limit
+        // Maintain cache size limit
         while (recentIds.size() > maxCacheSize) {
             recentIds.remove();
         }
 
-        //Store latest queue to shared preferences
+        // Store latest queue to shared preferences
         Context context = getApplicationContext();
         Gson gson = new Gson();
         String recentNotificationsJson = gson.toJson(recentIds);
@@ -175,7 +164,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         try {
             // Put the message into a notification and post it.
             final NotificationManager mNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
-            
+
             final PendingIntent contentIntent = createPendingIntent(msg, activityClassName);
             if (contentIntent == null) {
                 Log.e(TAG, "Error processing ADM push notification. Unable to create intent");
@@ -219,86 +208,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     private NotificationCompat.Builder createNotificationBuilder(String msgText, Bundle msg) {
         Context context = getApplicationContext();
         SharedPreferences prefs = SwrveAdmPushSupport.getAdmPreferences(context);
-        Resources res = getResources();
-        String pushTitle = prefs.getString(SwrveAdmPushSupport.PROPERTY_APP_TITLE, null);
-        String iconResourceName = prefs.getString(SwrveAdmPushSupport.PROPERTY_ICON_ID, null);
-        String materialIconName = prefs.getString(SwrveAdmPushSupport.PROPERTY_MATERIAL_ICON_ID, null);
-        String largeIconName = prefs.getString(SwrveAdmPushSupport.PROPERTY_LARGE_ICON_ID, null);
-        int accentColor = prefs.getInt(SwrveAdmPushSupport.PROPERTY_ACCENT_COLOR, -1);
-
-        PackageManager packageManager = context.getPackageManager();
-        ApplicationInfo app = null;
-        try {
-            app = packageManager.getApplicationInfo(getPackageName(), 0);
-        } catch (Exception exp) {
-            exp.printStackTrace();
-        }
-
-        int iconId = 0;
-        if (SwrveAdmHelper.isNullOrEmpty(iconResourceName)) {
-            // Default to the application icon
-            if (app != null) {
-                iconId = app.icon;
-            }
-        } else {
-            iconId = res.getIdentifier(iconResourceName, "drawable", getPackageName());
-        }
-
-        int finalIconId = iconId;
-        boolean mustUseMaterialDesignIcon = (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP);
-        if (SwrveAdmHelper.isNullOrEmpty(materialIconName)) {
-            // No material (Android L+) icon configured
-            Log.w(TAG, "No material icon specified. We recommend setting a special material icon for Android L+");
-        } else if(mustUseMaterialDesignIcon) {
-            // Running on Android L+
-            finalIconId = res.getIdentifier(materialIconName, "drawable", getPackageName());
-        }
-
-        if (SwrveAdmHelper.isNullOrEmpty(pushTitle)) {
-            if (app != null) {
-                // No configured push title
-                CharSequence appTitle = app.loadLabel(packageManager);
-                if (appTitle != null) {
-                    // Default to the application title
-                    pushTitle = appTitle.toString();
-                }
-            }
-            if (SwrveAdmHelper.isNullOrEmpty(pushTitle)) {
-                pushTitle = "Configure your app title";
-            }
-        }
-
-        // Build notification
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
-                .setSmallIcon(finalIconId)
-                .setContentTitle(pushTitle)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(msgText))
-                .setContentText(msgText)
-                .setTicker(msgText)
-                .setAutoCancel(true);
-
-        if (largeIconName != null) {
-            int largeIconId = res.getIdentifier(largeIconName, "drawable", getPackageName());
-            Bitmap largeIconBitmap = BitmapFactory.decodeResource(getResources(), largeIconId);
-            builder.setLargeIcon(largeIconBitmap);
-        }
-
-        if (accentColor >= 0) {
-            builder.setColor(accentColor);
-        }
-
-        String msgSound = msg.getString("sound");
-        if (!SwrveAdmHelper.isNullOrEmpty(msgSound)) {
-            Uri soundUri;
-            if (msgSound.equalsIgnoreCase("default")) {
-                soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-            } else {
-                String packageName = getApplicationContext().getPackageName();
-                soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + packageName + "/raw/" + msgSound);
-            }
-            builder.setSound(soundUri);
-        }
-        return builder;
+        return SwrvePushSupport.createNotificationBuilder(context, prefs, msgText, msg);
     }
 
     private PendingIntent createPendingIntent(Bundle msg, String activityClassName) {
@@ -311,15 +221,24 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     }
 
     private Intent createIntent(Bundle msg, String activityClassName) {
-        try {
-            Intent intent = new Intent(this, Class.forName(activityClassName));
-            intent.putExtra("notification", msg);
-            intent.setAction("openActivity");
-            return intent;
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        return SwrvePushSupport.createIntent(this, msg, activityClassName);
+    }
+
+    protected static void processIntent(Intent intent) {
+        if (intent == null) {
+            return;
         }
-        return null;
+        try {
+            Bundle extras = intent.getExtras();
+            if (extras != null && !extras.isEmpty()) {
+                Bundle msg = extras.getBundle(SwrvePushSupport.NOTIFICATION_PAYLOAD_KEY);
+                if (msg != null) {
+                    SwrveNotification notification = SwrveNotification.Builder.build(msg);
+                    SwrveAdmPushSupport.newOpenedNotification(SwrveAdmPushSupport.getGameObject(UnityPlayer.currentActivity), SwrveAdmPushSupport.ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD, notification);
+                }
+            }
+        } catch(Exception ex) {
+            Log.e(TAG, "Could not process push notification intent", ex);
+        }
     }
 }
-

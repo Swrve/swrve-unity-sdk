@@ -3,23 +3,18 @@ package com.swrve.unity.gcm;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ContentResolver;
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import java.util.Date;
 
 import com.google.android.gms.gcm.GcmListenerService;
+import com.swrve.sdk.SwrvePushSDK;
+import com.swrve.unity.SwrveNotification;
+import com.swrve.unity.SwrvePushSupport;
 import com.unity3d.player.UnityPlayer;
 
 public class SwrveGcmIntentService extends GcmListenerService {
@@ -30,31 +25,17 @@ public class SwrveGcmIntentService extends GcmListenerService {
 		processRemoteNotification(data);
 	}
 
-	private static boolean isSwrveRemoteNotification(final Bundle msg) {
-		Object rawId = msg.get("_p");
-		String msgId = (rawId != null) ? rawId.toString() : null;
-		return msgId != null && !msgId.equals("");
-     }
-
 	private void processRemoteNotification(Bundle msg) {
 		try {
-			if (isSwrveRemoteNotification(msg)) {
+			if (SwrvePushSDK.isSwrveRemoteNotification(msg)) {
 				final SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(getApplicationContext());
-				String activityClassName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_ACTIVITY_NAME, null);
-				if (isEmptyString(activityClassName)) {
-					activityClassName = "com.unity3d.player.UnityPlayerNativeActivity";
-				}
-				
-				// Process activity name (could be local or a class with a package name)
-				if(!activityClassName.contains(".")) {
-					activityClassName = getPackageName() + "." + activityClassName;
-				}
+				String activityClassName = SwrvePushSupport.getActivityClassName(getApplicationContext(), prefs);
 				
 				// Only call this listener if there is an activity running
 				if (UnityPlayer.currentActivity != null) {
 					// Call Unity SDK MonoBehaviour container
 					SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
-					SwrveGcmDeviceRegistration.newReceivedNotification(UnityPlayer.currentActivity, swrveNotification);
+					SwrveGcmDeviceRegistration.newReceivedNotification(SwrveGcmDeviceRegistration.getGameObject(UnityPlayer.currentActivity), SwrveGcmDeviceRegistration.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
 		    	}
 		
 				// Process notification
@@ -118,86 +99,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	public NotificationCompat.Builder createNotificationBuilder(String msgText, Bundle msg) {
 		Context context = getApplicationContext();
 		SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(context);
-		Resources res = getResources();
-		String pushTitle = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_APP_TITLE, null);
-		String iconResourceName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_ICON_ID, null);
-		String materialIconName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_MATERIAL_ICON_ID, null);
-		String largeIconName = prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_LARGE_ICON_ID, null);
-		int accentColor = prefs.getInt(SwrveGcmDeviceRegistration.PROPERTY_ACCENT_COLOR, -1);
-
-		PackageManager packageManager = context.getPackageManager();
-		ApplicationInfo app = null;
-		try {
-			app = packageManager.getApplicationInfo(getPackageName(), 0);
-		} catch (Exception exp) {
-			exp.printStackTrace();
-		}
-
-		int iconId = 0;
-		if (isEmptyString(iconResourceName)) {
-			// Default to the application icon
-			if (app != null) {
-				iconId = app.icon;
-			}
-		} else {
-			iconId = res.getIdentifier(iconResourceName, "drawable", getPackageName());
-		}
-
-		int finalIconId = iconId;
-		boolean mustUseMaterialDesignIcon = (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP);
-		if (isEmptyString(materialIconName)) {
-			// No material (Android L+) icon configured
-			Log.w(LOG_TAG, "No mateiral icon specified. We recommend setting a special material icon for Android L+");
-		} else if(mustUseMaterialDesignIcon) {
-			// Running on Android L+
-			finalIconId = res.getIdentifier(materialIconName, "drawable", getPackageName());
-		}
-
-		if (isEmptyString(pushTitle)) {
-			if (app != null) {
-				// No configured push title
-				CharSequence appTitle = app.loadLabel(packageManager);
-				if (appTitle != null) {
-					// Default to the application title
-					pushTitle = appTitle.toString();
-				}
-			}
-			if (isEmptyString(pushTitle)) {
-				pushTitle = "Configure your app title";
-			}
-		}
-
-		// Build notification
-		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-				.setSmallIcon(finalIconId)
-				.setContentTitle(pushTitle)
-				.setStyle(new NotificationCompat.BigTextStyle().bigText(msgText))
-				.setContentText(msgText)
-				.setTicker(msgText)
-				.setAutoCancel(true);
-
-		if (largeIconName != null) {
-			int largeIconId = res.getIdentifier(largeIconName, "drawable", getPackageName());
-			Bitmap largeIconBitmap = BitmapFactory.decodeResource(getResources(), largeIconId);
-			mBuilder.setLargeIcon(largeIconBitmap);
-		}
-
-		if (accentColor >= 0) {
-			mBuilder.setColor(accentColor);
-		}
-
-		String msgSound = msg.getString("sound");
-		if (!isEmptyString(msgSound)) {
-			Uri soundUri;
-			if (msgSound.equalsIgnoreCase("default")) {
-				soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-			} else {
-				String packageName = getApplicationContext().getPackageName();
-				soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + packageName + "/raw/" + msgSound);
-			}
-			mBuilder.setSound(soundUri);
-		}
-		return mBuilder;
+		return SwrvePushSupport.createNotificationBuilder(context, prefs, msgText, msg);
 	}
 
 	private static boolean isEmptyString(String str) {
@@ -269,15 +171,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	 * @return
 	 */
 	public Intent createIntent(Bundle msg, String activityClassName) {
-		try {
-			Intent intent = new Intent(this, Class.forName(activityClassName));
-			intent.putExtra("notification", msg);
-			intent.setAction("openActivity");
-			return intent;
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		return null;
+		return SwrvePushSupport.createIntent(this, msg, activityClassName);
 	}
 	
 	/**
@@ -293,10 +187,10 @@ public class SwrveGcmIntentService extends GcmListenerService {
 			try {
 				Bundle extras = intent.getExtras();
 				if (extras != null && !extras.isEmpty()) {
-					Bundle msg = extras.getBundle("notification");
+					Bundle msg = extras.getBundle(SwrvePushSupport.NOTIFICATION_PAYLOAD_KEY);
 					if (msg != null) {
 						SwrveNotification notification = SwrveNotification.Builder.build(msg);
-						SwrveGcmDeviceRegistration.newOpenedNotification(context, notification);
+						SwrveGcmDeviceRegistration.newOpenedNotification(SwrveGcmDeviceRegistration.getGameObject(UnityPlayer.currentActivity), SwrveGcmDeviceRegistration.ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD, notification);
 					}
 				}
 			} catch(Exception ex) {

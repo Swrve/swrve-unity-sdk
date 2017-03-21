@@ -1,18 +1,18 @@
-package com.swrve.unity.gcm;
+package com.swrve.unity;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.os.Bundle;
 
-public class SwrveNotification {
+import com.swrve.sdk.SwrvePushSDK;
 
-	private static final String SWRVE_PUSH_IDENTIFIER = "_p";
+public class SwrveNotification {
 	
 	public static class Builder {
 		public static SwrveNotification build(Bundle msg) {
-			if (msg.containsKey(SWRVE_PUSH_IDENTIFIER)) {
-				String id = msg.get(SWRVE_PUSH_IDENTIFIER).toString();
+			String id = SwrvePushSDK.getSwrveId(msg);
+			if (id != null) {
 				return new SwrveNotification(id, msg);
 			}
 			

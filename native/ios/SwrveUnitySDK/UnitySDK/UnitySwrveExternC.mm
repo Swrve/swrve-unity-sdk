@@ -94,6 +94,11 @@ extern "C"
         return [UnitySwrveHelper NSStringCopy:[[UnitySwrveCommonDelegate sharedInstance] GetPlotNotifications]];
     }
     
+    bool _swrveiOSIsSupportedOSVersion()
+    {
+        return [UnitySwrveHelper IsSupportediOSVersion];
+    }
+    
 #ifdef __cplusplus
 }
 #endif

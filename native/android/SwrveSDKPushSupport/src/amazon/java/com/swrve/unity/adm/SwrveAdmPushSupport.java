@@ -1,43 +1,27 @@
 package com.swrve.unity.adm;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Bundle;
 import android.util.Log;
 
 import com.amazon.device.messaging.ADM;
+import com.swrve.unity.SwrvePushSupport;
 import com.unity3d.player.UnityPlayer;
 
-public class SwrveAdmPushSupport {
+public class SwrveAdmPushSupport extends SwrvePushSupport {
     private static final String TAG = "SwrveAdmRegistration";
     private static final int VERSION = 1;
 
-    public static final String PROPERTY_ACTIVITY_NAME = "activity_name";
-    public static final String PROPERTY_GAME_OBJECT_NAME = "game_object_name";
+    private static final String PROPERTY_PUSH_CONFIG_VERSION = "push_config_version";
+    private static final String PROPERTY_PUSH_CONFIG_VERSION_VAL = "1";
 
-    public static final String PROPERTY_APP_TITLE = "app_title";
-    public static final String PROPERTY_ICON_ID = "icon_id";
-    public static final String PROPERTY_MATERIAL_ICON_ID = "material_icon_id";
-    public static final String PROPERTY_LARGE_ICON_ID = "large_icon_id";
-    public static final String PROPERTY_ACCENT_COLOR = "accent_color";
-    public static final String PROPERTY_PUSH_CONFIG_VERSION = "push_config_version";
-    public static final String PROPERTY_PUSH_CONFIG_VERSION_VAL = "1";
-
-    //Method names used when sending message from this plugin to Unity class "SwrveSDK/SwrveComponent.cs"
+    // Method names used when sending message from this plugin to Unity class "SwrveSDK/SwrveComponent.cs"
     public static final String ON_DEVICE_REGISTERED_METHOD = "OnDeviceRegisteredADM";
     public static final String ON_NOTIFICATION_RECEIVED_METHOD = "OnNotificationReceivedADM";
     public static final String ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD = "OnOpenedFromPushNotificationADM";
 
-    public static String lastGameObjectRegistered;
-    public static List<SwrveNotification> receivedNotifications = new ArrayList<SwrveNotification>();
-    public static List<SwrveNotification> openedNotifications = new ArrayList<SwrveNotification>();
-
+    // Called by Unity
     public static int getVersion() {
         return VERSION;
     }
@@ -53,6 +37,7 @@ public class SwrveAdmPushSupport {
         return admAvailable;
     }
 
+    // Called by Unity
     public static boolean initialiseAdm(final String gameObject, final String appTitle, final String iconId, final String materialIconId, final String largeIconId, final int accentColor) {
         if (!isAdmAvailable()) {
             Log.e(TAG, "Won't initialise ADM. ADM class not found.");
@@ -64,7 +49,6 @@ public class SwrveAdmPushSupport {
             return false;
         }
 
-        lastGameObjectRegistered = gameObject;
         final Activity activity = UnityPlayer.currentActivity;
         try {
             saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
@@ -79,7 +63,7 @@ public class SwrveAdmPushSupport {
                 Log.i(TAG, "adm.getRegistrationId() returned: " + registrationId);
                 notifySDKOfRegistrationId(gameObject, registrationId);
             }
-            sdkIsReadyToReceivePushNotifications(activity);
+            sdkIsReadyToReceivePushNotifications(getGameObject(context), ON_NOTIFICATION_RECEIVED_METHOD, ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD);
         } catch (Exception ex) {
             Log.e(TAG, "Couldn't obtain the ADM registration id for the device", ex);
             return false;
@@ -100,57 +84,19 @@ public class SwrveAdmPushSupport {
         editor.putString(PROPERTY_MATERIAL_ICON_ID, materialIconId);
         editor.putString(PROPERTY_LARGE_ICON_ID, largeIconId);
         editor.putInt(PROPERTY_ACCENT_COLOR, accentColor);
-        editor.commit();
+        editor.apply();
     }
 
-    public static SharedPreferences getAdmPreferences(Context context) {
+    static SharedPreferences getAdmPreferences(Context context) {
         return context.getSharedPreferences(context.getPackageName() + "_swrve_adm_push", Context.MODE_PRIVATE);
     }
 
-    private static String getGameObject(Context context) {
+    static String getGameObject(Context context) {
         final SharedPreferences prefs = getAdmPreferences(context);
         return prefs.getString(PROPERTY_GAME_OBJECT_NAME, "SwrveComponent");
     }
 
-    public static void sdkIsReadyToReceivePushNotifications(final Context context) {
-        synchronized(receivedNotifications) {
-            // Send pending received notifications to SDK instance
-            for(SwrveNotification notification : receivedNotifications) {
-                notifySDKOfReceivedNotification(context, notification);
-            }
-            // Remove right away as SDK is initialized
-            receivedNotifications.clear();
-        }
-
-        synchronized(openedNotifications) {
-            // Send pending opened notifications to SDK instance
-            for(SwrveNotification notification : openedNotifications) {
-                notifySDKOfOpenedNotification(context, notification);
-            }
-            // Remove right away as SDK is initialized
-            openedNotifications.clear();
-        }
-    }
-
-    public static void newReceivedNotification(Context context, SwrveNotification notification) {
-        if (notification != null) {
-            synchronized(receivedNotifications) {
-                receivedNotifications.add(notification);
-                notifySDKOfReceivedNotification(context, notification);
-            }
-        }
-    }
-
-    public static void newOpenedNotification(Context context, SwrveNotification notification) {
-        if (notification != null) {
-            synchronized(openedNotifications) {
-                openedNotifications.add(notification);
-                notifySDKOfOpenedNotification(context, notification);
-            }
-        }
-    }
-
-    public static void onPushTokenUpdated(Context context, String registrationId) {
+    static void onPushTokenUpdated(Context context, String registrationId) {
         String gameObject = getGameObject(context);
         if (SwrveAdmHelper.isNullOrEmpty(gameObject)) {
             Log.e(TAG, "Token has been updated, but can't inform UnitySDK because gameObject is empty");
@@ -162,60 +108,5 @@ public class SwrveAdmPushSupport {
     private static void notifySDKOfRegistrationId(String gameObject, String registrationId) {
         // Call Unity SDK MonoBehaviour container
         UnityPlayer.UnitySendMessage(gameObject, ON_DEVICE_REGISTERED_METHOD, registrationId);
-    }
-
-    private static void notifySDKOfReceivedNotification(Context context, SwrveNotification notification) {
-        String gameObject = getGameObject(context);
-        String serializedNotification = notification.toJson();
-        if (serializedNotification != null) {
-            UnityPlayer.UnitySendMessage(gameObject, ON_NOTIFICATION_RECEIVED_METHOD, serializedNotification.toString());
-        }
-    }
-
-    private static void notifySDKOfOpenedNotification(Context context, SwrveNotification notification) {
-        String gameObject = getGameObject(context);
-        String serializedNotification = notification.toJson();
-        if (serializedNotification != null) {
-            UnityPlayer.UnitySendMessage(gameObject, ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD, serializedNotification.toString());
-        }
-    }
-
-    public static void sdkAcknowledgeReceivedNotification(String id) {
-        removeFromCollection(id, receivedNotifications);
-    }
-
-    public static void sdkAcknowledgeOpenedNotification(String id) {
-        removeFromCollection(id, openedNotifications);
-    }
-
-    private static void removeFromCollection(String id, List<SwrveNotification> collection) {
-        synchronized(collection) {
-            // Remove acknowledge notification
-            Iterator<SwrveNotification> it = collection.iterator();
-            while(it.hasNext()) {
-                SwrveNotification notification = it.next();
-                if (notification.getId().equals(id)) {
-                    it.remove();
-                }
-            }
-        }
-    }
-
-    protected static void processIntent(Context context, Intent intent) {
-        if (intent == null) {
-            return;
-        }
-        try {
-            Bundle extras = intent.getExtras();
-            if (extras != null && !extras.isEmpty()) {
-                Bundle msg = extras.getBundle("notification");
-                if (msg != null) {
-                    SwrveNotification notification = SwrveNotification.Builder.build(msg);
-                    SwrveAdmPushSupport.newOpenedNotification(context, notification);
-                }
-            }
-        } catch(Exception ex) {
-            Log.e(TAG, "Could not process push notification intent", ex);
-        }
     }
 }

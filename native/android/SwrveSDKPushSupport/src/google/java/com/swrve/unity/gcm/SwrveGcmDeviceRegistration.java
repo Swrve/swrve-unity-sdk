@@ -1,10 +1,5 @@
 package com.swrve.unity.gcm;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -18,32 +13,31 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.iid.InstanceID;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
+import com.swrve.unity.SwrvePushSupport;
 import com.unity3d.player.UnityPlayer;
 
-public class SwrveGcmDeviceRegistration {
+public class SwrveGcmDeviceRegistration extends SwrvePushSupport {
 	private static final String LOG_TAG = "SwrveGcmRegistration";
 	private static final int VERSION = 4;
 
-    public static final String PROPERTY_REG_ID = "registration_id";
-    public static final String PROPERTY_APP_VERSION = "appVersion";
-    public static final String PROPERTY_ACTIVITY_NAME = "activity_name";
-    public static final String PROPERTY_GAME_OBJECT_NAME = "game_object_name";
+    private static final String PROPERTY_REG_ID = "registration_id";
+    private static final String PROPERTY_APP_VERSION = "appVersion";
 
-    public static final String PROPERTY_APP_TITLE = "app_title";
-    public static final String PROPERTY_ICON_ID = "icon_id";
-    public static final String PROPERTY_MATERIAL_ICON_ID = "material_icon_id";
-    public static final String PROPERTY_LARGE_ICON_ID = "large_icon_id";
-    public static final String PROPERTY_ACCENT_COLOR = "accent_color";
+	// Method names used when sending message from this plugin to Unity class "SwrveSDK/SwrveComponent.cs"
+	private static final String ON_DEVICE_REGISTERED_METHOD = "OnDeviceRegistered";
+	private static final String ON_NEW_ADVERTISING_ID_METHOD = "OnNewAdvertisingId";
+	static final String ON_NOTIFICATION_RECEIVED_METHOD = "OnNotificationReceived";
+	static final String ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD = "OnOpenedFromPushNotification";
 
-	public static String lastGameObjectRegistered;
-	public static String lastSenderIdUsed;
-    public static List<SwrveNotification> receivedNotifications = new ArrayList<SwrveNotification>();
-    public static List<SwrveNotification> openedNotifications = new ArrayList<SwrveNotification>();
+	private static String lastGameObjectRegistered;
+	private static String lastSenderIdUsed;
 
+	// Called by Unity
     public static int getVersion() {
     	return VERSION;
     }
 
+	// Called by Unity
     public static boolean registerDevice(final String gameObject, final String senderId, final String appTitle, final String iconId, final String materialIconId, final String largeIconId, final int accentColor) {
     	if (UnityPlayer.currentActivity != null) {
 			lastGameObjectRegistered = gameObject;
@@ -67,7 +61,7 @@ public class SwrveGcmDeviceRegistration {
 				            }
 					    }
 
-						sdkIsReadyToReceivePushNotifications(activity);
+						sdkIsReadyToReceivePushNotifications(gameObject, ON_NOTIFICATION_RECEIVED_METHOD, ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD);
 			    	} catch (Throwable ex) {
 			            Log.e(LOG_TAG, "Couldn't obtain the GCM registration id for the device", ex);
 			        }
@@ -83,7 +77,7 @@ public class SwrveGcmDeviceRegistration {
 	}
 
 	public static void onTokenRefreshed() {
-		if (UnityPlayer.currentActivity != null  && lastGameObjectRegistered != null && lastSenderIdUsed != null) {
+		if (UnityPlayer.currentActivity != null && lastGameObjectRegistered != null && lastSenderIdUsed != null) {
 			final Activity activity = UnityPlayer.currentActivity;
 			// This code needs to be run from the UI thread. Do not trust Unity to run
 			// the JNI invoked code from that thread.
@@ -115,7 +109,7 @@ public class SwrveGcmDeviceRegistration {
 	    editor.putString(PROPERTY_MATERIAL_ICON_ID, materialIconId);
 	    editor.putString(PROPERTY_LARGE_ICON_ID, largeIconId);
 	    editor.putInt(PROPERTY_ACCENT_COLOR, accentColor);
-	    editor.commit();
+	    editor.apply();
     }
 
     /**
@@ -207,13 +201,13 @@ public class SwrveGcmDeviceRegistration {
 	    SharedPreferences.Editor editor = prefs.edit();
 	    editor.putString(PROPERTY_REG_ID, regId);
 	    editor.putInt(PROPERTY_APP_VERSION, appVersion);
-	    editor.commit();
+	    editor.apply();
 	}
 
 	/**
 	 * @return Application's {@code SharedPreferences}.
 	 */
-	public static SharedPreferences getGCMPreferences(Context context) {
+	static SharedPreferences getGCMPreferences(Context context) {
 	    return context.getSharedPreferences(context.getPackageName() + "_swrve_push", Context.MODE_PRIVATE);
 	}
 
@@ -237,90 +231,15 @@ public class SwrveGcmDeviceRegistration {
 
     private static void notifySDKOfRegistrationId(String gameObject, String registrationId) {
     	// Call Unity SDK MonoBehaviour container
-    	UnityPlayer.UnitySendMessage(gameObject, "OnDeviceRegistered", registrationId);
+    	UnityPlayer.UnitySendMessage(gameObject, ON_DEVICE_REGISTERED_METHOD, registrationId);
 	}
 
-	private static String getGameObject(Context context) {
+	static String getGameObject(Context context) {
 		final SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(context);
-		return prefs.getString(SwrveGcmDeviceRegistration.PROPERTY_GAME_OBJECT_NAME, "SwrveComponent");
+		return prefs.getString(PROPERTY_GAME_OBJECT_NAME, "SwrveComponent");
 	}
 
-	public static void sdkIsReadyToReceivePushNotifications(final Context context) {
-		synchronized(receivedNotifications) {
-			// Send pending received notifications to SDK instance
-			for(SwrveNotification notification : receivedNotifications) {
-				notifySDKOfReceivedNotification(context, notification);
-			}
-			// Remove right away as SDK is initialized
-			receivedNotifications.clear();
-		}
-
-
-		synchronized(openedNotifications) {
-			// Send pending opened notifications to SDK instance
-			for(SwrveNotification notification : openedNotifications) {
-				notifySDKOfOpenedNotification(context, notification);
-			}
-			// Remove right away as SDK is initialized
-			openedNotifications.clear();
-		}
-	}
-
-	public static void newReceivedNotification(Context context, SwrveNotification notification) {
-		if (notification != null) {
-			synchronized(receivedNotifications) {
-				receivedNotifications.add(notification);
-				notifySDKOfReceivedNotification(context, notification);
-			}
-		}
-	}
-
-	public static void newOpenedNotification(Context context, SwrveNotification notification) {
-		if (notification != null) {
-			synchronized(openedNotifications) {
-				openedNotifications.add(notification);
-				notifySDKOfOpenedNotification(context, notification);
-			}
-		}
-	}
-
-	private static void notifySDKOfReceivedNotification(Context context, SwrveNotification notification) {
-		String gameObject = getGameObject(context);
-		String serializedNotification = notification.toJson();
-		if (serializedNotification != null) {
-			UnityPlayer.UnitySendMessage(gameObject, "OnNotificationReceived", serializedNotification.toString());
-		}
-	}
-
-	private static void notifySDKOfOpenedNotification(Context context, SwrveNotification notification) {
-		String gameObject = getGameObject(context);
-		String serializedNotification = notification.toJson();
-		if (serializedNotification != null) {
-			UnityPlayer.UnitySendMessage(gameObject, "OnOpenedFromPushNotification", serializedNotification.toString());
-		}
-	}
-
-	public static void sdkAcknowledgeReceivedNotification(String id) {
-		removeFromCollection(id, receivedNotifications);
-	}
-
-	public static void sdkAcknowledgeOpenedNotification(String id) {
-		removeFromCollection(id, openedNotifications);
-	}
-
-	private static void removeFromCollection(String id, List<SwrveNotification> collection) {
-		synchronized(collection) {
-			// Remove acknowledge notification
-			Iterator<SwrveNotification> it = collection.iterator();
-			while(it.hasNext()) {
-				SwrveNotification notification = it.next();
-				if (notification.getId().equals(id)) {
-					it.remove();
-				}
-			}
-		}
-	}
-
+	// Called by Unity
 	public static boolean requestAdvertisingId(final String gameObject) {
     	if (UnityPlayer.currentActivity != null) {
     		final Activity activity = UnityPlayer.currentActivity;
@@ -352,6 +271,6 @@ public class SwrveGcmDeviceRegistration {
 	}
 
 	private static void notifySDKOfAdvertisingId(String gameObject, String advertisingId) {
-		UnityPlayer.UnitySendMessage(gameObject, "OnNewAdvertisingId", advertisingId);
+		UnityPlayer.UnitySendMessage(gameObject, ON_NEW_ADVERTISING_ID_METHOD, advertisingId);
 	}
 }

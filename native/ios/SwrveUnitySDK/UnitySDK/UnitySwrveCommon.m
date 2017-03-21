@@ -66,7 +66,7 @@ static dispatch_once_t sharedInstanceToken = 0;
     if((jsonConfig == nil) || (0 == [jsonConfig length])) {
         return;
     }
-    NSLog(@"full config dict: %@", jsonConfig);
+    DebugLog(@"Full config dict: %@", jsonConfig);
 
     NSError* error = nil;
     NSDictionary* newConfigDict =
@@ -75,7 +75,7 @@ static dispatch_once_t sharedInstanceToken = 0;
     if(error == nil) {
         UnitySwrveCommonDelegate* swrve = [UnitySwrveCommonDelegate sharedInstance];
         swrve.configDict = newConfigDict;
-        NSLog(@"full config dict: %@", swrve.configDict);
+        DebugLog(@"Full config dict: %@", swrve.configDict);
 
         swrve.deviceInfo = [swrve.configDict objectForKey:@"deviceInfo"];
         [preferences setObject:jsonConfig forKey:spKey];
@@ -159,7 +159,7 @@ static dispatch_once_t sharedInstanceToken = 0;
 }
 
 -(BOOL) processPermissionRequest:(NSString*)action {
-    NSLog(@"%@", action);
+    DebugLog(@"%@", action);
     return TRUE;
 }
 
@@ -186,9 +186,9 @@ static dispatch_once_t sharedInstanceToken = 0;
 
 -(void) queueEvent:(NSString*)eventType data:(NSMutableDictionary*)eventData triggerCallback:(bool)triggerCallback
 {
-    NSLog(@"%d", triggerCallback);
-
-    if ([self eventBuffer]) {
+#pragma unused(triggerCallback)
+    NSMutableArray* buffer = self.eventBuffer;
+    if (buffer) {
         // Add common attributes (if not already present)
         if (![eventData objectForKey:@"type"]) {
             [eventData setValue:eventType forKey:@"type"];
@@ -201,8 +201,10 @@ static dispatch_once_t sharedInstanceToken = 0;
         NSData* json_data = [NSJSONSerialization dataWithJSONObject:eventData options:0 error:nil];
         if (json_data) {
             NSString* json_string = [[NSString alloc] initWithData:json_data encoding:NSUTF8StringEncoding];
-            [self setEventBufferBytes:[self eventBufferBytes] + (int)[json_string length]];
-            [[self eventBuffer] addObject:json_string];
+            @synchronized (buffer) {
+                [self setEventBufferBytes:self.eventBufferBytes + (int)[json_string length]];
+                [buffer addObject:json_string];
+            }
         }
         [self sendQueuedEvents];
     }
@@ -211,12 +213,15 @@ static dispatch_once_t sharedInstanceToken = 0;
 -(void) sendQueuedEvents
 {
     // Early out if length is zero.
-    if ([[self eventBuffer] count] == 0) return;
+    NSMutableArray* buffer = self.eventBuffer;
+    int bytes = self.eventBufferBytes;
 
-    // Swap buffers
-    NSArray* buffer = [self eventBuffer];
-    int bytes = [self eventBufferBytes];
-    [self initBuffer];
+    @synchronized (buffer) {
+        if ([buffer count] == 0) return;
+
+        // Swap buffers
+        [self initBuffer];
+    }
 
     NSString* session_token = [self createSessionToken];
     NSString* array_body = [self copyBufferToJson:buffer];
@@ -230,13 +235,16 @@ static dispatch_once_t sharedInstanceToken = 0;
 
                 if (error){
                     DebugLog(@"Error opening HTTP stream: %@ %@", [error localizedDescription], [error localizedFailureReason]);
-                    [self setEventBufferBytes:[self eventBufferBytes] + bytes];
-                    [[self eventBuffer] addObjectsFromArray:buffer];
+                    [self setEventBufferBytes:self.eventBufferBytes + bytes];
+                    NSMutableArray* currentBuffer = self.eventBuffer;
+                    @synchronized(currentBuffer) {
+                        [currentBuffer addObjectsFromArray:buffer];
+                    }
                     return;
                 }
                 else{
-                    NSLog(@"response: %@", response);
-                    NSLog(@"data: %@", data);
+                    DebugLog(@"response: %@", response);
+                    DebugLog(@"data: %@", data);
                 }
             }];
 }

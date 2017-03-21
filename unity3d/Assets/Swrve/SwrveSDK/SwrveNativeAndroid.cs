@@ -18,6 +18,7 @@ private const string ShowConversationName = "showConversation";
 private const string SwrveStartLocationName = "StartLocation";
 private const string SwrveLocationUserUpdateName = "LocationUserUpdate";
 private const string SwrveGetPlotNotificationsName = "GetPlotNotifications";
+private const string SwrveIsOSSupportedVersionName = "sdkAvailable";
 
 private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
 private const string UnityCurrentActivityName = "currentActivity";
@@ -603,7 +604,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     private void showNativeConversation (string conversation)
     {
         try {
-            AndroidGetBridge().Call(ShowConversationName, conversation);
+            AndroidGetBridge().Call(ShowConversationName, conversation, config.Orientation.ToString());
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
         }
@@ -655,6 +656,20 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     private bool NativeIsBackPressed ()
     {
         return Input.GetKeyDown (KeyCode.Escape);
+    }
+
+    public static bool IsSupportedAndroidVersion ()
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
+                    return unityPlayerClass.CallStatic<bool> (SwrveIsOSSupportedVersionName);
+                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't get supported OS version from Android: " + exp.ToString());
+            }
+        }
+        return false;
     }
 }
 

@@ -223,6 +223,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
         }
     }
 
+#if !UNITY_EDITOR
     [DllImport ("__Internal")]
     private static extern string _swrveiOSGetLanguage();
 
@@ -265,10 +266,15 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     [DllImport ("__Internal")]
     private static extern int _swrveiOSConversationVersion();
 
+    [DllImport ("__Internal")]
+    public static extern bool _swrveiOSIsSupportedOSVersion();
+#endif
+
     private string iOSdeviceToken;
 
     protected void RegisterForPushNotificationsIOS()
     {
+#if !UNITY_EDITOR
         try {
             _swrveiOSRegisterForPushNotifications (Json.Serialize (config.pushCategories.Select (a => a.toDict ()).ToList ()));
         } catch (Exception exp) {
@@ -280,6 +286,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
             NotificationServices.RegisterForRemoteNotificationTypes(RemoteNotificationType.Alert | RemoteNotificationType.Badge | RemoteNotificationType.Sound);
 #endif
         }
+#endif
     }
 
     protected string GetSavediOSDeviceToken()
@@ -303,6 +310,18 @@ public void IapApple (int quantity, string productId, double productPrice, strin
                 qaUser.PushNotification(notification);
             }
         }
+    }
+
+    public static bool IsSupportediOSVersion()
+    {
+#if !UNITY_EDITOR
+        try {
+            return _swrveiOSIsSupportedOSVersion();
+        } catch(Exception exp) {
+            SwrveLog.LogWarning("Couldn't get init the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
+#endif
+        return true;
     }
 
     protected void ProcessRemoteNotificationUserInfo(IDictionary userInfo)
@@ -336,11 +355,13 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
     private void initNative()
     {
+#if !UNITY_EDITOR
         try {
             _swrveiOSInitNative(GetNativeDetails ());
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get init the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
+#endif
     }
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)
@@ -349,6 +370,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
             deviceInfo["swrve.ios_token"] = iOSdeviceToken;
         }
 
+#if !UNITY_EDITOR
         try {
             deviceInfo ["swrve.timezone_name"] = _swrveiOSGetTimeZone();
         } catch (Exception e) {
@@ -381,82 +403,99 @@ public void IapApple (int quantity, string productId, double productPrice, strin
                 SwrveLog.LogWarning("Couldn't get device IDFA, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
             }
         }
+#endif
     }
 
     private string getNativeLanguage()
     {
+#if !UNITY_EDITOR
         try {
             return _swrveiOSGetLanguage();
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get the device language, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
+#endif
         return null;
     }
 
     private void setNativeAppVersion()
     {
+#if !UNITY_EDITOR
         try {
             config.AppVersion = _swrveiOSGetAppVersion();
             SwrveLog.Log ("got iOS version name " + config.AppVersion);
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get the device app version, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
+#endif
     }
 
     private string getNativeRandomUUID()
     {
         string uuid = null;
+#if !UNITY_EDITOR
         try {
             uuid = _swrveiOSUUID();
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
         }
+#endif
         return uuid;
     }
 
     private void setNativeConversationVersion()
     {
+#if !UNITY_EDITOR
         try {
             SetConversationVersion (_swrveiOSConversationVersion ());
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't start Locations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
+#endif
     }
 
     private void showNativeConversation(string conversation)
     {
+#if !UNITY_EDITOR
         try {
             _swrveiOSShowConversation(conversation);
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get show conversation correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
+#endif
     }
 
     private void startNativeLocation()
     {
+#if !UNITY_EDITOR
         try {
             _swrveiOSStartLocation();
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't start Location on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
+#endif
     }
 
     public void LocationUserUpdate(Dictionary<string, string> map)
     {
+#if !UNITY_EDITOR
         try {
             _swrveiOSLocationUserUpdate(Json.Serialize(map));
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't update location details from iOS: " + exp.ToString ());
         }
+#endif
     }
 
     public string GetPlotNotifications()
     {
+#if !UNITY_EDITOR
         try {
             return _swrveiOSGetPlotNotifications();
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't get plot notifications from iOS: " + exp.ToString ());
         }
+#endif
         return "[]";
     }
 

@@ -20,6 +20,7 @@ extern "C"
     void _swrveiOSStartLocation();
     void _swrveiOSLocationUserUpdate(char* jsonMap);
     char* _swrveiOSGetPlotNotifications();
+    bool _swrveiOSIsSupportedOSVersion();
     
 #ifdef __cplusplus
 }

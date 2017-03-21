@@ -6,7 +6,7 @@ namespace SwrveUnity.Device
 {
 public class DeviceCarrierInfo : ICarrierInfo
 {
-#if UNITY_IPHONE
+#if UNITY_IPHONE && !UNITY_EDITOR
     [DllImport ("__Internal")]
     private static extern string _swrveiOSCarrierName();
 
@@ -52,7 +52,7 @@ public class DeviceCarrierInfo : ICarrierInfo
 
     public string GetName()
     {
-#if UNITY_IPHONE
+#if UNITY_IPHONE && !UNITY_EDITOR
         try {
             return _swrveiOSCarrierName();
         } catch(Exception exp) {
@@ -68,7 +68,7 @@ public class DeviceCarrierInfo : ICarrierInfo
 
     public string GetIsoCountryCode()
     {
-#if UNITY_IPHONE
+#if UNITY_IPHONE && !UNITY_EDITOR
         try {
             return _swrveiOSCarrierIsoCountryCode();
         } catch(Exception exp) {
@@ -84,7 +84,7 @@ public class DeviceCarrierInfo : ICarrierInfo
 
     public string GetCarrierCode()
     {
-#if UNITY_IPHONE
+#if UNITY_IPHONE && !UNITY_EDITOR
         try {
             return _swrveiOSCarrierCode();
         } catch(Exception exp) {
