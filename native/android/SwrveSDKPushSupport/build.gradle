@@ -35,4 +35,16 @@ dependencies {
     //If compiling amazon flavour from source you should download
     //the adm jar from the Amazon Developer portal: https://developer.amazon.com/device-messaging
     amazonProvided files('providedLibs/amazon-device-messaging-1.0.1.jar')
+
+    // Unit tests
+    testCompile 'org.mockito:mockito-core:1.9.0'
+    testCompile 'org.robolectric:shadows-support-v4:3.2.2'
+    testCompile 'org.robolectric:shadows-httpclient:3.2.2'
+
+    // Roboelectric tests
+    testCompile 'junit:junit:4.12'
+    testCompile('org.robolectric:robolectric:3.2.2') {
+        exclude group: 'commons-logging', module: 'commons-logging'
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
 }

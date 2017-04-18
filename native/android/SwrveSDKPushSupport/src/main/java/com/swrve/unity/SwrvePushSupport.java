@@ -122,8 +122,7 @@ public abstract class SwrvePushSupport {
         String iconResourceName = prefs.getString(SwrvePushSupport.PROPERTY_ICON_ID, null);
         String materialIconName = prefs.getString(SwrvePushSupport.PROPERTY_MATERIAL_ICON_ID, null);
         String largeIconName = prefs.getString(SwrvePushSupport.PROPERTY_LARGE_ICON_ID, null);
-        int accentColorRaw = prefs.getInt(SwrvePushSupport.PROPERTY_ACCENT_COLOR, -1);
-        Integer accentColor = (accentColorRaw >= 0)? accentColorRaw : null;
+        int accentColor = prefs.getInt(SwrvePushSupport.PROPERTY_ACCENT_COLOR, -1);
         String packageName = context.getPackageName();
 
         PackageManager packageManager = context.getPackageManager();
@@ -145,7 +144,7 @@ public abstract class SwrvePushSupport {
         }
 
         int materialIcon = -1;
-        if (SwrveHelper.isNullOrEmpty(materialIconName)) {
+        if (SwrveHelper.isNotNullOrEmpty(materialIconName)) {
             materialIcon = res.getIdentifier(materialIconName, "drawable", packageName);
         }
 
