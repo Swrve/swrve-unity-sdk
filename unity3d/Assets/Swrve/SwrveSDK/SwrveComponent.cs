@@ -70,22 +70,7 @@ public class SwrveComponent : MonoBehaviour
     public SwrveComponent ()
     {
         Config = new SwrveConfig ();
-        bool supportedOSVersion = true;
-
-#if !UNITY_EDITOR
-#if UNITY_IPHONE
-        supportedOSVersion = SwrveSDK.IsSupportediOSVersion();
-#endif
-
-#if UNITY_ANDROID
-        supportedOSVersion = SwrveSDK.IsSupportedAndroidVersion();
-#endif
-#endif
-        if (supportedOSVersion) {
-            SDK = new SwrveSDK();
-        } else {
-            SDK = new SwrveEmpty();
-        }
+        SDK = new SwrveEmpty();
     }
 
     /// <summary>
@@ -99,6 +84,23 @@ public class SwrveComponent : MonoBehaviour
     /// </param>
     public void Init (int appId, string apiKey)
     {
+        if (SDK == null || SDK is SwrveEmpty) {
+            bool supportedOSVersion = true;
+#if !UNITY_EDITOR
+#if UNITY_IPHONE
+            supportedOSVersion = SwrveSDK.IsSupportediOSVersion();
+#endif
+
+#if UNITY_ANDROID
+            supportedOSVersion = SwrveSDK.IsSupportedAndroidVersion();
+#endif
+#endif
+            if (supportedOSVersion) {
+                SDK = new SwrveSDK ();
+            } else {
+                SDK = new SwrveEmpty ();
+            }
+        }
         SDK.Init (this, appId, apiKey, Config);
     }
 
