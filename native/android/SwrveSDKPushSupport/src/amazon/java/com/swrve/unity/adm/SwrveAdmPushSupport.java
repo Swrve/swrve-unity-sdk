@@ -63,7 +63,7 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
                 Log.i(TAG, "adm.getRegistrationId() returned: " + registrationId);
                 notifySDKOfRegistrationId(gameObject, registrationId);
             }
-            sdkIsReadyToReceivePushNotifications(getGameObject(context), ON_NOTIFICATION_RECEIVED_METHOD, ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD);
+            sdkIsReadyToReceivePushNotifications(gameObject, ON_NOTIFICATION_RECEIVED_METHOD, ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD);
         } catch (Exception ex) {
             Log.e(TAG, "Couldn't obtain the ADM registration id for the device", ex);
             return false;

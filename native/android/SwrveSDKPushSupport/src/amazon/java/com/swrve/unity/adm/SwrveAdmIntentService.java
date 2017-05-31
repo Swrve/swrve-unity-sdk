@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import com.amazon.device.messaging.ADMMessageHandlerBase;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.swrve.sdk.SwrveHelper;
 import com.swrve.sdk.SwrvePushConstants;
 import com.swrve.sdk.SwrvePushSDK;
 import com.swrve.unity.SwrveNotification;
@@ -86,6 +87,10 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
             // Deduplicate notification
             // Get tracking key
             Object rawId = msg.get(SwrvePushConstants.SWRVE_TRACKING_KEY);
+            String silentId = SwrvePushSDK.getSilentPushId(msg);
+            if (rawId == null) {
+                rawId = silentId;
+            }
             String msgId = (rawId != null) ? rawId.toString() : null;
 
             final String timestamp = msg.getString(SwrvePushConstants.TIMESTAMP_KEY);
@@ -113,18 +118,38 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
             // No duplicate found. Update the cache.
             updateRecentNotificationIdCache(recentIds, curId, pushIdCacheSize);
 
-            final SharedPreferences prefs = SwrveAdmPushSupport.getAdmPreferences(getApplicationContext());
-            String activityClassName = SwrvePushSupport.getActivityClassName(getApplicationContext(), prefs);
+            Context context = getApplicationContext();
+            if (SwrveHelper.isNullOrEmpty(silentId)) {
+                // Visible push notification
+                final SharedPreferences prefs = SwrveAdmPushSupport.getAdmPreferences(context);
+                String activityClassName = SwrvePushSupport.getActivityClassName(context, prefs);
 
-            // Only call this listener if there is an activity running
-            if (UnityPlayer.currentActivity != null) {
-                // Call Unity SDK MonoBehaviour container
-                SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
-                SwrveAdmPushSupport.newReceivedNotification(SwrveAdmPushSupport.getGameObject(UnityPlayer.currentActivity), SwrveAdmPushSupport.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
+                // Only call this listener if there is an activity running
+                if (UnityPlayer.currentActivity != null) {
+                    // Call Unity SDK MonoBehaviour container
+                    SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
+                    SwrveAdmPushSupport.newReceivedNotification(SwrveAdmPushSupport.getGameObject(UnityPlayer.currentActivity), SwrveAdmPushSupport.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
+                }
+
+                // Process notification
+                processNotification(msg, activityClassName);
+            } else {
+                // Silent push notification
+                if (msg.containsKey(SwrvePushConstants.SWRVE_INFLUENCED_WINDOW_MINS_KEY)) {
+                    // Save the date and push id for tracking influenced users
+                    SwrvePushSDK.saveInfluencedCampaign(context, silentId, msg.getString(SwrvePushConstants.SWRVE_INFLUENCED_WINDOW_MINS_KEY), new Date());
+                }
+
+                // Obtain and pass around the silent push object
+                String payloadJson = msg.getString(SwrvePushConstants.SILENT_PAYLOAD_KEY);
+
+                // Trigger the silent push broadcast
+                Bundle silentBundle = new Bundle();
+                silentBundle.putString(SwrvePushConstants.SILENT_PAYLOAD_KEY, payloadJson);
+                Intent silentIntent = new Intent(SwrvePushSupport.SILENT_PUSH_BROADCAST_ACTION);
+                silentIntent.putExtras(silentBundle);
+                sendBroadcast(silentIntent);
             }
-
-            // Process notification
-            processNotification(msg, activityClassName);
         } catch (Exception ex) {
             Log.e(TAG, "Error processing push notification", ex);
         }

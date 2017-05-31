@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "4.9.2";
+    public const string SdkVersion = "4.10";
 
     protected int appId;
     /// <summary>
@@ -384,6 +384,7 @@ public partial class SwrveSDK
         if(SwrveHelper.IsOnDevice()) {
             InitNative();
         }
+        ProcessInfluenceData();
 
         StartCampaignsAndResourcesTimer();
 #endif
@@ -892,6 +893,7 @@ public partial class SwrveSDK
 
             StartCampaignsAndResourcesTimer();
             DisableAutoShowAfterDelay();
+            ProcessInfluenceData();
         }
 #endif
     }

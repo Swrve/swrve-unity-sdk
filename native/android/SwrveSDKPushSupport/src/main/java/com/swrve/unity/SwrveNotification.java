@@ -11,7 +11,7 @@ public class SwrveNotification {
 	
 	public static class Builder {
 		public static SwrveNotification build(Bundle msg) {
-			String id = SwrvePushSDK.getSwrveId(msg);
+			String id = SwrvePushSDK.getPushId(msg);
 			if (id != null) {
 				return new SwrveNotification(id, msg);
 			}

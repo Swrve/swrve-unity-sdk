@@ -27,6 +27,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         {
             SwrveLog.Log("SwrveIOSPostProcess");
             CorrectXCodeProject (pathToBuiltProject, true);
+            SilentPushNotifications (pathToBuiltProject);
         }
     }
 
@@ -56,7 +57,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
 
         // 5. Add conversations resources to bundle
         if (!AddFolderToProject (project, targetGuid, "Assets/Plugins/iOS/SwrveConversationSDK/Resources", pathToProject, "Libraries/Plugins/iOS/SwrveConversationSDK/Resources")) {
-            UnityEngine.Debug.LogError ("Swrve SDK - Could not find any resources. If you want to use Conversations please contact support@swrve.com");
+            UnityEngine.Debug.LogError ("Swrve SDK - Could not find the Conversation resources folder in your project. If you want to use Conversations please contact support@swrve.com");
         }
         xcodeproj = project.WriteToString ();
 
@@ -64,11 +65,75 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         if (writeOut) {
             File.WriteAllText (path, xcodeproj);
         }
-
     }
+
+    // Enables silent push
+    private static void SilentPushNotifications(string path)
+    {
+        // Apply only if the file SwrveSilentPushListener.mm is found
+        string fileName = "SwrveSilentPushListener.mm";
+        string mmFilePath = "Assets/Plugins/iOS/" + fileName;
+        if (File.Exists (mmFilePath)) {
+            // Step 1. Add a silent push code to the AppDelegate
+            // Inject our code inside the existing didReceiveRemoteNotification, fetchCompletionHandler
+            List<string> allMMFiles = GetAllFiles (path, "*.mm");
+            bool appliedChanges = false;
+
+            // Inject before existing "UnitySendRemoteNotification(userInfo);"
+            string searchText = "UnitySendRemoteNotification(userInfo);";
+            for (int i = 0; i < allMMFiles.Count; i++) {
+                string filePath = allMMFiles[i];
+                string contents = File.ReadAllText (filePath);
+                MatchCollection silentPushMethodMatches = Regex.Matches(contents, "application:(.)*didReceiveRemoteNotification:(.)*fetchCompletionHandler:");
+
+                if (silentPushMethodMatches.Count > 0) {
+                    bool alreadyApplied = contents.IndexOf("[SwrveSilentPushListener onSilentPush:userInfo]") > 0;
+                    if (alreadyApplied) {
+                        UnityEngine.Debug.Log("SwrveSDK: Silent push custom code present or already injected, please make sure you are calling the Swrve SDK from: " + filePath);
+                        break;
+                    }
+
+
+                    int hookPosition = contents.IndexOf (searchText, silentPushMethodMatches[0].Index);
+                    if (hookPosition > 0) {
+                        string imports = "#import \"UnitySwrveCommon.h\"\n#import \"SwrveSilentPushListener.h\"\n";
+                        string injectedCode = "\t// Inform the Swrve SDK\n" +
+                                              "\t[UnitySwrveCommonDelegate silentPushNotificationReceived:userInfo withCompletionHandler:^ (UIBackgroundFetchResult fetchResult, NSDictionary* swrvePayload) {\n" +
+                                              "\t\t[SwrveSilentPushListener onSilentPush:swrvePayload];\n" +
+                                              "\t}];\n\t";
+                        contents = imports + contents.Substring (0, hookPosition - 1) + injectedCode + contents.Substring (hookPosition, contents.Length - hookPosition);
+                        File.WriteAllText (filePath, contents);
+                        UnityEngine.Debug.Log("SwrveSDK: Injected silent push code into the app delegate: " + filePath);
+                        appliedChanges = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!appliedChanges) {
+                throw new Exception("SwrveSDK: " + fileName + " could not be injected into the AppDelegate. Contact support@swrve.com");
+            }
+
+            // Step 2. Add silent background mode the file Info.plist
+            string plistPath = path + "/Info.plist";
+            if (File.Exists (plistPath)) {
+                string plistContent = File.ReadAllText (plistPath);
+                if (!plistContent.Contains("<key>UIBackgroundModes</key>") && !plistContent.Contains("<string>remote-notification</string>")) {
+                    File.WriteAllText(plistPath, ReplaceFirst(plistContent, "<dict>", "<dict><key>UIBackgroundModes</key><array><string>remote-notification</string></array>"));
+                    UnityEngine.Debug.Log("SwrveSDK: Injected silent UIBackgroundModes mode into Info.plist");
+                } else {
+                    UnityEngine.Debug.Log("SwrveSDK: Looks like silent UIBackgroundModes was already present in Info.plist");
+                }
+            }
+        }
+    }
+
 
     private static bool AddFolderToProject(PBXProject project, string targetGuid, string folderToCopy, string pathToProject, string destPath)
     {
+        if (!System.IO.Directory.Exists(folderToCopy)) {
+            return false;
+        }
         // Create dest folder
         string fullDestPath = Path.Combine(pathToProject, destPath);
         if (!System.IO.Directory.Exists(fullDestPath)) {
@@ -135,6 +200,33 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         string pattern = string.Format (@"{0} = .*;$", grouping);
         string replacement = string.Format (@"{0} = {1};", grouping, replacewith);
         return Regex.Replace (project, pattern, replacement, RegexOptions.Multiline);
+    }
+
+    private static List<string> GetAllFiles (string path, string fileExtension)
+    {
+        List<string> result = new List<string> ();
+        try {
+            string[] files = System.IO.Directory.GetFiles (path, fileExtension);
+            result.AddRange (files);
+            string[] directories = Directory.GetDirectories(path);
+            for (int i = 0; i < directories.Length; i++) {
+                List<string> filesInDir = GetAllFiles (directories[i], fileExtension);
+                result.AddRange (filesInDir);
+            }
+        } catch (System.Exception ex) {
+            UnityEngine.Debug.LogError (ex);
+        }
+
+        return result;
+    }
+
+    private static string ReplaceFirst(string str, string needle, string replacement)
+    {
+        int index = str.IndexOf(needle);
+        if (index >= 0) {
+            return str.Substring(0, index) + replacement + str.Substring(index + needle.Length);
+        }
+        return str;
     }
 }
 #endif

@@ -6,6 +6,9 @@
 #include <sys/time.h>
 #import <CommonCrypto/CommonHMAC.h>
 
+#import "SwrvePush.h"
+#import "SwrvePushConstants.h"
+
 static UnitySwrveCommonDelegate *_swrveSharedUnity = NULL;
 static dispatch_once_t sharedInstanceToken = 0;
 
@@ -447,6 +450,39 @@ static dispatch_once_t sharedInstanceToken = 0;
     [SwrvePlot sentLocationCampaign:notification];
 }
 #endif
+
++ (void) silentPushNotificationReceived:(NSDictionary*)userInfo withCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary*))completionHandler {
+    id pushIdentifier = [userInfo objectForKey:SwrveSilentPushIdentifierKey];
+    if (pushIdentifier && ![pushIdentifier isKindOfClass:[NSNull class]]) {
+        NSString* pushId = @"-1";
+        if ([pushIdentifier isKindOfClass:[NSString class]]) {
+            pushId = (NSString*)pushIdentifier;
+        }
+        else if ([pushIdentifier isKindOfClass:[NSNumber class]]) {
+            pushId = [((NSNumber*)pushIdentifier) stringValue];
+        }
+        else {
+            DebugLog(@"Unknown Swrve notification ID class for _sp attribute", nil);
+            return;
+        }
+        [SwrvePush saveInfluencedData:userInfo withPushId:pushId atDate:[NSDate date]];
+        DebugLog(@"Got Swrve silent notification with ID %@", pushId);
+    } else {
+        DebugLog(@"Got unidentified notification", nil);
+    }
+
+    if (completionHandler != nil) {
+        // The SDK currently does no fetch operation on its own but will in future releases
+        
+        // Obtain the silent push payload
+        id silentPayloadRaw = [userInfo objectForKey:SwrveSilentPushPayloadKey];
+        if (silentPayloadRaw != nil && [silentPayloadRaw isKindOfClass:[NSDictionary class]]) {
+            completionHandler(UIBackgroundFetchResultNoData, (NSDictionary*)silentPayloadRaw);
+        } else {
+            completionHandler(UIBackgroundFetchResultNoData, nil);
+        }
+    }
+}
 
 @end
 

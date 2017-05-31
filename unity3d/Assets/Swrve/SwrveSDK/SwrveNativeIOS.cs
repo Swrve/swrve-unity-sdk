@@ -268,6 +268,9 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
     [DllImport ("__Internal")]
     public static extern bool _swrveiOSIsSupportedOSVersion();
+
+    [DllImport ("__Internal")]
+    public static extern string _swrveGetInfluencedDataJson();
 #endif
 
     private string iOSdeviceToken;
@@ -303,8 +306,12 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     {
         if(config.PushNotificationEnabled) {
             ProcessRemoteNotificationUserInfo(notification.userInfo);
-            if(PushNotificationListener != null) {
-                PushNotificationListener.OnRemoteNotification(notification);
+
+            // Do not call listener for silent pushes
+            if (notification.userInfo == null || !notification.userInfo.Contains(SilentPushTrackingKey)) {
+                if(PushNotificationListener != null) {
+                    PushNotificationListener.OnRemoteNotification(notification);
+                }
             }
             if(qaUser != null) {
                 qaUser.PushNotification(notification);
@@ -326,7 +333,9 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
     protected void ProcessRemoteNotificationUserInfo(IDictionary userInfo)
     {
+        bool processDeeplink = false;
         if (userInfo != null && userInfo.Contains(PushTrackingKey)) {
+            processDeeplink = true;
             // It is a Swrve push, we need to check if it was sent while the app was in the background
             bool whileInBackground = !userInfo.Contains("_swrveForeground");
             if (whileInBackground) {
@@ -341,11 +350,15 @@ public void IapApple (int quantity, string productId, double productPrice, strin
                 SwrveLog.Log("Swrve remote notification received while in the foreground");
             }
         } else {
-            SwrveLog.Log("Got unidentified notification");
+            if (userInfo != null && userInfo.Contains(SilentPushTrackingKey)) {
+                SwrveLog.Log("Swrve silent push received");
+            } else {
+                SwrveLog.Log("Got unidentified notification");
+            }
         }
 
         // Process push deeplink
-        if (userInfo != null && userInfo.Contains (PushDeeplinkKey)) {
+        if (processDeeplink) {
             object deeplinkUrl = userInfo[PushDeeplinkKey];
             if (deeplinkUrl != null) {
                 OpenURL(deeplinkUrl.ToString());

@@ -43,4 +43,6 @@ void UnitySendMessage(const char *, const char *, const char *);
 -(int) userUpdate:(NSDictionary *)attributes;
 -(void) shutdown;
 
++ (void) silentPushNotificationReceived:(NSDictionary*)userInfo withCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary*))completionHandler;
+
 @end

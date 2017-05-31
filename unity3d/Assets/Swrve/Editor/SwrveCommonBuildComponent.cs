@@ -61,7 +61,10 @@ public class SwrveCommonBuildComponent
         // Get the Android SDK location
         string androidSDKLocation = EditorPrefs.GetString ("AndroidSdkRoot");
         if (string.IsNullOrEmpty (androidSDKLocation)) {
-            androidSDKLocation = Environment.GetEnvironmentVariable ("ANDROID_HOME");
+            androidSDKLocation = Environment.GetEnvironmentVariable ("UNITY_ANDROID_HOME");
+            if (string.IsNullOrEmpty (androidSDKLocation)) {
+                androidSDKLocation = Environment.GetEnvironmentVariable ("ANDROID_HOME");
+            }
             if (string.IsNullOrEmpty (androidSDKLocation)) {
                 // Build machine default location
                 androidSDKLocation = "/Users/Shared/android-sdk/sdk/";
@@ -79,7 +82,7 @@ public class SwrveCommonBuildComponent
         info.UseShellExecute = false;
         info.WorkingDirectory = workingDirectory;
         info.FileName = "ruby";
-        info.Arguments = "scripts/trainsporter_chef.rb " + filePath;
+        info.Arguments = "scripts/transporter_chief.rb " + filePath;
         System.Diagnostics.Process proc = System.Diagnostics.Process.Start (info);
 
         string errorOutput = string.Empty;
@@ -306,4 +309,3 @@ public class SwrveCommonBuildComponent
     }
 
 }
-

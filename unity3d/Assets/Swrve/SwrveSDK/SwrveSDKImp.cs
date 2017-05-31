@@ -44,6 +44,7 @@ public partial class SwrveSDK
     public const string DefaultAutoShowMessagesTrigger = "Swrve.Messages.showAtSessionStart";
 
     private const string PushTrackingKey = "_p";
+    private const string SilentPushTrackingKey = "_sp";
     private const string PushDeeplinkKey = "_sd";
 
     private string escapedUserId;
@@ -1702,6 +1703,77 @@ public partial class SwrveSDK
     {
         if (config.LocationEnabled) {
             startNativeLocation ();
+        }
+    }
+
+    private void ProcessInfluenceData()
+    {
+        // Obtain influence data from native layer
+        string influenceDataJson = GetInfluencedDataJsonPerPlatform();
+        if (influenceDataJson != null) {
+            List<object> influenceData = (List<object>)Json.Deserialize (influenceDataJson);
+            if (influenceData != null) {
+                for (int i = 0; i < influenceData.Count; i++) {
+                    CheckInfluenceData ((Dictionary<string, object>)influenceData [i]);
+                }
+            } else {
+                SwrveLog.LogError ("Could not parse influence data");
+            }
+        }
+    }
+
+    protected virtual string GetInfluencedDataJsonPerPlatform()
+    {
+        string influenceDataJson = null;
+#if !UNITY_EDITOR
+#if UNITY_ANDROID
+        try {
+            influenceDataJson = GetInfluencedDataJson();
+        } catch(Exception exp) {
+            SwrveLog.LogWarning("Couldn't get influence data from the native side correctly, make sure you have the Android plugin inside your project and you are running on an Android device: " + exp.ToString());
+        }
+#endif
+
+#if UNITY_IOS
+        try {
+            influenceDataJson = _swrveGetInfluencedDataJson();
+        } catch(Exception exp) {
+            SwrveLog.LogWarning("Couldn't get influence data from the native side correctly, make sure you have the iOS plugin inside your project and you are running on an iOS device: " + exp.ToString());
+        }
+#endif
+#endif
+        return influenceDataJson;
+    }
+
+    public void CheckInfluenceData(Dictionary<string, object> influenceData)
+    {
+        if (influenceData != null) {
+            object trackingIdRaw = influenceData["trackingId"];
+            object maxInfluencedMillisRaw = influenceData["maxInfluencedMillis"];
+            long maxInfluencedMillis = 0;
+            if (maxInfluencedMillisRaw != null) {
+                if (maxInfluencedMillisRaw is long || maxInfluencedMillisRaw is Int32 || maxInfluencedMillisRaw is Int64) {
+                    maxInfluencedMillis = (long)maxInfluencedMillisRaw;
+                }
+            }
+
+            if (trackingIdRaw != null && trackingIdRaw is string && maxInfluencedMillis > 0) {
+                string trackingId = (string)trackingIdRaw;
+                // Check if the user was influenced
+                long now = SwrveHelper.GetMilliseconds();
+                if (now <= maxInfluencedMillis) {
+                    Dictionary<string, object> json = new Dictionary<string, object> ();
+                    json.Add ("id", trackingId);
+                    json.Add ("campaignType", "push");
+                    json.Add ("actionType", "influenced");
+                    Dictionary<string, string> payload = new Dictionary<string, string> ();
+                    payload.Add ("delta", ((maxInfluencedMillis - now) / (100 * 60)).ToString());
+                    json.Add ("payload", payload);
+                    AppendEventToBuffer ("generic_campaign_event", json, false);
+
+                    SwrveLog.Log ("User was influenced by push " + trackingId);
+                }
+            }
         }
     }
 }

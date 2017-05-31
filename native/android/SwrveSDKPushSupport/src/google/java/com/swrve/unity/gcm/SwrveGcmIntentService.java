@@ -12,6 +12,8 @@ import android.util.Log;
 import java.util.Date;
 
 import com.google.android.gms.gcm.GcmListenerService;
+import com.swrve.sdk.SwrveHelper;
+import com.swrve.sdk.SwrvePushConstants;
 import com.swrve.sdk.SwrvePushSDK;
 import com.swrve.unity.SwrveNotification;
 import com.swrve.unity.SwrvePushSupport;
@@ -28,18 +30,39 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	private void processRemoteNotification(Bundle msg) {
 		try {
 			if (SwrvePushSDK.isSwrveRemoteNotification(msg)) {
-				final SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(getApplicationContext());
-				String activityClassName = SwrvePushSupport.getActivityClassName(getApplicationContext(), prefs);
-				
-				// Only call this listener if there is an activity running
-				if (UnityPlayer.currentActivity != null) {
-					// Call Unity SDK MonoBehaviour container
-					SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
-					SwrveGcmDeviceRegistration.newReceivedNotification(SwrveGcmDeviceRegistration.getGameObject(UnityPlayer.currentActivity), SwrveGcmDeviceRegistration.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
-		    	}
-		
-				// Process notification
-				processNotification(msg, activityClassName);
+				final Context context = getApplicationContext();
+				final SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(context);
+				final String activityClassName = SwrvePushSupport.getActivityClassName(context, prefs);
+
+				String silentId = SwrvePushSDK.getSilentPushId(msg);
+				if (SwrveHelper.isNullOrEmpty(silentId)) {
+					// Visible push notification
+					// Only call this listener if there is an activity running
+					if (UnityPlayer.currentActivity != null) {
+						// Call Unity SDK MonoBehaviour container
+						SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
+						SwrveGcmDeviceRegistration.newReceivedNotification(SwrveGcmDeviceRegistration.getGameObject(UnityPlayer.currentActivity), SwrveGcmDeviceRegistration.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
+					}
+
+					// Process notification
+					processNotification(msg, activityClassName);
+				} else {
+					// Silent push notification
+					if (msg.containsKey(SwrvePushConstants.SWRVE_INFLUENCED_WINDOW_MINS_KEY)) {
+						// Save the date and push id for tracking influenced users
+						SwrvePushSDK.saveInfluencedCampaign(context, silentId, msg.getString(SwrvePushConstants.SWRVE_INFLUENCED_WINDOW_MINS_KEY), new Date());
+					}
+
+					// Obtain and pass around the silent push object
+					String payloadJson = msg.getString(SwrvePushConstants.SILENT_PAYLOAD_KEY);
+
+					// Trigger the silent push broadcast
+					Bundle silentBundle = new Bundle();
+					silentBundle.putString(SwrvePushConstants.SILENT_PAYLOAD_KEY, payloadJson);
+					Intent silentIntent = new Intent(SwrvePushSupport.SILENT_PUSH_BROADCAST_ACTION);
+					silentIntent.putExtras(silentBundle);
+					sendBroadcast(silentIntent);
+				}
 			}
 		} catch (Exception ex) {
 			Log.e(LOG_TAG, "Error processing push notification", ex);
@@ -48,7 +71,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 
 	/**
 	 * Override this function to process notifications in a different way.
-	 * 
+	 *
 	 * @param msg
 	 * @param activityClassName
 	 * 			game activity
@@ -65,7 +88,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 
 	/**
 	 * Override this function to change the way a notification is shown.
-	 * 
+	 *
 	 * @param notificationManager
 	 * @param notification
 	 * @return the notification id so that it can be dismissed by other UI
@@ -81,7 +104,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	 * Generate the id for the new notification.
 	 *
 	 * Defaults to the current milliseconds to have unique notifications.
-	 * 
+	 *
 	 * @param notification notification data
 	 * @return id for the notification to be displayed
 	 */
@@ -91,7 +114,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 
 	/**
 	 * Override this function to change the attributes of a notification.
-	 * 
+	 *
 	 * @param msgText
 	 * @param msg
 	 * @return
@@ -108,7 +131,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 
 	/**
 	 * Override this function to change the way the notifications are created.
-	 * 
+	 *
 	 * @param msg
 	 * @param contentIntent
 	 * @return
@@ -128,11 +151,11 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	/**
 	 * Override this function to change what the notification will do once
 	 * clicked by the user.
-	 * 
+	 *
 	 * Note: sending the Bundle in an extra parameter "notification" is
 	 * essential so that the Swrve SDK can be notified that the app was opened
 	 * from the notification.
-	 * 
+	 *
 	 * @param msg
 	 * @param activityClassName
 	 * 			game activity
@@ -149,7 +172,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	 * the given push payload.
 	 *
 	 * Defaults to the current milliseconds to have unique notifications.
-	 * 
+	 *
 	 * @param msg push message payload
 	 * @return id for the notification to be displayed
 	 */
@@ -160,11 +183,11 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	/**
 	 * Override this function to change what the notification will do once
 	 * clicked by the user.
-	 * 
+	 *
 	 * Note: sending the Bundle in an extra parameter "notification" is
 	 * essential so that the Swrve SDK can be notified that the app was opened
 	 * from the notification.
-	 * 
+	 *
 	 * @param msg
 	 * @param activityClassName
 	 * 			game activity
@@ -173,11 +196,11 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	public Intent createIntent(Bundle msg, String activityClassName) {
 		return SwrvePushSupport.createIntent(this, msg, activityClassName);
 	}
-	
+
 	/**
 	 * Process the push notification received from GCM
 	 * that opened the app.
-	 * 
+	 *
 	 * @param context
 	 * @param intent
 	 * 			The intent that opened the activity

@@ -14,7 +14,11 @@ import android.support.v4.app.NotificationCompat;
 import com.swrve.sdk.SwrveHelper;
 import com.swrve.sdk.SwrvePushNotificationConfig;
 import com.swrve.sdk.SwrvePushConstants;
+import com.swrve.sdk.SwrvePushSDK;
 import com.unity3d.player.UnityPlayer;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -31,6 +35,8 @@ public abstract class SwrvePushSupport {
     protected static final String PROPERTY_ACCENT_COLOR = "accent_color";
 
     public static final String NOTIFICATION_PAYLOAD_KEY = "notification";
+
+    public static final String SILENT_PUSH_BROADCAST_ACTION = "com.swrve.SILENT_PUSH_ACTION";
 
     private static final List<SwrveNotification> receivedNotifications = new ArrayList<SwrveNotification>();
     private static final List<SwrveNotification> openedNotifications = new ArrayList<SwrveNotification>();
@@ -108,12 +114,6 @@ public abstract class SwrvePushSupport {
                 }
             }
         }
-    }
-
-    public static boolean isSwrveRemoteNotification(final Bundle msg) {
-        Object rawId = msg.get(SwrvePushConstants.SWRVE_TRACKING_KEY);
-        String msgId = (rawId != null) ? rawId.toString() : null;
-        return !SwrveHelper.isNullOrEmpty(msgId);
     }
 
     public static NotificationCompat.Builder createNotificationBuilder(Context context, SharedPreferences prefs, String msgText, Bundle msg) {
@@ -196,5 +196,28 @@ public abstract class SwrvePushSupport {
             e.printStackTrace();
         }
         return null;
+    }
+
+    // Called by Unity
+    public static String getInfluenceDataJson() {
+        JSONArray influenceArray = new JSONArray();
+
+        final Context context = UnityPlayer.currentActivity;
+        if (context != null) {
+            SharedPreferences sharedPreferences = context.getSharedPreferences(SwrvePushSDK.INFLUENCED_PREFS, Context.MODE_PRIVATE);
+            // Transform into JSON for the C# layer
+            List<SwrvePushSDK.InfluenceData> influenceData = SwrvePushSDK.readSavedInfluencedData(sharedPreferences);
+            for (SwrvePushSDK.InfluenceData data : influenceData) {
+                JSONObject influenceDataJson = data.toJson();
+                if (influenceDataJson != null) {
+                    influenceArray.put(influenceDataJson);
+                }
+            }
+
+            // Remove the influence data
+            sharedPreferences.edit().clear().commit();
+        }
+
+        return influenceArray.toString();
     }
 }

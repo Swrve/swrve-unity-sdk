@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+
 @interface UnitySwrveHelper : NSObject
 
 +(char*) CStringCopy:(const char*)string;

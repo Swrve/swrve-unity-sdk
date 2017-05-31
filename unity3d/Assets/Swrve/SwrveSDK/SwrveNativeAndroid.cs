@@ -11,6 +11,7 @@ public partial class SwrveSDK
 private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
 private const string SwrveAndroidADMPushPluginPackageName = "com.swrve.unity.adm.SwrveAdmPushSupport";
 private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
+private const string SwrvePushSupport = "com.swrve.unity.SwrvePushSupport";
 
 private const string IsInitialisedName = "isInitialised";
 private const string GetConversationVersionName = "getConversationVersion";
@@ -19,6 +20,7 @@ private const string SwrveStartLocationName = "StartLocation";
 private const string SwrveLocationUserUpdateName = "LocationUserUpdate";
 private const string SwrveGetPlotNotificationsName = "GetPlotNotifications";
 private const string SwrveIsOSSupportedVersionName = "sdkAvailable";
+private const string GetInfluencedDataJsonName = "getInfluenceDataJson";
 
 private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
 private const string UnityCurrentActivityName = "currentActivity";
@@ -587,8 +589,8 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     private AndroidJavaObject AndroidGetBridge()
     {
         if (SwrveHelper.IsOnDevice ()) {
-            using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
-                if (null == _androidBridge || !unityPlayerClass.CallStatic<bool> (IsInitialisedName)) {
+            using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
+                if (null == _androidBridge || !swrveAndroidCommonClass.CallStatic<bool> (IsInitialisedName)) {
                     _androidBridge = new AndroidJavaObject (SwrveAndroidUnityCommonName, GetNativeDetails ());
                 }
             }
@@ -662,14 +664,28 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     {
         if (SwrveHelper.IsOnDevice ()) {
             try {
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
-                    return unityPlayerClass.CallStatic<bool> (SwrveIsOSSupportedVersionName);
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
+                    return swrveAndroidCommonClass.CallStatic<bool> (SwrveIsOSSupportedVersionName);
                 }
             } catch (Exception exp) {
                 SwrveLog.LogWarning("Couldn't get supported OS version from Android: " + exp.ToString());
             }
         }
         return false;
+    }
+
+    public string GetInfluencedDataJson()
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                using (AndroidJavaClass pushSupportClass = new AndroidJavaClass (SwrvePushSupport)) {
+                    return pushSupportClass.CallStatic<string> (GetInfluencedDataJsonName);
+                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning ("Couldn't get influence data from Android: " + exp.ToString ());
+            }
+        }
+        return null;
     }
 }
 
