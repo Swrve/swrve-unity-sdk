@@ -13,7 +13,6 @@ import android.support.v4.app.NotificationCompat;
 
 import com.swrve.sdk.SwrveHelper;
 import com.swrve.sdk.SwrvePushNotificationConfig;
-import com.swrve.sdk.SwrvePushConstants;
 import com.swrve.sdk.SwrvePushSDK;
 import com.unity3d.player.UnityPlayer;
 
@@ -122,7 +121,11 @@ public abstract class SwrvePushSupport {
         String iconResourceName = prefs.getString(SwrvePushSupport.PROPERTY_ICON_ID, null);
         String materialIconName = prefs.getString(SwrvePushSupport.PROPERTY_MATERIAL_ICON_ID, null);
         String largeIconName = prefs.getString(SwrvePushSupport.PROPERTY_LARGE_ICON_ID, null);
+        Integer accentColorObject = null;
         int accentColor = prefs.getInt(SwrvePushSupport.PROPERTY_ACCENT_COLOR, -1);
+        if (accentColor != -1) {
+            accentColorObject = accentColor;
+        }
         String packageName = context.getPackageName();
 
         PackageManager packageManager = context.getPackageManager();
@@ -169,7 +172,7 @@ public abstract class SwrvePushSupport {
         }
 
         // Build notification
-        SwrvePushNotificationConfig notification = new SwrvePushNotificationConfig(null, iconId, materialIcon, largeIconBitmap, accentColor, pushTitle);
+        SwrvePushNotificationConfig notification = new SwrvePushNotificationConfig(null, iconId, materialIcon, largeIconBitmap, accentColorObject, pushTitle);
         return notification.createNotificationBuilder(context, msgText, msg);
     }
 

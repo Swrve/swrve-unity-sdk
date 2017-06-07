@@ -24,9 +24,9 @@ public class SwrveUWPPostProcess : SwrveCommonBuildComponent
         SwrveCommonBuildComponent.SetDependenciesForProjectJSON (
             projectPath,
         new Dictionary<string, string> {
-            {"SwrveConversationsSDK", "4.10"},
-            {"SwrveSDKCommon", "4.10"},
-            {"SwrveUnityBridge", "4.10"},
+            {"SwrveConversationsSDK", "4.10.1"},
+            {"SwrveSDKCommon", "4.10.1"},
+            {"SwrveUnityBridge", "4.10.1"},
             {"Microsoft.NETCore.UniversalWindowsPlatform", "5.1.0"}
         }
         );
@@ -37,9 +37,9 @@ public class SwrveUWPPostProcess : SwrveCommonBuildComponent
         SwrveCommonBuildComponent.SetDependenciesForProjectJSON (
             "UWP/Assembly-CSharp",
         new Dictionary<string, string> {
-            {"SwrveConversationsSDK", "4.10"},
-            {"SwrveSDKCommon", "4.10"},
-            {"SwrveUnityBridge", "4.10"}
+            {"SwrveConversationsSDK", "4.10.1"},
+            {"SwrveSDKCommon", "4.10.1"},
+            {"SwrveUnityBridge", "4.10.1"}
         }
         );
 
