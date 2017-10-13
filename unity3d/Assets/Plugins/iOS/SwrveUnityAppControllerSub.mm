@@ -15,7 +15,7 @@
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
     NSLog(@"SwrveUnityAppControllerSub - application didFinishLaunchingWithOptions");
-    
+
 #ifdef SWRVE_LOCATION_SDK
     [UnitySwrveCommonDelegate init:nil];
     UnitySwrveCommonDelegate* unitySwrve = (UnitySwrveCommonDelegate*)[SwrveCommon sharedInstance];
@@ -23,13 +23,18 @@
         [SwrvePlot initializeWithLaunchOptions:launchOptions delegate:unitySwrve];
     }
 #endif
+
+    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"10.0")) {
+        UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
+        center.delegate = [UnitySwrveCommonDelegate sharedInstance];
+    }
     return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
 - (void)application:(UIApplication*)application didReceiveRemoteNotification:(NSDictionary*)userInfo
 {
     UIApplicationState swrveState = [application applicationState];
-    
+
     BOOL swrveInBackground = (swrveState == UIApplicationStateInactive) || (swrveState == UIApplicationStateBackground);
     if (!swrveInBackground) {
         NSMutableDictionary* mutableUserInfo = [userInfo mutableCopy];

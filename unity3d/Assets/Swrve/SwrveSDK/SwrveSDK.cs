@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "4.10.1";
+    public const string SdkVersion = "4.11";
 
     protected int appId;
     /// <summary>
@@ -307,6 +307,13 @@ public partial class SwrveSDK
 
         // Load stored data
         LoadData ();
+		if (config.ABTestDetailsEnabled) {
+			try {
+				LoadABTestDetails();
+			} catch (Exception e) {
+				SwrveLog.LogError ("Error while initializing " + e);
+			}
+		}
         InitUserResources();
 
         // Get device info
@@ -334,14 +341,28 @@ public partial class SwrveSDK
             }
 
             if (config.LogGoogleAdvertisingId) {
-                RequestGooglePlayAdvertisingId(Container);
+                RequestGooglePlayAdvertisingIdGoogle(Container);
             }
         } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
             if (config.PushNotificationEnabled) {
                 InitialisePushADM(Container);
             }
+        } else if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_FIREBASE) {
+            if (config.PushNotificationEnabled) {
+                FirebaseRegisterForPushNotification(Container);
+            }
+
+            if (config.LogGoogleAdvertisingId) {
+                RequestGooglePlayAdvertisingIdFirebase(Container);
+            }
         }
 #endif
+
+		if (SwrveHelper.IsOnDevice()) {
+			InitNative();
+		}
+		ProcessInfluenceData();
+
         QueueDeviceInfo ();
 
         // Send initial events
@@ -380,11 +401,6 @@ public partial class SwrveSDK
         }
 
         DisableAutoShowAfterDelay();
-
-        if(SwrveHelper.IsOnDevice()) {
-            InitNative();
-        }
-        ProcessInfluenceData();
 
         StartCampaignsAndResourcesTimer();
 #endif
@@ -636,8 +652,10 @@ public partial class SwrveSDK
                     SwrveLog.Log("Sending events to Swrve");
                     Dictionary<string, string> requestHeaders = new Dictionary<string, string> {
                         { @"Content-Type", @"application/json; charset=utf-8" },
-                        { @"Content-Length", eventsPostEncodedData.Length.ToString () }
                     };
+#if !UNITY_2017_1_OR_NEWER
+                    requestHeaders["Content-Length"] = eventsPostEncodedData.Length.ToString();
+#endif
                     sentEvents = true;
                     StartTask ("PostEvents_Coroutine", PostEvents_Coroutine (requestHeaders, eventsPostEncodedData));
                 } else {
@@ -894,6 +912,13 @@ public partial class SwrveSDK
             StartCampaignsAndResourcesTimer();
             DisableAutoShowAfterDelay();
             ProcessInfluenceData();
+
+
+#if UNITY_IPHONE
+            if (config.PushNotificationEnabled) {
+                RefreshPushPermissions();
+            }
+#endif
         }
 #endif
     }

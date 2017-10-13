@@ -38,7 +38,13 @@ public class SwrveGcmDeviceRegistration extends SwrvePushSupport {
     }
 
 	// Called by Unity
-    public static boolean registerDevice(final String gameObject, final String senderId, final String appTitle, final String iconId, final String materialIconId, final String largeIconId, final int accentColor) {
+    public static boolean registerDevice(final String gameObject, final String senderId,
+										 final String appTitle, final String iconId,
+										 final String materialIconId, final String largeIconId,
+										 final int accentColor,
+										 final String defaultAndroidChannelId,
+										 final String defaultAndroidChannelName,
+										 final String defaultAndroidChannelImportance) {
     	if (UnityPlayer.currentActivity != null) {
 			lastGameObjectRegistered = gameObject;
 			lastSenderIdUsed = senderId;
@@ -49,7 +55,9 @@ public class SwrveGcmDeviceRegistration extends SwrvePushSupport {
 				@Override
 				public void run() {
 					try {
-			    		saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
+			    		saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId,
+								accentColor, defaultAndroidChannelId, defaultAndroidChannelName,
+								defaultAndroidChannelImportance);
 						String registrationId;
 						if (isGooglePlayServicesAvailable(activity)) {
 							Context context = activity.getApplicationContext();
@@ -97,18 +105,17 @@ public class SwrveGcmDeviceRegistration extends SwrvePushSupport {
 		}
 	}
 
-    private static void saveConfig(String gameObject, Activity activity, String appTitle, String iconId, String materialIconId, String largeIconId, int accentColor) {
+    private static void saveConfig(String gameObject, Activity activity, String appTitle, String iconId,
+								   String materialIconId, String largeIconId, int accentColor,
+								   final String defaultAndroidChannelId,
+								   final String defaultAndroidChannelName,
+								   final String defaultAndroidChannelImportance) {
     	Context context = activity.getApplicationContext();
     	final SharedPreferences prefs = getGCMPreferences(context);
 
     	SharedPreferences.Editor editor = prefs.edit();
-	    editor.putString(PROPERTY_ACTIVITY_NAME, activity.getLocalClassName());
-	    editor.putString(PROPERTY_GAME_OBJECT_NAME, gameObject);
-	    editor.putString(PROPERTY_APP_TITLE, appTitle);
-	    editor.putString(PROPERTY_ICON_ID, iconId);
-	    editor.putString(PROPERTY_MATERIAL_ICON_ID, materialIconId);
-	    editor.putString(PROPERTY_LARGE_ICON_ID, largeIconId);
-	    editor.putInt(PROPERTY_ACCENT_COLOR, accentColor);
+		SwrvePushSupport.saveConfig(editor, gameObject, activity, appTitle, iconId, materialIconId, largeIconId,
+				accentColor, defaultAndroidChannelId, defaultAndroidChannelName, defaultAndroidChannelImportance);
 	    editor.apply();
     }
 

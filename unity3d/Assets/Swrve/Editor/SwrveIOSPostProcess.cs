@@ -9,7 +9,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
+
+#if UNITY_2017_1_OR_NEWER
 using UnityEditor.iOS.Xcode;
+using UnityEditor.iOS.Xcode.Extensions;
+#else
+using SwrveInternal.iOS.Xcode;
+using SwrveInternal.iOS.Xcode.Extensions;
+#endif
 
 /// <summary>
 /// Integrates the native code required for Conversations and Location campaigns support on iOS.
@@ -19,7 +26,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
     [PostProcessBuild(100)]
     public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
     {
-#if UNITY_5
+#if UNITY_5 || UNITY_2017_1_OR_NEWER
         if (target == BuildTarget.iOS)
 #else
         if(target == BuildTarget.iPhone)
@@ -45,26 +52,120 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         // 3. Remove Android content that gets injected in the XCode project
         xcodeproj = Regex.Replace (xcodeproj, @"^.*Libraries/Plugins/Android/SwrveSDKPushSupport.*$", "", RegexOptions.Multiline);
 
-        // 4. Add required framewroks for Conversations
+        // 4. Add required frameworks for Conversations
         PBXProject project = new PBXProject();
         project.ReadFromString (xcodeproj);
         string targetGuid = project.TargetGuidByName ("Unity-iPhone");
-        project.AddFrameworkToProject (targetGuid, "AddressBook.framework", false);
-        project.AddFrameworkToProject (targetGuid, "AssetsLibrary.framework", false);
-        project.AddFrameworkToProject (targetGuid, "AdSupport.framework", false);
-        project.AddFrameworkToProject (targetGuid, "Contacts.framework", true);
-        project.AddFrameworkToProject (targetGuid, "Photos.framework", true);
 
-        // 5. Add conversations resources to bundle
+        project.AddFrameworkToProject (targetGuid, "AddressBook.framework", false /*not weak*/);
+        project.AddFrameworkToProject (targetGuid, "AssetsLibrary.framework", false /*not weak*/);
+        project.AddFrameworkToProject (targetGuid, "AdSupport.framework", false /*not weak*/);
+        project.AddFrameworkToProject (targetGuid, "Contacts.framework", true /*weak*/);
+        project.AddFrameworkToProject (targetGuid, "Photos.framework", true /*weak*/);
+
+        // 6. Add conversations resources to bundle
         if (!AddFolderToProject (project, targetGuid, "Assets/Plugins/iOS/SwrveConversationSDK/Resources", pathToProject, "Libraries/Plugins/iOS/SwrveConversationSDK/Resources")) {
             UnityEngine.Debug.LogError ("Swrve SDK - Could not find the Conversation resources folder in your project. If you want to use Conversations please contact support@swrve.com");
         }
-        xcodeproj = project.WriteToString ();
+
+        // 7. Add the required frameworks for push notifications
+        project.AddFrameworkToProject(targetGuid, "UserNotifications.framework", true /*weak*/);
+        project.AddFrameworkToProject(targetGuid, "UserNotificationsUI.framework", true /*weak*/);
+
+        // 8. Add Extension Target for Push
+        project = AddExtensionToProject(project, pathToProject);
+
+        // 9. Add Entitlements to project
+        project.AddCapability(targetGuid, PBXCapabilityType.AppGroups, null, false);
+        project.AddCapability(targetGuid, PBXCapabilityType.PushNotifications, null, false);
 
         // Write changes to the Xcode project
+        xcodeproj = project.WriteToString ();
         if (writeOut) {
             File.WriteAllText (path, xcodeproj);
         }
+    }
+
+    // Enables Advanced Push Capabilities
+    private static PBXProject AddExtensionToProject(PBXProject project, string pathToProject)
+    {
+        PBXProject proj = project;
+        string mainTarget = proj.TargetGuidByName(PBXProject.GetUnityTargetName());
+
+        // Add Push files to the extension
+        CopyFolder("Assets/Plugins/iOS/SwrvePushExtension", pathToProject + "/SwrvePushExtension");
+
+        string extensionTarget = "";
+
+#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
+        extensionTarget = proj.AddAppExtension(mainTarget, "SwrvePushExtension", PlayerSettings.applicationIdentifier + ".ServiceExtension", "SwrvePushExtension/Info.plist");
+#else
+        extensionTarget = proj.AddAppExtension(mainTarget, "SwrvePushExtension", PlayerSettings.bundleIdentifier + ".ServiceExtension", "SwrvePushExtension/Info.plist");
+#endif
+
+        // Ensure Service Files are part of the Build Phases
+        proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/NotificationService.h", "SwrvePushExtension/NotificationService.h"));
+        proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/NotificationService.m", "SwrvePushExtension/NotificationService.m"));
+        // Add TeamID from Player Settings to project
+        proj.SetTeamId(extensionTarget, PlayerSettings.iOS.appleDeveloperTeamID);
+
+        // Add Extension Common
+        if (!AddFolderToProject (proj, extensionTarget, "Assets/Plugins/iOS/SwrveSDKCommon", pathToProject, "SwrvePushExtension/SwrveSDKCommon")) {
+            UnityEngine.Debug.LogError ("Swrve SDK - Could not find the Common folder in the extension. If you want to use Rich Push please contact support@swrve.com");
+        }
+
+        // Add Frameworks needed for SwrveSDKCommon
+        proj.AddFrameworkToProject (extensionTarget, "AudioToolbox.framework", false /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "AVFoundation.framework", true /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "CFNetwork.framework", false /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "CoreGraphics.framework", false /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "CoreLocation.framework", false /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "CoreMedia.framework", false /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "CoreMotion.framework", false /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "CoreVideo.framework", false /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "Foundation.framework", false /*not weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "iAd.framework", false /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "MediaPlayer.framework", true /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "UIKit.framework", true /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "AddressBook.framework", false /*not weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "AssetsLibrary.framework", false /*not weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "AdSupport.framework", false /*not weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "Contacts.framework", true /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "Photos.framework", true /*weak*/);
+
+        // Add Notification Frameworks
+        proj.AddFrameworkToProject (extensionTarget, "UserNotifications.framework", false /*not weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "UserNotificationsUI.framework", false /*not weak*/);
+
+        // Update Build Settings for Compatibility
+        proj.AddBuildProperty (extensionTarget, "CLANG_ENABLE_OBJC_ARC", "YES");
+        proj.AddBuildProperty (extensionTarget, "IPHONEOS_DEPLOYMENT_TARGET", "10.0");
+        proj.AddBuildProperty (extensionTarget, "TARGETED_DEVICE_FAMILY", "1,2");
+        proj.AddBuildProperty (extensionTarget, "ARCHS", "$(ARCHS_STANDARD)");
+
+        // Add appgroupconfig.json to XCode project
+        string appGroupIndentifier = SwrveBuildComponent.GetPostProcessString(SwrveBuildComponent.APP_GROUP_ID_KEY);
+
+        if (string.IsNullOrEmpty (appGroupIndentifier)) {
+            SwrveLog.Log ("Swrve iOS Rich Push requires an iOSAppGroupIdentifier set in the postprocess.json file. Without it there will be no influence tracking and potential errors.");
+        } else {
+            string appGroupConfig = "appgroupconfig.json";
+            // Add the app group config so it can be read at run-time by the main app and the service extension
+            SwrveBuildComponent.SetAppGroupConfigKey("ios", Path.Combine(pathToProject + "/SwrvePushExtension", appGroupConfig));
+            proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/" + appGroupConfig, "SwrvePushExtension/" + appGroupConfig));
+            proj.AddFileToBuild(mainTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/" + appGroupConfig, "SwrvePushExtension/" + appGroupConfig));
+
+            // Edit template entitlements file
+            string entitlementContents = File.ReadAllText(pathToProject + "/SwrvePushExtension/SwrvePushExtension.entitlements");
+            entitlementContents = entitlementContents.Replace("<string>APP_GROUP_TEMP</string>", "<string>" + appGroupIndentifier + "</string>");
+            File.WriteAllText(pathToProject + "/SwrvePushExtension/SwrvePushExtension.entitlements", entitlementContents);
+
+            // Add entitlements file to service extension
+            proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/SwrvePushExtension.entitlements", "SwrvePushExtension/SwrvePushExtension.entitlements"));
+            proj.AddCapability(extensionTarget, PBXCapabilityType.AppGroups, "SwrvePushExtension/SwrvePushExtension.entitlements", false);
+        }
+
+        return proj;
     }
 
     // Enables silent push
@@ -98,7 +199,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
                     if (hookPosition > 0) {
                         string imports = "#import \"UnitySwrveCommon.h\"\n#import \"SwrveSilentPushListener.h\"\n";
                         string injectedCode = "\t// Inform the Swrve SDK\n" +
-                                              "\t[UnitySwrveCommonDelegate silentPushNotificationReceived:userInfo withCompletionHandler:^ (UIBackgroundFetchResult fetchResult, NSDictionary* swrvePayload) {\n" +
+                                              "\t[UnitySwrveCommonDelegate didReceiveRemoteNotification:userInfo withBackgroundCompletionHandler:^ (UIBackgroundFetchResult fetchResult, NSDictionary* swrvePayload) {\n" +
                                               "\t\t[SwrveSilentPushListener onSilentPush:swrvePayload];\n" +
                                               "\t}];\n\t";
                         contents = imports + contents.Substring (0, hookPosition - 1) + injectedCode + contents.Substring (hookPosition, contents.Length - hookPosition);
@@ -127,7 +228,6 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
             }
         }
     }
-
 
     private static bool AddFolderToProject(PBXProject project, string targetGuid, string folderToCopy, string pathToProject, string destPath)
     {

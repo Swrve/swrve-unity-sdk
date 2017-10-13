@@ -8,12 +8,18 @@ using SwrveUnity.IAP;
 using SwrveUnity.Helpers;
 using SwrveUnityMiniJSON;
 
-#if UNITY_5
+#if UNITY_5 || UNITY_2017_1_OR_NEWER
 using UnityEngine.iOS;
 #endif
 
 public partial class SwrveSDK
 {
+
+    private const string PushNotificationStatusKey = "Swrve.permission.ios.push_notifications";
+    private const string SilentPushNotificationStatusKey = "Swrve.permission.ios.push_bg_refresh";
+
+	private string pushNotificationStatus;
+	private string silentPushNotificationStatus;
 /// <summary>
 /// Buffer the event of a purchase using real currency, where a single item
 /// (that isn't an in-app currency) was purchased.
@@ -223,6 +229,34 @@ public void IapApple (int quantity, string productId, double productPrice, strin
         }
     }
 
+    /// <summary>
+    /// Obtain from the native layer the status of the push permissions
+    /// </summary>
+    public void RefreshPushPermissions()
+    {
+#if !UNITY_EDITOR
+		string preIOS10NotificationStatus = _swrvePushNotificationStatus (this.prefabName);		
+		if (!string.IsNullOrEmpty(preIOS10NotificationStatus)) {
+			this.pushNotificationStatus = preIOS10NotificationStatus;
+		}
+#endif
+
+#if !UNITY_EDITOR
+		this.silentPushNotificationStatus = _swrveBackgroundRefreshStatus ();
+#endif
+    }
+
+    public void SetPushNotificationsPermissionStatus(string pushStatus) {
+        // Called asynchronously by the iOS native code with the UNUserNotification status
+        if (!string.IsNullOrEmpty (pushStatus)) {
+			bool sendEvents = (this.pushNotificationStatus != pushStatus);
+			this.pushNotificationStatus = pushStatus;
+			if (sendEvents) {
+				QueueDeviceInfo();
+			}
+        }
+    }
+
 #if !UNITY_EDITOR
     [DllImport ("__Internal")]
     private static extern string _swrveiOSGetLanguage();
@@ -234,7 +268,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     private static extern string _swrveiOSGetAppVersion();
 
     [DllImport ("__Internal")]
-    private static extern void _swrveiOSRegisterForPushNotifications(string jsonCategory);
+    private static extern void _swrveiOSRegisterForPushNotifications(string unJsonCategory, string uiJsonCategory);
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSUUID();
@@ -271,6 +305,12 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
     [DllImport ("__Internal")]
     public static extern string _swrveGetInfluencedDataJson();
+
+    [DllImport ("__Internal")]
+    public static extern string _swrvePushNotificationStatus(string componentName);
+
+    [DllImport ("__Internal")]
+    public static extern string _swrveBackgroundRefreshStatus();
 #endif
 
     private string iOSdeviceToken;
@@ -279,11 +319,11 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     {
 #if !UNITY_EDITOR
         try {
-            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.pushCategories.Select (a => a.toDict ()).ToList ()));
+            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.notificationCategories.Select(a => a.toDict ()).ToList ()), Json.Serialize (config.pushCategories.Select (a => a.toDict ()).ToList ()));
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
 
-#if UNITY_5
+#if UNITY_5 || UNITY_5_OR_NEWER || UNITY_2017_1_OR_NEWER
             NotificationServices.RegisterForNotifications(NotificationType.Alert | NotificationType.Badge | NotificationType.Sound);
 #else
             NotificationServices.RegisterForRemoteNotificationTypes(RemoteNotificationType.Alert | RemoteNotificationType.Badge | RemoteNotificationType.Sound);
@@ -343,9 +383,11 @@ public void IapApple (int quantity, string productId, double productPrice, strin
                 string pushId = rawId.ToString();
                 // SWRVE-5613 Hack
                 if (rawId is Int64) {
-                    pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
+                    pushId = ConvertInt64ToInt32Hack ((Int64)rawId).ToString ();
                 }
+                    
                 SendPushEngagedEvent(pushId);
+
             } else {
                 SwrveLog.Log("Swrve remote notification received while in the foreground");
             }
@@ -375,6 +417,9 @@ public void IapApple (int quantity, string productId, double productPrice, strin
             SwrveLog.LogWarning("Couldn't get init the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
 #endif
+        if (config.PushNotificationEnabled) {
+            RefreshPushPermissions();
+        }
     }
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)
@@ -416,6 +461,14 @@ public void IapApple (int quantity, string productId, double productPrice, strin
                 SwrveLog.LogWarning("Couldn't get device IDFA, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
             }
         }
+
+		if (!string.IsNullOrEmpty (pushNotificationStatus)) {
+			deviceInfo[PushNotificationStatusKey] = pushNotificationStatus;
+		}
+
+		if (!string.IsNullOrEmpty (silentPushNotificationStatus)) {
+			deviceInfo[SilentPushNotificationStatusKey] = silentPushNotificationStatus;
+		}
 #endif
     }
 

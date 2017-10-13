@@ -3,17 +3,9 @@ package com.swrve.unity.adm;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ContentResolver;
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -34,8 +26,9 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     private final static String TAG = "SwrveAdm";
     private final static String AMAZON_RECENT_PUSH_IDS = "recent_push_ids";
     private final static String AMAZON_PREFERENCES = "swrve_amazon_unity_pref";
-
     protected final int DEFAULT_PUSH_ID_CACHE_SIZE = 16;
+
+    private Integer notificationId;
 
     public SwrveAdmIntentService() {
         super(SwrveAdmIntentService.class.getName());
@@ -118,7 +111,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
             // No duplicate found. Update the cache.
             updateRecentNotificationIdCache(recentIds, curId, pushIdCacheSize);
 
-            Context context = getApplicationContext();
+            final Context context = getApplicationContext();
             if (SwrveHelper.isNullOrEmpty(silentId)) {
                 // Visible push notification
                 final SharedPreferences prefs = SwrveAdmPushSupport.getAdmPreferences(context);
@@ -129,6 +122,18 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
                     // Call Unity SDK MonoBehaviour container
                     SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
                     SwrveAdmPushSupport.newReceivedNotification(SwrveAdmPushSupport.getGameObject(UnityPlayer.currentActivity), SwrveAdmPushSupport.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
+                }
+
+                SwrvePushSDK pushSDK = SwrvePushSDK.createInstance(this);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    pushSDK.setDefaultNotificationChannel((android.app.NotificationChannel)SwrvePushSupport.getDefaultAndroidChannel(prefs));
+                }
+
+                // Save influenced data
+                if (msg.containsKey(SwrvePushConstants.SWRVE_INFLUENCED_WINDOW_MINS_KEY)) {
+                    // Save the date and push id for tracking influenced users
+                    String normalId = SwrvePushSDK.getPushId(msg);
+                    SwrvePushSDK.saveInfluencedCampaign(context, normalId, msg.getString(SwrvePushConstants.SWRVE_INFLUENCED_WINDOW_MINS_KEY), new Date());
                 }
 
                 // Process notification
@@ -210,9 +215,16 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     }
 
     private int showNotification(NotificationManager notificationManager, Notification notification) {
-        int id = generateTimestampId();
-        notificationManager.notify(id, notification);
-        return id;
+        if (notificationId == null) {
+            // Continue to work as pre 4.11
+            int localNotificationId = generateTimestampId();
+            notificationManager.notify(localNotificationId, notification);
+            return localNotificationId;
+        } else {
+            // Notification Id generated in createNotification
+            notificationManager.notify(notificationId, notification);
+            return notificationId;
+        }
     }
 
     private int generateTimestampId() {
@@ -223,6 +235,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         String msgText = msg.getString("text");
         if (!SwrveAdmHelper.isNullOrEmpty(msgText)) {
             // Build notification
+            notificationId = SwrvePushSupport.createNotificationId(msg);
             NotificationCompat.Builder builder = createNotificationBuilder(msgText, msg);
             builder.setContentIntent(contentIntent);
             return builder.build();
@@ -233,7 +246,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     private NotificationCompat.Builder createNotificationBuilder(String msgText, Bundle msg) {
         Context context = getApplicationContext();
         SharedPreferences prefs = SwrveAdmPushSupport.getAdmPreferences(context);
-        return SwrvePushSupport.createNotificationBuilder(context, prefs, msgText, msg);
+        return SwrvePushSupport.createNotificationBuilder(context, prefs, msgText, msg, notificationId);
     }
 
     private PendingIntent createPendingIntent(Bundle msg, String activityClassName) {
@@ -249,7 +262,7 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
         return SwrvePushSupport.createIntent(this, msg, activityClassName);
     }
 
-    protected static void processIntent(Intent intent) {
+    protected static void processIntent(Context context, Intent intent) {
         if (intent == null) {
             return;
         }
@@ -259,6 +272,8 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
                 Bundle msg = extras.getBundle(SwrvePushSupport.NOTIFICATION_PAYLOAD_KEY);
                 if (msg != null) {
                     SwrveNotification notification = SwrveNotification.Builder.build(msg);
+                    // Remove influenced data before letting Unity know
+                    SwrvePushSDK.removeInfluenceCampaign(context, notification.getId());
                     SwrveAdmPushSupport.newOpenedNotification(SwrveAdmPushSupport.getGameObject(UnityPlayer.currentActivity), SwrveAdmPushSupport.ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD, notification);
                 }
             }

@@ -53,7 +53,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     public final static String EVENT_KEY = "event";
     public final static String NAME_KEY = "name";
     public final static String CONVERSATION_KEY = "conversation";
-    public final static String ORIENTATION_KEY = "orientation";
     public final static String PAGE_KEY = "page";
 
     public final static String SHARED_PREFERENCE_FILENAME = "swrve_unity_json_data";
@@ -106,8 +105,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             }
         }
 
-        SwrveLogger.d(LOG_TAG, "UnitySwrveCommon constructor called");
-
         if(null != jsonString) {
             try {
                 Gson gson = new Gson();
@@ -123,8 +120,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             } catch (Exception e) {
                 SwrveLogger.e(LOG_TAG, "Error loading settings from JSON", e);
             }
-        }
-        else {
+        } else {
             SwrveLogger.d(LOG_TAG, "UnitySwrveCommon error no jsonString, nothing native will work correctly");
         }
     }

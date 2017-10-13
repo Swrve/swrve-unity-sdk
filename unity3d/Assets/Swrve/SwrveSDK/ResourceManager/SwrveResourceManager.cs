@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SwrveUnity.Helpers;
 
 namespace SwrveUnity.ResourceManager
 {
@@ -41,6 +42,23 @@ public class SwrveResource
 }
 
 /// <summary>
+/// Represents a resource set up in the dashboard.
+/// </summary>
+public class ABTestDetails
+{
+    public readonly string Id;
+    public readonly string Name;
+    public readonly int CaseIndex;
+
+    public ABTestDetails (string id, string name, int caseIndex)
+    {
+        this.Id = id;
+        this.Name = name;
+        this.CaseIndex = caseIndex;
+    }
+}
+
+/// <summary>
 /// Use this resource manager to obtain the latest resources and their values.
 /// </summary>
 public class SwrveResourceManager
@@ -50,10 +68,21 @@ public class SwrveResourceManager
     /// </summary>
     public Dictionary<string, SwrveResource> UserResources;
 
+	/// <summary>
+	/// Information about the AB Tests a user is part of. To use this feature enable the
+	/// flag abTestDetailsEnabled in your configuration.
+	/// </summary>
+    public List<ABTestDetails> ABTestDetails;
+
+	public SwrveResourceManager() {
+		UserResources = new Dictionary<string, SwrveResource> ();	
+		ABTestDetails = new List<ABTestDetails> ();
+	}
+
     /// <summary>
     /// Update the resources with the JSON content coming from the Swrve servers.
     /// </summary>
-    /// <param name="userResources">
+    /// <param name="userResourcesJson">
     /// JSON response coming from the Swrve servers.
     /// </param>
     public void SetResourcesFromJSON (Dictionary<string, Dictionary<string, string>> userResourcesJson)
@@ -65,6 +94,29 @@ public class SwrveResourceManager
             newUserResources [userResource.Key] = new SwrveResource (userResource.Value);
         }
         UserResources = newUserResources;
+    }
+
+    /// <summary>
+    /// Update the AB Test details with the JSON content coming from the Swrve servers.
+    /// </summary>
+    /// <param name="abTestDetailsJson">
+    /// JSON response coming from the Swrve servers.
+    /// </param>
+    public void SetABTestDetailsFromJSON (Dictionary<string, object> abTestDetailsJson)
+    {
+        List<ABTestDetails> abTestDetails = new List<ABTestDetails> ();
+        Dictionary<string, object>.Enumerator enumerator = abTestDetailsJson.GetEnumerator();
+        while(enumerator.MoveNext()) {
+            KeyValuePair<string, object> abTestDetailsPair = enumerator.Current;
+            if (abTestDetailsPair.Value is Dictionary<string, object>) {
+                Dictionary<string, object> abTestDetailsDic = (Dictionary<string, object>)abTestDetailsPair.Value;
+                string name = (string)abTestDetailsDic ["name"];
+                int caseIndex = MiniJsonHelper.GetInt (abTestDetailsDic, "case_index", 0);
+                ABTestDetails newDetails = new ABTestDetails (abTestDetailsPair.Key, name, caseIndex);
+                abTestDetails.Add (newDetails);
+            }
+        }
+        ABTestDetails = abTestDetails;
     }
 
     /// <summary>

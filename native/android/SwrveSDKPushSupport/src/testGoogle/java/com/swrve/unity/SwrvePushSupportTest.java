@@ -1,43 +1,36 @@
 package com.swrve.unity;
 
-import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 
+import com.swrve.sdk.SwrvePushSDK;
 import com.swrve.unity.gcm.MainActivity;
+import com.swrve.unity.gcm.SwrveGcmDeviceRegistration;
 import com.swrve.unity.gcm.SwrveGcmIntentService;
 import com.swrve.unity.swrvesdkpushsupport.R;
 import com.unity3d.player.UnityPlayer;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import junit.framework.Assert;
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
-import org.robolectric.shadows.ShadowApplication;
-import org.robolectric.shadows.ShadowNotification;
+import org.robolectric.annotation.Config;
 
-import java.util.Date;
 import java.util.List;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-import static org.robolectric.Shadows.shadowOf;
-
-public class SwrvePushSupportTest extends SwrveBaseTest {
-
-    protected Activity mActivity;
+public class SwrvePushSupportTest extends SwrveBasePushSupportTest {
 
     @Before
     public void setUp() throws Exception {
@@ -45,6 +38,8 @@ public class SwrvePushSupportTest extends SwrveBaseTest {
 
         mActivity = Robolectric.buildActivity(MainActivity.class).create().visible().get();
         mShadowActivity = Shadows.shadowOf(mActivity);
+        service = Robolectric.setupService(SwrveGcmIntentService.class);
+        SwrvePushSDK.createInstance(mActivity);
     }
 
     @After
@@ -66,7 +61,7 @@ public class SwrvePushSupportTest extends SwrveBaseTest {
 
         // Check a notification has been shown
         NotificationManager notificationManager = (NotificationManager) RuntimeEnvironment.application.getSystemService(Context.NOTIFICATION_SERVICE);
-        List<Notification> notifications = shadowOf(notificationManager).getAllNotifications();
+        List<Notification> notifications = Shadows.shadowOf(notificationManager).getAllNotifications();
         Assert.assertEquals(1, notifications.size());
         Notification notification = notifications.get(0);
         assertEquals(msgText, notification.tickerText);
@@ -96,7 +91,7 @@ public class SwrvePushSupportTest extends SwrveBaseTest {
 
         Bundle extras = new Bundle();
         extras.putString("sound", "default");
-        NotificationCompat.Builder builder = SwrvePushSupport.createNotificationBuilder(mActivity, prefs, msgText, extras);
+        NotificationCompat.Builder builder = SwrvePushSupport.createNotificationBuilder(mActivity, prefs, msgText, extras, 0);
         assertNotification(builder, msgTitle, msgText, materialIconId, colorId, "content://settings/system/notification_sound");
     }
 
@@ -110,60 +105,27 @@ public class SwrvePushSupportTest extends SwrveBaseTest {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
         prefs.edit().clear().commit();
 
-        NotificationCompat.Builder builder = SwrvePushSupport.createNotificationBuilder(mActivity, prefs, msgText, new Bundle());
+        NotificationCompat.Builder builder = SwrvePushSupport.createNotificationBuilder(mActivity, prefs, msgText, new Bundle(), 0);
         assertNotification(builder, msgTitle, msgText, iconId, 0, null);
     }
 
+    @Config(sdk = Build.VERSION_CODES.O)
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Test
-    public void testSilentPush() throws InterruptedException, JSONException {
+    public void testNotificationChannel() throws NoSuchFieldException, IllegalAccessException {
+        String channelId = "default-channel-id";
+        String channelName = "default-channel-name";
 
-        ShadowApplication shadowApplication = ShadowApplication.getInstance();
-        long nowMilliseconds = new Date().getTime();
-
-        SwrveGcmIntentService service = Robolectric.setupService(SwrveGcmIntentService.class);
-        Bundle bundle = new Bundle();
-        bundle.putString("_sp", "10");
-        bundle.putString("_siw", "720");
-        String rawJson = "{\"key\":\"value\"}";
-        bundle.putString("_s.SilentPayload", rawJson);
-
-        service.onMessageReceived(null, bundle);
-
-        List<Intent> intents = shadowApplication.getBroadcastIntents();
-        assertEquals(1, intents.size());
-        Intent intent = intents.get(0);
-        Bundle silentBundle = intent.getExtras();
-        assertEquals(false, silentBundle.containsKey("_sp"));
-        assertEquals(false, silentBundle.containsKey("_siw"));
-        assertEquals(rawJson, silentBundle.getString("_s.SilentPayload"));
-
-        // Test no notification was shown
-        NotificationManager notificationManager = (NotificationManager) RuntimeEnvironment.application.getSystemService(Context.NOTIFICATION_SERVICE);
-        List<Notification> notifications = shadowOf(notificationManager).getAllNotifications();
-        Assert.assertEquals(0, notifications.size());
-
-        // Test that influence data was written
-        // Fake UnityPlayer.currentActivity
+        // Emulate call to register from the C# layer
         UnityPlayer.currentActivity = mActivity;
-        String influencedData = SwrvePushSupport.getInfluenceDataJson();
-        JSONArray influenceArray = new JSONArray(influencedData);
-        assertEquals(1, influenceArray.length());
-        JSONObject influenceObject = influenceArray.getJSONObject(0);
-        assertEquals("10", influenceObject.getString("trackingId"));
-        long maxInfluencedMillis = influenceObject.getLong("maxInfluencedMillis");
-        assertTrue(maxInfluencedMillis >= nowMilliseconds);
+        SwrveGcmDeviceRegistration.registerDevice("gameObject", "senderId", "appTitle", "common_google_signin_btn_icon_dark", "common_full_open_on_phone", "largeIconId", 0, channelId, channelName, "min");
+        Robolectric.flushForegroundThreadScheduler();
 
-        influencedData = SwrvePushSupport.getInfluenceDataJson();
-        assertEquals("[]", influencedData);
+        testNotificationChannelAssert(channelId, channelName);
     }
 
-    private void assertNotification(NotificationCompat.Builder builder, String title, String text, int icon, int colorId, String sound)  {
-        Notification notification = builder.build();
-        ShadowNotification shadowNotification = shadowOf(notification);
-        assertEquals("Notification title is wrong", title, shadowNotification.getContentTitle());
-        assertEquals("Notification content text is wrong", text, shadowNotification.getContentText());
-        assertEquals("Notification icon is wrong", icon, notification.icon);
-        assertEquals("Notification icon is wrong", colorId, builder.getColor());
-        assertEquals("Notification sound is wrong",  sound, notification.sound == null ? null : notification.sound.toString());
+    @Override
+    public void serviceOnMessageReceived(Bundle bundle) {
+        ((SwrveGcmIntentService)service).onMessageReceived(null, bundle);
     }
 }

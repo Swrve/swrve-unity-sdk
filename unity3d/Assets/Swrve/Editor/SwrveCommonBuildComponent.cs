@@ -18,14 +18,19 @@ public class SwrveCommonBuildComponent
         return parentDir.FullName;
     }
 
-    protected static void BuildIOS (string fileName, BuildOptions opt, string[] mainScenes, string bundleIdentifier)
+    protected static void BuildIOS (string fileName, BuildOptions opt, string[] mainScenes, string applicationIdentifier)
     {
         fileName = Path.GetFullPath (fileName);
         UnityEngine.Debug.Log ("[####] Building " + fileName);
-        UnityEngine.Debug.Log ("With: " + PlayerSettings.iOS.sdkVersion + ", opt: " + opt + ", scenes: " + mainScenes + ", id: " + bundleIdentifier);
+		UnityEngine.Debug.Log ("With: " + PlayerSettings.iOS.sdkVersion + ", opt: " + opt + ", scenes: " + mainScenes + ", id: " + applicationIdentifier);
 
-        PlayerSettings.bundleIdentifier = bundleIdentifier;
-#if UNITY_5
+#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
+		PlayerSettings.applicationIdentifier = applicationIdentifier;
+#else
+		PlayerSettings.bundleIdentifier = applicationIdentifier;
+#endif
+
+#if UNITY_5 || UNITY_2017_1_OR_NEWER
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
         string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt);
 #else
@@ -38,11 +43,15 @@ public class SwrveCommonBuildComponent
         UnityEngine.Debug.Log ("Built " + fileName);
     }
 
-    protected static void BuildAndroid (string fileName, BuildOptions opt, string[] mainScenes, string packageName)
+	protected static void BuildAndroid (string fileName, BuildOptions opt, string[] mainScenes, string applicationIdentifier)
     {
         UnityEngine.Debug.Log ("[####] Building " + fileName);
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.Android);
-        PlayerSettings.bundleIdentifier = packageName;
+#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
+		PlayerSettings.applicationIdentifier = applicationIdentifier;
+#else
+		PlayerSettings.bundleIdentifier = applicationIdentifier;
+#endif
         SwrveBuildComponent.AndroidPreBuild ();
 
         // Fix for ANDROID_HOME Unity bug
@@ -121,7 +130,14 @@ public class SwrveCommonBuildComponent
             info.UseShellExecute = false;
             info.WorkingDirectory = workingDirectory;
             info.FileName = androidSDKLocation + "/platform-tools/adb";
-            info.Arguments = string.Format("shell monkey -p {0} -c android.intent.category.LAUNCHER 1", PlayerSettings.bundleIdentifier);
+			string applicationIdentifier;
+#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
+			applicationIdentifier = PlayerSettings.applicationIdentifier;
+#else
+			applicationIdentifier = PlayerSettings.bundleIdentifier;
+#endif
+
+			info.Arguments = string.Format("shell monkey -p {0} -c android.intent.category.LAUNCHER 1", applicationIdentifier);
             proc = System.Diagnostics.Process.Start (info);
             while (!proc.HasExited) {
                 errorOutput += proc.StandardError.ReadToEnd ();

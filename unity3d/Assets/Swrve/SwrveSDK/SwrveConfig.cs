@@ -24,6 +24,7 @@ public enum Stack {
 public enum AndroidPushProvider {
     GOOGLE_GCM,
     AMAZON_ADM,
+    GOOGLE_FIREBASE,
     NONE
 }
 
@@ -231,7 +232,6 @@ public class SwrveConfig
     /// </summary>
     public int GCMPushNotificationAccentColor = -1;
 
-
     /// <summary>
     /// The title that will appear for each push notification received through Amazon Device Messaging.
     /// </summary>
@@ -260,11 +260,16 @@ public class SwrveConfig
     public int ADMPushNotificationAccentColor = -1;
 
     /// <summary>
-    /// Push provider type. GCM is the default. Set to AMAZON_ADM if using Kindle
+    /// Push provider type. GOOGLE_GCM is the default. Set to AMAZON_ADM if using Kindle or GOOGLE_FIREBASE if using Firebase.
     /// Requires the use of the correct native Android plugin (Google or Amazon variant).
     /// See Docs for integration guide.
     /// </summary>
     public AndroidPushProvider AndroidPushProvider = AndroidPushProvider.GOOGLE_GCM;
+
+    /// <summary>
+    /// Default Android O+ channel that will be used to display notifications.
+    /// </summary>
+    public AndroidChannel DefaultAndroidChannel;
 
     /// <summary>
     /// Maximum delay in seconds for in-app messages to appear after initialization.
@@ -296,8 +301,16 @@ public class SwrveConfig
     /// </summary>
     public bool LogAppleIDFA = false;
 
-    // iOS Push Categories
+    // pre-iOS10 Push Categories
     public List<UIUserNotificationCategory> pushCategories = new List<UIUserNotificationCategory>();
+
+    // iOS Push Categories
+    public List<UNNotificationCategory> notificationCategories = new List<UNNotificationCategory>();
+
+    /// <summary>
+    /// Obtain information about the AB Tests a user is part of.
+    /// </summary>
+    public bool ABTestDetailsEnabled = false;
 
     public void CalculateEndpoints (int appId)
     {

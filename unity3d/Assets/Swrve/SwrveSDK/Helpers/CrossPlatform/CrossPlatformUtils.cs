@@ -11,7 +11,7 @@ public static class CrossPlatformUtils
 {
     public static WWW MakeWWW (string url, byte[] encodedData, Dictionary<string, string> headers)
     {
-#if (UNITY_METRO || UNITY_WP8) || (UNITY_4_5 || UNITY_4_6 || UNITY_4_7 || UNITY_5)
+#if (UNITY_METRO || UNITY_WP8) || (UNITY_4_5 || UNITY_4_6 || UNITY_4_7 || UNITY_5 || UNITY_2017_1_OR_NEWER)
         return new WWW(url, encodedData, headers);
 #else
         return new WWW (url, encodedData, new Hashtable (headers));

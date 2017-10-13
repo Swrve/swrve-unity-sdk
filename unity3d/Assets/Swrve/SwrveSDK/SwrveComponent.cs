@@ -126,6 +126,11 @@ public class SwrveComponent : MonoBehaviour
 
 #if UNITY_IPHONE
     protected bool deviceTokenSent = false;
+
+    // Used by the native internals
+    public void SetPushNotificationsPermissionStatus(string pushStatus) {
+        SDK.SetPushNotificationsPermissionStatus (pushStatus);
+    }
 #endif
 
     public void Update ()

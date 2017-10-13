@@ -1,4 +1,6 @@
 {
     "NSLocationAlwaysUsageDescription": "REPLACEME",
-    "PlotToken": "REPLACEME"
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "REPLACEME",
+    "PlotToken": "REPLACEME",
+    "iOSAppGroupIdentifier": "REPLACEME"
 }

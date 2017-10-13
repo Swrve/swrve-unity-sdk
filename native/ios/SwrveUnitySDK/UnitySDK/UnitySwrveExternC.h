@@ -2,7 +2,7 @@
 extern "C"
 {
 #endif
-    
+
     int _swrveiOSConversationVersion();
     char* _swrveiOSGetLanguage();
     char* _swrveiOSGetTimeZone();
@@ -14,7 +14,7 @@ extern "C"
     char* _swrveiOSLocaleCountry();
     char* _swrveiOSIDFV();
     char* _swrveiOSIDFA();
-    void _swrveiOSRegisterForPushNotifications(char* jsonCategorySet);
+    void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet, char* jsonUICategorySet);
     void _swrveiOSInitNative(char* jsonConfig);
     void _swrveiOSShowConversation(char* conversation);
     void _swrveiOSStartLocation();
@@ -22,7 +22,9 @@ extern "C"
     char* _swrveiOSGetPlotNotifications();
     bool _swrveiOSIsSupportedOSVersion();
     char* _swrveGetInfluencedDataJson();
-    
+    char* _swrvePushNotificationStatus(char* componentName);
+    char* _swrveBackgroundRefreshStatus();
+
 #ifdef __cplusplus
 }
 #endif

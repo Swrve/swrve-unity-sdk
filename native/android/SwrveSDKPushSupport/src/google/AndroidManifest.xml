@@ -32,7 +32,6 @@
                 <action android:name="com.google.android.gms.iid.InstanceID"/>
             </intent-filter>
         </service>
-        <!-- -->
     </application>
 
 </manifest>

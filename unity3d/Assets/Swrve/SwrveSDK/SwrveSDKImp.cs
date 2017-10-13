@@ -1381,6 +1381,10 @@ public partial class SwrveSDK
                     getRequest.AppendFormat("&location_version={0}", this.locationSegmentVersion);
                 }
 
+				if (config.ABTestDetailsEnabled) {
+					getRequest.AppendFormat("&ab_test_details=1");
+				}
+
                 if (!string.IsNullOrEmpty (lastETag)) {
                     getRequest.AppendFormat ("&etag={0}", lastETag);
                 }
@@ -1439,22 +1443,9 @@ public partial class SwrveSDK
                             }
                         }
 
-                        if (root.ContainsKey("user_resources")) {
-                            // Process user resources
-                            IList<object> userResourcesData = (IList<object>)root["user_resources"];
-                            string userResourcesJson = SwrveUnityMiniJSON.Json.Serialize(userResourcesData);
-                            storage.SaveSecure(AbTestUserResourcesSave, userResourcesJson, userId);
-                            userResources = ProcessUserResources(userResourcesData);
-                            userResourcesRaw = userResourcesJson;
-
-                            if (campaignsAndResourcesInitialized) {
-                                NotifyUpdateUserResources();
-                            }
-                        }
-
-                        if (config.TalkEnabled) {
-                            if (root.ContainsKey("campaigns")) {
-                                Dictionary<string, object> campaignsData = (Dictionary<string, object>)root["campaigns"];
+						if (root.ContainsKey("campaigns")) {
+							Dictionary<string, object> campaignsData = (Dictionary<string, object>)root["campaigns"];
+                        	if (config.TalkEnabled) {
                                 string campaignsJson = SwrveUnityMiniJSON.Json.Serialize(campaignsData);
                                 SaveCampaignsCache (campaignsJson);
 
@@ -1475,7 +1466,25 @@ public partial class SwrveSDK
                                 payload.Add ("count", (campaigns == null)? "0" : campaigns.Count.ToString ());
                                 NamedEventInternal ("Swrve.Messages.campaigns_downloaded", payload, false);
                             }
+
+							if (config.ABTestDetailsEnabled && campaignsData.ContainsKey("ab_test_details")) {
+								Dictionary<string, object> abTestDetailsData = (Dictionary<string, object>)campaignsData["ab_test_details"];
+								ResourceManager.SetABTestDetailsFromJSON(abTestDetailsData);
+							}
                         }
+
+						if (root.ContainsKey("user_resources")) {
+							// Process user resources
+							IList<object> userResourcesData = (IList<object>)root["user_resources"];
+							string userResourcesJson = SwrveUnityMiniJSON.Json.Serialize(userResourcesData);
+							storage.SaveSecure(AbTestUserResourcesSave, userResourcesJson, userId);
+							userResources = ProcessUserResources(userResourcesData);
+							userResourcesRaw = userResourcesJson;
+
+							if (campaignsAndResourcesInitialized) {
+								NotifyUpdateUserResources();
+							}
+						}
 
                         if (config.LocationEnabled) {
                             if (root.ContainsKey("location_campaigns")) {
@@ -1584,6 +1593,28 @@ public partial class SwrveSDK
         }
     }
 
+	private void LoadABTestDetails ()
+	{
+		// Load ABTest details
+		try {
+			string loadedData = storage.LoadSecure (CampaignsSave, userId);
+			if (!string.IsNullOrEmpty (loadedData)) {
+				string campaignsCandidate = null;
+				if (ResponseBodyTester.TestUTF8 (loadedData, out campaignsCandidate)) {
+					Dictionary<string, object> campaignsData = (Dictionary<string, object>)Json.Deserialize (campaignsCandidate);
+					if (campaignsData.ContainsKey("ab_test_details")) {
+						Dictionary<string, object> abTestDetails = (Dictionary<string, object>) campaignsData["ab_test_details"];
+						ResourceManager.SetABTestDetailsFromJSON(abTestDetails);
+					}
+				} else {
+					SwrveLog.Log ("Failed to parse AB test details cache");
+				}
+			}
+		} catch (Exception e) {
+			SwrveLog.LogWarning ("Could not read ABTest details from cache, using default (" + e.ToString () + ")");
+		}
+	}
+
     public void SendPushEngagedEvent (string pushId)
     {
         if (("0" == pushId) || (pushId != lastPushEngagedId)) {
@@ -1591,7 +1622,12 @@ public partial class SwrveSDK
             string eventName = "Swrve.Messages.Push-" + pushId + ".engaged";
             NamedEventInternal (eventName);
             SwrveLog.Log ("Got Swrve notification with ID " + pushId);
+            Container.StartCoroutine (WaitASecondAndSendEvents_Coroutine());
         }
+    }
+    private IEnumerator WaitASecondAndSendEvents_Coroutine() {
+        yield return new WaitForSeconds (1);
+        SendQueuedEvents ();
     }
 
     protected int ConvertInt64ToInt32Hack (Int64 val)
@@ -1772,6 +1808,7 @@ public partial class SwrveSDK
                     AppendEventToBuffer ("generic_campaign_event", json, false);
 
                     SwrveLog.Log ("User was influenced by push " + trackingId);
+                    Container.StartCoroutine (WaitASecondAndSendEvents_Coroutine());
                 }
             }
         }

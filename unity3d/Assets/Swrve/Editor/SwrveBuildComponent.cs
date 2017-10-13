@@ -22,7 +22,9 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     private const string POSTPROCESS_JSON = "Assets/Swrve/Editor/postprocess.json";
     private const string TEMPLATE_CONTENT = "REPLACEME";
     private const string PLOT_PUBLIC_TOKEN_KEY = "publicToken";
+    private const string APP_GROUP_ID_PUBLIC_KEY = "appGroupIdentifier";
     public const string PLOT_TOKEN_KEY = "PlotToken";
+    public const string APP_GROUP_ID_KEY = "iOSAppGroupIdentifier";
 
     private static Dictionary<string, object> postprocessJson = null;
 
@@ -65,6 +67,12 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     public static void ExportUnityPackageAmazon ()
     {
         AssetDatabase.ExportPackage (assets, "../../buildtemp/SwrveAmazon.unityPackage", ExportPackageOptions.Recurse);
+    }
+
+    [MenuItem ("Swrve/Export unityPackageFirebase")]
+    public static void ExportUnityPackageFirebase ()
+    {
+        AssetDatabase.ExportPackage (assets, "../../buildtemp/SwrveFirebase.unityPackage", ExportPackageOptions.Recurse);
     }
 
     [MenuItem ("Swrve/iOS/Build Demo (Xcode project)")]
@@ -192,8 +200,14 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
             string project = dirs [i];
             string amFile = Path.Combine(project, "_AndroidManifest.xml");
             if (File.Exists (amFile)) {
+				string applicationIdentifier;
+#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
+				applicationIdentifier = PlayerSettings.applicationIdentifier;
+#else
+				applicationIdentifier = PlayerSettings.bundleIdentifier;
+#endif
                 File.WriteAllText (Path.Combine (project, "AndroidManifest.xml"),
-                                   File.ReadAllText (amFile).Replace ("${applicationId}", PlayerSettings.bundleIdentifier)
+					File.ReadAllText (amFile).Replace ("${applicationId}", applicationIdentifier)
                                   );
             }
         }
@@ -232,5 +246,37 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
             (Dictionary<string, object>)Json.Deserialize(File.ReadAllText(readPath));
         plotconfig[PLOT_PUBLIC_TOKEN_KEY] = plotToken;
         File.WriteAllText(writePath, Json.Serialize(plotconfig));
+    }
+
+    public static void SetAppGroupConfigKey(string platform, string writePath=null)
+    {
+        platform = platform.ToLower();
+
+        string readPath = null;
+        if("ios" == platform) {
+            readPath = "Assets/Plugins/iOS/SwrvePushExtension";
+        } else {
+            SwrveLog.Log(string.Format("{0} is an unknown platform, returning", platform));
+            return;
+        }
+        if(!Directory.Exists(readPath)) {
+            return;
+        }
+        readPath = Path.Combine(readPath, "appgroupconfig.json");
+
+        string appGroupIdItem = SwrveBuildComponent.GetPostProcessString(SwrveBuildComponent.APP_GROUP_ID_KEY);
+        if(string.IsNullOrEmpty(appGroupIdItem)) {
+            SwrveLog.Log(string.Format("No App Group Id Key was set in postprocess file, not adding appgroupconfig.json for {0}", platform));
+            return;
+        }
+
+        if(string.IsNullOrEmpty(writePath)) {
+            writePath = readPath;
+        }
+
+        Dictionary<string, object> groupconfig =
+            (Dictionary<string, object>)Json.Deserialize(File.ReadAllText(readPath));
+        groupconfig[APP_GROUP_ID_PUBLIC_KEY] = appGroupIdItem;
+        File.WriteAllText(writePath, Json.Serialize(groupconfig));
     }
 }

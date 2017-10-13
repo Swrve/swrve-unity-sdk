@@ -26,7 +26,7 @@ public class DemoGUI : BaseDemoGUI
         swrveComponent.SDK.GlobalMessageListener = new CustomMessageListener (this);
         swrveComponent.SDK.GlobalCustomButtonListener = new CustomButtonListener ();
 
-#if UNITY_5
+#if UNITY_5 || UNITY_2017_1_OR_NEWER
         Debug.LogWarning("Consider using the UnitySwrveDemo5xx");
 #endif
     }

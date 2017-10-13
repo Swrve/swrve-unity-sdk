@@ -21,6 +21,7 @@ import com.unity3d.player.UnityPlayer;
 
 public class SwrveGcmIntentService extends GcmListenerService {
 	private static final String LOG_TAG = "SwrveGcmIntentService";
+	private Integer notificationId;
 
 	@Override
 	public void onMessageReceived(String from, Bundle data) {
@@ -42,6 +43,18 @@ public class SwrveGcmIntentService extends GcmListenerService {
 						// Call Unity SDK MonoBehaviour container
 						SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
 						SwrveGcmDeviceRegistration.newReceivedNotification(SwrveGcmDeviceRegistration.getGameObject(UnityPlayer.currentActivity), SwrveGcmDeviceRegistration.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
+					}
+
+					SwrvePushSDK pushSDK = SwrvePushSDK.createInstance(this);
+					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        pushSDK.setDefaultNotificationChannel((android.app.NotificationChannel)SwrvePushSupport.getDefaultAndroidChannel(prefs));
+					}
+
+					// Save influenced data
+					if (msg.containsKey(SwrvePushConstants.SWRVE_INFLUENCED_WINDOW_MINS_KEY)) {
+						// Save the date and push id for tracking influenced users
+                        String normalId = SwrvePushSDK.getPushId(msg);
+						SwrvePushSDK.saveInfluencedCampaign(context, normalId, msg.getString(SwrvePushConstants.SWRVE_INFLUENCED_WINDOW_MINS_KEY), new Date());
 					}
 
 					// Process notification
@@ -95,9 +108,16 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	 *         elements
 	 */
 	public int showNotification(NotificationManager notificationManager, Notification notification) {
-		int notificationId = generateNotificationId(notification);
-		notificationManager.notify(notificationId, notification);
-		return notificationId;
+		if (notificationId == null) {
+			// Continue to work as pre 4.11
+			int localNotificationId = generateNotificationId(notification);
+			notificationManager.notify(localNotificationId, notification);
+			return localNotificationId;
+		} else {
+			// Notification Id generated in createNotification
+			notificationManager.notify(notificationId, notification);
+			return notificationId;
+		}
 	}
 
 	/**
@@ -122,7 +142,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 	public NotificationCompat.Builder createNotificationBuilder(String msgText, Bundle msg) {
 		Context context = getApplicationContext();
 		SharedPreferences prefs = SwrveGcmDeviceRegistration.getGCMPreferences(context);
-		return SwrvePushSupport.createNotificationBuilder(context, prefs, msgText, msg);
+		return SwrvePushSupport.createNotificationBuilder(context, prefs, msgText, msg, notificationId);
 	}
 
 	private static boolean isEmptyString(String str) {
@@ -140,6 +160,7 @@ public class SwrveGcmIntentService extends GcmListenerService {
 		String msgText = msg.getString("text");
 
 		if (!isEmptyString(msgText)) { // Build notification
+			notificationId = SwrvePushSupport.createNotificationId(msg);
 			NotificationCompat.Builder mBuilder = createNotificationBuilder(msgText, msg);
 			mBuilder.setContentIntent(contentIntent);
 			return mBuilder.build();
@@ -213,6 +234,8 @@ public class SwrveGcmIntentService extends GcmListenerService {
 					Bundle msg = extras.getBundle(SwrvePushSupport.NOTIFICATION_PAYLOAD_KEY);
 					if (msg != null) {
 						SwrveNotification notification = SwrveNotification.Builder.build(msg);
+						// Remove influenced data before letting Unity know
+						SwrvePushSDK.removeInfluenceCampaign(context, notification.getId());
 						SwrveGcmDeviceRegistration.newOpenedNotification(SwrveGcmDeviceRegistration.getGameObject(UnityPlayer.currentActivity), SwrveGcmDeviceRegistration.ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD, notification);
 					}
 				}
