@@ -5,22 +5,21 @@ using System.IO;
 using System.Linq;
 using System;
 
-
 namespace SwrveInternal.iOS.Xcode.PBX
 {
     internal class PBXObjectData
-    {   
+    {
         public string guid;
         protected PBXElementDict m_Properties = new PBXElementDict();
-        
+
         internal void SetPropertiesWhenSerializing(PBXElementDict props)
         {
             m_Properties = props;
         }
-        
-        internal PBXElementDict GetPropertiesWhenSerializing() 
-        { 
-            return m_Properties; 
+
+        internal PBXElementDict GetPropertiesWhenSerializing()
+        {
+            return m_Properties;
         }
 
         /*  Returns the internal properties dictionary which the user may manipulate directly.
@@ -32,7 +31,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             UpdateProps();
             return m_Properties;
         }
-        
+
         // returns null if it does not exist
         protected string GetPropertyString(string name)
         {
@@ -42,7 +41,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
 
             return prop.AsString();
         }
-        
+
         protected void SetPropertyString(string name, string value)
         {
             if (value == null)
@@ -50,19 +49,19 @@ namespace SwrveInternal.iOS.Xcode.PBX
             else
                 m_Properties.SetString(name, value);
         }
-        
+
         protected List<string> GetPropertyList(string name)
         {
             var prop = m_Properties[name];
             if (prop == null)
                 return null;
-            
+
             var list = new List<string>();
             foreach (var el in prop.AsArray().values)
                 list.Add(el.AsString());
             return list;
         }
-        
+
         protected void SetPropertyList(string name, List<string> value)
         {
             if (value == null)
@@ -74,28 +73,30 @@ namespace SwrveInternal.iOS.Xcode.PBX
                     array.AddString(val);
             }
         }
-        
+
         private static PropertyCommentChecker checkerData = new PropertyCommentChecker();
         internal virtual PropertyCommentChecker checker { get { return checkerData; } }
         internal virtual bool shouldCompact { get { return false; } }
-        
+
         public virtual void UpdateProps() {}      // Updates the props from cached variables
         public virtual void UpdateVars() {}       // Updates the cached variables from underlying props
     }
-    
+
     internal class PBXBuildFileData : PBXObjectData
     {
         public string fileRef;
         public string compileFlags;
         public bool weak;
+        public bool codeSignOnCopy;
+        public bool removeHeadersOnCopy;
         public List<string> assetTags;
-        
+
         private static PropertyCommentChecker checkerData = new PropertyCommentChecker(new string[]{
             "fileRef/*"
         });
         internal override PropertyCommentChecker checker { get { return checkerData; } }
         internal override bool shouldCompact { get { return true; } }
-        
+
         public static PBXBuildFileData CreateFromFile(string fileRefGUID, bool weak,
                                                       string compileFlags)
         {
@@ -105,10 +106,48 @@ namespace SwrveInternal.iOS.Xcode.PBX
             buildFile.fileRef = fileRefGUID;
             buildFile.compileFlags = compileFlags;
             buildFile.weak = weak;
+            buildFile.codeSignOnCopy = false;
+            buildFile.removeHeadersOnCopy = false;
             buildFile.assetTags = new List<string>();
             return buildFile;
         }
-        
+
+        PBXElementDict UpdatePropsAttribute(PBXElementDict settings, bool value, string attributeName)
+        {
+            PBXElementArray attrs = null;
+            if (value)
+            {
+                if (settings == null)
+                    settings = m_Properties.CreateDict("settings");
+            }
+            if (settings != null && settings.Contains("ATTRIBUTES"))
+                attrs = settings["ATTRIBUTES"].AsArray();
+
+            if (value)
+            {
+                if (attrs == null)
+                    attrs = settings.CreateArray("ATTRIBUTES");
+
+                bool exists = attrs.values.Any(attr =>
+                {
+                    return attr is PBXElementString && attr.AsString() == attributeName;
+                });
+
+                if (!exists)
+                    attrs.AddString(attributeName);
+            }
+            else
+            {
+                if (attrs != null)
+                {
+                    attrs.values.RemoveAll(el => (el is PBXElementString && el.AsString() == attributeName));
+                    if (attrs.values.Count == 0)
+                        settings.Remove("ATTRIBUTES");
+                }
+            }
+            return settings;
+        }
+
         public override void UpdateProps()
         {
             SetPropertyString("fileRef", fileRef);
@@ -116,7 +155,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             PBXElementDict settings = null;
             if (m_Properties.Contains("settings"))
                 settings = m_Properties["settings"].AsDict();
-            
+
             if (compileFlags != null && compileFlags != "")
             {
                 if (settings == null)
@@ -129,36 +168,10 @@ namespace SwrveInternal.iOS.Xcode.PBX
                     settings.Remove("COMPILER_FLAGS");
             }
 
-            if (weak)
-            {
-                if (settings == null)
-                    settings = m_Properties.CreateDict("settings");
-                PBXElementArray attrs = null;
-                if (settings.Contains("ATTRIBUTES"))
-                    attrs = settings["ATTRIBUTES"].AsArray();
-                else
-                    attrs = settings.CreateArray("ATTRIBUTES");
-                    
-                bool exists = false;
-                foreach (var value in attrs.values)
-                {
-                    if (value is PBXElementString && value.AsString() == "Weak")
-                        exists = true;
-                }
-                if (!exists)
-                    attrs.AddString("Weak");
-            }
-            else
-            {
-                if (settings != null && settings.Contains("ATTRIBUTES"))
-                {
-                    var attrs = settings["ATTRIBUTES"].AsArray();
-                    attrs.values.RemoveAll(el => (el is PBXElementString && el.AsString() == "Weak"));
-                    if (attrs.values.Count == 0)
-                        settings.Remove("ATTRIBUTES");
-                }
-            }
-            
+            settings = UpdatePropsAttribute(settings, weak, "Weak");
+            settings = UpdatePropsAttribute(settings, codeSignOnCopy, "CodeSignOnCopy");
+            settings = UpdatePropsAttribute(settings, removeHeadersOnCopy, "RemoveHeadersOnCopy");
+
             if (assetTags.Count > 0)
             {
                 if (settings == null)
@@ -172,7 +185,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 if (settings != null)
                     settings.Remove("ASSET_TAGS");
             }
-            
+
             if (settings != null && settings.values.Count == 0)
                 m_Properties.Remove("settings");
         }
@@ -188,7 +201,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 var dict = m_Properties["settings"].AsDict();
                 if (dict.Contains("COMPILER_FLAGS"))
                     compileFlags = dict["COMPILER_FLAGS"].AsString();
-                
+
                 if (dict.Contains("ATTRIBUTES"))
                 {
                     var attrs = dict["ATTRIBUTES"].AsArray();
@@ -196,6 +209,10 @@ namespace SwrveInternal.iOS.Xcode.PBX
                     {
                         if (value is PBXElementString && value.AsString() == "Weak")
                             weak = true;
+                        if (value is PBXElementString && value.AsString() == "CodeSignOnCopy")
+                            codeSignOnCopy = true;
+                        if (value is PBXElementString && value.AsString() == "RemoveHeadersOnCopy")
+                            removeHeadersOnCopy = true;
                     }
                 }
                 if (dict.Contains("ASSET_TAGS"))
@@ -207,33 +224,33 @@ namespace SwrveInternal.iOS.Xcode.PBX
             }
         }
     }
-    
+
     internal class PBXFileReferenceData : PBXObjectData
     {
         string m_Path = null;
         string m_ExplicitFileType = null;
         string m_LastKnownFileType = null;
-        
-        public string path 
-        { 
-            get { return m_Path; } 
-            set { m_ExplicitFileType = null; m_LastKnownFileType = null; m_Path = value; } 
+
+        public string path
+        {
+            get { return m_Path; }
+            set { m_ExplicitFileType = null; m_LastKnownFileType = null; m_Path = value; }
         }
 
         public string name;
         public PBXSourceTree tree;
-        public bool isFolderReference 
-        { 
-            get { return m_LastKnownFileType != null && m_LastKnownFileType == "folder"; } 
+        public bool isFolderReference
+        {
+            get { return m_LastKnownFileType != null && m_LastKnownFileType == "folder"; }
         }
-        
+
         internal override bool shouldCompact { get { return true; } }
-        
+
         public static PBXFileReferenceData CreateFromFile(string path, string projectFileName,
                                                           PBXSourceTree tree)
         {
             string guid = PBXGUID.Generate();
-            
+
             PBXFileReferenceData fileRef = new PBXFileReferenceData();
             fileRef.SetPropertyString("isa", "PBXFileReference");
             fileRef.guid = guid;
@@ -242,7 +259,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             fileRef.tree = tree;
             return fileRef;
         }
-        
+
         public static PBXFileReferenceData CreateFromFolderReference(string path, string projectFileName,
                                                                      PBXSourceTree tree)
         {
@@ -250,7 +267,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             fileRef.m_LastKnownFileType = "folder";
             return fileRef;
         }
-        
+
         public override void UpdateProps()
         {
             string ext = null;
@@ -260,7 +277,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 SetPropertyString("lastKnownFileType", m_LastKnownFileType);
             else
             {
-                if (name != null) 
+                if (name != null)
                     ext = Path.GetExtension(name);
                 else if (m_Path != null)
                     ext = Path.GetExtension(m_Path);
@@ -302,14 +319,14 @@ namespace SwrveInternal.iOS.Xcode.PBX
         private List<string> m_List = new List<string>();
 
         public GUIDList() {}
-        public GUIDList(List<string> data) 
+        public GUIDList(List<string> data)
         {
             m_List = data;
         }
-        
+
         public static implicit operator List<string>(GUIDList list) { return list.m_List; }
         public static implicit operator GUIDList(List<string> data) { return new GUIDList(data); }
-        
+
         public void AddGUID(string guid)        { m_List.Add(guid); }
         public void RemoveGUID(string guid)     { m_List.RemoveAll(x => x == guid); }
         public bool Contains(string guid)       { return m_List.Contains(guid); }
@@ -327,7 +344,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             "buildConfigurations/*"
         });
         internal override PropertyCommentChecker checker { get { return checkerData; } }
-        
+
         public static XCConfigurationListData Create()
         {
             var res = new XCConfigurationListData();
@@ -339,7 +356,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
 
             return res;
         }
-        
+
         public override void UpdateProps()
         {
             SetPropertyList("buildConfigurations", buildConfigs);
@@ -353,9 +370,9 @@ namespace SwrveInternal.iOS.Xcode.PBX
     internal class PBXGroupData : PBXObjectData
     {
         public GUIDList children;
-        public PBXSourceTree tree; 
+        public PBXSourceTree tree;
         public string name, path;
-                
+
         private static PropertyCommentChecker checkerData = new PropertyCommentChecker(new string[]{
             "children/*"
         });
@@ -377,12 +394,12 @@ namespace SwrveInternal.iOS.Xcode.PBX
 
             return gr;
         }
-        
+
         public static PBXGroupData CreateRelative(string name)
         {
             return Create(name, name, PBXSourceTree.Group);
         }
-        
+
         public override void UpdateProps()
         {
             // The name property is set only if it is different from the path property
@@ -432,8 +449,8 @@ namespace SwrveInternal.iOS.Xcode.PBX
         });
 
         internal override PropertyCommentChecker checker { get { return checkerData; } }
-        
-        public static PBXNativeTargetData Create(string name, string productRef, 
+
+        public static PBXNativeTargetData Create(string name, string productRef,
                                                  string productType, string buildConfigList)
         {
             var res = new PBXNativeTargetData();
@@ -450,7 +467,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             res.SetPropertyString("productType", productType);
             return res;
         }
-        
+
         public override void UpdateProps()
         {
             SetPropertyString("buildConfigurationList", buildConfigList);
@@ -473,11 +490,11 @@ namespace SwrveInternal.iOS.Xcode.PBX
     internal class FileGUIDListBase : PBXObjectData
     {
         public GUIDList files;
- 
+
         private static PropertyCommentChecker checkerData = new PropertyCommentChecker(new string[]{
             "files/*",
         });
-        
+
         internal override PropertyCommentChecker checker { get { return checkerData; } }
 
         public override void UpdateProps()
@@ -537,10 +554,12 @@ namespace SwrveInternal.iOS.Xcode.PBX
         private static PropertyCommentChecker checkerData = new PropertyCommentChecker(new string[]{
             "files/*",
         });
-        
+
         internal override PropertyCommentChecker checker { get { return checkerData; } }
 
         public string name;
+        public string dstPath;
+        public string dstSubfolderSpec;
 
         // name may be null
         public static PBXCopyFilesBuildPhaseData Create(string name, string dstPath, string subfolderSpec)
@@ -549,23 +568,28 @@ namespace SwrveInternal.iOS.Xcode.PBX
             res.guid = PBXGUID.Generate();
             res.SetPropertyString("isa", "PBXCopyFilesBuildPhase");
             res.SetPropertyString("buildActionMask", "2147483647");
-            res.SetPropertyString("dstPath", dstPath);
-            res.SetPropertyString("dstSubfolderSpec", subfolderSpec);
+            res.dstPath = dstPath;
+            res.dstSubfolderSpec = subfolderSpec;
             res.files = new List<string>();
             res.SetPropertyString("runOnlyForDeploymentPostprocessing", "0");
             res.name = name;
             return res;
         }
-        
+
         public override void UpdateProps()
         {
             SetPropertyList("files", files);
             SetPropertyString("name", name);
+            SetPropertyString("dstPath", dstPath);
+            SetPropertyString("dstSubfolderSpec", dstSubfolderSpec);
         }
+
         public override void UpdateVars()
         {
             files = GetPropertyList("files");
             name = GetPropertyString("name");
+            dstPath = GetPropertyString("dstPath");
+            dstSubfolderSpec = GetPropertyString("dstSubfolderSpec");
         }
     }
 
@@ -620,7 +644,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             if (!val.Contains(value))
                 val.Add(value);
         }
-        
+
         public void RemoveValue(string value)
         {
             val.RemoveAll(v => v == value);
@@ -666,7 +690,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
         public string baseConfigurationReference; // may be null
 
         // Note that QuoteStringIfNeeded does its own escaping. Double-escaping with quotes is
-        // required to please Xcode that does not handle paths with spaces if they are not 
+        // required to please Xcode that does not handle paths with spaces if they are not
         // enclosed in quotes.
         static string EscapeWithQuotesIfNeeded(string name, string value)
         {
@@ -691,7 +715,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             else
                 SetProperty(name, value);
         }
-        
+
         public void RemoveProperty(string name)
         {
             if (entries.ContainsKey(name))
@@ -719,7 +743,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             res.SetPropertyString("name", name);
             return res;
         }
-        
+
         public override void UpdateProps()
         {
             SetPropertyString("baseConfigurationReference", baseConfigurationReference);
@@ -774,15 +798,15 @@ namespace SwrveInternal.iOS.Xcode.PBX
             }
         }
     }
-    
+
     internal class PBXContainerItemProxyData : PBXObjectData
     {
         private static PropertyCommentChecker checkerData = new PropertyCommentChecker(new string[]{
             "containerPortal/*"
         });
-        
+
         internal override PropertyCommentChecker checker { get { return checkerData; } }
-        
+
         public static PBXContainerItemProxyData Create(string containerRef, string proxyType,
                                                    string remoteGlobalGUID, string remoteInfo)
         {
@@ -802,9 +826,9 @@ namespace SwrveInternal.iOS.Xcode.PBX
         private static PropertyCommentChecker checkerData = new PropertyCommentChecker(new string[]{
             "remoteRef/*"
         });
-        
+
         internal override PropertyCommentChecker checker { get { return checkerData; } }
-        
+
         public string path { get { return GetPropertyString("path"); } }
 
         public static PBXReferenceProxyData Create(string path, string fileType,
@@ -820,16 +844,16 @@ namespace SwrveInternal.iOS.Xcode.PBX
             return res;
         }
     }
-    
+
     internal class PBXTargetDependencyData : PBXObjectData
     {
         private static PropertyCommentChecker checkerData = new PropertyCommentChecker(new string[]{
             "target/*",
             "targetProxy/*"
         });
-        
+
         internal override PropertyCommentChecker checker { get { return checkerData; } }
-        
+
         public static PBXTargetDependencyData Create(string target, string targetProxy)
         {
             var res = new PBXTargetDependencyData();
@@ -864,7 +888,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             "projectReferences/*/ProjectRef/*",
             "targets/*"
         });
-        
+
         internal override PropertyCommentChecker checker { get { return checkerData; } }
 
         public List<ProjectReference> projectReferences = new List<ProjectReference>();
@@ -882,7 +906,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
         {
             projectReferences.Add(ProjectReference.Create(productGroup, projectRef));
         }
-        
+
         public override void UpdateProps()
         {
             m_Properties.values.Remove("projectReferences");
@@ -991,4 +1015,3 @@ namespace SwrveInternal.iOS.Xcode.PBX
     }
 
 } // namespace UnityEditor.iOS.Xcode
-

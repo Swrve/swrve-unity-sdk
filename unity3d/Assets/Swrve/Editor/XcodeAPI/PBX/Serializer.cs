@@ -6,18 +6,18 @@ using System.IO;
 using System.Linq;
 
 namespace SwrveInternal.iOS.Xcode.PBX
-{    
+{
     class PropertyCommentChecker
     {
         private int m_Level;
         private bool m_All;
         private List<List<string>> m_Props;
-        
-        /*  The argument is an array of matcher strings each of which determine 
+
+        /*  The argument is an array of matcher strings each of which determine
                 whether a property with a certain path needs to be decorated with a
                 comment.
-                
-                A path is a number of path elements concatenated by '/'. The last path 
+
+                A path is a number of path elements concatenated by '/'. The last path
                 element is either:
                     the key if we're referring to a dict key
                     the value if we're referring to a value in an array
@@ -25,12 +25,12 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 All other path elements are either:
                     the key if the container is dict
                     '*' if the container is array
-                
+
                 Path matcher has the same structure as a path, except that any of the
                 elements may be '*'. Matcher matches a path if both have the same number
                 of elements and for each pair matcher element is the same as path element
                 or is '*'.
-                
+
                 a/b/c matches a/b/c but not a/b nor a/b/c/d
                 a/* /c matches a/d/c but not a/b nor a/b/c/d
                 * /* /* matches any path from three elements
@@ -59,10 +59,10 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 m_Props.Add(new List<string>(prop.Split('/')));
             }
         }
-        
+
         bool CheckContained(string prop)
         {
-            if (m_All) 
+            if (m_All)
                 return true;
             foreach (var list in m_Props)
             {
@@ -79,10 +79,10 @@ namespace SwrveInternal.iOS.Xcode.PBX
             }
             return false;
         }
-        
+
         public bool CheckStringValueInArray(string value) { return CheckContained(value); }
         public bool CheckKeyInDict(string key) { return CheckContained(key); }
-        
+
         public bool CheckStringValueInDict(string key, string value)
         {
             foreach (var list in m_Props)
@@ -94,9 +94,9 @@ namespace SwrveInternal.iOS.Xcode.PBX
                         return true;
                 }
             }
-            return false;       
+            return false;
         }
-        
+
         public PropertyCommentChecker NextLevel(string prop)
         {
             var newList = new List<List<string>>();
@@ -111,7 +111,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
         }
     }
 
-    class Serializer 
+    class Serializer
     {
         public static PBXElementDict ParseTreeAST(TreeAST ast, TokenList tokens, string text)
         {
@@ -124,7 +124,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             }
             return el;
         }
-        
+
         public static PBXElementArray ParseArrayAST(ArrayAST ast, TokenList tokens, string text)
         {
             var el = new PBXElementArray();
@@ -134,7 +134,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             }
             return el;
         }
-        
+
         public static PBXElement ParseValueAST(ValueAST ast, TokenList tokens, string text)
         {
             if (ast is TreeAST)
@@ -145,7 +145,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 return ParseIdentifierAST((IdentifierAST)ast, tokens, text);
             return null;
         }
-        
+
         public static PBXElementString ParseIdentifierAST(IdentifierAST ast, TokenList tokens, string text)
         {
             Token tok = tokens[ast.value];
@@ -161,11 +161,11 @@ namespace SwrveInternal.iOS.Xcode.PBX
                     return new PBXElementString(value);
                 default:
                     throw new Exception("Internal parser error");
-            }           
+            }
         }
-        
+
         static string k_Indent = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
-        
+
         static string GetIndent(int indent)
         {
             return k_Indent.Substring(0, indent);
@@ -178,8 +178,8 @@ namespace SwrveInternal.iOS.Xcode.PBX
             else
                 sb.Append(PBXStream.QuoteStringIfNeeded(s));
         }
-                                         
-        public static void WriteDictKeyValue(StringBuilder sb, string key, PBXElement value, int indent, bool compact, 
+
+        public static void WriteDictKeyValue(StringBuilder sb, string key, PBXElement value, int indent, bool compact,
                                              PropertyCommentChecker checker, GUIDToCommentMap comments)
         {
             if (!compact)
@@ -200,12 +200,12 @@ namespace SwrveInternal.iOS.Xcode.PBX
             if (compact)
                 sb.Append(" ");
         }
-        
-        public static void WriteDict(StringBuilder sb, PBXElementDict el, int indent, bool compact, 
+
+        public static void WriteDict(StringBuilder sb, PBXElementDict el, int indent, bool compact,
                                      PropertyCommentChecker checker, GUIDToCommentMap comments)
         {
             sb.Append("{");
-            
+
             if (el.Contains("isa"))
                 WriteDictKeyValue(sb, "isa", el["isa"], indent+1, compact, checker, comments);
             var keys = new List<string>(el.values.Keys);
@@ -222,8 +222,8 @@ namespace SwrveInternal.iOS.Xcode.PBX
             }
             sb.Append("}");
         }
- 
-        public static void WriteArray(StringBuilder sb, PBXElementArray el, int indent, bool compact, 
+
+        public static void WriteArray(StringBuilder sb, PBXElementArray el, int indent, bool compact,
                                       PropertyCommentChecker checker, GUIDToCommentMap comments)
         {
             sb.Append("(");
@@ -234,7 +234,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
                     sb.Append("\n");
                     sb.Append(GetIndent(indent+1));
                 }
-                
+
                 if (value is PBXElementString)
                     WriteStringImpl(sb, value.AsString(), checker.CheckStringValueInArray(value.AsString()), comments);
                 else if (value is PBXElementDict)
@@ -245,7 +245,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 if (compact)
                     sb.Append(" ");
             }
-            
+
             if (!compact)
             {
                 sb.Append("\n");
@@ -254,6 +254,5 @@ namespace SwrveInternal.iOS.Xcode.PBX
             sb.Append(")");
         }
     }
-    
-} // namespace UnityEditor.iOS.Xcode
 
+} // namespace UnityEditor.iOS.Xcode

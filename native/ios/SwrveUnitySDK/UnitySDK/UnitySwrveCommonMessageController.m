@@ -53,7 +53,8 @@
             bool success = [SwrveConversationItemViewController showConversation:conversation
                                                               withItemController:self.swrveConversationItemViewController
                                                                 withEventHandler:(id <SwrveMessageEventHandler>) self
-                                                                        inWindow:self.conversationWindow];
+                                                                        inWindow:self.conversationWindow
+                                                             withMessageDelegate:nil];
             if (!success) {
                 self.conversationWindow = nil;
             }

@@ -6,19 +6,19 @@
 +(char*) NSStringCopy:(NSString*)string;
 +(NSString*) CStringToNSString:(char*)string;
 
-+(char*) GetLanguage;
-+(char*) GetTimeZone;
-+(char*) GetAppVersion;
-+(char*) GetUUID;
-+(char*) GetCarrierName;
-+(char*) GetCarrierIsoCountryCode;
-+(char*) GetCarrierCode;
-+(char*) GetLocaleCountry;
-+(char*) GetIDFV;
-+(char*) GetIDFA;
-+(void) RegisterForPushNotifications:(NSString*)jsonCategorySet withBackwardsCompatibility:(NSString*)backCompatJsonCategorySet;
-+(void) InitPlot;
-+(bool) IsSupportediOSVersion;
++(char*) language;
++(char*) timeZone;
++(char*) appVersion;
++(char*) UUID;
++(char*) carrierName;
++(char*) carrierIsoCountryCode;
++(char*) carrierCode;
++(char*) localeCountry;
++(char*) IDFV;
++(char*) IDFA;
++(void) registerForPushNotifications:(NSString*)jsonCategorySet withBackwardsCompatibility:(NSString*)backCompatJsonCategorySet;
++(void) initPlot;
++(bool) isSupportediOSVersion;
 
 +(NSSet*) categoryFromJson:(NSString*)jsonString;
 +(NSSet*) preiOS10CategoryFromJson:(NSString*)jsonString;

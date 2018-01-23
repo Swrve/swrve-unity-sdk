@@ -558,19 +558,19 @@ Prefab:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.size
+      propertyPath: Config.PushCategories.Array.size
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.size
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.size
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].defaultContextActions.Array.size
+      propertyPath: Config.PushCategories.Array.data[0].defaultContextActions.Array.size
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].minimalContextActions.Array.size
+      propertyPath: Config.PushCategories.Array.data[0].minimalContextActions.Array.size
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
@@ -610,7 +610,7 @@ Prefab:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.TalkEnabled
+      propertyPath: Config.MessagingEnabled
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
@@ -642,10 +642,6 @@ Prefab:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: InitialiseOnStart
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
       propertyPath: Config.DefaultLanguage
       value: en
       objectReference: {fileID: 0}
@@ -658,151 +654,151 @@ Prefab:
       value: http://content.swrve.com
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[0].authenticationRequired
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[0].authenticationRequired
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].identifier
+      propertyPath: Config.PushCategories.Array.data[0].identifier
       value: INVITE_CATEGORY
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[0].identifier
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[0].identifier
       value: ACCEPT_IDENTIFIER
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[0].title
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[0].title
       value: Accept
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[1].identifier
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[1].identifier
       value: REJECT_IDENTIFIER
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[1].title
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[1].title
       value: Reject
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[1].context
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[1].context
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[0].activationMode
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[0].activationMode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[1].activationMode
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[1].activationMode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[0].destructive
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[0].destructive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[1].destructive
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[1].destructive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[2].identifier
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[2].identifier
       value: ACCEPT_IDENTIFIER
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[2].title
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[2].title
       value: Reject
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[2].context
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[2].context
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[2].activationMode
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[2].activationMode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[2].destructive
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[2].destructive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[3].identifier
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[3].identifier
       value: REJECT_IDENTIFIER
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[3].title
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[3].title
       value: Accept
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[3].context
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[3].context
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[3].activationMode
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[3].activationMode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].contextActions.Array.data[3].destructive
+      propertyPath: Config.PushCategories.Array.data[0].contextActions.Array.data[3].destructive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].defaultContextActions.Array.data[0].identifier
+      propertyPath: Config.PushCategories.Array.data[0].defaultContextActions.Array.data[0].identifier
       value: ACCEPT_IDENTIFIER
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].defaultContextActions.Array.data[0].title
+      propertyPath: Config.PushCategories.Array.data[0].defaultContextActions.Array.data[0].title
       value: Accept
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].defaultContextActions.Array.data[0].activationMode
+      propertyPath: Config.PushCategories.Array.data[0].defaultContextActions.Array.data[0].activationMode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].defaultContextActions.Array.data[0].destructive
+      propertyPath: Config.PushCategories.Array.data[0].defaultContextActions.Array.data[0].destructive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].defaultContextActions.Array.data[1].identifier
+      propertyPath: Config.PushCategories.Array.data[0].defaultContextActions.Array.data[1].identifier
       value: REJECT_IDENTIFIER
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].defaultContextActions.Array.data[1].title
+      propertyPath: Config.PushCategories.Array.data[0].defaultContextActions.Array.data[1].title
       value: Reject
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].defaultContextActions.Array.data[1].destructive
+      propertyPath: Config.PushCategories.Array.data[0].defaultContextActions.Array.data[1].destructive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].minimalContextActions.Array.data[0].destructive
+      propertyPath: Config.PushCategories.Array.data[0].minimalContextActions.Array.data[0].destructive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].minimalContextActions.Array.data[1].destructive
+      propertyPath: Config.PushCategories.Array.data[0].minimalContextActions.Array.data[1].destructive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].minimalContextActions.Array.data[1].title
+      propertyPath: Config.PushCategories.Array.data[0].minimalContextActions.Array.data[1].title
       value: Reject
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].minimalContextActions.Array.data[1].identifier
+      propertyPath: Config.PushCategories.Array.data[0].minimalContextActions.Array.data[1].identifier
       value: REJECT_IDENTIFIER
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].minimalContextActions.Array.data[0].title
+      propertyPath: Config.PushCategories.Array.data[0].minimalContextActions.Array.data[0].title
       value: Accept
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].minimalContextActions.Array.data[0].identifier
+      propertyPath: Config.PushCategories.Array.data[0].minimalContextActions.Array.data[0].identifier
       value: ACCEPT_IDENTIFIER
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].defaultContextActions.Array.data[1].activationMode
+      propertyPath: Config.PushCategories.Array.data[0].defaultContextActions.Array.data[1].activationMode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].minimalContextActions.Array.data[0].activationMode
+      propertyPath: Config.PushCategories.Array.data[0].minimalContextActions.Array.data[0].activationMode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 035bc9a24db7f4733be8484046919a48, type: 2}
-      propertyPath: Config.pushCategories.Array.data[0].minimalContextActions.Array.data[1].activationMode
+      propertyPath: Config.PushCategories.Array.data[0].minimalContextActions.Array.data[1].activationMode
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []

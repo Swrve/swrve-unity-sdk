@@ -1,9 +1,12 @@
 package com.swrve.sdk;
 
 import android.app.Activity;
+import android.app.NotificationChannel;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -42,6 +45,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     public final static String USER_ID_KEY = "userId";
     public final static String SWRVE_PATH_KEY = "swrvePath";
     public final static String LOC_TAG_KEY = "locTag";
+    public final static String QAUSER_KEY = "swrve.q1"; // note this
     public final static String SIG_SUFFIX_KEY = "sigSuffix";
     public final static String APP_VERSION_KEY = "appVersion";
     public final static String UNIQUE_KEY_KEY = "uniqueKey";
@@ -68,6 +72,8 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     private String sessionKey;
 
     private File cacheDir;
+
+    private final SwrveUnityNotifcationChannelUtil notificationChannelUtil;
 
     /***
      * This is the automatically called Constructor from SwrveUnityApplication
@@ -101,9 +107,11 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             try {
                 jsonString = sp.getString(LOG_TAG, "");
             } catch (Exception e) {
-                SwrveLogger.e(LOG_TAG, "Error loading Unity settings from shared prefs", e);
+                SwrveLogger.e("Error loading Unity settings from shared prefs", e);
             }
         }
+
+        SwrveLogger.d("UnitySwrveCommon constructor called");
 
         if(null != jsonString) {
             try {
@@ -115,18 +123,23 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
                 editor.putString(LOG_TAG, jsonString);
                 editor.apply();
 
-                this.cacheDir = new File(getSwrveTemporaryPath());
+                String tempPath = getSwrveTemporaryPath();
+                if (tempPath != null) {
+                    this.cacheDir = new File(tempPath);
+                }
                 sessionKey = SwrveHelper.generateSessionToken(this.getApiKey(), this.getAppId(), getUserId());
             } catch (Exception e) {
-                SwrveLogger.e(LOG_TAG, "Error loading settings from JSON", e);
+                SwrveLogger.e("Error loading settings from JSON", e);
             }
         } else {
-            SwrveLogger.d(LOG_TAG, "UnitySwrveCommon error no jsonString, nothing native will work correctly");
+            SwrveLogger.d("UnitySwrveCommon error no jsonString, nothing native will work correctly");
         }
+
+        notificationChannelUtil = new SwrveUnityNotifcationChannelUtil(this.context);
     }
 
     private void resetDeviceInfo() {
-        if(this.currentDetails.containsKey(DEVICE_INFO_KEY)) {
+        if (this.currentDetails != null && this.currentDetails.containsKey(DEVICE_INFO_KEY)) {
             LinkedTreeMap<String, Object> _deviceInfo = (LinkedTreeMap<String, Object>)this.currentDetails.get(DEVICE_INFO_KEY);
             try {
                 JSONObject deviceInfo = new JSONObject("{}");
@@ -137,18 +150,18 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
                 this.currentDetails.put(DEVICE_INFO_KEY, deviceInfo);
             }
             catch (JSONException ex) {
-                SwrveLogger.e(LOG_TAG, "Error while creating device info json object", ex);
+                SwrveLogger.e("Error while creating device info json object", ex);
             }
         }
     }
 
     @CalledByUnity
-    public static void StartLocation() {
+    public static void startLocation() {
         SwrvePlot.onCreate(UnityPlayer.currentActivity);
     }
 
     @CalledByUnity
-    public static void LocationUserUpdate(String jsonString) {
+    public static void locationUserUpdate(String jsonString) {
         Gson gson = new Gson();
         Map<String, String> map = new HashMap<>();
         Map<String, Object> _map = gson.fromJson(jsonString, new TypeToken<Map<String, Object>>(){}.getType());
@@ -159,12 +172,12 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     }
 
     @CalledByUnity
-    public static String GetPlotNotifications() {
+    public static String getPlotNotifications() {
         Gson gson = new Gson();
         return gson.toJson(Plot.getLoadedNotifications());
     }
 
-    private String readFile(String dir, String filename) {
+    private String readFile(String userId, String dir, String filename) {
         String fileContent = "";
 
         String filePath = new File(dir, filename).getPath();
@@ -177,7 +190,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             }
             String _fileContent = readFile(filePath);
 
-            String computedSignature = SwrveHelper.createHMACWithMD5(_fileContent, getUniqueKey());
+            String computedSignature = SwrveHelper.createHMACWithMD5(_fileContent, getUniqueKey(userId));
 
             if (!fileSignature.trim().equals(computedSignature.trim())) {
                 throw new SecurityException("Signature validation failed, signatures mismatch");
@@ -185,9 +198,9 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             fileContent = _fileContent;
 
         } catch (NoSuchAlgorithmException e) {
-            SwrveLogger.e(LOG_TAG, "Computing signature failed because of invalid algorithm", e);
+            SwrveLogger.e("Computing signature failed because of invalid algorithm", e);
         } catch (InvalidKeyException e) {
-            SwrveLogger.e(LOG_TAG, "Computing signature failed because of an invalid key", e);
+            SwrveLogger.e("Computing signature failed because of an invalid key", e);
         }
 
         return fileContent;
@@ -198,7 +211,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             try {
                 closeable.close();
             } catch (IOException e) {
-                SwrveLogger.e(LOG_TAG, "Error closing closable: " + closeable, e);
+                SwrveLogger.e("Error closing closable: " + closeable, e);
             }
         }
     }
@@ -228,9 +241,9 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
                 // prints character
                 text.append((char)value);
             }
-            SwrveLogger.d(LOG_TAG, "FileReader read file: " + filePath + ", content: " + text);
+            SwrveLogger.d("FileReader read file: %s, content: %s", filePath, text);
         } catch(Exception e) {
-            SwrveLogger.e(LOG_TAG, "Error reading file:" + filePath, e);
+            SwrveLogger.e("Error reading file:" + filePath, e);
         } finally {
             // releases resources associated with the streams
             tryCloseCloseable(is);
@@ -242,14 +255,14 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     }
 
     private String getStringDetail(String key) {
-        if(currentDetails.containsKey(key)) {
+        if (currentDetails != null && currentDetails.containsKey(key)) {
             return (String)currentDetails.get(key);
         }
         return null;
     }
 
     private int getIntDetail(String key) {
-        if(currentDetails.containsKey(key)) {
+        if (currentDetails != null && currentDetails.containsKey(key)) {
             return ((Double)currentDetails.get(key)).intValue();
         }
         return 0;
@@ -312,7 +325,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     }
 
     @Override
-    public String getUniqueKey() {
+    public String getUniqueKey(String userId) {
         return getStringDetail(UNIQUE_KEY_KEY);
     }
 
@@ -337,25 +350,35 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         // no operation, events will be send when the game is focused again
     }
 
-    private void sendMessageUp(String method, String msg)
-    {
+    private void sendMessageUp(String method, String msg) {
         UnityPlayer.UnitySendMessage(getPrefabName(), method, msg);
     }
 
     @Override
     public String getCachedData(String userId, String key) {
-        if(LOCATION_CAMPAIGN_CATEGORY.equals(key))
-        {
-            return readFile(getSwrvePath(), getLocTag() + userId);
+        String cacheData = null;
+        switch (key) {
+            case CACHE_LOCATION_CAMPAIGNS:
+                cacheData = readFile(userId, getSwrvePath(), getLocTag() + userId);
+                break;
+            case CACHE_QA:
+                cacheData = readFile(userId, getSwrvePath(), QAUSER_KEY + userId);
+                break;
         }
-        return null;
+        return cacheData;
     }
 
     @Override
-    public void sendEventsWakefully(Context context, ArrayList<String> events) {
-        Intent intent = new Intent(context, SwrveUnityWakefulReceiver.class);
-        intent.putStringArrayListExtra(SwrveUnityWakefulService.EXTRA_EVENTS, events);
-        context.sendBroadcast(intent);
+    public void sendEventsInBackground(Context context, String userId, ArrayList<String> events) {
+        Intent intent;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            // Avoid using the deprecated wakeful receiver
+            SwrveUnityEventSenderJobService.scheduleJob(context, events);
+        } else {
+            intent = new Intent(context, SwrveUnityWakefulReceiver.class);
+            intent.putStringArrayListExtra(SwrveUnityBackgroundEventSender.EXTRA_EVENTS, events);
+            context.sendBroadcast(intent);
+        }
     }
 
     @Override
@@ -367,18 +390,18 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
         payload.put(CONVERSATION_KEY, Integer.toString(conversationId));
         payload.put(PAGE_KEY, page);
 
-        SwrveLogger.d(LOG_TAG, "Sending view conversation event: " + eventParamName);
+        SwrveLogger.d("Sending view conversation event: %s", eventParamName);
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(NAME_KEY, eventParamName);
 
         ArrayList<String> conversationEvents = new ArrayList<>();
         try {
-            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, payload, getNextSequenceNumber()));
+            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, payload, getNextSequenceNumber(), System.currentTimeMillis()));
         } catch (JSONException e) {
-            SwrveLogger.e(LOG_TAG, "Could not queue conversation events params: " + parameters, e);
+            SwrveLogger.e("Could not queue conversation events params: " + parameters, e);
         }
-        sendEventsWakefully(context.get(), conversationEvents);
+        sendEventsInBackground(context.get(), getUserId(), conversationEvents);
     }
 
     /***
@@ -423,7 +446,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
             SwrveBaseConversation conversation = new SwrveBaseConversation(new JSONObject(conversationJson), cacheDir);
             ConversationActivity.showConversation(context.get(), conversation, SwrveOrientation.parse(orientation));
         } catch (Exception exc) {
-            SwrveLogger.e(LOG_TAG, "Could not JSONify conversation (or another error), conversation string didn't have the correct structure.");
+            SwrveLogger.e("Could not JSONify conversation (or another error), conversation string didn't have the correct structure.");
         }
     }
 
@@ -440,5 +463,38 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     @Override
     public int getNextSequenceNumber() {
         return 0; //
+    }
+
+    @CalledByUnity
+    public void setDefaultNotificationChannel(String id, String name, String importance) {
+        try {
+            notificationChannelUtil.setDefaultNotificationChannel(id, name, importance);
+        } catch (Exception ex) {
+            SwrveLogger.e("Exception trying to set notification channel details. [id:%s] [name:%s] [importance:%s]", ex, id, name, importance);
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    @Override
+    public NotificationChannel getDefaultNotificationChannel() {
+        return notificationChannelUtil.getDefaultNotificationChannel();
+    }
+
+    @CalledByUnity
+    public static void updateQaUser() {
+        try {
+            QaUser.update();
+        } catch (Exception ex) {
+            SwrveLogger.e("Exception trying to update QaUser instance", ex);
+        }
+    }
+
+    @CalledByUnity
+    public static void locationCampaignsDownloaded() {
+        try {
+            QaUser.locationCampaignsDownloaded();
+        } catch (Exception ex) {
+            SwrveLogger.e("Exception trying to call locationCampaignsDownloaded from unity", ex);
+        }
     }
 }

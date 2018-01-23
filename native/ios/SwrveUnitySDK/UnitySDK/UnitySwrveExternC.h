@@ -4,9 +4,9 @@ extern "C"
 #endif
 
     int _swrveiOSConversationVersion();
-    char* _swrveiOSGetLanguage();
-    char* _swrveiOSGetTimeZone();
-    char* _swrveiOSGetAppVersion();
+    char* _swrveiOSLanguage();
+    char* _swrveiOSTimeZone();
+    char* _swrveiOSAppVersion();
     char* _swrveiOSUUID();
     char* _swrveiOSCarrierName();
     char* _swrveiOSCarrierIsoCountryCode();
@@ -19,11 +19,12 @@ extern "C"
     void _swrveiOSShowConversation(char* conversation);
     void _swrveiOSStartLocation();
     void _swrveiOSLocationUserUpdate(char* jsonMap);
-    char* _swrveiOSGetPlotNotifications();
+    char* _swrveiOSPlotNotifications();
     bool _swrveiOSIsSupportedOSVersion();
-    char* _swrveGetInfluencedDataJson();
+    char* _swrveInfluencedDataJson();
     char* _swrvePushNotificationStatus(char* componentName);
     char* _swrveBackgroundRefreshStatus();
+    void _swrveiOSUpdateQaUser(char* jsonMap);
 
 #ifdef __cplusplus
 }

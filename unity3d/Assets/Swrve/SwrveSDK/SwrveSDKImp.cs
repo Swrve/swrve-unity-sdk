@@ -46,6 +46,7 @@ public partial class SwrveSDK
     private const string PushTrackingKey = "_p";
     private const string SilentPushTrackingKey = "_sp";
     private const string PushDeeplinkKey = "_sd";
+    private const string PushNestedJsonKey = "_s.JsonPayload";
 
     private string escapedUserId;
     private long installTimeEpoch;
@@ -82,12 +83,13 @@ public partial class SwrveSDK
     protected long campaignsAndResourcesLastRefreshed;
     protected bool campaignsAndResourcesInitialized;
 
-    // Talk related
+    // Messaging related
     private static readonly int CampaignEndpointVersion = 6;
     private static readonly int CampaignResponseVersion = 2;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
     protected static readonly string CampaignsSettingsSave = "Swrve_CampaignsData";
     protected static readonly string LocationSave = "loccc2"; // Saved securely
+    protected static readonly string QaUserSave = "swrve.q1"; // Saved securely
     private static readonly string WaitTimeFormat = @"HH\:mm\:ss zzz";
     protected static readonly string InstallTimeFormat = "yyyyMMdd";
     private string resourcesAndCampaignsUrl;
@@ -104,7 +106,7 @@ public partial class SwrveSDK
     protected IInputManager inputManager = NativeInputManager.Instance;
     protected string prefabName;
 
-    // Talk rules
+    // Messaging rules
     private const int DefaultDelayFirstMessage = 150;
     private const long DefaultMaxShows = 99999;
     private const int DefaultMinDelay = 55;
@@ -689,7 +691,7 @@ public partial class SwrveSDK
         if (config.ConversationsEnabled) {
             baseMessage = GetConversationForEvent (eventName, payload);
         }
-        if ((baseMessage == null) && config.TalkEnabled) {
+        if ((baseMessage == null) && config.MessagingEnabled) {
             baseMessage = GetMessageForEvent (eventName, payload);
         }
 
@@ -1255,7 +1257,10 @@ public partial class SwrveSDK
                         SwrveLog.Log ("You are a QA user!");
                         campaignsDownloaded = new Dictionary<int, string> ();
                         qaUser = new SwrveQAUser (this, jsonQa);
-
+#if UNITY_IOS
+                        // This is for Location logging
+		                updateQAUser(jsonQa);
+ #endif
                         if (jsonQa.ContainsKey ("campaigns")) {
                             IList<object> jsonQaCampaigns = (List<object>)jsonQa ["campaigns"];
                             for (int i = 0; i < jsonQaCampaigns.Count; i++) {
@@ -1272,6 +1277,15 @@ public partial class SwrveSDK
                     } else {
                         qaUser = null;
                     }
+
+#if UNITY_ANDROID
+                    if (qaUser != null && qaUser.Logging) {
+                        storage.SaveSecure(QaUserSave, "true", userId);
+                        QaUserUpdateInstance();
+                    } else {
+                        storage.SaveSecure(QaUserSave, "false", userId);
+                    }
+#endif
 
                     // Campaigns
                     IList<object> jsonCampaigns = (List<object>)root ["campaigns"];
@@ -1369,7 +1383,7 @@ public partial class SwrveSDK
                 StringBuilder getRequest = new StringBuilder (resourcesAndCampaignsUrl)
                 .AppendFormat ("?user={0}&api_key={1}&app_version={2}&joined={3}", escapedUserId, ApiKey, WWW.EscapeURL (GetAppVersion ()), installTimeEpoch);
 
-                if (config.TalkEnabled) {
+                if (config.MessagingEnabled) {
                     getRequest.AppendFormat ("&version={0}&orientation={1}&language={2}&app_store={3}&device_width={4}&device_height={5}&device_dpi={6}&os_version={7}&device_name={8}",
                                              CampaignEndpointVersion, config.Orientation.ToString ().ToLower (), Language, config.AppStore,
                                              deviceWidth, deviceHeight, dpi, WWW.EscapeURL (osVersion), WWW.EscapeURL (deviceName));
@@ -1445,7 +1459,7 @@ public partial class SwrveSDK
 
 						if (root.ContainsKey("campaigns")) {
 							Dictionary<string, object> campaignsData = (Dictionary<string, object>)root["campaigns"];
-                        	if (config.TalkEnabled) {
+                        	if (config.MessagingEnabled) {
                                 string campaignsJson = SwrveUnityMiniJSON.Json.Serialize(campaignsData);
                                 SaveCampaignsCache (campaignsJson);
 
@@ -1494,6 +1508,9 @@ public partial class SwrveSDK
 #endif
                                 string locationJson = SwrveUnityMiniJSON.Json.Serialize(locationData);
                                 SaveLocationCache (locationJson);
+#if UNITY_ANDROID
+                                QaUserLocationCampaignsDownloaded();
+#endif
                             }
                         }
                     }
@@ -1619,8 +1636,7 @@ public partial class SwrveSDK
     {
         if (("0" == pushId) || (pushId != lastPushEngagedId)) {
             lastPushEngagedId = pushId;
-            string eventName = "Swrve.Messages.Push-" + pushId + ".engaged";
-            NamedEventInternal (eventName);
+            NamedEventInternal ("Swrve.Messages.Push-" + pushId + ".engaged", null, false);
             SwrveLog.Log ("Got Swrve notification with ID " + pushId);
             Container.StartCoroutine (WaitASecondAndSendEvents_Coroutine());
         }
@@ -1772,7 +1788,7 @@ public partial class SwrveSDK
 
 #if UNITY_IOS
         try {
-            influenceDataJson = _swrveGetInfluencedDataJson();
+            influenceDataJson = _swrveInfluencedDataJson();
         } catch(Exception exp) {
             SwrveLog.LogWarning("Couldn't get influence data from the native side correctly, make sure you have the iOS plugin inside your project and you are running on an iOS device: " + exp.ToString());
         }

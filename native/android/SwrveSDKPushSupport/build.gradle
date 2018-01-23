@@ -11,43 +11,55 @@ android {
         versionName "1.0"
     }
 
-    publishNonDefault true
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+
+    flavorDimensions "swrve-sdk"
 
     productFlavors {
-        google {}
-        amazon {}
-        firebase {}
+        google {
+            flavorDimensions "swrve-sdk"
+        }
+        amazon {
+            flavorDimensions "swrve-sdk"
+        }
+        firebase {
+            flavorDimensions "swrve-sdk"
+        }
     }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:support-v4:' + project.ANDROID_DESIGN_TOOLS_VERSION
-    compile 'com.google.code.gson:gson:2.2.+'
-    compile project(':SwrveSDKPush')
-    compile project(':UnityFacade')
+    api fileTree(dir: 'libs', include: ['*.jar'])
+    api 'com.android.support:support-v4:' + project.ANDROID_DESIGN_TOOLS_VERSION
+    api 'com.google.code.gson:gson:2.2.+'
+    api project(':SwrveSDKPush')
+    api project(':UnityFacade')
 
-    googleCompile 'com.google.android.gms:play-services-base:' + project.GOOGLE_GMS_TOOLS_VERSION
-    googleCompile 'com.google.android.gms:play-services-basement:' + project.GOOGLE_GMS_TOOLS_VERSION
-    googleCompile 'com.google.android.gms:play-services-gcm:' + project.GOOGLE_GMS_TOOLS_VERSION
-    googleCompile 'com.google.android.gms:play-services-ads:' + project.GOOGLE_GMS_TOOLS_VERSION
+    googleApi 'com.google.android.gms:play-services-base:' + project.GOOGLE_GMS_TOOLS_VERSION
+    googleApi 'com.google.android.gms:play-services-basement:' + project.GOOGLE_GMS_TOOLS_VERSION
+    googleApi 'com.google.android.gms:play-services-gcm:' + project.GOOGLE_GMS_TOOLS_VERSION
+    googleApi 'com.google.android.gms:play-services-ads:' + project.GOOGLE_GMS_TOOLS_VERSION
 
     // This file is not distributed with Swrve source code.
     // If compiling amazon flavour from source you should download
     // the ADM jar from the Amazon Developer portal: https://developer.amazon.com/device-messaging
-    amazonProvided files('providedLibs/amazon-device-messaging-1.0.1.jar')
+    amazonCompileOnly fileTree(dir: "providedLibs", include: ['amazon-device-messaging*.jar'])
 
-    firebaseCompile 'com.google.android.gms:play-services-base:' + project.FIREBASE_TOOLS_VERSION
-    firebaseCompile 'com.google.firebase:firebase-messaging:' + project.FIREBASE_TOOLS_VERSION
+    firebaseApi 'com.google.android.gms:play-services-base:' + project.FIREBASE_TOOLS_VERSION
+    firebaseApi 'com.google.firebase:firebase-messaging:' + project.FIREBASE_TOOLS_VERSION
 
     // Unit tests
-    testCompile 'org.mockito:mockito-core:1.9.0'
-    testCompile 'org.robolectric:shadows-support-v4:3.4-rc2'
-    testCompile 'org.robolectric:shadows-httpclient:3.4-rc2'
+    testApi 'org.mockito:mockito-core:1.9.0'
+    testApi 'org.robolectric:shadows-support-v4:3.4-rc2'
+    testApi 'org.robolectric:shadows-httpclient:3.4-rc2'
 
     // Roboelectric tests
-    testCompile 'junit:junit:4.12'
-    testCompile('org.robolectric:robolectric:3.4.2') {
+    testApi 'junit:junit:4.12'
+    testApi('org.robolectric:robolectric:3.5.1') {
         exclude group: 'commons-logging', module: 'commons-logging'
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'
     }

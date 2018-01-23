@@ -53,8 +53,6 @@ public class SwrveConfig
     public string AppStore = SwrveAppStore.Google;
 #elif UNITY_IPHONE
     public string AppStore = SwrveAppStore.Apple;
-#elif UNITY_WSA_10_0
-    public string AppStore = SwrveAppStore.Windows;
 #else
     public string AppStore = null;
 #endif
@@ -84,17 +82,17 @@ public class SwrveConfig
     public string DefaultLanguage = "en";
 
     /// <summary>
-    /// Enable or disable Talk features for in-app campaigns/
+    /// Enable or disable messaaging features.
     /// </summary>
-    public bool TalkEnabled = true;
+    public bool MessagingEnabled = true;
 
     /// <summary>
-    /// Enable or disable Conversations features for in-app campaigns/
+    /// Enable or disable Conversations features for in-app campaigns.
     /// </summary>
     public bool ConversationsEnabled = true;
 
     /// <summary>
-    /// Enable or disable Location features for in-app campaigns/
+    /// Enable or disable Location features for in-app campaigns.
     /// </summary>
     public bool LocationEnabled = false;
 
@@ -206,58 +204,30 @@ public class SwrveConfig
     public string GCMSenderId = null;
 
     /// <summary>
-    /// The title that will appear for each push notification received through Google Cloud Messaging.
+    /// The title that will appear for each push notification received on Android.
     /// </summary>
-    public string GCMPushNotificationTitle = "#Your App Title";
+    public string AndroidPushNotificationTitle = "#Your App Title";
 
     /// <summary>
-    /// The resource identifier for the icon that will be displayed on your GCM notifications.
+    /// The resource identifier for the icon that will be displayed on your Android notifications.
     /// </summary>
-    public string GCMPushNotificationIconId = null;
+    public string AndroidPushNotificationIconId = null;
 
     /// <summary>
-    /// The resource identifier for the Material icon that will be displayed on your GCM notifications
-    /// on Android L+.
+    /// The resource identifier for the Material icon that will be displayed on your Android L+ notifications.
     /// https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorNotifications
     /// </summary>
-    public string GCMPushNotificationMaterialIconId = null;
+    public string AndroidPushNotificationMaterialIconId = null;
 
     /// <summary>
-    /// The resource identifier for the large icon that will be displayed on your GCM notifications.
+    /// The resource identifier for the large icon that will be displayed on your Android notifications.
     /// </summary>
-    public string GCMPushNotificationLargeIconId = null;
+    public string AndroidPushNotificationLargeIconId = null;
 
     /// <summary>
-    /// The color (argb) that will be used as accent color for your GCM notifications.
+    /// The color (argb) that will be used as accent color for your Android notifications.
     /// </summary>
-    public int GCMPushNotificationAccentColor = -1;
-
-    /// <summary>
-    /// The title that will appear for each push notification received through Amazon Device Messaging.
-    /// </summary>
-    public string ADMPushNotificationTitle = "#Your App Title";
-
-    /// <summary>
-    /// The resource identifier for the icon that will be displayed on your ADM notifications.
-    /// </summary>
-    public string ADMPushNotificationIconId = null;
-
-    /// <summary>
-    /// The resource identifier for the Material icon that will be displayed on your ADM notifications
-    /// on Android L+.
-    /// https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorNotifications
-    /// </summary>
-    public string ADMPushNotificationMaterialIconId = null;
-
-    /// <summary>
-    /// The resource identifier for the large icon that will be displayed on your ADM notifications.
-    /// </summary>
-    public string ADMPushNotificationLargeIconId = null;
-
-    /// <summary>
-    /// The color (argb) that will be used as accent color for your ADM notifications.
-    /// </summary>
-    public int ADMPushNotificationAccentColor = -1;
+    public int AndroidPushNotificationAccentColor = -1;
 
     /// <summary>
     /// Push provider type. GOOGLE_GCM is the default. Set to AMAZON_ADM if using Kindle or GOOGLE_FIREBASE if using Firebase.
@@ -301,11 +271,15 @@ public class SwrveConfig
     /// </summary>
     public bool LogAppleIDFA = false;
 
+    /// <summary>
     // pre-iOS10 Push Categories
-    public List<UIUserNotificationCategory> pushCategories = new List<UIUserNotificationCategory>();
+    /// </summary>
+    public List<UIUserNotificationCategory> PushCategories = new List<UIUserNotificationCategory>();
 
+    /// <summary>
     // iOS Push Categories
-    public List<UNNotificationCategory> notificationCategories = new List<UNNotificationCategory>();
+    /// </summary>
+    public List<UNNotificationCategory> NotificationCategories = new List<UNNotificationCategory>();
 
     /// <summary>
     /// Obtain information about the AB Tests a user is part of.

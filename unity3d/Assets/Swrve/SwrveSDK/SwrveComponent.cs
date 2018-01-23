@@ -16,29 +16,9 @@ public class SwrveComponent : MonoBehaviour
     public SwrveSDK SDK;
 
     /// <summary>
-    /// ID for your app, as supplied by Swrve.
-    /// </summary>
-    public int AppId = 0;
-
-    /// <summary>
-    /// Secret API key, as supplied by Swrve.
-    /// </summary>
-    public string ApiKey = "your_api_key_here";
-
-    /// <summary>
-    /// SDK configuration.
-    /// </summary>
-    public SwrveConfig Config;
-
-    /// <summary>
     /// Automatically flush events on application quit.
     /// </summary>
     public bool FlushEventsOnApplicationQuit = true;
-
-    /// <summary>
-    /// Automatically initialise the SDK on Start.
-    /// </summary>
-    public bool InitialiseOnStart = true;
 
     /// Singleton instance access.
     protected static SwrveComponent instance;
@@ -69,12 +49,11 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public SwrveComponent ()
     {
-        Config = new SwrveConfig ();
         SDK = new SwrveEmpty();
     }
 
     /// <summary>
-    /// Manually initialize the SDK.
+    /// Initialize the SDK.
     /// </summary>
     /// <param name="appId">
     /// ID for your app, as supplied by Swrve.
@@ -82,7 +61,10 @@ public class SwrveComponent : MonoBehaviour
     /// <param name="apiKey">
     /// Scret API key for your app, as supplied by Swrve.
     /// </param>
-    public void Init (int appId, string apiKey)
+    /// <param name="config">
+    /// Extra configuration for the SDK.
+    /// </param>
+    public void Init (int appId, string apiKey, SwrveConfig config = null)
     {
         if (SDK == null || SDK is SwrveEmpty) {
             bool supportedOSVersion = true;
@@ -101,7 +83,10 @@ public class SwrveComponent : MonoBehaviour
                 SDK = new SwrveEmpty ();
             }
         }
-        SDK.Init (this, appId, apiKey, Config);
+        if (config == null) {
+            config = new SwrveConfig ();
+        }
+        SDK.Init (this, appId, apiKey, config);
     }
 
     /// <summary>
@@ -110,9 +95,6 @@ public class SwrveComponent : MonoBehaviour
     public void Start ()
     {
         useGUILayout = false;
-        if (InitialiseOnStart) {
-            Init (AppId, ApiKey);
-        }
     }
 
     /// <summary>
@@ -237,7 +219,7 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public void OnApplicationPause (bool pauseStatus)
     {
-        if (SDK != null && SDK.Initialised && Config != null && Config.AutomaticSessionManagement) {
+        if (SDK != null && SDK.Initialised) {
             if (pauseStatus) {
                 SDK.OnSwrvePause ();
             } else {
@@ -279,5 +261,10 @@ public class SwrveComponent : MonoBehaviour
         } catch (System.Exception e) {
             SwrveLog.LogError (e.ToString(), "userUpdate");
         }
+    }
+
+    // Keep the SDK alive between scene loads
+    void Awake() {
+        DontDestroyOnLoad(transform.gameObject);
     }
 }

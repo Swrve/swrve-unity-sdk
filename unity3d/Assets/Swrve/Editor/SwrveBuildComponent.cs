@@ -186,12 +186,6 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         SetPlotConfigKey("android");
     }
 
-    [System.Obsolete("Use SwrveBuildComponent.AndroidPreBuild instead")]
-    public static void CorrectApplicationId()
-    {
-        AndroidPreBuild();
-    }
-
     private static void AndroidCorrectApplicationId()
     {
         string androidDir = Path.Combine (Directory.GetCurrentDirectory (), "Assets/Plugins/Android");

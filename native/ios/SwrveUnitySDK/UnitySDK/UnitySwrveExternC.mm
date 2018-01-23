@@ -20,59 +20,59 @@ extern "C"
         return CONVERSATION_VERSION;
     }
 
-    char* _swrveiOSGetLanguage()
+    char* _swrveiOSLanguage()
     {
-        return [UnitySwrveHelper GetLanguage];
+        return [UnitySwrveHelper language];
     }
 
-    char* _swrveiOSGetTimeZone()
+    char* _swrveiOSTimeZone()
     {
-        return [UnitySwrveHelper GetTimeZone];
+        return [UnitySwrveHelper timeZone];
     }
 
-    char* _swrveiOSGetAppVersion()
+    char* _swrveiOSAppVersion()
     {
-        return [UnitySwrveHelper GetAppVersion];
+        return [UnitySwrveHelper appVersion];
     }
 
     char* _swrveiOSUUID()
     {
-        return [UnitySwrveHelper GetUUID];
+        return [UnitySwrveHelper UUID];
     }
 
     char* _swrveiOSCarrierName()
     {
-        return [UnitySwrveHelper GetCarrierName];
+        return [UnitySwrveHelper carrierName];
     }
 
     char* _swrveiOSCarrierIsoCountryCode()
     {
-        return [UnitySwrveHelper GetCarrierIsoCountryCode];
+        return [UnitySwrveHelper carrierIsoCountryCode];
     }
 
     char* _swrveiOSCarrierCode()
     {
-        return [UnitySwrveHelper GetCarrierCode];
+        return [UnitySwrveHelper carrierCode];
     }
 
     char* _swrveiOSLocaleCountry()
     {
-        return [UnitySwrveHelper GetLocaleCountry];
+        return [UnitySwrveHelper localeCountry];
     }
 
     char* _swrveiOSIDFV()
     {
-        return [UnitySwrveHelper GetIDFV];
+        return [UnitySwrveHelper IDFV];
     }
 
     char* _swrveiOSIDFA()
     {
-        return [UnitySwrveHelper GetIDFA];
+        return [UnitySwrveHelper IDFA];
     }
 
     void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet, char* jsonUICategorySet)
     {
-        return [UnitySwrveHelper RegisterForPushNotifications:[UnitySwrveHelper CStringToNSString:jsonUNCategorySet] withBackwardsCompatibility:[UnitySwrveHelper CStringToNSString:jsonUICategorySet]];
+        return [UnitySwrveHelper registerForPushNotifications:[UnitySwrveHelper CStringToNSString:jsonUNCategorySet] withBackwardsCompatibility:[UnitySwrveHelper CStringToNSString:jsonUICategorySet]];
     }
 
     void _swrveiOSInitNative(char* jsonConfig)
@@ -92,20 +92,20 @@ extern "C"
 
     void _swrveiOSLocationUserUpdate(char* jsonMap)
     {
-        [[UnitySwrveCommonDelegate sharedInstance] LocationUserUpdate:[UnitySwrveHelper CStringToNSString:jsonMap]];
+        [[UnitySwrveCommonDelegate sharedInstance] locationUserUpdate:[UnitySwrveHelper CStringToNSString:jsonMap]];
     }
 
-    char* _swrveiOSGetPlotNotifications()
+    char* _swrveiOSPlotNotifications()
     {
-        return [UnitySwrveHelper NSStringCopy:[[UnitySwrveCommonDelegate sharedInstance] GetPlotNotifications]];
+        return [UnitySwrveHelper NSStringCopy:[[UnitySwrveCommonDelegate sharedInstance] plotNotifications]];
     }
 
     bool _swrveiOSIsSupportedOSVersion()
     {
-        return [UnitySwrveHelper IsSupportediOSVersion];
+        return [UnitySwrveHelper isSupportediOSVersion];
     }
 
-    char* _swrveGetInfluencedDataJson()
+    char* _swrveInfluencedDataJson()
     {
         NSMutableArray* influenceArrayJson = [[NSMutableArray alloc] init];
 
@@ -157,7 +157,7 @@ extern "C"
                 [serviceExtensionDefaults synchronize];
             }
         } else {
-            NSLog(@"_swrveGetInfluencedData: error: %@", error.localizedDescription);
+            NSLog(@"_swrveInfluencedData: error: %@", error.localizedDescription);
         }
 
         return [UnitySwrveHelper NSStringCopy:influenceDataJson];
@@ -215,6 +215,11 @@ extern "C"
         }
 #endif
         return [UnitySwrveHelper NSStringCopy:backgroundRefreshStatus];
+    }
+    
+    void _swrveiOSUpdateQaUser(char* jsonMap)
+    {
+        [[UnitySwrveCommonDelegate sharedInstance] updateQAUser:[UnitySwrveHelper CStringToNSString:jsonMap]];
     }
 
 #ifdef __cplusplus

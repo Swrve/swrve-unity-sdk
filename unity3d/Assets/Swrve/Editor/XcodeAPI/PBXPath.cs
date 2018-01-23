@@ -27,11 +27,11 @@ namespace SwrveInternal.iOS.Xcode
                 resTree = tree1;
                 return;
             }
-            
+
             resPath = path2;
             resTree = tree2;
         }
-        
+
         // Combines two paths
         public static string Combine(string path1, string path2)
         {
@@ -45,7 +45,7 @@ namespace SwrveInternal.iOS.Xcode
                 return path1;
             return path1 + "/" + path2;
         }
-        
+
         public static string GetDirectory(string path)
         {
             path = path.TrimEnd('/');
@@ -63,14 +63,14 @@ namespace SwrveInternal.iOS.Xcode
             {
                 throw new Exception("PBX project compatible current directory can only obtained on OSX");
             }
-                
+
             string path = Directory.GetCurrentDirectory();
             path = FixSlashes(path);
             if (!IsPathRooted(path))
                 return "/" + path;
             return path;
         }
-        
+
         public static string GetFilename(string path)
         {
             int pos = path.LastIndexOf('/');
@@ -86,7 +86,7 @@ namespace SwrveInternal.iOS.Xcode
                 return false;
             return path[0] == '/';
         }
-        
+
         public static string GetFullPath(string path)
         {
             if (IsPathRooted(path))

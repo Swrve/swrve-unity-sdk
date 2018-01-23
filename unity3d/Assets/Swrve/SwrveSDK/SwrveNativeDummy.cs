@@ -23,6 +23,7 @@ public partial class SwrveSDK
     {
         return false;
     }
+	public void updateQAUser(Dictionary<string, object> map) {}
 }
 
 #endif

@@ -1,7 +1,6 @@
 package com.swrve.unity;
 
 import android.app.Activity;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,9 +9,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 
 import com.swrve.sdk.SwrveHelper;
@@ -20,7 +17,6 @@ import com.swrve.sdk.SwrvePushConstants;
 import com.swrve.sdk.SwrvePushNotificationConfig;
 import com.swrve.sdk.SwrvePushSDK;
 import com.swrve.sdk.model.PushPayload;
-import com.swrve.sdk.model.PushPayloadChannel;
 import com.unity3d.player.UnityPlayer;
 
 import org.json.JSONArray;
@@ -44,10 +40,6 @@ public abstract class SwrvePushSupport {
     public static final String NOTIFICATION_PAYLOAD_KEY = "notification";
 
     public static final String SILENT_PUSH_BROADCAST_ACTION = "com.swrve.SILENT_PUSH_ACTION";
-
-    protected static final String PREF_CHANNEL_ID = "android_channel_id";
-    protected static final String PREF_CHANNEL_NAME = "android_channel_name";
-    protected static final String PREF_CHANNEL_IMPORTANCE = "android_channel_importance";
 
     private static final List<SwrveNotification> receivedNotifications = new ArrayList<SwrveNotification>();
     private static final List<SwrveNotification> openedNotifications = new ArrayList<SwrveNotification>();
@@ -201,19 +193,6 @@ public abstract class SwrvePushSupport {
         return activityClassName;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    public static Object /* NotificationChannel */ getDefaultAndroidChannel(SharedPreferences prefs) {
-        String channelId = prefs.getString(PREF_CHANNEL_ID, "default");
-        String channelName = prefs.getString(PREF_CHANNEL_NAME, "Default");
-        String channelImportance = prefs.getString(PREF_CHANNEL_IMPORTANCE, "default");
-        int androidChannelImportance = NotificationManager.IMPORTANCE_DEFAULT;
-        if(SwrveHelper.isNotNullOrEmpty(channelImportance)) {
-            androidChannelImportance = PushPayloadChannel.ImportanceLevel.valueOf(channelImportance.toUpperCase()).androidImportance();
-        }
-
-        return new android.app.NotificationChannel(channelId, channelName, androidChannelImportance);
-    }
-
     public static Intent createIntent(Context ctx, Bundle msg, String activityClassName) {
         try {
             Intent intent = new Intent(ctx, Class.forName(activityClassName));
@@ -263,8 +242,7 @@ public abstract class SwrvePushSupport {
 
     public static void saveConfig(SharedPreferences.Editor editor, String gameObject, Activity activity,
                                   String appTitle, String iconId, String materialIconId,
-                                  String largeIconId, int accentColor, String defaultAndroidChannelId,
-                                  String defaultAndroidChannelName, String defaultAndroidChannelImportance) {
+                                  String largeIconId, int accentColor) {
         editor.putString(PROPERTY_ACTIVITY_NAME, activity.getLocalClassName());
         editor.putString(PROPERTY_GAME_OBJECT_NAME, gameObject);
         editor.putString(PROPERTY_APP_TITLE, appTitle);
@@ -272,10 +250,6 @@ public abstract class SwrvePushSupport {
         editor.putString(PROPERTY_MATERIAL_ICON_ID, materialIconId);
         editor.putString(PROPERTY_LARGE_ICON_ID, largeIconId);
         editor.putInt(PROPERTY_ACCENT_COLOR, accentColor);
-
-        editor.putString(PREF_CHANNEL_ID, defaultAndroidChannelId);
-        editor.putString(PREF_CHANNEL_NAME, defaultAndroidChannelName);
-        editor.putString(PREF_CHANNEL_IMPORTANCE, defaultAndroidChannelImportance);
     }
 
     private static class UnitySwrvePushNotificationConfig extends SwrvePushNotificationConfig {

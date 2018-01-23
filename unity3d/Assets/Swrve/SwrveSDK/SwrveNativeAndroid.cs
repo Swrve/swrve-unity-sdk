@@ -8,8 +8,8 @@ using SwrveUnity;
 
 public partial class SwrveSDK
 {
-private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmDeviceRegistration";
-private const string SwrveAndroidFirebasePushPluginPackageName = "com.swrve.unity.firebase.SwrveFirebaseDeviceRegistration";
+private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmPushSupport";
+private const string SwrveAndroidFirebasePushPluginPackageName = "com.swrve.unity.firebase.SwrveFirebasePushSupport";
 private const string SwrveAndroidADMPushPluginPackageName = "com.swrve.unity.adm.SwrveAdmPushSupport";
 private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
 private const string SwrvePushSupport = "com.swrve.unity.SwrvePushSupport";
@@ -17,19 +17,23 @@ private const string SwrvePushSupport = "com.swrve.unity.SwrvePushSupport";
 private const string IsInitialisedName = "isInitialised";
 private const string GetConversationVersionName = "getConversationVersion";
 private const string ShowConversationName = "showConversation";
-private const string SwrveStartLocationName = "StartLocation";
-private const string SwrveLocationUserUpdateName = "LocationUserUpdate";
-private const string SwrveGetPlotNotificationsName = "GetPlotNotifications";
+private const string SetDefaultNotificationChannelName = "setDefaultNotificationChannel";
+private const string SwrveStartLocationName = "startLocation";
+private const string SwrveLocationUserUpdateName = "locationUserUpdate";
+private const string SwrveGetPlotNotificationsName = "getPlotNotifications";
 private const string SwrveIsOSSupportedVersionName = "sdkAvailable";
 private const string GetInfluencedDataJsonName = "getInfluenceDataJson";
+
+private const string QaUserUpdateName = "updateQaUser";
+private const string QaUserLocationCampaignsDownloadedName = "locationCampaignsDownloaded";
 
 private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
 private const string UnityCurrentActivityName = "currentActivity";
 
 private string gcmDeviceToken;
 private static AndroidJavaObject androidPlugin;
-private static bool androidPluginInitialized = false;
-private static bool androidPluginInitializedSuccessfully = false;
+private static bool androidPushPluginInitialized = false;
+private static bool androidPushPluginInitializedSuccessfully = false;
 private string admDeviceToken;
 private static AndroidJavaObject androidADMPlugin;
 private static bool androidADMPluginInitialized = false;
@@ -188,8 +192,18 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
         return language;
     }
 
-    private AndroidChannel DefaultChannel() {
-        return new AndroidChannel("default", "Default", AndroidChannel.ImportanceLevel.Default);
+    private AndroidChannel FallbackDefaultChannel() {
+        return new AndroidChannel("swrve_default", "Default", AndroidChannel.ImportanceLevel.Default);
+    }
+
+    private void SetDefaultNotificationChannel ()
+    {
+        try {
+            AndroidChannel defaultChannel = (config.DefaultAndroidChannel != null)? config.DefaultAndroidChannel : FallbackDefaultChannel();
+            AndroidGetBridge().Call(SetDefaultNotificationChannelName, defaultChannel.Id, defaultChannel.Name, defaultChannel.Importance.ToString());
+        } catch (Exception exp) {
+            SwrveLog.LogWarning("Couldn't set default notification channel in Android: " + exp.ToString());
+        }
     }
 
     private void GooglePlayRegisterForPushNotification(MonoBehaviour container, string senderId)
@@ -198,8 +212,8 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
             bool registered = false;
             this.gcmDeviceToken = storage.Load (GcmDeviceTokenSave);
 
-            if (!androidPluginInitialized) {
-                androidPluginInitialized = true;
+            if (!androidPushPluginInitialized) {
+                androidPushPluginInitialized = true;
 
                 using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
                     string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
@@ -216,18 +230,16 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
                                 androidPlugin = null;
                                 throw new Exception("The version of the Swrve Android Push plugin is different. This Swrve SDK needs version " + GooglePlayPushPluginVersion);
                             } else {
-                                androidPluginInitializedSuccessfully = true;
+                                androidPushPluginInitializedSuccessfully = true;
                             }
                         }
                     }
                 }
             }
 
-            if (androidPluginInitializedSuccessfully) {
-                AndroidChannel defaultChannel = (config.DefaultAndroidChannel != null)? config.DefaultAndroidChannel : DefaultChannel();
-                registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, senderId, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId,
-					config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor, defaultChannel.Id,
-                    defaultChannel.Name, defaultChannel.Importance.ToString());
+            if (androidPushPluginInitializedSuccessfully) {
+                registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, senderId, config.AndroidPushNotificationTitle, config.AndroidPushNotificationIconId,
+                  config.AndroidPushNotificationMaterialIconId, config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColor);
             }
 
             if (!registered) {
@@ -317,11 +329,9 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
             }
 
             if (androidADMPluginInitializedSuccessfully) {
-                AndroidChannel defaultChannel = (config.DefaultAndroidChannel != null)? config.DefaultAndroidChannel : DefaultChannel();
                 registered = androidADMPlugin.CallStatic<bool>(
-                                 InitialiseAdmName, container.name, config.ADMPushNotificationTitle, config.ADMPushNotificationIconId, config.ADMPushNotificationMaterialIconId,
-                                 config.ADMPushNotificationLargeIconId, config.ADMPushNotificationAccentColor, defaultChannel.Id,
-                                 defaultChannel.Name, defaultChannel.Importance.ToString());
+                    InitialiseAdmName, container.name, config.AndroidPushNotificationTitle, config.AndroidPushNotificationIconId, config.AndroidPushNotificationMaterialIconId,
+                    config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColor);
             }
 
             if (!registered) {
@@ -339,8 +349,8 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
             bool registered = false;
             this.gcmDeviceToken = storage.Load (GcmDeviceTokenSave);
 
-            if (!androidPluginInitialized) {
-                androidPluginInitialized = true;
+            if (!androidPushPluginInitialized) {
+                androidPushPluginInitialized = true;
 
                 using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
                     string jniPluginClassName = SwrveAndroidFirebasePushPluginPackageName.Replace(".", "/");
@@ -357,18 +367,16 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
                                 androidPlugin = null;
                                 throw new Exception("The version of the Swrve Android Push plugin is different. This Swrve SDK needs version " + GooglePlayPushPluginVersion);
                             } else {
-                                androidPluginInitializedSuccessfully = true;
+                                androidPushPluginInitializedSuccessfully = true;
                             }
                         }
                     }
                 }
             }
 
-            if (androidPluginInitializedSuccessfully) {
-                AndroidChannel defaultChannel = (config.DefaultAndroidChannel != null)? config.DefaultAndroidChannel : DefaultChannel();
-                registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, config.GCMPushNotificationTitle, config.GCMPushNotificationIconId,
-                                 config.GCMPushNotificationMaterialIconId, config.GCMPushNotificationLargeIconId, config.GCMPushNotificationAccentColor,
-                                 defaultChannel.Id, defaultChannel.Name, defaultChannel.Importance.ToString());
+            if (androidPushPluginInitializedSuccessfully) {
+                registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, config.AndroidPushNotificationTitle, config.AndroidPushNotificationIconId, config.AndroidPushNotificationMaterialIconId,
+                  config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColor);
             }
 
             if (!registered) {
@@ -507,7 +515,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
 
         if (PushNotificationListener != null) {
             try {
-                PushNotificationListener.OnNotificationReceived(notification);
+                PushNotificationListener.OnNotificationReceived(parsePayload(notification));
             } catch (Exception exp) {
                 SwrveLog.LogError("Error processing the push notification: " + exp.Message);
             }
@@ -534,7 +542,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
 
         if (PushNotificationListener != null) {
             try {
-                PushNotificationListener.OnNotificationReceived(notification);
+                PushNotificationListener.OnNotificationReceived(parsePayload(notification));
             } catch (Exception exp) {
                 SwrveLog.LogError("Error processing the push notification: " + exp.Message);
             }
@@ -598,7 +606,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
 
         if (PushNotificationListener != null) {
             try {
-                PushNotificationListener.OnOpenedFromPushNotification(notification);
+                PushNotificationListener.OnOpenedFromPushNotification(parsePayload(notification));
             } catch (Exception exp) {
                 SwrveLog.LogError("Error processing the push notification: " + exp.Message);
             }
@@ -645,6 +653,26 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
                 SwrveLog.LogError("Error processing the push notification: " + exp.Message);
             }
         }
+    }
+
+    private Dictionary<string, object> parsePayload(Dictionary<string, object> notification) {
+        Dictionary<string, object> payload = notification;
+        // Parse nested JSON
+        if (notification.ContainsKey(PushNestedJsonKey)) {
+            string pushNestedRaw = notification[PushNestedJsonKey].ToString();
+            Dictionary<string, object> nestedJson = (Dictionary<string, object>)Json.Deserialize (pushNestedRaw);
+            if (nestedJson != null) {
+                // Merge values from 'notification'
+                var notificationEnumerator = notification.GetEnumerator();
+                while(notificationEnumerator.MoveNext()) {
+                    nestedJson[notificationEnumerator.Current.Key] = notificationEnumerator.Current.Value;
+                }
+                payload = nestedJson;
+            } else {
+                SwrveLog.LogError("Error processing nested JSON");
+            }
+        }
+        return payload;
     }
 
     private void initNative ()
@@ -762,6 +790,32 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
             }
         }
         return null;
+    }
+
+    public static void QaUserUpdateInstance ()
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
+                    swrveAndroidCommonClass.CallStatic(QaUserUpdateName);
+                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't update qauser from Android: " + exp.ToString());
+            }
+        }
+    }
+
+    public static void QaUserLocationCampaignsDownloaded ()
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
+                    swrveAndroidCommonClass.CallStatic(QaUserLocationCampaignsDownloadedName);
+                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't update qauser from Android: " + exp.ToString());
+            }
+        }
     }
 }
 

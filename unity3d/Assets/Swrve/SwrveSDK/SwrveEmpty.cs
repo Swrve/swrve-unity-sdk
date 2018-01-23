@@ -64,12 +64,6 @@ public class SwrveEmpty : SwrveSDK
     {
         //do nothing
     }
-		
-	[System.Obsolete("use IsMessageDisplaying", false)]
-    public override bool IsMessageDispaying ()
-    {
-        return false;
-    }
 
     public override bool IsMessageDisplaying ()
     {

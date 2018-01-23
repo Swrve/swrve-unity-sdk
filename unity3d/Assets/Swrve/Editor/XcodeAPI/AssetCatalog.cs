@@ -150,7 +150,7 @@ namespace SwrveInternal.iOS.Xcode
             var folder = OpenFolderForResource(relativePath);
             return folder.OpenImageSet(Path.GetFileName(relativePath));
         }
-        
+
         public AssetImageStack OpenImageStack(string relativePath)
         {
             var folder = OpenFolderForResource(relativePath);
@@ -313,7 +313,7 @@ namespace SwrveInternal.iOS.Xcode
             m_Items.Add(imageset);
             return imageset;
         }
-        
+
         // Checks if a image stack with given name exists and returns it if it does.
         // Otherwise, creates a new image stack.
         public AssetImageStack OpenImageStack(string name)
@@ -321,12 +321,12 @@ namespace SwrveInternal.iOS.Xcode
             var item = GetExistingItemWithType<AssetImageStack>(name);
             if (item != null)
                 return item;
-            
+
             var imageStack = new AssetImageStack(m_Path, name, authorId);
             m_Items.Add(imageStack);
             return imageStack;
         }
-        
+
         // Checks if a brand asset with given name exists and returns it if it does.
         // Otherwise, creates a new brand asset.
         public AssetBrandAssetGroup OpenBrandAssetGroup(string name)
@@ -334,7 +334,7 @@ namespace SwrveInternal.iOS.Xcode
             var item = GetExistingItemWithType<AssetBrandAssetGroup>(name);
             if (item != null)
                 return item;
-            
+
             var brandAsset = new AssetBrandAssetGroup(m_Path, name, authorId);
             m_Items.Add(brandAsset);
             return brandAsset;
@@ -447,6 +447,33 @@ namespace SwrveInternal.iOS.Xcode
                     item.SetString(kv.Key, kv.Value);
             }
         }
+
+        // Returns the filename of the resulting file
+        protected string CopyFileToSet(string path, HashSet<string> existingFilenames, List<string> warnings)
+        {
+            var filename = Path.GetFileName(path);
+            if (!File.Exists(path))
+            {
+                if (warnings != null)
+                    warnings.Add("File not found: " + path);
+            }
+            else
+            {
+                // ensure that we don't create duplicate filenames
+                int index = 1;
+                string filenameBase = Path.GetFileNameWithoutExtension(filename);
+                string extension = Path.GetExtension(filename);
+
+                while (existingFilenames.Contains(filename))
+                {
+                    filename = String.Format("{0}-{1}{2}", filenameBase, index, extension);
+                    index++;
+                }
+                existingFilenames.Add(filename);
+                File.Copy(path, Path.Combine(m_Path, filename));
+            }
+            return filename;
+        }
     }
 
     internal class AssetDataSet : AssetCatalogItemWithVariants
@@ -491,16 +518,11 @@ namespace SwrveInternal.iOS.Xcode
 
             var data = doc.root.CreateArray("data");
 
+            var existingFilenames = new HashSet<string>();
+
             foreach (DataSetVariant item in m_Variants)
             {
-                var filename = Path.GetFileName(item.path);
-                if (!File.Exists(item.path))
-                {
-                    if (warnings != null)
-                        warnings.Add("File not found: " + item.path);
-                }
-                else
-                    File.Copy(item.path, Path.Combine(m_Path, filename));
+                var filename = CopyFileToSet(item.path, existingFilenames, warnings);
 
                 var docItem = data.AddDict();
                 docItem.SetString("filename", filename);
@@ -629,16 +651,11 @@ namespace SwrveInternal.iOS.Xcode
 
             var images = doc.root.CreateArray("images");
 
+            var existingFilenames = new HashSet<string>();
+
             foreach (ImageSetVariant item in m_Variants)
             {
-                var filename = Path.GetFileName(item.path);
-                if (!File.Exists(item.path))
-                {
-                    if (warnings != null)
-                        warnings.Add("File not found: " + item.path);
-                }
-                else
-                    File.Copy(item.path, Path.Combine(m_Path, filename));
+                var filename = CopyFileToSet(item.path, existingFilenames, warnings);
 
                 var docItem = images.AddDict();
                 docItem.SetString("filename", filename);
@@ -733,14 +750,14 @@ namespace SwrveInternal.iOS.Xcode
             foreach (var layer in m_Layers)
             {
                 layer.Write(warnings);
- 
+
                 var docLayer = docLayers.AddDict();
                 docLayer.SetString("filename", Path.GetFileName(layer.path));
             }
             doc.WriteToFile(Path.Combine(m_Path, "Contents.json"));
         }
     }
-    
+
     class AssetBrandAssetGroup : AssetCatalogItem
     {
         class AssetBrandAssetItem
@@ -749,16 +766,16 @@ namespace SwrveInternal.iOS.Xcode
             internal string role = null;
             internal int width, height;
             internal AssetCatalogItem item = null;
-            
+
         }
 
         List<AssetBrandAssetItem> m_Items = new List<AssetBrandAssetItem>();
-        
+
         internal AssetBrandAssetGroup(string assetCatalogPath, string name, string authorId) : base(name, authorId)
         {
             m_Path = Path.Combine(assetCatalogPath, name + ".brandassets");
         }
-        
+
         void AddItem(AssetCatalogItem item, string idiom, string role, int width, int height)
         {
             foreach (var it in m_Items)
@@ -788,13 +805,13 @@ namespace SwrveInternal.iOS.Xcode
             AddItem(newItem, idiom, role, width, height);
             return newItem;
         }
-        
+
         public override void Write(List<string> warnings)
         {
             Directory.CreateDirectory(m_Path);
             var doc = new JsonDocument();
             WriteInfoToJson(doc);
-            
+
             var docAssets = doc.root.CreateArray("assets");
             foreach (var item in m_Items)
             {
@@ -803,7 +820,7 @@ namespace SwrveInternal.iOS.Xcode
                 docAsset.SetString("idiom", item.idiom);
                 docAsset.SetString("role", item.role);
                 docAsset.SetString("filename", Path.GetFileName(item.item.path));
-                
+
                 item.item.Write(warnings);
             }
             doc.WriteToFile(Path.Combine(m_Path, "Contents.json"));

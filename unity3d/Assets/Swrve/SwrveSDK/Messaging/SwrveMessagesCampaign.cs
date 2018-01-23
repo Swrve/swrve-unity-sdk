@@ -7,7 +7,7 @@ using SwrveUnity.Helpers;
 namespace SwrveUnity.Messaging
 {
 /// <summary>
-/// Swrve Talk campaign.
+/// Swrve in-app message campaign.
 /// </summary>
 public class SwrveMessagesCampaign : SwrveBaseCampaign
 {

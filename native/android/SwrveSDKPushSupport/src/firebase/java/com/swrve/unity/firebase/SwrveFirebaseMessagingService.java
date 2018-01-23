@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import java.util.Date;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -19,6 +18,8 @@ import com.swrve.sdk.SwrvePushSDK;
 import com.swrve.unity.SwrveNotification;
 import com.swrve.unity.SwrvePushSupport;
 import com.unity3d.player.UnityPlayer;
+
+import java.util.Date;
 
 public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 	private static final String LOG_TAG = "SwrveFirebase";
@@ -39,8 +40,8 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 	private void processRemoteNotification(Bundle msg) {
 		try {
 			if (SwrvePushSDK.isSwrveRemoteNotification(msg)) {
+				final SharedPreferences prefs = SwrveFirebasePushSupport.getFirebasePreferences(getApplicationContext());
 				final Context context = getApplicationContext();
-				final SharedPreferences prefs = SwrveFirebaseDeviceRegistration.getFirebasePreferences(getApplicationContext());
 				String activityClassName = SwrvePushSupport.getActivityClassName(getApplicationContext(), prefs);
 
 				String silentId = SwrvePushSDK.getSilentPushId(msg);
@@ -50,12 +51,7 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 					if (UnityPlayer.currentActivity != null) {
 						// Call Unity SDK MonoBehaviour container
 						SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
-						SwrveFirebaseDeviceRegistration.newReceivedNotification(SwrveFirebaseDeviceRegistration.getGameObject(UnityPlayer.currentActivity), SwrveFirebaseDeviceRegistration.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
-					}
-
-					SwrvePushSDK pushSDK = SwrvePushSDK.createInstance(this);
-					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-						pushSDK.setDefaultNotificationChannel((android.app.NotificationChannel)SwrvePushSupport.getDefaultAndroidChannel(prefs));
+						SwrveFirebasePushSupport.newReceivedNotification(SwrveFirebasePushSupport.getGameObject(UnityPlayer.currentActivity), SwrveFirebasePushSupport.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
 					}
 
 					// Save influenced data
@@ -92,7 +88,7 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 
 	/**
 	 * Override this function to process notifications in a different way.
-	 * 
+	 *
 	 * @param msg
 	 * @param activityClassName
 	 * 			game activity
@@ -109,7 +105,7 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 
 	/**
 	 * Override this function to change the way a notification is shown.
-	 * 
+	 *
 	 * @param notificationManager
 	 * @param notification
 	 * @return the notification id so that it can be dismissed by other UI
@@ -132,7 +128,7 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 	 * Generate the id for the new notification.
 	 *
 	 * Defaults to the current milliseconds to have unique notifications.
-	 * 
+	 *
 	 * @param notification notification data
 	 * @return id for the notification to be displayed
 	 */
@@ -142,14 +138,14 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 
 	/**
 	 * Override this function to change the attributes of a notification.
-	 * 
+	 *
 	 * @param msgText
 	 * @param msg
 	 * @return
 	 */
 	public NotificationCompat.Builder createNotificationBuilder(String msgText, Bundle msg) {
 		Context context = getApplicationContext();
-		SharedPreferences prefs = SwrveFirebaseDeviceRegistration.getFirebasePreferences(context);
+		SharedPreferences prefs = SwrveFirebasePushSupport.getFirebasePreferences(context);
 		return SwrvePushSupport.createNotificationBuilder(context, prefs, msgText, msg, notificationId);
 	}
 
@@ -159,7 +155,7 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 
 	/**
 	 * Override this function to change the way the notifications are created.
-	 * 
+	 *
 	 * @param msg
 	 * @param contentIntent
 	 * @return
@@ -180,11 +176,11 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 	/**
 	 * Override this function to change what the notification will do once
 	 * clicked by the user.
-	 * 
+	 *
 	 * Note: sending the Bundle in an extra parameter "notification" is
 	 * essential so that the Swrve SDK can be notified that the app was opened
 	 * from the notification.
-	 * 
+	 *
 	 * @param msg
 	 * @param activityClassName
 	 * 			game activity
@@ -201,7 +197,7 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 	 * the given push payload.
 	 *
 	 * Defaults to the current milliseconds to have unique notifications.
-	 * 
+	 *
 	 * @param msg push message payload
 	 * @return id for the notification to be displayed
 	 */
@@ -212,11 +208,11 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 	/**
 	 * Override this function to change what the notification will do once
 	 * clicked by the user.
-	 * 
+	 *
 	 * Note: sending the Bundle in an extra parameter "notification" is
 	 * essential so that the Swrve SDK can be notified that the app was opened
 	 * from the notification.
-	 * 
+	 *
 	 * @param msg
 	 * @param activityClassName
 	 * 			game activity
@@ -225,11 +221,11 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 	public Intent createIntent(Bundle msg, String activityClassName) {
 		return SwrvePushSupport.createIntent(this, msg, activityClassName);
 	}
-	
+
 	/**
 	 * Process the push notification received from Firebase
 	 * that opened the app.
-	 * 
+	 *
 	 * @param context
 	 * @param intent
 	 * 			The intent that opened the activity
@@ -244,7 +240,7 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 						SwrveNotification notification = SwrveNotification.Builder.build(msg);
 						// Remove influenced data before letting Unity know
 						SwrvePushSDK.removeInfluenceCampaign(context, notification.getId());
-						SwrveFirebaseDeviceRegistration.newOpenedNotification(SwrveFirebaseDeviceRegistration.getGameObject(UnityPlayer.currentActivity), SwrveFirebaseDeviceRegistration.ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD, notification);
+						SwrveFirebasePushSupport.newOpenedNotification(SwrveFirebasePushSupport.getGameObject(UnityPlayer.currentActivity), SwrveFirebasePushSupport.ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD, notification);
 					}
 				}
 			} catch(Exception ex) {

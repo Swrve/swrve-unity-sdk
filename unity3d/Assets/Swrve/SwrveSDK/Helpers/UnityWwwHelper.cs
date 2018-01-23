@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_2017_1_OR_NEWER
+using UnityEngine.Networking;
+#endif
 using System;
 using System.Collections.Generic;
 using SwrveUnityMiniJSON;
@@ -29,6 +32,52 @@ public class UnityWwwHelper
     /// <param name='expectedResponse'>
     /// The expected response.
     /// </param>
+
+#if UNITY_2017_1_OR_NEWER
+        public static WwwDeducedError DeduceWwwError (UnityWebRequest request)
+    {
+
+        // Use UnityWebRequests error detection first 
+        if(request.isNetworkError) {
+            SwrveLog.LogError ("Request network error: " + request.error + " in " + request.url);
+            return WwwDeducedError.NetworkError;
+        }
+
+        // Check response headers for X-Swrve-Error
+            if (request.GetResponseHeaders() != null) {
+            string errorKey = null;
+
+            Dictionary<string, string>.Enumerator enumerator = request.GetResponseHeaders().GetEnumerator();
+            while(enumerator.MoveNext()) {
+                string headerKey = enumerator.Current.Key;
+                if (string.Equals (headerKey, "X-Swrve-Error", StringComparison.OrdinalIgnoreCase)) {
+                    request.GetResponseHeaders().TryGetValue (headerKey, out errorKey);
+                    break;
+                }
+            }
+
+            if (errorKey != null) {
+                SwrveLog.LogError (@"Request response headers [""X-Swrve-Error""]: " + errorKey + " at " + request.url);
+                try {
+                    if (!string.IsNullOrEmpty (request.downloadHandler.text)) {
+                        SwrveLog.LogError (@"Request response headers [""X-Swrve-Error""]: " +
+                                ((IDictionary<string, object>)Json.Deserialize(request.downloadHandler.text))["message"]);
+                    }
+                } catch(Exception e) {
+                    SwrveLog.LogError(e.Message);
+                }
+                return WwwDeducedError.ApplicationErrorHeader;
+            }
+        }
+
+        if(!string.IsNullOrEmpty (request.error)) {
+            SwrveLog.LogError ("Request network error: " + request.error + " in " + request.url);
+            return WwwDeducedError.NetworkError;
+        }
+
+        return WwwDeducedError.NoError;
+    }
+#endif
     public static WwwDeducedError DeduceWwwError (WWW request)
     {
         // Check response headers for X-Swrve-Error

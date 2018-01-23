@@ -51,7 +51,7 @@ MonoBehaviour:
     AppStore:
     Language:
     DefaultLanguage: en
-    TalkEnabled: 1
+    MessagingEnabled: 1
     AutoDownloadCampaignsAndResources: 1
     Orientation: 2
     EventsServer:
@@ -64,10 +64,9 @@ MonoBehaviour:
     StoreDataInPlayerPrefs: 0
     PushNotificationEnabled: 0
     GCMSenderId:
-    GCMPushNotificationTitle: '#Your App Title'
+    AndroidPushNotificationTitle: '#Your App Title'
     AutoShowMessagesMaxDelay: 5
   FlushEventsOnApplicationQuit: 1
-  InitialiseOnStart: 1
 --- !u!1002 &11400001
 EditorExtensionImpl:
   serializedVersion: 6

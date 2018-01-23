@@ -6,6 +6,6 @@ public class SwrveFirebaseInstanceIdService extends FirebaseInstanceIdService {
 
     @Override
     public void onTokenRefresh() {
-        SwrveFirebaseDeviceRegistration.onTokenRefresh();
+        SwrveFirebasePushSupport.onTokenRefresh();
     }
 }

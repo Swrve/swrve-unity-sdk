@@ -6,6 +6,6 @@ public class SwrveGcmInstanceIDListenerService extends InstanceIDListenerService
 
     @Override
     public void onTokenRefresh() {
-        SwrveGcmDeviceRegistration.onTokenRefreshed();
+        SwrveGcmPushSupport.onTokenRefreshed();
     }
 }

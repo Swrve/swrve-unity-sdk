@@ -4,10 +4,8 @@ using System.IO;
 using System.Linq;
 using System;
 
-
 namespace SwrveInternal.iOS.Xcode.PBX
-{   
-
+{
     class ValueAST {}
 
     // IdentifierAST := <quoted string> \ <string>
@@ -41,9 +39,9 @@ namespace SwrveInternal.iOS.Xcode.PBX
         public IdentifierAST key = null;
         public ValueAST value = null; // either IdentifierAST, TreeAST or ListAST
     }
-    
+
     class Parser
-    { 
+    {
         TokenList tokens;
         int currPos;
 
@@ -52,7 +50,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             this.tokens = tokens;
             currPos = SkipComments(0);
         }
-        
+
         int SkipComments(int pos)
         {
             while (pos < tokens.Count && tokens[pos].type == TokenType.Comment)
@@ -61,17 +59,17 @@ namespace SwrveInternal.iOS.Xcode.PBX
             }
             return pos;
         }
-       
+
         // returns new position
         int IncInternal(int pos)
         {
             if (pos >= tokens.Count)
                 return pos;
             pos++;
-            
+
             return SkipComments(pos);
         }
-        
+
         // Increments current pointer if not past the end, returns previous pos
         int Inc()
         {
@@ -87,18 +85,18 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 return TokenType.EOF;
             return tokens[currPos].type;
         }
-        
+
         void SkipIf(TokenType type)
         {
             if (Tok() == type)
                 Inc();
         }
-        
+
         string GetErrorMsg()
         {
             return "Invalid PBX project (parsing line " + tokens[currPos].line + ")";
         }
-        
+
         public IdentifierAST ParseIdentifier()
         {
             if (Tok() != TokenType.String && Tok() != TokenType.QuotedString)
@@ -107,28 +105,28 @@ namespace SwrveInternal.iOS.Xcode.PBX
             ast.value = Inc();
             return ast;
         }
-        
+
         public TreeAST ParseTree()
         {
             if (Tok() != TokenType.LBrace)
                 throw new Exception(GetErrorMsg());
             Inc();
-            
+
             var ast = new TreeAST();
             while (Tok() != TokenType.RBrace && Tok() != TokenType.EOF)
             {
                 ast.values.Add(ParseKeyValue());
             }
             SkipIf(TokenType.RBrace);
-            return ast;  
+            return ast;
         }
-        
+
         public ArrayAST ParseList()
         {
             if (Tok() != TokenType.LParen)
                 throw new Exception(GetErrorMsg());
             Inc();
-            
+
             var ast = new ArrayAST();
             while (Tok() != TokenType.RParen && Tok() != TokenType.EOF)
             {
@@ -136,25 +134,25 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 SkipIf(TokenType.Comma);
             }
             SkipIf(TokenType.RParen);
-            return ast;  
+            return ast;
         }
-        
+
         // throws on error
         public KeyValueAST ParseKeyValue()
         {
             var ast = new KeyValueAST();
             ast.key = ParseIdentifier();
-          
+
             if (Tok() != TokenType.Eq)
                 throw new Exception(GetErrorMsg());
             Inc(); // skip '='
-                       
+
             ast.value = ParseValue();
             SkipIf(TokenType.Semicolon);
 
             return ast;
         }
-        
+
         // throws on error
         public ValueAST ParseValue()
         {
@@ -166,6 +164,6 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 return ParseList();
             throw new Exception(GetErrorMsg());
         }
-    } 
-    
+    }
+
 } // namespace UnityEditor.iOS.Xcode

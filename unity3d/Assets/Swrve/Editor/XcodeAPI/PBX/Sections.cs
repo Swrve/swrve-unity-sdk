@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
 
-// Basr classes for section handling
+// Base classes for section handling
 
 namespace SwrveInternal.iOS.Xcode.PBX
 {
@@ -28,17 +28,17 @@ namespace SwrveInternal.iOS.Xcode.PBX
         {
             m_Name = sectionName;
         }
- 
+
         public IEnumerable<KeyValuePair<string, T>> GetEntries()
-        { 
-            return m_Entries; 
+        {
+            return m_Entries;
         }
 
         public IEnumerable<string> GetGuids()
         {
             return m_Entries.Keys;
         }
-        
+
         public IEnumerable<T> GetObjects()
         {
             return m_Entries.Values;
@@ -68,7 +68,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 sb.Append("\n\t\t");
                 comments.WriteStringBuilder(sb, obj.guid);
                 sb.Append(" = ");
-                Serializer.WriteDict(sb, obj.GetPropertiesWhenSerializing(), 2, 
+                Serializer.WriteDict(sb, obj.GetPropertiesWhenSerializing(), 2,
                                      obj.shouldCompact, obj.checker, comments);
                 sb.Append(";");
             }
@@ -84,11 +84,11 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 return null;
             }
         }
-        
+
         public bool HasEntry(string guid)
         {
             return m_Entries.ContainsKey(guid);
-        }      
+        }
 
         public void AddEntry(T obj)
         {

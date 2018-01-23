@@ -9,8 +9,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import java.util.Date;
-import java.util.LinkedList;
 
 import com.amazon.device.messaging.ADMMessageHandlerBase;
 import com.google.gson.Gson;
@@ -21,6 +19,9 @@ import com.swrve.sdk.SwrvePushSDK;
 import com.swrve.unity.SwrveNotification;
 import com.swrve.unity.SwrvePushSupport;
 import com.unity3d.player.UnityPlayer;
+
+import java.util.Date;
+import java.util.LinkedList;
 
 public class SwrveAdmIntentService extends ADMMessageHandlerBase {
     private final static String TAG = "SwrveAdm";
@@ -122,11 +123,6 @@ public class SwrveAdmIntentService extends ADMMessageHandlerBase {
                     // Call Unity SDK MonoBehaviour container
                     SwrveNotification swrveNotification = SwrveNotification.Builder.build(msg);
                     SwrveAdmPushSupport.newReceivedNotification(SwrveAdmPushSupport.getGameObject(UnityPlayer.currentActivity), SwrveAdmPushSupport.ON_NOTIFICATION_RECEIVED_METHOD, swrveNotification);
-                }
-
-                SwrvePushSDK pushSDK = SwrvePushSDK.createInstance(this);
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    pushSDK.setDefaultNotificationChannel((android.app.NotificationChannel)SwrvePushSupport.getDefaultAndroidChannel(prefs));
                 }
 
                 // Save influenced data

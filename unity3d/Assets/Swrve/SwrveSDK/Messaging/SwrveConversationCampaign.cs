@@ -4,7 +4,7 @@ using System;
 namespace SwrveUnity.Messaging
 {
 /// <summary>
-/// Swrve Talk campaign.
+/// Swrve conversation campaign.
 /// </summary>
 public class SwrveConversationCampaign : SwrveBaseCampaign
 {

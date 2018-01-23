@@ -11,6 +11,7 @@ public class RESTResponse
 {
     public readonly string Body;
     public readonly WwwDeducedError Error = WwwDeducedError.NoError;
+    public readonly long ResponseCode;
     public readonly Dictionary<string, string> Headers;
 
     public RESTResponse (string body)
@@ -26,6 +27,11 @@ public class RESTResponse
     public RESTResponse (WwwDeducedError error)
     {
         Error = error;
+    }
+
+    public RESTResponse (long responseCode)
+    {
+        ResponseCode = responseCode;
     }
 }
 }

@@ -235,7 +235,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     public void RefreshPushPermissions()
     {
 #if !UNITY_EDITOR
-		string preIOS10NotificationStatus = _swrvePushNotificationStatus (this.prefabName);		
+		string preIOS10NotificationStatus = _swrvePushNotificationStatus (this.prefabName);
 		if (!string.IsNullOrEmpty(preIOS10NotificationStatus)) {
 			this.pushNotificationStatus = preIOS10NotificationStatus;
 		}
@@ -259,13 +259,13 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
 #if !UNITY_EDITOR
     [DllImport ("__Internal")]
-    private static extern string _swrveiOSGetLanguage();
+    private static extern string _swrveiOSLanguage();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveiOSGetTimeZone();
+    private static extern string _swrveiOSTimeZone();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveiOSGetAppVersion();
+    private static extern string _swrveiOSAppVersion();
 
     [DllImport ("__Internal")]
     private static extern void _swrveiOSRegisterForPushNotifications(string unJsonCategory, string uiJsonCategory);
@@ -286,7 +286,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     private static extern void _swrveiOSStartLocation();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveiOSGetPlotNotifications();
+    private static extern string _swrveiOSPlotNotifications();
 
     [DllImport ("__Internal")]
     private static extern void _swrveiOSLocationUserUpdate(string jsonMap);
@@ -304,13 +304,16 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     public static extern bool _swrveiOSIsSupportedOSVersion();
 
     [DllImport ("__Internal")]
-    public static extern string _swrveGetInfluencedDataJson();
+    public static extern string _swrveInfluencedDataJson();
 
     [DllImport ("__Internal")]
     public static extern string _swrvePushNotificationStatus(string componentName);
 
     [DllImport ("__Internal")]
     public static extern string _swrveBackgroundRefreshStatus();
+
+    [DllImport ("__Internal")]
+    private static extern void _swrveiOSUpdateQaUser(string jsonMap);
 #endif
 
     private string iOSdeviceToken;
@@ -319,7 +322,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     {
 #if !UNITY_EDITOR
         try {
-            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.notificationCategories.Select(a => a.toDict ()).ToList ()), Json.Serialize (config.pushCategories.Select (a => a.toDict ()).ToList ()));
+            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.NotificationCategories.Select(a => a.toDict ()).ToList ()), Json.Serialize (config.PushCategories.Select (a => a.toDict ()).ToList ()));
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
 
@@ -385,7 +388,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
                 if (rawId is Int64) {
                     pushId = ConvertInt64ToInt32Hack ((Int64)rawId).ToString ();
                 }
-                    
+
                 SendPushEngagedEvent(pushId);
 
             } else {
@@ -430,7 +433,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
 #if !UNITY_EDITOR
         try {
-            deviceInfo ["swrve.timezone_name"] = _swrveiOSGetTimeZone();
+            deviceInfo ["swrve.timezone_name"] = _swrveiOSTimeZone();
         } catch (Exception e) {
             SwrveLog.LogWarning("Couldn't get device timezone on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
         }
@@ -476,7 +479,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     {
 #if !UNITY_EDITOR
         try {
-            return _swrveiOSGetLanguage();
+            return _swrveiOSLanguage();
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get the device language, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
@@ -488,7 +491,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     {
 #if !UNITY_EDITOR
         try {
-            config.AppVersion = _swrveiOSGetAppVersion();
+            config.AppVersion = _swrveiOSAppVersion();
             SwrveLog.Log ("got iOS version name " + config.AppVersion);
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get the device app version, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
@@ -557,7 +560,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     {
 #if !UNITY_EDITOR
         try {
-            return _swrveiOSGetPlotNotifications();
+            return _swrveiOSPlotNotifications();
         } catch (Exception exp) {
             SwrveLog.LogWarning ("Couldn't get plot notifications from iOS: " + exp.ToString ());
         }
@@ -573,6 +576,17 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     private bool NativeIsBackPressed ()
     {
         return false;
+    }
+
+    public void updateQAUser(Dictionary<string, object> map)
+    {
+#if !UNITY_EDITOR
+        try {
+          _swrveiOSUpdateQaUser(Json.Serialize(map));
+         } catch (Exception exp) {
+          SwrveLog.LogWarning ("Couldn't update QA user from iOS: " + exp.ToString ());
+         }
+#endif
     }
 
 }

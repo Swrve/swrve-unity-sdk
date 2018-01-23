@@ -21,8 +21,8 @@ void UnitySendRemoteNotification(NSDictionary* notification);
 +(void) init:(char*)jsonConfig;
 
 -(void) initLocation;
--(void) LocationUserUpdate:(NSString*)jsonMap;
--(NSString*) GetPlotNotifications;
+-(void) locationUserUpdate:(NSString*)jsonMap;
+-(NSString*) plotNotifications;
 
 -(long) appId;
 -(NSString*) apiKey;
@@ -33,20 +33,20 @@ void UnitySendRemoteNotification(NSDictionary* notification);
 -(NSString*) userId;
 -(NSString*) appVersion;
 -(NSString*) uniqueKey;
--(NSString*) getLocationPath;
-
--(NSString*) batchUrl;
+-(NSString*) locationPath;
 -(NSString*) eventsServer;
 
--(NSURL*) getBatchUrl;
+-(NSURL*) batchUrl;
 -(int) httpTimeout;
 
--(NSData*) getCampaignData:(int)category;
+-(NSData*) campaignData:(int)category;
 
 -(void) setLocationSegmentVersion:(int)version;
 -(int) userUpdate:(NSDictionary *)attributes;
 -(void) shutdown;
 
 +(BOOL) didReceiveRemoteNotification:(NSDictionary*)userInfo withBackgroundCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary*))completionHandler;
+
+-(void) updateQAUser:(NSString*)qaJson;
 
 @end

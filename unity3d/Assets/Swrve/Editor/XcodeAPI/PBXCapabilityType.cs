@@ -1,4 +1,4 @@
-﻿namespace SwrveInternal.iOS.Xcode
+namespace SwrveInternal.iOS.Xcode
 {
     /// <summary>
     /// List of all the capabilities available.

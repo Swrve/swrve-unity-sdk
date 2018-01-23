@@ -9,6 +9,7 @@
 #import "SwrvePush.h"
 #import "SwrvePushInternalAccess.h"
 #import "SwrvePushConstants.h"
+#import "SwrveQA.h"
 
 static UnitySwrveCommonDelegate *_swrveSharedUnity = NULL;
 static dispatch_once_t sharedInstanceToken = 0;
@@ -129,6 +130,10 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
     return [self stringFromConfig:@"sigSuffix"];
 }
 
+-(NSString*) deviceId {
+    return [self stringFromConfig:@"deviceId"];
+}
+
 -(NSString*) userId {
     return [self stringFromConfig:@"userId"];
 }
@@ -151,23 +156,20 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
     return [self stringFromConfig:@"uniqueKey"];
 }
 
--(NSString*) batchUrl {
-    return [self stringFromConfig:@"batchUrl"];
-}
-
 -(NSString*) eventsServer {
     return [self stringFromConfig:@"eventsServer"];
 }
 
--(NSURL*) getBatchUrl {
-    return [NSURL URLWithString:[self batchUrl] relativeToURL:[NSURL URLWithString:[self eventsServer]]];
+-(NSURL*) batchUrl {
+    NSString* baseUrl = [self stringFromConfig:@"batchUrl"];
+    return [NSURL URLWithString:baseUrl relativeToURL:[NSURL URLWithString:[self eventsServer]]];
 }
 
 -(int) httpTimeout {
     return [self intFromConfig:@"httpTimeout"];
 }
 
--(NSString*) getLocationPath {
+-(NSString*) locationPath {
     return [NSString stringWithFormat:@"%@/%@%@", [self applicationPath], [self locTag], [self userId]];
 }
 
@@ -242,7 +244,7 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
 
     NSData* json_data = [json_string dataUsingEncoding:NSUTF8StringEncoding];
 
-    [self sendHttpPOSTRequest:[self getBatchUrl]
+    [self sendHttpPOSTRequest:[self batchUrl]
                      jsonData:json_data
             completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
 
@@ -412,7 +414,7 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
 
 -(NSDictionary *) readAppGroupConfigJSON {
     NSString *path = [[NSBundle mainBundle] pathForResource:@"appgroupconfig" ofType:@"json"];
-    
+
     if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
         NSData *data = [NSData dataWithContentsOfFile:path];
         return [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:nil];
@@ -445,7 +447,7 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
 #endif
 }
 
--(void) LocationUserUpdate:(NSString*) jsonMap
+-(void) locationUserUpdate:(NSString*) jsonMap
 {
 #ifdef SWRVE_LOCATION_SDK
     NSError* error = nil;
@@ -456,13 +458,13 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
 #endif
 }
 
--(NSString*) GetPlotNotifications
+-(NSString*) plotNotifications
 {
     NSMutableArray* notifications = [NSMutableArray array];
 #ifdef SWRVE_LOCATION_SDK
     NSArray* plotNotifications = [Plot loadedNotifications];
     for (uint i = 0; i < [plotNotifications count]; i++) {
-        [notifications addObject:[[(UILocalNotification*)plotNotifications[i] userInfo] valueForKey:@"action"]];
+        [notifications addObject:[[((UNNotificationRequest*)plotNotifications[i]).content userInfo] valueForKey:@"action"]];
     };
 #endif
     NSData* jsonData = [NSJSONSerialization dataWithJSONObject:notifications options:0 error:nil];
@@ -474,10 +476,10 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
                     msg:[NSString stringWithFormat:@"%d", version]];
 }
 
--(NSData*) getCampaignData:(int)category {
+-(NSData*) campaignData:(int)category {
     if(SWRVE_CAMPAIGN_LOCATION == category) {
         // We could add a security check here
-        return [NSData dataWithContentsOfURL: [NSURL fileURLWithPath:[self getLocationPath]]];
+        return [NSData dataWithContentsOfURL: [NSURL fileURLWithPath:[self locationPath]]];
     }
     return nil;
 }
@@ -648,8 +650,8 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
     [SwrvePlot filterLocationCampaigns:filterNotifications];
 }
 
--(void)plotHandleNotification:(UILocalNotification*)localNotification data:(NSString*)data {
-    [SwrvePlot engageLocationCampaign:localNotification withData:data];
+-(void)plotHandleNotification:(UNNotificationRequest*)notification data:(NSString*)data {
+    [SwrvePlot engageLocationCampaign:notification withData:data];
 }
 
 -(void)plotNotificationSentEvent:(PlotSentNotification*)notification {
@@ -694,6 +696,18 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
 
     // We won't call the completionHandler and the customer should handle it themselves
     return NO;
+}
+
+-(void) updateQAUser:(NSString *)qaJson {
+    
+    NSError* error = nil;
+    NSDictionary* map =
+    [NSJSONSerialization JSONObjectWithData:[qaJson dataUsingEncoding:NSUTF8StringEncoding]
+                                    options:NSJSONReadingMutableContainers error:&error];
+    if (error == nil) {
+        
+        [SwrveQA updateQAUser:map];
+    }
 }
 
 @end

@@ -40,10 +40,7 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
     // Called by Unity
     public static boolean initialiseAdm(final String gameObject, final String appTitle,
                                         final String iconId, final String materialIconId,
-                                        final String largeIconId, final int accentColor,
-                                        final String defaultAndroidChannelId,
-                                        final String defaultAndroidChannelName,
-                                        final String defaultAndroidChannelImportance) {
+                                        final String largeIconId, final int accentColor) {
         if (!isAdmAvailable()) {
             Log.e(TAG, "Won't initialise ADM. ADM class not found.");
             return false;
@@ -56,9 +53,7 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
 
         final Activity activity = UnityPlayer.currentActivity;
         try {
-            saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId,
-                    accentColor, defaultAndroidChannelId, defaultAndroidChannelName,
-                    defaultAndroidChannelImportance);
+            saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
             Context context = activity.getApplicationContext();
 
             final ADM adm = new ADM(context);
@@ -79,17 +74,13 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
     }
 
     private static void saveConfig(String gameObject, Activity activity, String appTitle, String iconId,
-                                   String materialIconId, String largeIconId, int accentColor,
-                                   final String defaultAndroidChannelId,
-                                   final String defaultAndroidChannelName,
-                                   final String defaultAndroidChannelImportance) {
+                                   String materialIconId, String largeIconId, int accentColor) {
         Context context = activity.getApplicationContext();
         final SharedPreferences prefs = getAdmPreferences(context);
 
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(PROPERTY_PUSH_CONFIG_VERSION, PROPERTY_PUSH_CONFIG_VERSION_VAL);
-        SwrvePushSupport.saveConfig(editor, gameObject, activity, appTitle, iconId, materialIconId, largeIconId,
-                accentColor, defaultAndroidChannelId, defaultAndroidChannelName, defaultAndroidChannelImportance);
+        SwrvePushSupport.saveConfig(editor, gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
         editor.apply();
     }
 

@@ -44,13 +44,13 @@ public class SwrveResource
 /// <summary>
 /// Represents a resource set up in the dashboard.
 /// </summary>
-public class ABTestDetails
+public class SwrveABTestDetails
 {
     public readonly string Id;
     public readonly string Name;
     public readonly int CaseIndex;
 
-    public ABTestDetails (string id, string name, int caseIndex)
+    public SwrveABTestDetails (string id, string name, int caseIndex)
     {
         this.Id = id;
         this.Name = name;
@@ -72,11 +72,11 @@ public class SwrveResourceManager
 	/// Information about the AB Tests a user is part of. To use this feature enable the
 	/// flag abTestDetailsEnabled in your configuration.
 	/// </summary>
-    public List<ABTestDetails> ABTestDetails;
+    public List<SwrveABTestDetails> ABTestDetails;
 
 	public SwrveResourceManager() {
-		UserResources = new Dictionary<string, SwrveResource> ();	
-		ABTestDetails = new List<ABTestDetails> ();
+		UserResources = new Dictionary<string, SwrveResource> ();
+		ABTestDetails = new List<SwrveABTestDetails> ();
 	}
 
     /// <summary>
@@ -104,7 +104,7 @@ public class SwrveResourceManager
     /// </param>
     public void SetABTestDetailsFromJSON (Dictionary<string, object> abTestDetailsJson)
     {
-        List<ABTestDetails> abTestDetails = new List<ABTestDetails> ();
+        List<SwrveABTestDetails> abTestDetails = new List<SwrveABTestDetails> ();
         Dictionary<string, object>.Enumerator enumerator = abTestDetailsJson.GetEnumerator();
         while(enumerator.MoveNext()) {
             KeyValuePair<string, object> abTestDetailsPair = enumerator.Current;
@@ -112,7 +112,7 @@ public class SwrveResourceManager
                 Dictionary<string, object> abTestDetailsDic = (Dictionary<string, object>)abTestDetailsPair.Value;
                 string name = (string)abTestDetailsDic ["name"];
                 int caseIndex = MiniJsonHelper.GetInt (abTestDetailsDic, "case_index", 0);
-                ABTestDetails newDetails = new ABTestDetails (abTestDetailsPair.Key, name, caseIndex);
+                SwrveABTestDetails newDetails = new SwrveABTestDetails (abTestDetailsPair.Key, name, caseIndex);
                 abTestDetails.Add (newDetails);
             }
         }
@@ -163,4 +163,3 @@ public class SwrveResourceManager
     }
 }
 }
-

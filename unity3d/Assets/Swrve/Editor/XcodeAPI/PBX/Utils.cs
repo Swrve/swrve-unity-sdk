@@ -30,7 +30,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
         {
             m_Dict.Remove(guid);
         }
-        
+
         public string Write(string guid)
         {
             string comment = this[guid];
@@ -109,7 +109,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             }
             return true;
         }
-  
+
         // Quotes the given string if it contains special characters. Note: if the string already
         // contains quotes, then they are escaped and the entire string quoted again
         public static string QuoteStringIfNeeded(string src)
@@ -135,7 +135,8 @@ namespace SwrveInternal.iOS.Xcode.PBX
         Framework,
         Source,
         Resource,
-        CopyFile
+        CopyFile,
+        ShellScript
     }
 
     internal class FileTypeUtils
@@ -165,6 +166,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             new Dictionary<string, FileTypeDesc>
         {
             { "a",         new FileTypeDesc("archive.ar",              PBXFileType.Framework) },
+            { "aif",       new FileTypeDesc("sound.aif",               PBXFileType.Resource) },
             { "app",       new FileTypeDesc("wrapper.application",     PBXFileType.NotBuildable, true) },
             { "appex",     new FileTypeDesc("wrapper.app-extension",   PBXFileType.CopyFile) },
             { "bin",       new FileTypeDesc("archive.macbinary",       PBXFileType.Resource) },
@@ -182,6 +184,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             { "inc",       new FileTypeDesc("sourcecode.inc",          PBXFileType.NotBuildable) },
             { "m",         new FileTypeDesc("sourcecode.c.objc",       PBXFileType.Source) },
             { "mm",        new FileTypeDesc("sourcecode.cpp.objcpp",   PBXFileType.Source ) },
+            { "mp3",       new FileTypeDesc("sound.mp3",               PBXFileType.Resource) },
             { "nib",       new FileTypeDesc("wrapper.nib",             PBXFileType.Resource) },
             { "plist",     new FileTypeDesc("text.plist.xml",          PBXFileType.Resource) },
             { "png",       new FileTypeDesc("image.png",               PBXFileType.Resource) },
@@ -195,7 +198,8 @@ namespace SwrveInternal.iOS.Xcode.PBX
             { "storyboard",new FileTypeDesc("file.storyboard",         PBXFileType.Resource) },
             { "bundle",    new FileTypeDesc("wrapper.plug-in",         PBXFileType.Resource) },
             { "dylib",     new FileTypeDesc("compiled.mach-o.dylib",   PBXFileType.Framework) },
-            { "tbd",       new FileTypeDesc("sourcecode.text-based-dylib-definition",  PBXFileType.Framework) }
+            { "tbd",       new FileTypeDesc("sourcecode.text-based-dylib-definition",  PBXFileType.Framework) },
+            { "wav",       new FileTypeDesc("sound.wav",               PBXFileType.Resource) }
         };
 
         public static string TrimExtension(string ext)
@@ -257,7 +261,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             return IsBuildableFile(ext);
         }
 
-        private static readonly Dictionary<PBXSourceTree, string> sourceTree = new Dictionary<PBXSourceTree, string> 
+        private static readonly Dictionary<PBXSourceTree, string> sourceTree = new Dictionary<PBXSourceTree, string>
         {
             { PBXSourceTree.Absolute,   "<absolute>" },
             { PBXSourceTree.Group,      "<group>" },
@@ -266,8 +270,8 @@ namespace SwrveInternal.iOS.Xcode.PBX
             { PBXSourceTree.Sdk,        "SDKROOT" },
             { PBXSourceTree.Source,     "SOURCE_ROOT" },
         };
-        
-        private static readonly Dictionary<string, PBXSourceTree> stringToSourceTreeMap = new Dictionary<string, PBXSourceTree> 
+
+        private static readonly Dictionary<string, PBXSourceTree> stringToSourceTreeMap = new Dictionary<string, PBXSourceTree>
         {
             { "<absolute>",         PBXSourceTree.Absolute },
             { "<group>",            PBXSourceTree.Group },
@@ -281,7 +285,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
         {
             return sourceTree[tree];
         }
-        
+
         // returns PBXSourceTree.Source on error
         internal static PBXSourceTree ParseSourceTree(string tree)
         {

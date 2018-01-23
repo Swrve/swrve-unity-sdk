@@ -57,12 +57,6 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         project.ReadFromString (xcodeproj);
         string targetGuid = project.TargetGuidByName ("Unity-iPhone");
 
-        project.AddFrameworkToProject (targetGuid, "AddressBook.framework", false /*not weak*/);
-        project.AddFrameworkToProject (targetGuid, "AssetsLibrary.framework", false /*not weak*/);
-        project.AddFrameworkToProject (targetGuid, "AdSupport.framework", false /*not weak*/);
-        project.AddFrameworkToProject (targetGuid, "Contacts.framework", true /*weak*/);
-        project.AddFrameworkToProject (targetGuid, "Photos.framework", true /*weak*/);
-
         // 6. Add conversations resources to bundle
         if (!AddFolderToProject (project, targetGuid, "Assets/Plugins/iOS/SwrveConversationSDK/Resources", pathToProject, "Libraries/Plugins/iOS/SwrveConversationSDK/Resources")) {
             UnityEngine.Debug.LogError ("Swrve SDK - Could not find the Conversation resources folder in your project. If you want to use Conversations please contact support@swrve.com");
@@ -72,12 +66,18 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         project.AddFrameworkToProject(targetGuid, "UserNotifications.framework", true /*weak*/);
         project.AddFrameworkToProject(targetGuid, "UserNotificationsUI.framework", true /*weak*/);
 
-        // 8. Add Extension Target for Push
-        project = AddExtensionToProject(project, pathToProject);
+        string appGroupIndentifier = SwrveBuildComponent.GetPostProcessString(SwrveBuildComponent.APP_GROUP_ID_KEY);
 
-        // 9. Add Entitlements to project
-        project.AddCapability(targetGuid, PBXCapabilityType.AppGroups, null, false);
-        project.AddCapability(targetGuid, PBXCapabilityType.PushNotifications, null, false);
+        if (string.IsNullOrEmpty (appGroupIndentifier)) {
+            SwrveLog.Log ("Swrve iOS Rich Push requires an iOSAppGroupIdentifier set in the postprocess.json file. Without it there will be no influence tracking and potential errors.");
+        } else {
+            // 8. Add Extension Target for Push
+            project = AddExtensionToProject(project, pathToProject);
+
+            // 9. Add Entitlements to project
+            project.AddCapability(targetGuid, PBXCapabilityType.AppGroups, null, false);
+            project.AddCapability(targetGuid, PBXCapabilityType.PushNotifications, null, false);
+        }
 
         // Write changes to the Xcode project
         xcodeproj = project.WriteToString ();
@@ -145,26 +145,22 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
 
         // Add appgroupconfig.json to XCode project
         string appGroupIndentifier = SwrveBuildComponent.GetPostProcessString(SwrveBuildComponent.APP_GROUP_ID_KEY);
+        string appGroupConfig = "appgroupconfig.json";
+        // Add the app group config so it can be read at run-time by the main app and the service extension
+        SwrveBuildComponent.SetAppGroupConfigKey("ios", Path.Combine(pathToProject + "/SwrvePushExtension", appGroupConfig));
+        proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/" + appGroupConfig, "SwrvePushExtension/" + appGroupConfig));
+        proj.AddFileToBuild(mainTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/" + appGroupConfig, "SwrvePushExtension/" + appGroupConfig));
 
-        if (string.IsNullOrEmpty (appGroupIndentifier)) {
-            SwrveLog.Log ("Swrve iOS Rich Push requires an iOSAppGroupIdentifier set in the postprocess.json file. Without it there will be no influence tracking and potential errors.");
-        } else {
-            string appGroupConfig = "appgroupconfig.json";
-            // Add the app group config so it can be read at run-time by the main app and the service extension
-            SwrveBuildComponent.SetAppGroupConfigKey("ios", Path.Combine(pathToProject + "/SwrvePushExtension", appGroupConfig));
-            proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/" + appGroupConfig, "SwrvePushExtension/" + appGroupConfig));
-            proj.AddFileToBuild(mainTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/" + appGroupConfig, "SwrvePushExtension/" + appGroupConfig));
+        // Edit template entitlements file
+        string entitlementContents = File.ReadAllText(pathToProject + "/SwrvePushExtension/SwrvePushExtension.entitlements");
+        entitlementContents = entitlementContents.Replace("<string>APP_GROUP_TEMP</string>", "<string>" + appGroupIndentifier + "</string>");
+        File.WriteAllText(pathToProject + "/SwrvePushExtension/SwrvePushExtension.entitlements", entitlementContents);
 
-            // Edit template entitlements file
-            string entitlementContents = File.ReadAllText(pathToProject + "/SwrvePushExtension/SwrvePushExtension.entitlements");
-            entitlementContents = entitlementContents.Replace("<string>APP_GROUP_TEMP</string>", "<string>" + appGroupIndentifier + "</string>");
-            File.WriteAllText(pathToProject + "/SwrvePushExtension/SwrvePushExtension.entitlements", entitlementContents);
+        // Add entitlements file to service extension
+        proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/SwrvePushExtension.entitlements", "SwrvePushExtension/SwrvePushExtension.entitlements"));
+        proj.AddCapability(extensionTarget, PBXCapabilityType.AppGroups, "SwrvePushExtension/SwrvePushExtension.entitlements", false);
 
-            // Add entitlements file to service extension
-            proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/SwrvePushExtension.entitlements", "SwrvePushExtension/SwrvePushExtension.entitlements"));
-            proj.AddCapability(extensionTarget, PBXCapabilityType.AppGroups, "SwrvePushExtension/SwrvePushExtension.entitlements", false);
-        }
-
+        // Return edited project
         return proj;
     }
 

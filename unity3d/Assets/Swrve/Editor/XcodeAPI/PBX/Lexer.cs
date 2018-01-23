@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System;
 
-
 namespace SwrveInternal.iOS.Xcode.PBX
 {
     enum TokenType
@@ -14,31 +13,31 @@ namespace SwrveInternal.iOS.Xcode.PBX
         String,
         QuotedString,
         Comment,
-        
+
         Semicolon,  // ;
         Comma,      // ,
         Eq,         // =
         LParen,     // (
         RParen,     // )
         LBrace,     // {
-        RBrace,     // }      
+        RBrace,     // }
     }
-    
+
     class Token
     {
         public TokenType type;
-        
+
         // the line of the input stream the token starts in (0-based)
         public int line;
-        
+
         // start and past-the-end positions of the token in the input stream
         public int begin, end;
     }
-    
+
     class TokenList : List<Token>
     {
     }
-    
+
     class Lexer
     {
         string text;
@@ -52,7 +51,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             lexer.SetText(text);
             return lexer.ScanAll();
         }
-        
+
         public void SetText(string text)
         {
             this.text = text + "    "; // to prevent out-of-bounds access during look ahead
@@ -60,11 +59,11 @@ namespace SwrveInternal.iOS.Xcode.PBX
             length = text.Length;
             line = 0;
         }
-        
+
         public TokenList ScanAll()
         {
             var tokens = new TokenList();
-            
+
             while (true)
             {
                 var tok = new Token();
@@ -75,13 +74,13 @@ namespace SwrveInternal.iOS.Xcode.PBX
             }
             return tokens;
         }
-        
+
         void UpdateNewlineStats(char ch)
         {
             if (ch == '\n')
                 line++;
         }
-        
+
         // tokens list is modified in the case when we add BrokenLine token and need to remove already
         // added tokens for the current line
         void ScanOne(Token tok)
@@ -93,16 +92,16 @@ namespace SwrveInternal.iOS.Xcode.PBX
                     UpdateNewlineStats(text[pos]);
                     pos++;
                 }
-                
+
                 if (pos >= length)
                 {
                     tok.type = TokenType.EOF;
                     break;
                 }
-                
+
                 char ch = text[pos];
                 char ch2 = text[pos+1];
-                
+
                 if (ch == '\"')
                     ScanQuotedString(tok);
                 else if (ch == '/' && ch2 == '*')
@@ -114,9 +113,9 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 else
                     ScanString(tok); // be more robust and accept whatever is left
                 return;
-            }    
+            }
         }
-        
+
         void ScanString(Token tok)
         {
             tok.type = TokenType.String;
@@ -125,7 +124,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             {
                 char ch = text[pos];
                 char ch2 = text[pos+1];
-                
+
                 if (Char.IsWhiteSpace(ch))
                     break;
                 else if (ch == '\"')
@@ -141,13 +140,13 @@ namespace SwrveInternal.iOS.Xcode.PBX
             tok.end = pos;
             tok.line = line;
         }
-        
+
         void ScanQuotedString(Token tok)
         {
             tok.type = TokenType.QuotedString;
             tok.begin = pos;
             pos++;
-            
+
             while (pos < length)
             {
                 // ignore escaped quotes
@@ -156,11 +155,11 @@ namespace SwrveInternal.iOS.Xcode.PBX
                     pos += 2;
                     continue;
                 }
-            
+
                 // note that we close unclosed quotes
                 if (text[pos] == '\"')
                     break;
-                
+
                 UpdateNewlineStats(text[pos]);
                 pos++;
             }
@@ -174,12 +173,12 @@ namespace SwrveInternal.iOS.Xcode.PBX
             tok.type = TokenType.Comment;
             tok.begin = pos;
             pos += 2;
-            
+
             while (pos < length)
             {
                 if (text[pos] == '*' && text[pos+1] == '/')
                     break;
-                
+
                 // we support multiline comments
                 UpdateNewlineStats(text[pos]);
                 pos++;
@@ -206,7 +205,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
             tok.end = pos;
             tok.line = line;
         }
-        
+
         bool IsOperator(char ch)
         {
             if (ch == ';' || ch == ',' || ch == '=' || ch == '(' || ch == ')' || ch == '{' || ch == '}')
@@ -228,7 +227,7 @@ namespace SwrveInternal.iOS.Xcode.PBX
                 default: return;
             }
         }
-        
+
         void ScanOperatorSpecific(Token tok, TokenType type)
         {
             tok.type = type;
@@ -238,6 +237,6 @@ namespace SwrveInternal.iOS.Xcode.PBX
             tok.line = line;
         }
     }
-    
+
 
 } // namespace UnityEditor.iOS.Xcode

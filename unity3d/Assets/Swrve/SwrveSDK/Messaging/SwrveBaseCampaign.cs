@@ -8,7 +8,7 @@ using SwrveUnityMiniJSON;
 namespace SwrveUnity.Messaging
 {
 /// <summary>
-/// Swrve Talk campaign.
+/// Swrve messaging campaign.
 /// </summary>
 public abstract class SwrveBaseCampaign
 {

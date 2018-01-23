@@ -1,22 +1,16 @@
 package com.swrve.unity;
 
-import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.RequiresApi;
 
-import com.swrve.sdk.SwrvePushSDK;
 import com.google.firebase.messaging.RemoteMessage;
+import com.swrve.sdk.SwrvePushSDK;
 import com.swrve.unity.firebase.MainActivity;
-import com.swrve.unity.firebase.SwrveFirebaseDeviceRegistration;
 import com.swrve.unity.firebase.SwrveFirebaseMessagingService;
-import com.unity3d.player.UnityPlayer;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.robolectric.Robolectric;
 import org.robolectric.Shadows;
-import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Constructor;
 
@@ -50,20 +44,5 @@ public class SwrvePushSupportTest extends SwrveBasePushSupportTest {
             System.err.println(exp.toString());
             fail();
         }
-    }
-
-    @Config(sdk = Build.VERSION_CODES.O)
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    @Test
-    public void testNotificationChannel() throws NoSuchFieldException, IllegalAccessException {
-        String channelId = "default-channel-id";
-        String channelName = "default-channel-name";
-
-        // Emulate call to register from the C# layer
-        UnityPlayer.currentActivity = mActivity;
-        SwrveFirebaseDeviceRegistration.registerDevice("gameObject", "appTitle", "common_google_signin_btn_icon_dark", "common_full_open_on_phone", "largeIconId", 0, channelId, channelName, "min");
-        Robolectric.flushForegroundThreadScheduler();
-
-        testNotificationChannelAssert(channelId, channelName);
     }
 }

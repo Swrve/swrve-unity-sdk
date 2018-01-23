@@ -1,4 +1,4 @@
-#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WSA_10_0
+#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE
 #define SWRVE_SUPPORTED_PLATFORM
 #endif
 using UnityEngine;
@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "4.11";
+    public const string SdkVersion = "5.1";
 
     protected int appId;
     /// <summary>
@@ -330,10 +330,13 @@ public partial class SwrveSDK
 
         if (string.IsNullOrEmpty(installTimeEpoch)) {
             // Its a new user
-            NamedEventInternal("Swrve.first_session");
+            NamedEventInternal("Swrve.first_session", null, false);
         }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
+        // set the default notification channel for location and remote notifications (for oreo+)
+        SetDefaultNotificationChannel();
+
         // Ask for Android registration id
         if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
             if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
@@ -369,18 +372,16 @@ public partial class SwrveSDK
         SendQueuedEvents();
 
         // In-app messaging features
-        if (config.TalkEnabled) {
+        if (config.MessagingEnabled) {
             // Check language and link token
             if (string.IsNullOrEmpty(Language)) {
-                throw new Exception ("Language needed to use Talk");
+                throw new Exception ("Language needed to use messaging");
             } else if (string.IsNullOrEmpty(config.AppStore)) {
                 // Default app-store by platform
 #if UNITY_ANDROID
                 config.AppStore = SwrveAppStore.Google;
 #elif UNITY_IPHONE
                 config.AppStore = SwrveAppStore.Apple;
-#elif UNITY_WSA_10_0
-                config.AppStore = SwrveAppStore.Windows;
 #else
                 throw new Exception ("App store must be apple, google, amazon or a custom app store");
 #endif
@@ -1041,13 +1042,6 @@ public partial class SwrveSDK
 #endif
     }
 
-
-    [Obsolete("IsMessageDispaying is deprecated, please use IsMessageDisplaying instead.")]
-    public virtual bool IsMessageDispaying ()
-    {
-        return IsMessageDisplaying ();
-    }
-
     public void SetLocationSegmentVersion(int locationSegmentVersion)
     {
         this.locationSegmentVersion = locationSegmentVersion;
@@ -1334,18 +1328,6 @@ public partial class SwrveSDK
     {
         campaign.Status = SwrveCampaignState.Status.Deleted;
         SaveCampaignData(campaign);
-    }
-
-    [Obsolete("This method is for internal use only and will be removed in later version.")]
-    public bool IsAssetInCache(string asset)
-    {
-        return asset != null && this.GetAssetsOnDisk ().Contains (asset);
-    }
-
-    [Obsolete("This method is for internal use only and will be removed in later version.")]
-    public HashSet<string> GetAssetsOnDisk()
-    {
-        return this.SwrveAssetsManager.AssetsOnDisk;
     }
 
     /// <summary>

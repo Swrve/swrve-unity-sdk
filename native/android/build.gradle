@@ -3,10 +3,12 @@ buildscript {
     repositories {
         jcenter()
         maven { url 'https://maven.fabric.io/public' }
+        maven { url 'https://maven.google.com' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.1'
         classpath 'io.fabric.tools:gradle:1.+'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.2'
     }
 }
 
@@ -17,6 +19,9 @@ allprojects {
         maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
         jcenter {
             url  "http://dl.bintray.com/swrve-inc/android"
+        }
+        maven {
+            url 'https://maven-repo.plotprojects.com'
         }
         maven { url "https://maven.google.com" }
     }
