@@ -47,7 +47,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
             return null;
         }
 
-        if (checkCampaignLimits (triggerEvent, payload, qaUser)) {
+        if (CheckCampaignLimits (triggerEvent, payload, qaUser)) {
             SwrveLog.Log (string.Format ("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
 
             return GetNextMessage (messagesCount, qaUser);

@@ -40,7 +40,7 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
             return null;
         }
 
-        if (checkCampaignLimits (triggerEvent, payload, qaUser)) {
+        if (CheckCampaignLimits (triggerEvent, payload, qaUser)) {
             SwrveLog.Log (string.Format ("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
             if (AreAssetsReady ()) {
                 return Conversation;

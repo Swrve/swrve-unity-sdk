@@ -159,7 +159,7 @@ public abstract class SwrveBaseCampaign
         this.showMessagesAfterLaunch = swrveInitialisedTime + TimeSpan.FromSeconds (DefaultDelayFirstMessage);
     }
 
-    public bool checkCampaignLimits (string triggerEvent, IDictionary<string, string> payload, SwrveQAUser qaUser)
+    public bool CheckCampaignLimits (string triggerEvent, IDictionary<string, string> payload, SwrveQAUser qaUser)
     {
         // Use local time to track throttle limits (want to show local time in logs)
         DateTime localNow = SwrveHelper.GetNow ();
@@ -173,8 +173,7 @@ public abstract class SwrveBaseCampaign
             return false;
         }
 
-        if (Impressions >= maxImpressions) {
-            LogAndAddReason ("{Campaign throttle limit} Campaign " + Id + " has been shown " + maxImpressions + " times already", qaUser);
+        if (!CheckImpressions(qaUser)) {
             return false;
         }
 
@@ -188,6 +187,14 @@ public abstract class SwrveBaseCampaign
             return false;
         }
 
+        return true;
+    }
+
+    public bool CheckImpressions(SwrveQAUser qaUser) {
+        if (Impressions >= maxImpressions) {
+            LogAndAddReason ("{Campaign throttle limit} Campaign " + Id + " has been shown " + maxImpressions + " times already", qaUser);
+            return false;
+        }
         return true;
     }
 

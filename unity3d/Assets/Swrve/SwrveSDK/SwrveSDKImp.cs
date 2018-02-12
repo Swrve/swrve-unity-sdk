@@ -989,7 +989,7 @@ public partial class SwrveSDK
 
             SwrveConversationCampaign campaign = (SwrveConversationCampaign)campaigns[ci];
 
-            if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
+            if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger) && campaign.CheckImpressions(qaUser)) {
                 if (campaign.AreAssetsReady ()) {
                     Container.StartCoroutine (LaunchConversation (campaign.Conversation));
                     baseMessage = campaign.Conversation;
@@ -1010,7 +1010,7 @@ public partial class SwrveSDK
 
                 SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)campaigns[ci];
 
-                if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger)) {
+                if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger) && campaign.CheckImpressions(qaUser)) {
                     if (TriggeredMessageListener != null) {
                         // They are using a custom listener
                         SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);

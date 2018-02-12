@@ -42,7 +42,7 @@ public class SwrveAssetsManager : ISwrveAssetsManager
     {
         yield return StartTask ("SwrveAssetsManager.DownloadAssetQueue", DownloadAssetQueue (assetsQueue));
 
-        if(callBack!=null) {
+        if (callBack != null) {
             callBack.Invoke(); // AutoShowMessages;
         }
         TaskFinished("SwrveAssetsManager.DownloadAssets");
@@ -118,7 +118,7 @@ public class SwrveAssetsManager : ISwrveAssetsManager
     {
         byte[] bytes = www.bytes;
         string sha1 = SwrveHelper.sha1(bytes);
-        if(sha1 == item.Digest) {
+        if (sha1 == item.Digest) {
             string filePath = GetTemporaryPathFileName(item.Name);
             SwrveLog.Log("Saving to " + filePath);
             CrossPlatformFile.SaveBytes(filePath, bytes);
