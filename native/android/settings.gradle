@@ -15,3 +15,5 @@ include ":SwrveSDKPushSupport"
 include ":SwrveSDKUnityBridge"
 include ":SwrveSDKUnityAndroidBridge"
 include ":SwrveSDKUnityAndroidBridgeTest"
+include ":UnityMultipleGCMProviders"
+project(":UnityMultipleGCMProviders").projectDir = file("samples/UnityMultipleGCMProviders")

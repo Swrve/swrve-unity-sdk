@@ -33,6 +33,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+
 public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
 {
     public final static String SWRVE_TEMPORARY_PATH_KEY = "swrveTemporaryPath";
@@ -76,9 +80,30 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK
     private final SwrveUnityNotifcationChannelUtil notificationChannelUtil;
 
     /***
-     * This is the automatically called Constructor from SwrveUnityApplication
-     * Application class, if used.
+     * Call this method from the Unity Application class or your custom Application class.
      */
+    public static void onCreate(final Context context) {
+      SwrveCommon.setRunnable(new Runnable() {
+          @Override
+          public void run() {
+              new SwrveUnityCommon(context);
+          }
+      });
+
+      // Initialise the native layer of the SwrvePushSDK if it is included in the app
+      try {
+          Class pushSupportClass = Class.forName("com.swrve.sdk.SwrvePushSDK");
+          if (pushSupportClass != null) {
+              Class[] cArg = new Class[1];
+              cArg[0] = Context.class;
+              Method m = pushSupportClass.getDeclaredMethod("createInstance", cArg);
+              m.invoke(null, context);
+          }
+      } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+          SwrveLogger.d("SwrvePushSDK not found or erroneous, not initialising native push layer");
+      }
+    }
+
     public SwrveUnityCommon(Context context) {
         this(context, null);
     }

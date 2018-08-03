@@ -34,7 +34,8 @@
     </service>
     <!-- -->
 
-    <activity android:name="com.swrve.unity.gcm.MainActivity" android:label="@string/app_name" android:configChanges="fontScale|keyboard|keyboardHidden|locale|mnc|mcc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|touchscreen" android:screenOrientation="portrait">
+    <!-- Only launchMode singleTask is supported https://docs.unity3d.com/Manual/android-manifest.html -->
+    <activity android:name="com.swrve.unity.gcm.MainActivity" android:label="@string/app_name" android:configChanges="fontScale|keyboard|keyboardHidden|locale|mnc|mcc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|touchscreen" android:screenOrientation="portrait" android:launchMode="singleTask">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />

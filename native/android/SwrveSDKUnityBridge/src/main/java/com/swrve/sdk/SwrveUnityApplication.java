@@ -11,17 +11,13 @@ import android.app.Application;
  * your AndroidManifest file, with
  * <application android:name="com.swrve.sdk.SwrveUnityApplication">
  *
+ * Alternatively you can call SwrveUnityCommon.onCreate(this) from your custom
+ * application class.
  */
 public class SwrveUnityApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-
-        SwrveCommon.setRunnable(new Runnable() {
-            @Override
-            public void run() {
-                new SwrveUnityCommon(SwrveUnityApplication.this);
-            }
-        });
+        SwrveUnityCommon.onCreate(this);
     }
 }

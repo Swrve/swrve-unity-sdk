@@ -36,11 +36,18 @@ public class SwrveCommonBuildComponent
 #else
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
 #endif
+
+#if UNITY_2018_1_OR_NEWER
+        string error = (BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt).summary.totalErrors > 0)? "Build had errors" : null;
+#else
         string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt);
+#endif
+
 #else
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);
         string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iPhone, opt);
 #endif
+
         if (error != null && !error.Equals (string.Empty)) {
             throw new Exception (error);
         }
@@ -67,7 +74,12 @@ public class SwrveCommonBuildComponent
         FixAndroidHomeNotFound ();
 
         // Build Android
+#if UNITY_2018_1_OR_NEWER
+        string error = (BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.Android, opt).summary.totalErrors > 0)? "Build had errors" : null;
+#else
         string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.Android, opt);
+#endif
+
         if (error != null && !error.Equals (string.Empty)) {
             throw new Exception (error);
         }

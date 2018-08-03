@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.swrve.sdk.sample">
+
+    <uses-sdk
+        android:minSdkVersion="14"
+        android:targetSdkVersion="25" />
+
+    <application>
+        <!-- Start of changes to the AndroidManifest.xml file to support Swrve push -->
+        <!-- Custom GcmReceiver to make sure Swrve pushes reach the SwrveGcmIntentService. -->
+        <receiver android:name=".CustomGcmReceiver" android:exported="true" android:permission="com.google.android.c2dm.permission.SEND" >
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
+                <category android:name="${packageName}" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Example of another push receiver in your app -->
+        <service android:name=".MyOtherPushProvider" >
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+            </intent-filter>
+        </service>
+
+        <service android:name="com.swrve.unity.gcm.SwrveGcmIntentService" >
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+            </intent-filter>
+        </service>
+        <service android:name="com.swrve.unity.gcm.SwrveGcmInstanceIDListenerService" android:exported="false" >
+            <intent-filter>
+                <action android:name="com.google.android.gms.iid.InstanceID" />
+            </intent-filter>
+        </service>
+
+        <service android:exported="false" android:name="com.swrve.sdk.sample.GcmJobService" android:permission="android.permission.BIND_JOB_SERVICE"/>
+
+        <service android:exported="false" android:name="com.swrve.sdk.sample.GcmWakefulIntentService"/>
+        <receiver android:exported="false" android:name="com.swrve.sdk.sample.GcmWakefulReceiver">
+            <intent-filter>
+                <action android:name="${applicationId}.swrve.SwrveWakeful" />
+            </intent-filter>
+        </receiver>
+        <!-- End of changes -->
+    </application>
+
+</manifest>
