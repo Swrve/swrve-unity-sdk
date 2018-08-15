@@ -47,11 +47,11 @@ public class RESTClient : IRESTClient
 #if UNITY_2017_1_OR_NEWER
         using (var www = CrossPlatformUtils.MakeRequest(url, UnityWebRequest.kHttpVerbGET, null, headers)) {
             yield return www.SendWebRequest();
-#else 
+#else
         using (var www = CrossPlatformUtils.MakeWWW(url, null, headers)) {
-            yield return www;               
-#endif                
-         
+            yield return www;
+#endif
+
             long wwwTime = SwrveHelper.GetMilliseconds () - start;
             ProcessResponse (www, wwwTime, url, listener);
         }
@@ -65,7 +65,7 @@ public class RESTClient : IRESTClient
         long start = SwrveHelper.GetMilliseconds ();
 #if UNITY_2017_1_OR_NEWER
         using (var www = CrossPlatformUtils.MakeRequest(url, UnityWebRequest.kHttpVerbPOST, encodedData, headers)) {
-            yield return www.SendWebRequest(); 
+            yield return www.SendWebRequest();
 #else
         using (var www = CrossPlatformUtils.MakeWWW(url, encodedData, headers)) {
             yield return www;
@@ -98,13 +98,13 @@ public class RESTClient : IRESTClient
         }
         metrics.Add (metricString);
     }
-            
+
 #if UNITY_2017_1_OR_NEWER
 protected void ProcessResponse (UnityWebRequest www, long wwwTime, string url, Action<RESTResponse> listener)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         try {
-            if(!(www.isNetworkError) || !(www.isHttpError)) {
+            if(!www.isNetworkError && !www.isHttpError) {
             // - made it there and it was ok
             string responseBody = null;
             bool success = ResponseBodyTester.TestUTF8 (www.downloadHandler.data, out responseBody);
@@ -150,11 +150,11 @@ protected void ProcessResponse (UnityWebRequest www, long wwwTime, string url, A
                     listener.Invoke (new RESTResponse (responseBody, headers));
                 } else {
                     AddMetrics (url, wwwTime, true);
-                    listener.Invoke (new RESTResponse (responseBody, headers));
+                    listener.Invoke (new RESTResponse (WwwDeducedError.ApplicationErrorBody));
                 }
             } else {
                 AddMetrics (url, wwwTime, true);
-                listener.Invoke (new RESTResponse (www.responseCode));
+                listener.Invoke (new RESTResponse (UnityWwwHelper.DeduceWwwError (www)));
             }
         } catch(Exception exp) {
              SwrveLog.LogError(exp);
@@ -224,7 +224,7 @@ protected void ProcessResponse (WWW www, long wwwTime, string url, Action<RESTRe
         }
 #endif
     }
-#endif    
+#endif
 }
 
 }

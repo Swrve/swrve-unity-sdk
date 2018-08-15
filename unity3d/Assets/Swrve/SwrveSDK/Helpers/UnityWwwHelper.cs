@@ -34,17 +34,17 @@ public class UnityWwwHelper
     /// </param>
 
 #if UNITY_2017_1_OR_NEWER
-        public static WwwDeducedError DeduceWwwError (UnityWebRequest request)
+    public static WwwDeducedError DeduceWwwError (UnityWebRequest request)
     {
 
-        // Use UnityWebRequests error detection first 
-        if(request.isNetworkError) {
+        // Use UnityWebRequests error detection first
+        if (request.isNetworkError) {
             SwrveLog.LogError ("Request network error: " + request.error + " in " + request.url);
             return WwwDeducedError.NetworkError;
         }
 
         // Check response headers for X-Swrve-Error
-            if (request.GetResponseHeaders() != null) {
+        if (request.GetResponseHeaders() != null) {
             string errorKey = null;
 
             Dictionary<string, string>.Enumerator enumerator = request.GetResponseHeaders().GetEnumerator();
@@ -70,7 +70,7 @@ public class UnityWwwHelper
             }
         }
 
-        if(!string.IsNullOrEmpty (request.error)) {
+        if (!string.IsNullOrEmpty (request.error)) {
             SwrveLog.LogError ("Request network error: " + request.error + " in " + request.url);
             return WwwDeducedError.NetworkError;
         }
