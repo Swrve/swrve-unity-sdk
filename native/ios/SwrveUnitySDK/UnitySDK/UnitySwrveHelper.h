@@ -16,11 +16,9 @@
 +(char*) localeCountry;
 +(char*) IDFV;
 +(char*) IDFA;
-+(void) registerForPushNotifications:(NSString*)jsonCategorySet withBackwardsCompatibility:(NSString*)backCompatJsonCategorySet;
-+(void) initPlot;
++(void) registerForPushNotifications:(NSString*)jsonCategorySet;
 +(bool) isSupportediOSVersion;
 
 +(NSSet*) categoryFromJson:(NSString*)jsonString;
-+(NSSet*) preiOS10CategoryFromJson:(NSString*)jsonString;
 
 @end

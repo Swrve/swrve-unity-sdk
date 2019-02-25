@@ -14,11 +14,13 @@ import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 
-import com.swrve.unity.swrvesdkpushsupport.R;
+import com.swrve.sdk.SwrveNotificationBuilder;
+import com.swrve.sdk.SwrveNotificationConstants;
+import com.swrve.sdk.SwrveUnityCommon;
+import com.swrve.sdk.SwrveUnityCommonHelper;
 import com.unity3d.player.UnityPlayer;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,6 +33,8 @@ import org.robolectric.shadows.ShadowNotification;
 import java.util.Date;
 import java.util.List;
 
+import static com.swrve.sdk.SwrveNotificationConstants.SOUND_DEFAULT;
+import static com.swrve.sdk.SwrveNotificationConstants.SOUND_KEY;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
@@ -45,12 +49,13 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
     public abstract void serviceOnMessageReceived(Bundle bundle);
 
     @Test
-    public void testNotifications() throws InterruptedException {
+    public void testNotifications()  {
 
+        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(shadowApplication.getApplicationContext());
         String msgText = "hello";
         Bundle bundle = new Bundle();
         bundle.putString("_p", "10");
-        bundle.putString("text", msgText);
+        bundle.putString(SwrveNotificationConstants.TEXT_KEY, msgText);
         bundle.putString("custom", "key");
 
         serviceOnMessageReceived(bundle);
@@ -73,7 +78,8 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
     @Test
     public void testCreateNotificationBuilderWithPrefs() {
 
-        String msgTitle = "My Awesome App Title";
+        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(shadowApplication.getApplicationContext());
+        String msgTitle = "com.swrve.unity.swrvesdkpushsupport";
         String msgText = "hello";
         String icon = "common_google_signin_btn_icon_dark";
         String materialIcon = "common_full_open_on_phone";
@@ -81,20 +87,21 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
         int colorId = 1;
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
-        prefs.edit().putString(SwrvePushSupport.PROPERTY_APP_TITLE, msgTitle).commit();
-        prefs.edit().putString(SwrvePushSupport.PROPERTY_ICON_ID, icon).commit();
-        prefs.edit().putString(SwrvePushSupport.PROPERTY_MATERIAL_ICON_ID, materialIcon).commit();
-        prefs.edit().putInt(SwrvePushSupport.PROPERTY_ACCENT_COLOR, colorId).commit();
+        prefs.edit().putString("icon_id", icon).commit();
+        prefs.edit().putString("material_icon_id", materialIcon).commit();
+        prefs.edit().putInt("accent_color", colorId).commit();
 
         Bundle extras = new Bundle();
-        extras.putString("sound", "default");
-        NotificationCompat.Builder builder = SwrvePushSupport.createNotificationBuilder(mActivity, prefs, msgText, extras, 0);
+        extras.putString(SOUND_KEY, SOUND_DEFAULT);
+        SwrveNotificationBuilder swrveNotificationBuilder = SwrvePushSupport.createSwrveNotificationBuilder(mActivity, prefs);
+        NotificationCompat.Builder builder = swrveNotificationBuilder.build(msgText, extras, SwrveUnityCommonHelper.getGenericEventCampaignTypePush(), null);
         assertNotification(builder, msgTitle, msgText, iconId, colorId, "content://settings/system/notification_sound");
     }
 
     @Test
     public void testCreateNotificationBuilderWithDefaults() {
 
+        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(shadowApplication.getApplicationContext());
         String msgTitle = "com.swrve.unity.swrvesdkpushsupport";
         String msgText = "hello";
         int iconId = 0;
@@ -102,12 +109,13 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
         prefs.edit().clear().commit();
 
-        NotificationCompat.Builder builder = SwrvePushSupport.createNotificationBuilder(mActivity, prefs, msgText, new Bundle(), 0);
+        SwrveNotificationBuilder swrveNotificationBuilder = SwrvePushSupport.createSwrveNotificationBuilder(mActivity, prefs);
+        NotificationCompat.Builder builder = swrveNotificationBuilder.build(msgText, new Bundle(), SwrveUnityCommonHelper.getGenericEventCampaignTypePush(), null);
         assertNotification(builder, msgTitle, msgText, iconId, 0, null);
     }
 
     @Test
-    public void testSilentPush() throws InterruptedException, JSONException {
+    public void testSilentPush() throws Exception {
 
         ShadowApplication shadowApplication = ShadowApplication.getInstance();
         long nowMilliseconds = new Date().getTime();
@@ -163,7 +171,7 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
         String msgText = "hello";
         Bundle bundle = new Bundle();
         bundle.putString("_p", "10");
-        bundle.putString("text", msgText);
+        bundle.putString(SwrveNotificationConstants.TEXT_KEY, msgText);
         bundle.putString("custom", "key");
 
         serviceOnMessageReceived(bundle);

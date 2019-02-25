@@ -1,7 +1,3 @@
-#if !UNITY_5_0_0
-#define SWRVE_USE_HTTPS_DEFAULTS
-#endif
-
 using System;
 using SwrveUnity.Messaging;
 using System.Collections.Generic;
@@ -22,7 +18,6 @@ public enum Stack {
 /// Available stacks to choose from
 /// </summary>
 public enum AndroidPushProvider {
-    GOOGLE_GCM,
     AMAZON_ADM,
     GOOGLE_FIREBASE,
     NONE
@@ -35,12 +30,6 @@ public enum AndroidPushProvider {
 [System.Serializable]
 public class SwrveConfig
 {
-    /// <summary>
-    /// Custom unique user id. The SDK will fill this property
-    /// with a unique or random user id if you provide none.
-    /// </summary>
-    public string UserId;
-
     /// <summary>
     /// Version of the app.
     /// </summary>
@@ -92,16 +81,6 @@ public class SwrveConfig
     public bool ConversationsEnabled = true;
 
     /// <summary>
-    /// Enable or disable Location features for in-app campaigns.
-    /// </summary>
-    public bool LocationEnabled = false;
-
-    /// <summary>
-    /// Set whether Location (plot) will autostart, or whether you want to enable it manually (after asking for permission)
-    /// </summary>
-    public bool LocationAutostart = false;
-
-    /// <summary>
     /// Automatically download campaigns and user resources.
     /// </summary>
     public bool AutoDownloadCampaignsAndResources = true;
@@ -116,42 +95,19 @@ public class SwrveConfig
     /// </summary>
     public string EventsServer = DefaultEventsServer;
     public const string DefaultEventsServer =
-#if SWRVE_USE_HTTPS_DEFAULTS
         "https://api.swrve.com";
-#else
-        "http://api.swrve.com";
-#endif
 
     /// <summary>
-    /// Use HTTPS for the event server.
+    /// The URL of the server to identity the user.
     /// </summary>
-    public bool UseHttpsForEventsServer =
-#if SWRVE_USE_HTTPS_DEFAULTS
-        true;
-#else
-        false;
-#endif
-
+    public string IdentityServer = DefaultIdentityServer;
+    public const string DefaultIdentityServer = "https://identity.swrve.com";
     /// <summary>
     /// The URL of the server to request campaign and resources data from.
     /// </summary>
     public string ContentServer = DefaultContentServer;
     public const string DefaultContentServer =
-#if SWRVE_USE_HTTPS_DEFAULTS
         "https://content.swrve.com";
-#else
-        "http://content.swrve.com";
-#endif
-
-    /// <summary>
-    /// Use HTTPS for the in-app message and resources server.
-    /// </summary>
-    public bool UseHttpsForContentServer =
-#if SWRVE_USE_HTTPS_DEFAULTS
-        true;
-#else
-        false;
-#endif
 
     /// <summary>
     /// The SDK will send a session start on init and manage app pauses and resumes.
@@ -199,16 +155,6 @@ public class SwrveConfig
     };
 
     /// <summary>
-    /// The Google Cloud Messaaging Sender Id obtained from the Google Cloud Console.
-    /// </summary>
-    public string GCMSenderId = null;
-
-    /// <summary>
-    /// The title that will appear for each push notification received on Android.
-    /// </summary>
-    public string AndroidPushNotificationTitle = "#Your App Title";
-
-    /// <summary>
     /// The resource identifier for the icon that will be displayed on your Android notifications.
     /// </summary>
     public string AndroidPushNotificationIconId = null;
@@ -230,11 +176,11 @@ public class SwrveConfig
     public int AndroidPushNotificationAccentColor = -1;
 
     /// <summary>
-    /// Push provider type. GOOGLE_GCM is the default. Set to AMAZON_ADM if using Kindle or GOOGLE_FIREBASE if using Firebase.
-    /// Requires the use of the correct native Android plugin (Google or Amazon variant).
+    /// Push provider type. GOOGLE_FIREBASE is the default. Set to AMAZON_ADM if using Kindle.
+    /// Requires the use of the correct native Android plugin (Firebase or Amazon variant).
     /// See Docs for integration guide.
     /// </summary>
-    public AndroidPushProvider AndroidPushProvider = AndroidPushProvider.GOOGLE_GCM;
+    public AndroidPushProvider AndroidPushProvider = AndroidPushProvider.GOOGLE_FIREBASE;
 
     /// <summary>
     /// Default Android O+ channel that will be used to display notifications.
@@ -272,11 +218,6 @@ public class SwrveConfig
     public bool LogAppleIDFA = false;
 
     /// <summary>
-    // pre-iOS10 Push Categories
-    /// </summary>
-    public List<UIUserNotificationCategory> PushCategories = new List<UIUserNotificationCategory>();
-
-    /// <summary>
     // iOS Push Categories
     /// </summary>
     public List<UNNotificationCategory> NotificationCategories = new List<UNNotificationCategory>();
@@ -286,14 +227,57 @@ public class SwrveConfig
     /// </summary>
     public bool ABTestDetailsEnabled = false;
 
+    /// <summary>
+    /// Install button listener for all in-app messages.
+    /// </summary>
+    public ISwrveInstallButtonListener InAppMessageInstallButtonListener = null;
+
+    /// <summary>
+    /// Custom button listener for all in-app messages.
+    /// </summary>
+    public ISwrveCustomButtonListener InAppMessageCustomButtonListener = null;
+
+    /// <summary>
+    /// In-app message listener.
+    /// </summary>
+    public ISwrveMessageListener InAppMessageListener = null;
+
+    /// <summary>
+    /// Listener for push notifications received in the app.
+    /// </summary>
+    public ISwrvePushNotificationListener PushNotificationListener = null;
+
+    /// <summary>
+    /// Disable default In-app renderer and manage messages manually.
+    /// </summary>
+    public ISwrveTriggeredMessageListener TriggeredMessageListener = null;
+
+    /// <summary>
+    /// A callback to get notified when user resources have been updated.
+    /// If Config.AutoDownloadCampaignsAndResources is TRUE (default) user resources will be kept up to date automatically
+    /// and this listener will be called whenever there has been a change.
+    /// Instead of using the listener, you could use the SwrveResourceManager ([swrve getResourceManager]) to get
+    /// the latest value for each attribute at the time you need it. Resources and attributes in the resourceManager
+    /// are kept up to date.
+    ///
+    /// When Config.AutoDownloadCampaignsAndResources is FALSE resources will not be kept up to date, and you will have
+    /// to manually call RefreshCampaignsAndResources - which will call this listener on completion.
+    ///
+    /// This listener does not have any argument, use the resourceManager to get the updated resources.
+    /// </summary>
+    public Action ResourcesUpdatedCallback;
+
     public void CalculateEndpoints (int appId)
     {
         // Default values are saved in the prefab or component instance.
         if (string.IsNullOrEmpty(EventsServer) || EventsServer == DefaultEventsServer) {
-            EventsServer = CalculateEndpoint(UseHttpsForEventsServer, appId, SelectedStack, "api.swrve.com");
+            EventsServer = CalculateEndpoint(appId, SelectedStack, "api.swrve.com");
         }
         if (string.IsNullOrEmpty(ContentServer) || ContentServer == DefaultContentServer) {
-            ContentServer = CalculateEndpoint(UseHttpsForContentServer, appId, SelectedStack, "content.swrve.com");
+            ContentServer = CalculateEndpoint(appId, SelectedStack, "content.swrve.com");
+        }
+        if (string.IsNullOrEmpty(IdentityServer) || IdentityServer == DefaultIdentityServer) {
+            IdentityServer = CalculateEndpoint(appId, SelectedStack, "identity.swrve.com");
         }
     }
 
@@ -305,14 +289,9 @@ public class SwrveConfig
         return "";
     }
 
-    private static string HttpSchema(bool useHttps)
+    private static string CalculateEndpoint(int appId, Stack stack, string suffix)
     {
-        return useHttps? "https" : "http";
-    }
-
-    private static string CalculateEndpoint(bool useHttps, int appId, Stack stack, string suffix)
-    {
-        return HttpSchema(useHttps) + "://" + appId + "." + GetStackPrefix(stack) + suffix;
+        return "https://" + appId + "." + GetStackPrefix(stack) + suffix;
     }
 }
 }

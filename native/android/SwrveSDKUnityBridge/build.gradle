@@ -20,17 +20,21 @@ android {
 
 dependencies {
     api project(':SwrveConversationSDK')
+    api project(':SwrveSDKCommon')
     api project(':UnityFacade')
-    api project(':SwrveLocationSDK')
+
+    implementation 'com.jakewharton.timber:timber:' + project.TIMBER_VERSION
+    implementation 'com.android.support:support-v4:' + project.ANDROID_DESIGN_TOOLS_VERSION
+    implementation 'com.google.code.gson:gson:' + project.GSON_VERSION
 
     // Unit tests
-    testApi 'org.mockito:mockito-core:1.9.0'
-    testApi 'org.robolectric:shadows-support-v4:3.4-rc2'
-    testApi 'org.robolectric:shadows-httpclient:3.4-rc2'
+    testImplementation 'org.mockito:mockito-core:1.9.0'
+    testImplementation 'org.robolectric:shadows-support-v4:3.4-rc2'
+    testImplementation 'org.robolectric:shadows-httpclient:3.4-rc2'
 
     // Roboelectric tests
-    testApi 'junit:junit:4.12'
-    testApi('org.robolectric:robolectric:3.5.1') {
+    testImplementation 'junit:junit:4.12'
+    testImplementation('org.robolectric:robolectric:3.5.1') {
         exclude group: 'commons-logging', module: 'commons-logging'
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'
     }

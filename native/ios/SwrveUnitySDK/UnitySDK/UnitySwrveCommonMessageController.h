@@ -8,7 +8,10 @@
 
 @interface UnitySwrveMessageEventHandler : NSObject<SwrveMessageEventHandler>
 
+@property (nonatomic, retain) UIWindow* conversationWindow;
+
 -(SwrveBaseConversation*) conversationFromString:(NSString*)conversation;
 -(void) showConversationFromString:(NSString*)conversation;
+-(bool) isConversationDisplaying;
 
 @end

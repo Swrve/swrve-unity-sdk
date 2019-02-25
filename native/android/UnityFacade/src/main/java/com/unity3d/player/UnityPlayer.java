@@ -1,5 +1,6 @@
 package com.unity3d.player;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.util.Log;
 
@@ -7,7 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UnityPlayer {
-    protected static List<Object> messages = new ArrayList<Object>();
+    private static List<Object> messages = new ArrayList<Object>();
+    @SuppressLint("StaticFieldLeak")
     public static Activity currentActivity;
 
     public static void UnitySendMessage(String object, String method, String msg) {

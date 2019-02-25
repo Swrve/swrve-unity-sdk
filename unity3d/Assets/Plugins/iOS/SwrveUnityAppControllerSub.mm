@@ -1,10 +1,7 @@
 #import "UnityAppController.h"
 #define WITH_UNITY
-#import "UnitySwrveCommon.h"
-
-#ifdef SWRVE_LOCATION_SDK
-#import "SwrvePlot.h"
-#endif
+#import "UnitySwrve.h"
+//importHookForSwrvePermissionsDelegate
 
 @interface SwrveUnityAppControllerSub : UnityAppController
 
@@ -16,18 +13,11 @@
 {
     NSLog(@"SwrveUnityAppControllerSub - application didFinishLaunchingWithOptions");
 
-#ifdef SWRVE_LOCATION_SDK
-    [UnitySwrveCommonDelegate init:nil];
-    UnitySwrveCommonDelegate* unitySwrve = (UnitySwrveCommonDelegate*)[SwrveCommon sharedInstance];
-    if(unitySwrve != nil) {
-        [SwrvePlot initializeWithLaunchOptions:launchOptions delegate:unitySwrve];
-    }
-#endif
-
     if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"10.0")) {
         UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
-        center.delegate = [UnitySwrveCommonDelegate sharedInstance];
+        center.delegate = [UnitySwrve sharedInstance];
     }
+    //setSwrvePermissionsDelegate
     return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 

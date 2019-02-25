@@ -110,7 +110,8 @@ public class SwrveComponent : MonoBehaviour
     protected bool deviceTokenSent = false;
 
     // Used by the native internals
-    public void SetPushNotificationsPermissionStatus(string pushStatus) {
+    public void SetPushNotificationsPermissionStatus(string pushStatus)
+    {
         SDK.SetPushNotificationsPermissionStatus (pushStatus);
     }
 #endif
@@ -129,7 +130,7 @@ public class SwrveComponent : MonoBehaviour
     }
 
 #if UNITY_ANDROID
-    /// Called by the Google Cloud Messaging plugin to notify
+    /// Called by the push plugin to notify
     /// of a device registration id.
     public virtual void OnDeviceRegistered(string registrationId)
     {
@@ -138,7 +139,7 @@ public class SwrveComponent : MonoBehaviour
         }
     }
 
-    /// Called by the Google Cloud Messaging plugin to notify
+    /// Called by the push plugin to notify
     /// of a received push notification.
     public virtual void OnNotificationReceived(string notificationJson)
     {
@@ -147,7 +148,7 @@ public class SwrveComponent : MonoBehaviour
         }
     }
 
-    /// Called by the Google Cloud Messaging plugin to notify
+    /// Called by the push plugin to notify
     /// of the push notification that opened the app.
     public virtual void OnOpenedFromPushNotification(string notificationJson)
     {
@@ -165,25 +166,7 @@ public class SwrveComponent : MonoBehaviour
         }
     }
 
-    /// Called by the ADM plugin to notify
-    /// of a received push notification.
-    public virtual void OnNotificationReceivedADM(string notificationJson)
-    {
-        if (SDK != null && SDK.Initialised) {
-            SDK.NotificationReceivedADM(notificationJson);
-        }
-    }
-
-    /// Called by the ADM plugin to notify
-    /// of the push notification that opened the app.
-    public virtual void OnOpenedFromPushNotificationADM(string notificationJson)
-    {
-        if (SDK != null && SDK.Initialised) {
-            SDK.OpenedFromPushNotificationADM(notificationJson);
-        }
-    }
-
-    /// Called by the Google Cloud Messaging plugin to notify
+    /// Called by the FCM plugin to notify
     /// of the Advertising Id.
     public virtual void OnNewAdvertisingId(string advertisingId)
     {
@@ -236,16 +219,6 @@ public class SwrveComponent : MonoBehaviour
     }
 
     // Used by the native internals. Please use the SDK object directly.
-    public void SetLocationSegmentVersion(string locationSegmentVersion)
-    {
-        try {
-            SDK.SetLocationSegmentVersion(int.Parse(locationSegmentVersion));
-        } catch (System.Exception e) {
-            SwrveLog.LogError (e.ToString(), "location");
-        }
-    }
-
-    // Used by the native internals. Please use the SDK object directly.
     public void UserUpdate(string userUpdate)
     {
         try {
@@ -263,8 +236,18 @@ public class SwrveComponent : MonoBehaviour
         }
     }
 
+    public void NativeConversationClosed(string msg)
+    {
+        try {
+            SDK.ConversationClosed();
+        } catch (System.Exception e) {
+            SwrveLog.LogError (e.ToString(), "nativeConversationClosed");
+        }
+    }
+
     // Keep the SDK alive between scene loads
-    void Awake() {
+    void Awake()
+    {
         DontDestroyOnLoad(transform.gameObject);
     }
 }

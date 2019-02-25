@@ -10,20 +10,16 @@ public partial class SwrveSDK
     }
     private void setNativeAppVersion () {}
     private void showNativeConversation (string conversation) {}
-    private void initNative () {}
-    private void startNativeLocation () {}
-    private void startNativeLocationAfterPermission () {}
-    public void LocationUserUpdate (Dictionary<string, string> map) {}
-    public string GetPlotNotifications ()
-    {
-        return "[]";
-    }
     private void setNativeConversationVersion () {}
     private bool NativeIsBackPressed ()
     {
         return false;
     }
-	public void updateQAUser(Dictionary<string, object> map) {}
+    private bool IsConversationDisplaying()
+    {
+        return false;
+    }
+    public void updateQAUser(Dictionary<string, object> map) {}
 }
 
 #endif

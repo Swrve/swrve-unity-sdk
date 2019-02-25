@@ -19,19 +19,6 @@ using SwrveUnity.IAP;
 /// </remarks>
 public class SwrveEmpty : SwrveSDK
 {
-    public override void Init (MonoBehaviour container, int appId, string apiKey, string userId)
-    {
-        SwrveConfig config = new SwrveConfig();
-        config.UserId = userId;
-        Init (container, 0, "", config);
-    }
-
-    public override void Init (MonoBehaviour container, int appId, string apiKey, string userId, SwrveConfig config)
-    {
-        config.UserId = userId;
-        Init (container, 0, "", config);
-    }
-
     public override void Init (MonoBehaviour container, int appId, string apiKey, SwrveConfig config)
     {
         this.Container = container;
@@ -40,7 +27,6 @@ public class SwrveEmpty : SwrveSDK
         this.appId = appId;
         this.apiKey = apiKey;
         this.config = config;
-        this.userId = config.UserId;
         this.Language = config.Language;
         this.Initialised = true;
     }
@@ -133,6 +119,14 @@ public class SwrveEmpty : SwrveSDK
     }
 
     public override void CurrencyGiven (string givenCurrency, double amount)
+    {
+    }
+
+    public override void HandleDeeplink (string url)
+    {
+    }
+
+    public override void HandleDeferredDeeplink(string url)
     {
     }
 

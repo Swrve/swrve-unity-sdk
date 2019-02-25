@@ -1,6 +1,5 @@
 {
-    "NSLocationAlwaysUsageDescription": "REPLACEME",
-    "NSLocationAlwaysAndWhenInUseUsageDescription": "REPLACEME",
-    "PlotToken": "REPLACEME",
-    "iOSAppGroupIdentifier": "REPLACEME"
+    "NSLocationAlwaysUsageDescription": "I need location",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "I need location",
+    "iOSAppGroupIdentifier": "group.com.swrve.unity.qa"
 }

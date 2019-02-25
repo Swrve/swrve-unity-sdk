@@ -35,6 +35,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
             SwrveLog.Log("SwrveIOSPostProcess");
             CorrectXCodeProject (pathToBuiltProject, true);
             SilentPushNotifications (pathToBuiltProject);
+            PermissionsDelegateSupport (pathToBuiltProject);
         }
     }
 
@@ -167,10 +168,10 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
     // Enables silent push
     private static void SilentPushNotifications(string path)
     {
-        // Apply only if the file SwrveSilentPushListener.mm is found
-        string fileName = "SwrveSilentPushListener.mm";
-        string mmFilePath = "Assets/Plugins/iOS/" + fileName;
-        if (File.Exists (mmFilePath)) {
+        // Apply only if the file SwrveSilentPushListener.h is found
+        string fileName = "SwrveSilentPushListener.h";
+        string hFilePath = "Assets/Plugins/iOS/" + fileName;
+        if (File.Exists (hFilePath)) {
             // Step 1. Add a silent push code to the AppDelegate
             // Inject our code inside the existing didReceiveRemoteNotification, fetchCompletionHandler
             List<string> allMMFiles = GetAllFiles (path, "*.mm");
@@ -193,9 +194,9 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
 
                     int hookPosition = contents.IndexOf (searchText, silentPushMethodMatches[0].Index);
                     if (hookPosition > 0) {
-                        string imports = "#import \"UnitySwrveCommon.h\"\n#import \"SwrveSilentPushListener.h\"\n";
+                        string imports = "#import \"UnitySwrve.h\"\n#import \"SwrveSilentPushListener.h\"\n";
                         string injectedCode = "\t// Inform the Swrve SDK\n" +
-                                              "\t[UnitySwrveCommonDelegate didReceiveRemoteNotification:userInfo withBackgroundCompletionHandler:^ (UIBackgroundFetchResult fetchResult, NSDictionary* swrvePayload) {\n" +
+                                              "\t[UnitySwrve didReceiveRemoteNotification:userInfo withBackgroundCompletionHandler:^ (UIBackgroundFetchResult fetchResult, NSDictionary* swrvePayload) {\n" +
                                               "\t\t[SwrveSilentPushListener onSilentPush:swrvePayload];\n" +
                                               "\t}];\n\t";
                         contents = imports + contents.Substring (0, hookPosition - 1) + injectedCode + contents.Substring (hookPosition, contents.Length - hookPosition);
@@ -225,6 +226,42 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         }
     }
 
+
+    // Enables permissions support
+    private static void PermissionsDelegateSupport(string path)
+    {
+        // Apply only if the file SwrvePermissionsDelegateImp.h is found
+        string fileName = "SwrvePermissionsDelegateImp.h";
+        string hFilePath = "Assets/Plugins/iOS/" + fileName;
+        if (File.Exists (hFilePath)) {
+            // Inject initialisation code to set the permission delegate
+            List<string> allMMFiles = GetAllFiles (path, "*.mm");
+            bool appliedChanges = false;
+
+            // Find hooks to modify the init code
+            string importHook = "//importHookForSwrvePermissionsDelegate";
+            string setDelegateHook = "//setSwrvePermissionsDelegate";
+            string setDelegateCode = "[[UnitySwrve sharedInstance] setPermissionsDelegate:[[SwrvePermissionsDelegateImp alloc] init:self]];";
+            for (int i = 0; i < allMMFiles.Count; i++) {
+                string filePath = allMMFiles[i];
+                string contents = File.ReadAllText (filePath);
+                int hookPosition = contents.IndexOf (importHook);
+                if (hookPosition > 0) {
+                    contents = contents.Replace(importHook, "#import \"SwrvePermissionsDelegateImp.h\"");
+                    contents = contents.Replace(setDelegateHook, setDelegateCode);
+                    File.WriteAllText (filePath, contents);
+                    UnityEngine.Debug.Log("SwrveSDK: Injected device permission code into Swrve native initialisation: " + filePath);
+                    appliedChanges = true;
+                    break;
+                }
+            }
+
+            if (!appliedChanges) {
+                throw new Exception("SwrveSDK: " + fileName + " could not be injected the SwrvePermissionsDelegateImp. Contact support@swrve.com");
+            }
+        }
+    }
+
     private static bool AddFolderToProject(PBXProject project, string targetGuid, string folderToCopy, string pathToProject, string destPath)
     {
         if (!System.IO.Directory.Exists(folderToCopy)) {
@@ -240,10 +277,13 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         string[] files = System.IO.Directory.GetFiles (folderToCopy);
         for (int i = 0; i < files.Length; i++) {
             string filePath = files [i];
-            if (!filePath.EndsWith (".meta")) {
+            if (!filePath.EndsWith (".meta")
+                    && !filePath.Contains("SwrveConversation-tvos")
+                    && !filePath.Contains("LICENSE")) {
                 string fileName = System.IO.Path.GetFileName (filePath);
                 string newFilePath = Path.Combine(fullDestPath, fileName);
                 System.IO.File.Copy (filePath, newFilePath);
+
                 // Add to the XCode project
                 string relativeProjectPath = Path.Combine (destPath, fileName);
                 string resourceGuid = project.AddFile (relativeProjectPath, relativeProjectPath, PBXSourceTree.Source);

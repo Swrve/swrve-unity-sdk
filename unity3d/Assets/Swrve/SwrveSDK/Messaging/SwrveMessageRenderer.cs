@@ -34,10 +34,10 @@ public class SwrveMessageRenderer
 
     public static void InitMessage (SwrveMessageFormat format, SwrveOrientation deviceOrientation)
     {
+        format.Init (deviceOrientation);
         if (Animator != null) {
             Animator.InitMessage (format);
         } else {
-            format.Init (deviceOrientation);
             format.InitAnimation (new Point (0, 0), new Point (0, 0));
         }
     }

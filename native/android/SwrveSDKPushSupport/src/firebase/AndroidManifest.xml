@@ -3,15 +3,8 @@
     package="com.swrve.unity.swrvesdkpushsupport">
 
     <application>
-        <service
-            android:name="com.swrve.unity.firebase.SwrveFirebaseInstanceIdService">
-            <intent-filter>
-                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
-            </intent-filter>
-        </service>
-
-        <service
-            android:name="com.swrve.unity.firebase.SwrveFirebaseMessagingService">
+        <service android:name="com.swrve.unity.firebase.SwrveFirebaseMessagingService"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>

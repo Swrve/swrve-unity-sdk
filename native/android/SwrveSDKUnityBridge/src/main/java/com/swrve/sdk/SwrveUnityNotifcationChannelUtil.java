@@ -41,12 +41,18 @@ public class SwrveUnityNotifcationChannelUtil {
             return null;
         }
 
-        SharedPreferences preferences = context.get().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        String id = preferences.getString(PREF_CHANNEL_ID, "swrve_default");
-        String name = preferences.getString(PREF_CHANNEL_NAME, "Default");
-        int importance = parseImportance(preferences.getString(PREF_CHANNEL_IMPORTANCE, "default"));
-        SwrveLogger.v("Creating default Notification Channel with [id:%s], [name:%s], [importance:%s]", id, name, importance);
-        return new NotificationChannel(id, name, importance);
+        NotificationChannel channel = null;
+        // Create the NotificationChannel (only on API 26+, channel might be null)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            SharedPreferences preferences = context.get().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            String id = preferences.getString(PREF_CHANNEL_ID, "swrve_default");
+            String name = preferences.getString(PREF_CHANNEL_NAME, "Default");
+            int importance = parseImportance(preferences.getString(PREF_CHANNEL_IMPORTANCE, "default"));
+            SwrveLogger.v("Creating default Notification Channel with [id:%s], [name:%s], [importance:%s]", id, name, importance);
+            channel = new NotificationChannel(id, name, importance);
+        }
+
+        return channel;
     }
 
     private int parseImportance(String notificationImportance) {

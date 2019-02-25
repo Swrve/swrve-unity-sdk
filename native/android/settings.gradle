@@ -7,13 +7,11 @@ project(":SwrveConversationSDK").projectDir = new File(ANDROID_REPO_LOC, "/Swrve
 include ":SwrveSDKPush"
 project(":SwrveSDKPush").projectDir = new File(ANDROID_REPO_LOC, "/SwrveSDKPush")
 
-include ":SwrveLocationSDK"
-project(":SwrveLocationSDK").projectDir = file(ANDROID_LOCATION_REPO_LOC)
-
 include ":UnityFacade"
 include ":SwrveSDKPushSupport"
 include ":SwrveSDKUnityBridge"
 include ":SwrveSDKUnityAndroidBridge"
 include ":SwrveSDKUnityAndroidBridgeTest"
-include ":UnityMultipleGCMProviders"
-project(":UnityMultipleGCMProviders").projectDir = file("samples/UnityMultipleGCMProviders")
+
+include ":UnityMultipleFCMProviders"
+project(":UnityMultipleFCMProviders").projectDir = file("samples/UnityMultipleFCMProviders")

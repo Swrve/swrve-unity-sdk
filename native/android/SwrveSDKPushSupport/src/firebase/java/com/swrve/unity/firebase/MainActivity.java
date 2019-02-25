@@ -22,6 +22,6 @@ public class MainActivity extends UnityPlayerActivity {
 	
 	public static void processIntent(Context context, Intent intent) {
 		// Process intent that launched resumed activity
-		SwrveFirebaseMessagingService.processIntent(context, intent);
+		SwrveFirebasePushSupport.processIntent(context, intent);
 	}
 }

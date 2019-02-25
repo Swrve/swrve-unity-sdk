@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using UnityEngine;
+using UnityEngine.Networking;
 
 using System;
 using System.Collections;
@@ -48,6 +49,16 @@ public class SwrveAssetsManager : ISwrveAssetsManager
         TaskFinished("SwrveAssetsManager.DownloadAssets");
     }
 
+    public IEnumerator DownloadAssets(HashSet<SwrveAssetsQueueItem> assetsQueue, Action<object> callBack, object arg)
+    {
+        yield return StartTask ("SwrveAssetsManager.DownloadAssetQueue", DownloadAssetQueue (assetsQueue));
+
+        if (callBack != null) {
+            callBack(arg);
+        }
+        TaskFinished("SwrveAssetsManager.DownloadAssets");
+    }
+
     private IEnumerator DownloadAssetQueue(HashSet<SwrveAssetsQueueItem> assetsQueue)
     {
         IEnumerator<SwrveAssetsQueueItem> enumerator = assetsQueue.GetEnumerator();
@@ -68,16 +79,29 @@ public class SwrveAssetsManager : ISwrveAssetsManager
         string cdn = item.IsImage ? CdnImages : CdnFonts;
         string url = cdn + item.Name;
         SwrveLog.Log("Downloading asset: " + url);
-        WWW www = new WWW(url);
-        yield return www;
-        WwwDeducedError err = UnityWwwHelper.DeduceWwwError(www);
-        if (www != null && WwwDeducedError.NoError == err && www.isDone) {
-            if(item.IsImage) {
+#if UNITY_2017_1_OR_NEWER
+        UnityWebRequest www = (item.IsImage)? UnityWebRequestTexture.GetTexture(url) : new UnityWebRequest (url);
+        yield return www.SendWebRequest();
+
+        if (!www.isNetworkError && !www.isHttpError) {
+            if (item.IsImage) {
                 SaveImageAsset(item, www);
             } else {
                 SaveBinaryAsset(item, www);
             }
         }
+#else
+        WWW www = new WWW(url);
+        yield return www;
+        WwwDeducedError err = UnityWwwHelper.DeduceWwwError(www);
+        if (www != null && WwwDeducedError.NoError == err && www.isDone) {
+            if (item.IsImage) {
+                SaveImageAsset(item, www);
+            } else {
+                SaveBinaryAsset(item, www);
+            }
+        }
+#endif
         TaskFinished("SwrveAssetsManager.DownloadAsset");
     }
 
@@ -94,6 +118,42 @@ public class SwrveAssetsManager : ISwrveAssetsManager
         return Path.Combine(SwrveTemporaryPath, fileName);
     }
 
+#if UNITY_2017_1_OR_NEWER
+    protected virtual void SaveImageAsset(SwrveAssetsQueueItem item, UnityWebRequest www)
+    {
+        Texture2D loadedTexture = ((DownloadHandlerTexture)www.downloadHandler).texture;
+        if (loadedTexture != null) {
+            byte[] rawBytes = www.downloadHandler.data;
+            string sha1 = SwrveHelper.sha1(rawBytes);
+            if(sha1 == item.Digest) {
+                byte[] bytes = loadedTexture.EncodeToPNG();
+                string filePath = GetTemporaryPathFileName(item.Name);
+                SwrveLog.Log("Saving to " + filePath);
+                CrossPlatformFile.SaveBytes(filePath, bytes);
+                bytes = null;
+                Texture2D.Destroy(loadedTexture);
+                AssetsOnDisk.Add(item.Name);
+            } else {
+                SwrveLog.Log ("Error downloading image assetItem:" + item.Name + ". Did not match digest:" + sha1);
+            }
+        }
+    }
+
+    protected virtual void SaveBinaryAsset(SwrveAssetsQueueItem item, UnityWebRequest www)
+    {
+        byte[] bytes = www.downloadHandler.data;
+        string sha1 = SwrveHelper.sha1(bytes);
+        if (sha1 == item.Digest) {
+            string filePath = GetTemporaryPathFileName(item.Name);
+            SwrveLog.Log("Saving to " + filePath);
+            CrossPlatformFile.SaveBytes(filePath, bytes);
+            bytes = null;
+            AssetsOnDisk.Add(item.Name);
+        } else {
+            SwrveLog.Log ("Error downloading binary assetItem:" + item.Name + ". Did not match digest:" + sha1);
+        }
+    }
+#else
     protected virtual void SaveImageAsset(SwrveAssetsQueueItem item, WWW www)
     {
         Texture2D loadedTexture = www.texture;
@@ -128,6 +188,7 @@ public class SwrveAssetsManager : ISwrveAssetsManager
             SwrveLog.Log ("Error downloading binary assetItem:" + item.Name + ". Did not match digest:" + sha1);
         }
     }
+#endif
 
     protected virtual Coroutine StartTask (string tag, IEnumerator task)
     {

@@ -17,6 +17,7 @@ using SwrveUnity.Helpers;
 using SwrveUnity.ResourceManager;
 using SwrveUnity.Device;
 using SwrveUnity.IAP;
+using SwrveUnity.SwrveUsers;
 
 #if UNITY_IPHONE
 using System.Runtime.InteropServices;
@@ -37,7 +38,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "5.1.3";
+    public const string SdkVersion = "6.0";
 
     protected int appId;
     /// <summary>
@@ -61,18 +62,17 @@ public partial class SwrveSDK
         }
     }
 
-    protected string userId;
     /// <summary>
     /// User ID assigned to this device.
     /// </summary>
     public string UserId
     {
         get {
-            return userId;
+            return profileManager.userId;
         }
     }
 
-    protected SwrveConfig config;
+    internal SwrveConfig config;
 
     /// <summary>
     /// Current language of the app or device.
@@ -94,54 +94,18 @@ public partial class SwrveSDK
     /// </summary>
     public MonoBehaviour Container;
 
-    /// <summary>
-    /// Install button listener for all in-app messages.
-    /// </summary>
-    public ISwrveInstallButtonListener GlobalInstallButtonListener = null;
-
-    /// <summary>
-    /// Custom button listener for all in-app messages.
-    /// </summary>
-    public ISwrveCustomButtonListener GlobalCustomButtonListener = null;
-
-    /// <summary>
-    /// Global in-app message listener.
-    /// </summary>
-    public ISwrveMessageListener GlobalMessageListener = null;
-
-    /// <summary>
-    /// Global in-app conversation listener (used for Windows UWP devices only)
-    /// </summary>
-    public ISwrveConversationListener GlobalConversationListener = null;
-
-    /// <summary>
-    /// Listener for push notifications received in the app.
-    /// </summary>
-    public ISwrvePushNotificationListener PushNotificationListener = null;
-
-    /// <summary>
-    /// Disable default renderer and manage messages manually.
-    /// </summary>
-    public ISwrveTriggeredMessageListener TriggeredMessageListener = null;
-
 #if UNITY_EDITOR
     public Action<string> ConversationEditorCallback;
 #endif
 
     /// <summary>
-    /// A callback to get notified when user resources have been updated.
-    /// If Config.AutoDownloadCampaignsAndResources is TRUE (default) user resources will be kept up to date automatically
-    /// and this listener will be called whenever there has been a change.
-    /// Instead of using the listener, you could use the SwrveResourceManager ([swrve getResourceManager]) to get
-    /// the latest value for each attribute at the time you need it. Resources and attributes in the resourceManager
-    /// are kept up to date.
-    ///
-    /// When Config.AutoDownloadCampaignsAndResources is FALSE resources will not be kept up to date, and you will have
-    /// to manually call RefreshCampaignsAndResources - which will call this listener on completion.
-    ///
-    /// This listener does not have any argument, use the resourceManager to get the updated resources.
+    /// OnSuccessIdentify delegate for when Identify API call completes successfully
     /// </summary>
-    public Action ResourcesUpdatedCallback;
+    public delegate void OnSuccessIdentify(string status, string swrve_id);
+    /// <summary>
+    /// OnErrorIdentify delegate for when Identify API call completes fails
+    /// </summary>
+    public delegate void OnErrorIdentify(long httpCode, string errorMessage);
 
     /// <summary>
     /// Flag to indicate that the SDK was initialised.
@@ -171,52 +135,6 @@ public partial class SwrveSDK
     }
 
     /// <summary>
-    /// Initialise the SDK with the given app id, api key and user id.
-    /// </summary>
-    /// <param name="container">
-    /// MonoBehaviour objecto to act as a container.
-    /// </param>
-    /// <param name="appId">
-    /// App ID for your app, as provided by Swrve.
-    /// </param>
-    /// <param name="apiKey">
-    /// API key for your app, as provided by Swrve.
-    /// </param>
-    /// <param name="userId">
-    /// Custom unique identifier for this user.
-    /// </param>
-    public virtual void Init (MonoBehaviour container, int appId, string apiKey, string userId)
-    {
-        SwrveConfig config = new SwrveConfig();
-        config.UserId = userId;
-        Init (container, appId, apiKey, config);
-    }
-
-    /// <summary>
-    /// Initialise the SDK with the given app id, api key, user id and config.
-    /// </summary>
-    /// <param name="container">
-    /// MonoBehaviour objecto to act as a container.
-    /// </param>
-    /// <param name="appId">
-    /// App ID for your app, as provided by Swrve.
-    /// </param>
-    /// <param name="apiKey">
-    /// API key for your app, as provided by Swrve.
-    /// </param>
-    /// <param name="userId">
-    /// Custom unique identifier for this user.
-    /// </param>
-    /// <param name="config">
-    /// Configuration object with advanced settings.
-    /// </param>
-    public virtual void Init (MonoBehaviour container, int appId, string apiKey, string userId, SwrveConfig config)
-    {
-        config.UserId = userId;
-        Init (container, appId, apiKey, config);
-    }
-
-    /// <summary>
     /// Initialise the SDK with the given app id, api key and config.
     /// </summary>
     /// <param name="container">
@@ -237,39 +155,41 @@ public partial class SwrveSDK
         this.ResourceManager = new SwrveUnity.ResourceManager.SwrveResourceManager ();
         this.config = config;
         this.prefabName = container.name;
-
         this.appId = appId;
         this.apiKey = apiKey;
-        this.userId = config.UserId;
         this.Language = config.Language;
 #if SWRVE_SUPPORTED_PLATFORM
-        this.lastSessionTick = GetSessionTime ();
-        // Save init time
-        initialisedTime = SwrveHelper.GetNow();
-        this.campaignsAndResourcesInitialized = false;
-        this.autoShowMessagesEnabled = true;
 
+        //Init profile manager (it already load/create a default userId)
+        profileManager = new SwrveProfileManager();
+
+        // Storage path/init.
+        swrvePath = GetSwrvePath();
+        storage = CreateStorage();
+        storage.SetSecureFailedListener(delegate() {
+            NamedEventInternal ("Swrve.signature_invalid", null, false);
+        });
         swrveTemporaryPath = GetSwrveTemporaryCachePath();
         this.InitAssetsManager(container, swrveTemporaryPath);
+
+        // Check for migrations.
+        SwrveMigrationsManager migrationManager = new SwrveMigrationsManager(storage, profileManager);
+        migrationManager.CheckMigrations();
+
+        // Load install date
+        string installTimeSecondsFromFile = storage.Load (AppInstallTimeSecondsSave);
+        if (string.IsNullOrEmpty(installTimeSecondsFromFile)) {
+            installTimeSeconds = GetSessionTime();
+            storage.Save(AppInstallTimeSecondsSave, userInitTimeSeconds.ToString());
+        } else {
+            long.TryParse (installTimeSecondsFromFile, out installTimeSeconds);
+        }
+        installTimeSecondsFormatted = SwrveHelper.EpochToFormat (installTimeSeconds, InstallTimeFormat);
 
         // Check API key
         if (string.IsNullOrEmpty(apiKey)) {
             throw new Exception("The api key has not been specified.");
         }
-
-        // Check user id
-        if (string.IsNullOrEmpty(userId)) {
-            // Use the Swrve user id when empty
-            this.userId = GetDeviceUniqueId();
-        }
-        // Save to disk if we have a valid unique identifier
-        if (!string.IsNullOrEmpty (this.userId)) {
-            // Save to preferences
-            PlayerPrefs.SetString (DeviceIdKey, this.userId);
-            PlayerPrefs.Save ();
-        }
-        SwrveLog.Log("Your user id is: " + this.userId);
-        this.escapedUserId = WWW.EscapeURL (this.userId);
 
         // Language
         if (string.IsNullOrEmpty(Language)) {
@@ -284,69 +204,19 @@ public partial class SwrveSDK
         config.CalculateEndpoints(appId);
         string abTestServer = config.ContentServer;
         eventsUrl = config.EventsServer + "/1/batch";
+        identifyUrl = config.IdentityServer + "/identify";
         abTestResourcesDiffUrl = abTestServer + "/api/1/user_resources_diff";
         resourcesAndCampaignsUrl = abTestServer + "/api/1/user_resources_and_campaigns";
 
-        // Storage path
-        swrvePath = GetSwrvePath();
-
-        // Storage
-        if (storage == null) {
-            storage = CreateStorage ();
-        }
-        storage.SetSecureFailedListener(delegate() {
-            NamedEventInternal ("Swrve.signature_invalid", null, false);
-        });
-
         // REST Client
         restClient = CreateRestClient ();
-
-        // Events buffers
-        eventBufferStringBuilder = new StringBuilder (config.MaxBufferChars);
-        string installTimeEpoch = GetSavedInstallTimeEpoch();
-
-        // Load stored data
-        LoadData ();
-		if (config.ABTestDetailsEnabled) {
-			try {
-				LoadABTestDetails();
-			} catch (Exception e) {
-				SwrveLog.LogError ("Error while initializing " + e);
-			}
-		}
-        InitUserResources();
-
-        // Get device info
-        deviceCarrierInfo = new DeviceCarrierInfo();
-        GetDeviceScreenInfo ();
-
-        Initialised = true;
-
-        if (config.AutomaticSessionManagement) {
-            // Start a new session (will send events)
-            QueueSessionStart ();
-            GenerateNewSessionInterval ();
-        }
-
-        if (string.IsNullOrEmpty(installTimeEpoch)) {
-            // Its a new user
-            NamedEventInternal("Swrve.first_session", null, false);
-        }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
         // set the default notification channel for location and remote notifications (for oreo+)
         SetDefaultNotificationChannel();
 
         // Ask for Android registration id
-        if (config.AndroidPushProvider == AndroidPushProvider.GOOGLE_GCM) {
-            if (config.PushNotificationEnabled && !string.IsNullOrEmpty(config.GCMSenderId)) {
-                GooglePlayRegisterForPushNotification(Container, config.GCMSenderId);
-            }
-
-            if (config.LogGoogleAdvertisingId) {
-                RequestGooglePlayAdvertisingIdGoogle(Container);
-            }
-        } else if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
+        if (config.AndroidPushProvider == AndroidPushProvider.AMAZON_ADM) {
             if (config.PushNotificationEnabled) {
                 InitialisePushADM(Container);
             }
@@ -361,15 +231,13 @@ public partial class SwrveSDK
         }
 #endif
 
-		if (SwrveHelper.IsOnDevice()) {
-			InitNative();
-		}
-		ProcessInfluenceData();
+        if (SwrveHelper.IsOnDevice()) {
+            InitNative();
+        }
 
-        QueueDeviceInfo ();
+        this.InitUser();
 
-        // Send initial events
-        SendQueuedEvents();
+        ProcessInfluenceData();
 
         // In-app messaging features
         if (config.MessagingEnabled) {
@@ -386,24 +254,13 @@ public partial class SwrveSDK
                 throw new Exception ("App store must be apple, google, amazon or a custom app store");
 #endif
             }
-
-            try {
-                LoadTalkData ();
-
 #if UNITY_IPHONE
-                // If we had a device token, keep asking for a new one
-                if (config.PushNotificationEnabled && !string.IsNullOrEmpty(iOSdeviceToken)) {
-                    RegisterForPushNotificationsIOS();
-                }
-#endif
-            } catch (Exception e) {
-                SwrveLog.LogError ("Error while initializing " + e);
+            // If we had a device token, keep asking for a new one
+            if (config.PushNotificationEnabled && !string.IsNullOrEmpty(iOSdeviceToken)) {
+                RegisterForPushNotificationsIOS();
             }
+#endif
         }
-
-        DisableAutoShowAfterDelay();
-
-        StartCampaignsAndResourcesTimer();
 #endif
     }
 
@@ -632,6 +489,10 @@ public partial class SwrveSDK
     public virtual bool SendQueuedEvents ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) {
+            this.LogTrackingState();
+            return false;
+        }
         bool sentEvents = false;
         if (Initialised) {
             if (!eventsConnecting) {
@@ -642,9 +503,8 @@ public partial class SwrveSDK
                 }
 
                 if (eventsPostString.Length > 0) {
-                    long time = SwrveHelper.GetSeconds ();
-                    eventsPostEncodedData = PostBodyBuilder.Build (apiKey, appId, userId, GetDeviceId(),
-                                            GetAppVersion(), time, eventsPostString);
+                    long time = GetSessionTime();
+                    eventsPostEncodedData = PostBodyBuilder.BuildEvent(apiKey, appId, this.UserId, GetDeviceUUID(), GetAppVersion(), time, eventsPostString);
                 }
 
                 // eventsConnecting will be true until there is a response or an error from the POST
@@ -672,6 +532,35 @@ public partial class SwrveSDK
         return false;
 #endif
     }
+    /// <summary>
+    /// Handle an deeplink event from an Ad Journey Campaign
+    /// </summary>
+    /// <param name="url">
+    /// The deeplink url to process.
+    /// </param>
+    public virtual void HandleDeeplink (string url)
+    {
+        if(deeplinkManager == null) {
+            deeplinkManager = new SwrveDeeplinkManager(Container, this);
+        }
+
+        deeplinkManager.HandleDeeplink(url);
+    }
+
+    /// <summary>
+    /// This method is used to inform SDK that the App had to be installed first and the url loaded in a deferred manner.
+    /// </summary>
+    /// <param name="url">
+    /// The deeplink url to process.
+    /// </param>
+    public virtual void HandleDeferredDeeplink(string url)
+    {
+        if(deeplinkManager == null) {
+            deeplinkManager = new SwrveDeeplinkManager(Container, this);
+        }
+
+        deeplinkManager.HandleDeferredDeeplink(url);
+    }
 
     /// <summary>
     /// Obtain the latest resources and values applied to this user.
@@ -685,6 +574,7 @@ public partial class SwrveSDK
     public virtual void GetUserResources (Action<Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) return;
         if (Initialised) {
             if (userResources != null) {
                 onResult.Invoke(userResources, userResourcesRaw);
@@ -707,10 +597,11 @@ public partial class SwrveSDK
     public virtual void GetUserResourcesDiff (Action<Dictionary<string, Dictionary<string, string>>, Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) return;
         if (Initialised && !abTestUserResourcesDiffConnecting) {
             abTestUserResourcesDiffConnecting = true;
             StringBuilder getRequest = new StringBuilder (abTestResourcesDiffUrl);
-            getRequest.AppendFormat ("?user={0}&api_key={1}&app_version={2}&joined={3}", escapedUserId, apiKey, WWW.EscapeURL (GetAppVersion()), installTimeEpoch);
+            getRequest.AppendFormat ("?user={0}&api_key={1}&app_version={2}&joined={3}", SwrveHelper.EscapeURL (this.UserId), apiKey, SwrveHelper.EscapeURL (GetAppVersion()), userInitTimeSeconds);
 
             SwrveLog.Log("AB Test User Resources Diff request: " + getRequest.ToString());
 
@@ -744,6 +635,10 @@ public partial class SwrveSDK
     public virtual void FlushToDisk (bool saveEventsBeingSent = false)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) {
+            this.LogTrackingState();
+            return;
+        }
         if (Initialised) {
             // Concatenate existing events and buffer
             if (eventBufferStringBuilder != null) {
@@ -767,7 +662,7 @@ public partial class SwrveSDK
 
                 // Load old events saved in file
                 try {
-                    string loadedEvents = storage.Load (EventsSave, userId);
+                    string loadedEvents = storage.Load (EventsSave, this.UserId);
                     if(!string.IsNullOrEmpty(loadedEvents)) {
                         if (savedEventStringBuilder.Length != 0) {
                             savedEventStringBuilder.Append (",");
@@ -780,7 +675,7 @@ public partial class SwrveSDK
 
                 // Save all the events in the storage
                 string savedEventString = savedEventStringBuilder.ToString ();
-                storage.Save (EventsSave, savedEventString, userId);
+                storage.Save (EventsSave, savedEventString, this.UserId);
             }
         }
 #endif
@@ -844,7 +739,7 @@ public partial class SwrveSDK
             { "swrve.app_store", config.AppStore },
             { "swrve.sdk_version", Platform + SdkVersion },
             { "swrve.unity_version", Application.unityVersion },
-            { "swrve.install_date", installTimeFormatted }
+            { "swrve.install_date", installTimeSecondsFormatted }
         };
 
         String tzUtcOffsetSeconds = DateTimeOffset.Now.Offset.TotalSeconds.ToString();
@@ -879,6 +774,7 @@ public partial class SwrveSDK
     public virtual void OnSwrvePause ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        applicationPaused = true;
         if (Initialised) {
             FlushToDisk ();
             // Session management
@@ -898,6 +794,7 @@ public partial class SwrveSDK
     public virtual void OnSwrveResume ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        applicationPaused = false;
         if (Initialised) {
             LoadFromDisk ();
             QueueDeviceInfo ();
@@ -913,6 +810,10 @@ public partial class SwrveSDK
             StartCampaignsAndResourcesTimer();
             DisableAutoShowAfterDelay();
             ProcessInfluenceData();
+
+            if (IsMessageDisplaying() == false) {
+                ConversationClosed();
+            }
 
 
 #if UNITY_IPHONE
@@ -1040,11 +941,6 @@ public partial class SwrveSDK
 #else
         return false;
 #endif
-    }
-
-    public void SetLocationSegmentVersion(int locationSegmentVersion)
-    {
-        this.locationSegmentVersion = locationSegmentVersion;
     }
 
     public void SetConversationVersion(int conversationVersion)
@@ -1292,16 +1188,7 @@ public partial class SwrveSDK
 
     public virtual void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation)
     {
-        if (campaign.IsA<SwrveMessagesCampaign> ()) {
-            Container.StartCoroutine (LaunchMessage (
-                                          ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
-                                          GlobalInstallButtonListener, GlobalCustomButtonListener, GlobalMessageListener
-                                      ));
-        } else if (campaign.IsA<SwrveConversationCampaign> ()) {
-            Container.StartCoroutine (LaunchConversation(
-                                          ((SwrveConversationCampaign)campaign).Conversation
-                                      ));
-        }
+        ShowCampaign (campaign, false, orientation);
         campaign.Status = SwrveCampaignState.Status.Seen;
         SaveCampaignData(campaign);
     }
@@ -1382,10 +1269,10 @@ public partial class SwrveSDK
     public virtual IEnumerator ShowMessageForEvent (string eventName, SwrveMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (TriggeredMessageListener != null) {
+        if (config.TriggeredMessageListener != null) {
             // They are using a custom listener
             if (message != null) {
-                TriggeredMessageListener.OnMessageTriggered (message);
+                config.TriggeredMessageListener.OnMessageTriggered (message);
             }
         } else {
             if (currentMessage == null) {
@@ -1423,8 +1310,8 @@ public partial class SwrveSDK
     public virtual void DismissMessage ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (TriggeredMessageListener != null) {
-            TriggeredMessageListener.DismissCurrentMessage ();
+        if (config.TriggeredMessageListener != null) {
+            config.TriggeredMessageListener.DismissCurrentMessage ();
         } else {
             try {
                 if (currentMessage != null) {
@@ -1445,6 +1332,49 @@ public partial class SwrveSDK
     {
 #if SWRVE_SUPPORTED_PLATFORM
         LoadResourcesAndCampaigns ();
+#endif
+    }
+
+    /// <summary>
+    /// Identify users such that they can be tracked and targeted safely across multiple devices, platforms and channels.
+    /// </summary>
+    /// <param name="externalUserId">
+    /// An ID that uniquely identifies your user. Personal identifiable information should not be used. An error may be returned if such information is submitted as the userID eg email, phone number etc.
+    /// </param>
+    /// <param name="onSuccess">
+    /// Callback that will handle a success for the Identify call.
+    /// </param>
+    /// <param name="onError">
+    /// Callback that will handle an error for the Identify call.
+    /// </param>
+    public void Identify(string userId, OnSuccessIdentify onSuccess, OnErrorIdentify onError)
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        if (Initialised) {
+            if(string.IsNullOrEmpty(userId)) {
+                SwrveLog.LogInfo("Swrve identify: External user id cannot be nil or empty");
+                if(onError != null) {
+                    onError(-1, "External user id cannot be nil or empty");
+                }
+                return;
+            }
+
+            SwrveLog.LogInfo("Swrve identify: Pausing event queuing and sending prior to Identity API call...");
+            this.SendQueuedEvents();
+            this.PauseEventSending();
+
+            // Check and try Identify a cached user.
+            SwrveUser cachedUser = profileManager.GetSwrveUser(userId);
+            if(this.IdentifyCachedUser(cachedUser, onSuccess)) {
+                return;
+            }
+
+            //internal identify call.
+            this.IdentifyUnknownUser(userId, cachedUser, onSuccess, onError);
+
+        } else {
+            SwrveLog.LogError("Swrve identify: Failed to call Identify, you did't init the SDK. Please be sure that the SDK is init first");
+        }
 #endif
     }
 }

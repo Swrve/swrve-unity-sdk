@@ -1,6 +1,10 @@
 SwrveSilentPushListener.h
 SwrveSilentPushListener.h.meta
-SwrveSilentPushListener.mm
-SwrveSilentPushListener.mm.meta
+SwrveSilentPushListener.m
+SwrveSilentPushListener.m.meta
 SwrvePushExtension/
 SwrvePushExtension.meta
+SwrvePermissionsDelegateImp.h
+SwrvePermissionsDelegateImp.h.meta
+SwrvePermissionsDelegateImp.m
+SwrvePermissionsDelegateImp.m.meta

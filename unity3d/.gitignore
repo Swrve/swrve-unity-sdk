@@ -21,7 +21,7 @@ obj/
 Temp/
 
 #Visual Studio Stuff
-#*.sln
+*.sln
 *.suo
 *.pidb
 *.swp

@@ -4,8 +4,7 @@ import android.app.Application;
 
 /**
  * This class is needed for when you want Swrve to properly process background
- * processes for the Unity SDK, like push notifications, and location campaign
- * searching and merging.
+ * processes for the Unity SDK, like push notifications.
  *
  * This file is included in the swrve-unity aar, but needs to be referred to in
  * your AndroidManifest file, with

@@ -4,13 +4,16 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Reflection;
+using UnityEngine;
+using UnityEngine.Networking;
 
 namespace SwrveUnity.Helpers
 {
 /// <summary
 /// Used internally as a helper for the Swrve SDK.
 /// </summary>
-public static class SwrveHelper
+public static partial class SwrveHelper
 {
     // Testing
     public static DateTime? Now = null;
@@ -44,7 +47,7 @@ public static class SwrveHelper
     public static void Shuffle<T> (this IList<T> list)
     {
         int n = list.Count;
-        Random rnd = new Random ();
+        System.Random rnd = new System.Random ();
         while (n > 1) {
             int k = (rnd.Next (0, n) % n);
             n--;
@@ -126,6 +129,43 @@ public static class SwrveHelper
         return (long)(((TimeSpan)(DateTime.UtcNow - UnixEpoch)).TotalMilliseconds);
     }
 
+    public static string GetRandomUUID ()
+    {
+#if UNITY_IPHONE
+        string randomUUID = getNativeRandomUUID();
+        if (!string.IsNullOrEmpty (randomUUID)) {
+            return randomUUID;
+        }
+#endif
+        try {
+            Type type = System.Type.GetType ("System.Guid");
+            if (type != null) {
+                MethodInfo methodInfo = type.GetMethod ("NewGuid");
+                if (methodInfo != null) {
+                    object result = methodInfo.Invoke (null, null);
+                    if (result != null) {
+                        string stringResult = result.ToString();
+                        if (!string.IsNullOrEmpty(stringResult)) {
+                            return stringResult;
+                        }
+                    }
+                }
+            }
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
+        }
+
+        // Generate random string if all fails
+        string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        string randomString = string.Empty;
+        for (int i = 0; i < 128; i++) {
+            System.Random rnd = new System.Random();
+            int rndInt = rnd.Next (chars.Length);
+            randomString += chars[rndInt];
+        }
+        return randomString;
+    }
+
     public static string GetEventName (Dictionary<string, object> eventParameters)
     {
         string eventName = string.Empty;
@@ -197,6 +237,33 @@ public static class SwrveHelper
         available = UnityEngine.Application.platform == platform;
 
         return available;
+    }
+
+    public static Dictionary<string, string> GetUriQueryParameters(string query)
+    {
+        Dictionary<string, string> queryParams = new Dictionary<string,string>();
+        string formattedQuery = query.Replace("?","");
+        string[] listOfQueries = formattedQuery.Split('&');
+        for(int queryIndex = 0; queryIndex < listOfQueries.Length; queryIndex++) {
+            string[] valueKeyCombo = listOfQueries[queryIndex].Split('=');
+            string paramKey = valueKeyCombo[0];
+            string paramValue = (valueKeyCombo.Length == 2) ? valueKeyCombo[1] : null;
+
+            if(!String.IsNullOrEmpty(paramValue)) {
+                queryParams.Add(paramKey, paramValue);
+            }
+        }
+
+        return queryParams;
+    }
+
+    public static string EscapeURL(string url)
+    {
+#if UNITY_2017_1_OR_NEWER
+        return UnityWebRequest.EscapeURL (url);
+#else
+        return WWW.EscapeURL (url);
+#endif
     }
 }
 }

@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using SwrveUnity.IAP;
 using SwrveUnity.Helpers;
 using SwrveUnityMiniJSON;
+using SwrveUnity.SwrveUsers;
 
 #if UNITY_5 || UNITY_2017_1_OR_NEWER
 using UnityEngine.iOS;
@@ -15,11 +16,11 @@ using UnityEngine.iOS;
 public partial class SwrveSDK
 {
 
-    private const string PushNotificationStatusKey = "Swrve.permission.ios.push_notifications";
-    private const string SilentPushNotificationStatusKey = "Swrve.permission.ios.push_bg_refresh";
+private const string PushNotificationStatusKey = "Swrve.permission.ios.push_notifications";
+private const string SilentPushNotificationStatusKey = "Swrve.permission.ios.push_bg_refresh";
 
-	private string pushNotificationStatus;
-	private string silentPushNotificationStatus;
+private string pushNotificationStatus;
+private string silentPushNotificationStatus;
 /// <summary>
 /// Buffer the event of a purchase using real currency, where a single item
 /// (that isn't an in-app currency) was purchased.
@@ -235,25 +236,26 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     public void RefreshPushPermissions()
     {
 #if !UNITY_EDITOR
-		string preIOS10NotificationStatus = _swrvePushNotificationStatus (this.prefabName);
-		if (!string.IsNullOrEmpty(preIOS10NotificationStatus)) {
-			this.pushNotificationStatus = preIOS10NotificationStatus;
-		}
+        string preIOS10NotificationStatus = _swrvePushNotificationStatus (this.prefabName);
+        if (!string.IsNullOrEmpty(preIOS10NotificationStatus)) {
+            this.pushNotificationStatus = preIOS10NotificationStatus;
+        }
 #endif
 
 #if !UNITY_EDITOR
-		this.silentPushNotificationStatus = _swrveBackgroundRefreshStatus ();
+        this.silentPushNotificationStatus = _swrveBackgroundRefreshStatus ();
 #endif
     }
 
-    public void SetPushNotificationsPermissionStatus(string pushStatus) {
+    public void SetPushNotificationsPermissionStatus(string pushStatus)
+    {
         // Called asynchronously by the iOS native code with the UNUserNotification status
         if (!string.IsNullOrEmpty (pushStatus)) {
-			bool sendEvents = (this.pushNotificationStatus != pushStatus);
-			this.pushNotificationStatus = pushStatus;
-			if (sendEvents) {
-				QueueDeviceInfo();
-			}
+            bool sendEvents = (this.pushNotificationStatus != pushStatus);
+            this.pushNotificationStatus = pushStatus;
+            if (sendEvents) {
+                QueueDeviceInfo();
+            }
         }
     }
 
@@ -268,10 +270,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     private static extern string _swrveiOSAppVersion();
 
     [DllImport ("__Internal")]
-    private static extern void _swrveiOSRegisterForPushNotifications(string unJsonCategory, string uiJsonCategory);
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSUUID();
+    private static extern void _swrveiOSRegisterForPushNotifications(string unJsonCategory);
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSLocaleCountry();
@@ -281,15 +280,6 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSIDFV();
-
-    [DllImport ("__Internal")]
-    private static extern void _swrveiOSStartLocation();
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSPlotNotifications();
-
-    [DllImport ("__Internal")]
-    private static extern void _swrveiOSLocationUserUpdate(string jsonMap);
 
     [DllImport ("__Internal")]
     private static extern void _swrveiOSInitNative(string jsonConfig);
@@ -304,6 +294,9 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     public static extern bool _swrveiOSIsSupportedOSVersion();
 
     [DllImport ("__Internal")]
+    public static extern bool _swrveiOSIsConversationDisplaying();
+
+    [DllImport ("__Internal")]
     public static extern string _swrveInfluencedDataJson();
 
     [DllImport ("__Internal")]
@@ -314,6 +307,13 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
     [DllImport ("__Internal")]
     private static extern void _swrveiOSUpdateQaUser(string jsonMap);
+
+    [DllImport ("__Internal")]
+    public static extern void _swrveUserId(string userId);
+
+    [DllImport ("__Internal")]
+    public static extern void _clearAllAuthenticatedNotifications();
+
 #endif
 
     private string iOSdeviceToken;
@@ -322,7 +322,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     {
 #if !UNITY_EDITOR
         try {
-            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.NotificationCategories.Select(a => a.toDict ()).ToList ()), Json.Serialize (config.PushCategories.Select (a => a.toDict ()).ToList ()));
+            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.NotificationCategories.Select(a => a.toDict ()).ToList ()));
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
 
@@ -347,13 +347,12 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
     protected void ProcessRemoteNotification (RemoteNotification notification)
     {
-        if(config.PushNotificationEnabled) {
+        if (config.PushNotificationEnabled) {
             ProcessRemoteNotificationUserInfo(notification.userInfo);
-
             // Do not call listener for silent pushes
             if (notification.userInfo == null || !notification.userInfo.Contains(SilentPushTrackingKey)) {
-                if(PushNotificationListener != null) {
-                    PushNotificationListener.OnRemoteNotification(notification);
+                if (config.PushNotificationListener != null) {
+                    config.PushNotificationListener.OnRemoteNotification(notification);
                 }
             }
             if(qaUser != null) {
@@ -376,39 +375,76 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
     protected void ProcessRemoteNotificationUserInfo(IDictionary userInfo)
     {
-        bool processDeeplink = false;
-        if (userInfo != null && userInfo.Contains(PushTrackingKey)) {
-            processDeeplink = true;
-            // It is a Swrve push, we need to check if it was sent while the app was in the background
-            bool whileInBackground = !userInfo.Contains("_swrveForeground");
-            if (whileInBackground) {
-                object rawId = userInfo[PushTrackingKey];
-                string pushId = rawId.ToString();
-                // SWRVE-5613 Hack
-                if (rawId is Int64) {
-                    pushId = ConvertInt64ToInt32Hack ((Int64)rawId).ToString ();
+        // First check if it is processed natively or empty
+        bool processedNatively = (userInfo != null && userInfo.Contains(PushUnityDoNotProcessKey));
+        if (!processedNatively) {
+            if (userInfo != null && userInfo.Contains(PushTrackingKey)) {
+                // It is a Swrve push, we need to check if it was sent while the app was in the background
+                bool whileInBackground = !userInfo.Contains("_swrveForeground");
+                if (whileInBackground) {
+                    object rawId = userInfo[PushTrackingKey];
+                    string pushId = rawId.ToString();
+                    // SWRVE-5613 Hack
+                    if (rawId is Int64) {
+                        pushId = ConvertInt64ToInt32Hack ((Int64)rawId).ToString ();
+                    }
+                    SendPushEngagedEvent(pushId);
+
+                    // Evaluate and process any default push actions available
+                    object deeplinkUrl = userInfo[PushDeeplinkKey];
+                    if (deeplinkUrl != null) {
+                        OpenURL(deeplinkUrl.ToString());
+                    }
+
+                    ProcessNotificationForCampaign(userInfo);
+
+                } else {
+                    SwrveLog.Log("Swrve remote notification received while in the foreground");
                 }
-
-                SendPushEngagedEvent(pushId);
-
             } else {
-                SwrveLog.Log("Swrve remote notification received while in the foreground");
+                if (userInfo != null && userInfo.Contains(SilentPushTrackingKey)) {
+                    SwrveLog.Log("Swrve silent push received");
+                } else {
+                    SwrveLog.Log("Got unidentified notification");
+                }
             }
         } else {
-            if (userInfo != null && userInfo.Contains(SilentPushTrackingKey)) {
-                SwrveLog.Log("Swrve silent push received");
-            } else {
-                SwrveLog.Log("Got unidentified notification");
+            // On the native layer, we modify the userInfo if there is an action required on the unity layer.
+            if(userInfo != null && userInfo.Contains(PushButtonToCampaignIdKey)) {
+                object campaignId = userInfo[PushButtonToCampaignIdKey];
+                if(campaignId != null) {
+                    HandleCampaignFromNotification(campaignId.ToString());
+                }
             }
         }
+    }
 
-        // Process push deeplink
-        if (processDeeplink) {
-            object deeplinkUrl = userInfo[PushDeeplinkKey];
-            if (deeplinkUrl != null) {
-                OpenURL(deeplinkUrl.ToString());
+
+    private void ProcessNotificationForCampaign(IDictionary userInfo)
+    {
+        if(userInfo.Contains(PushContentKey)) {
+            IDictionary content = userInfo[PushContentKey] as IDictionary;
+            if(content != null && HasCorrectVersion(content)) {
+                IDictionary campaign = content["campaign"] as IDictionary;
+                if(campaign != null) {
+                    object campaignId = campaign["id"];
+                    if(campaignId != null) {
+                        HandleCampaignFromNotification(campaignId.ToString());
+                    }
+                }
             }
         }
+    }
+
+    private bool HasCorrectVersion (IDictionary content)
+    {
+        /** Check the push version number **/
+        object version = content["version"];
+        if (version != null) {
+            int contentVersion = Int32.Parse(version.ToString());
+            return (contentVersion >= PushContentVersion);
+        }
+        return false;
     }
 
     private void initNative()
@@ -465,13 +501,18 @@ public void IapApple (int quantity, string productId, double productPrice, strin
             }
         }
 
-		if (!string.IsNullOrEmpty (pushNotificationStatus)) {
-			deviceInfo[PushNotificationStatusKey] = pushNotificationStatus;
-		}
+        if (!string.IsNullOrEmpty (pushNotificationStatus)) {
+            deviceInfo[PushNotificationStatusKey] = pushNotificationStatus;
+        }
 
-		if (!string.IsNullOrEmpty (silentPushNotificationStatus)) {
-			deviceInfo[SilentPushNotificationStatusKey] = silentPushNotificationStatus;
-		}
+        if (!string.IsNullOrEmpty (silentPushNotificationStatus)) {
+            deviceInfo[SilentPushNotificationStatusKey] = silentPushNotificationStatus;
+        }
+
+        // Authenticated Push
+        deviceInfo["swrve.can_receive_authenticated_push"] = Boolean.TrueString.ToLower();
+
+        UpdateNativeUserId();
 #endif
     }
 
@@ -498,20 +539,18 @@ public void IapApple (int quantity, string productId, double productPrice, strin
         }
 #endif
     }
-
-    private string getNativeRandomUUID()
+    private void UpdateNativeUserId()
     {
-        string uuid = null;
 #if !UNITY_EDITOR
-        try {
-            uuid = _swrveiOSUUID();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
-        }
+        _swrveUserId(UserId);
 #endif
-        return uuid;
     }
-
+    private void ClearAllAuthenticatedNotifications()
+    {
+#if !UNITY_EDITOR
+        _clearAllAuthenticatedNotifications();
+#endif
+    }
     private void setNativeConversationVersion()
     {
 #if !UNITY_EDITOR
@@ -523,54 +562,27 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 #endif
     }
 
+    private static bool IsConversationDisplaying()
+    {
+#if !UNITY_EDITOR
+        try {
+            return _swrveiOSIsConversationDisplaying();
+        } catch(Exception exp) {
+            SwrveLog.LogWarning("Couldn't init the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
+#endif
+        return false; // Defaulting to false so messages can still appear in the editor
+    }
+
     private void showNativeConversation(string conversation)
     {
 #if !UNITY_EDITOR
         try {
             _swrveiOSShowConversation(conversation);
         } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get show conversation correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+            SwrveLog.LogWarning("Couldn't show conversation correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
 #endif
-    }
-
-    private void startNativeLocation()
-    {
-#if !UNITY_EDITOR
-        try {
-            _swrveiOSStartLocation();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't start Location on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-#endif
-    }
-
-    public void LocationUserUpdate(Dictionary<string, string> map)
-    {
-#if !UNITY_EDITOR
-        try {
-            _swrveiOSLocationUserUpdate(Json.Serialize(map));
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't update location details from iOS: " + exp.ToString ());
-        }
-#endif
-    }
-
-    public string GetPlotNotifications()
-    {
-#if !UNITY_EDITOR
-        try {
-            return _swrveiOSPlotNotifications();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't get plot notifications from iOS: " + exp.ToString ());
-        }
-#endif
-        return "[]";
-    }
-
-    private void startNativeLocationAfterPermission()
-    {
-        startNativeLocation ();
     }
 
     private bool NativeIsBackPressed ()
@@ -582,12 +594,39 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     {
 #if !UNITY_EDITOR
         try {
-          _swrveiOSUpdateQaUser(Json.Serialize(map));
-         } catch (Exception exp) {
-          SwrveLog.LogWarning ("Couldn't update QA user from iOS: " + exp.ToString ());
-         }
+            _swrveiOSUpdateQaUser(Json.Serialize(map));
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't update QA user from iOS: " + exp.ToString ());
+        }
 #endif
     }
 
 }
+
+// Added interface for our NativeiOS layer for our Helper Class.
+namespace SwrveUnity.Helpers
+{
+public static partial class SwrveHelper
+{
+#if !UNITY_EDITOR
+    [DllImport ("__Internal")]
+    private static extern string _swrveiOSUUID();
 #endif
+
+    public static string getNativeRandomUUID()
+    {
+        string uuid = null;
+#if !UNITY_EDITOR
+        try {
+            uuid = _swrveiOSUUID();
+        } catch (Exception exp) {
+            SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
+        }
+#endif
+        return uuid;
+    }
+}
+
+}
+
+#endif //#endif for "#if UNITY_IPHONE" - Begining of this File.

@@ -3,12 +3,12 @@
 #import "SwrveConversationsNavigationController.h"
 #import "SwrveConversationContainerViewController.h"
 #import "SwrveCommon.h"
+#import "UnitySwrve.h"
 
 @class SwrveConversationItemViewController;
 
 @interface UnitySwrveMessageEventHandler()
 
-@property (nonatomic, retain) UIWindow* conversationWindow;
 @property (nonatomic, retain) SwrveConversationItemViewController* swrveConversationItemViewController;
 
 @end
@@ -28,6 +28,7 @@
         self.conversationWindow.hidden = YES;
         self.conversationWindow = nil;
         self.swrveConversationItemViewController = nil;
+        [[UnitySwrve sharedInstance] conversationClosed];
     }
 }
 
@@ -60,6 +61,10 @@
             }
         }
     }
+}
+
+- (bool) isConversationDisplaying {
+    return (self.conversationWindow != nil);
 }
 
 @end

@@ -100,28 +100,28 @@ public class RESTClient : IRESTClient
     }
 
 #if UNITY_2017_1_OR_NEWER
-protected void ProcessResponse (UnityWebRequest www, long wwwTime, string url, Action<RESTResponse> listener)
+    protected void ProcessResponse (UnityWebRequest www, long wwwTime, string url, Action<RESTResponse> listener)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         try {
-            if(!www.isNetworkError && !www.isHttpError) {
-            // - made it there and it was ok
-            string responseBody = null;
-            bool success = ResponseBodyTester.TestUTF8 (www.downloadHandler.data, out responseBody);
-            Dictionary<string, string> headers = new Dictionary<string, string> ();
+            if (!www.isNetworkError) {
+                // - made it there and it was ok
+                string responseBody = null;
+                bool success = ResponseBodyTester.TestUTF8 (www.downloadHandler.data, out responseBody);
+                Dictionary<string, string> headers = new Dictionary<string, string> ();
 
-            string contentEncodingHeader = null;
+                string contentEncodingHeader = null;
                 if (www.GetResponseHeaders() != null) {
                     Dictionary<string, string>.Enumerator headersEnum = www.GetResponseHeaders().GetEnumerator();
-                while(headersEnum.MoveNext()) {
-                    KeyValuePair<string, string> header = headersEnum.Current;
-                    headers.Add (header.Key.ToUpper (), header.Value);
+                    while(headersEnum.MoveNext()) {
+                        KeyValuePair<string, string> header = headersEnum.Current;
+                        headers.Add (header.Key.ToUpper (), header.Value);
+                    }
+                    // Get the content encoding header, if present
+                    if (headers.ContainsKey(CONTENT_ENCODING_HEADER_KEY)) {
+                        contentEncodingHeader = headers[CONTENT_ENCODING_HEADER_KEY];
+                    }
                 }
-                // Get the content encoding header, if present
-                if (headers.ContainsKey(CONTENT_ENCODING_HEADER_KEY)) {
-                    contentEncodingHeader = headers[CONTENT_ENCODING_HEADER_KEY];
-                }
-            }
 #if SUPPORTS_GZIP_RESPONSES
                 // BitConverter.ToInt32 needs at least 4 bytes
                 if (www.downloadHandler.data != null && www.downloadHandler.data.Length > 4 && contentEncodingHeader != null && string.Equals (contentEncodingHeader, "gzip", StringComparison.OrdinalIgnoreCase)) {
@@ -147,29 +147,29 @@ protected void ProcessResponse (UnityWebRequest www, long wwwTime, string url, A
 
                 if (success) {
                     AddMetrics (url, wwwTime, false);
-                    listener.Invoke (new RESTResponse (responseBody, headers));
+                    listener.Invoke (new RESTResponse(error: UnityWwwHelper.DeduceWwwError (www), responseCode: www.responseCode, responseBody: responseBody, headers: headers) );
                 } else {
                     AddMetrics (url, wwwTime, true);
-                    listener.Invoke (new RESTResponse (WwwDeducedError.ApplicationErrorBody));
+                    listener.Invoke (new RESTResponse (error: WwwDeducedError.ApplicationErrorBody, responseCode: www.responseCode, responseBody: responseBody, headers: headers));
                 }
             } else {
                 AddMetrics (url, wwwTime, true);
-                listener.Invoke (new RESTResponse (UnityWwwHelper.DeduceWwwError (www)));
+                listener.Invoke (new RESTResponse (error: UnityWwwHelper.DeduceWwwError (www)));
             }
         } catch(Exception exp) {
-             SwrveLog.LogError(exp);
+            SwrveLog.LogError(exp);
         }
 #endif
     }
 
 #else
-protected void ProcessResponse (WWW www, long wwwTime, string url, Action<RESTResponse> listener)
+    protected void ProcessResponse (WWW www, long wwwTime, string url, Action<RESTResponse> listener)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         try {
             WwwDeducedError deducedError = UnityWwwHelper.DeduceWwwError (www);
-            if (deducedError == WwwDeducedError.NoError) {
-                // - made it there and it was ok
+            if (deducedError == WwwDeducedError.NoError || deducedError == WwwDeducedError.ApplicationErrorHeader) {
+                // - made it there and it was ok or returned an internal swrve error.
                 string responseBody = null;
                 bool success = ResponseBodyTester.TestUTF8 (www.bytes, out responseBody);
                 Dictionary<string, string> headers = new Dictionary<string, string> ();
@@ -208,16 +208,22 @@ protected void ProcessResponse (WWW www, long wwwTime, string url, Action<RESTRe
                     }
                 }
 #endif
+                long responseCode = 0;
+                // Parse by our own the responseCode code regarding unity is returning always response code "0".
+                if (responseCode == 0 && (headers != null && headers.ContainsKey("STATUS")) ) {
+                    string headerStatus = headers["STATUS"];
+                    responseCode = UnityWwwHelper.parseResponseCode(headerStatus);
+                }
                 if (success) {
                     AddMetrics (url, wwwTime, false);
-                    listener.Invoke (new RESTResponse (responseBody, headers));
+                    listener.Invoke (new RESTResponse (error: deducedError, responseCode: responseCode, responseBody: responseBody, headers: headers));
                 } else {
                     AddMetrics (url, wwwTime, true);
-                    listener.Invoke (new RESTResponse (WwwDeducedError.ApplicationErrorBody));
+                    listener.Invoke (new RESTResponse (error: WwwDeducedError.ApplicationErrorBody, responseCode: responseCode, responseBody: responseBody, headers: headers));
                 }
             } else {
                 AddMetrics (url, wwwTime, true);
-                listener.Invoke (new RESTResponse (deducedError));
+                listener.Invoke (new RESTResponse (error: deducedError));
             }
         } catch(Exception exp) {
             SwrveLog.LogError(exp);

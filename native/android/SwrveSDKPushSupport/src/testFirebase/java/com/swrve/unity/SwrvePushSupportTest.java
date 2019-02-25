@@ -3,11 +3,9 @@ package com.swrve.unity;
 import android.os.Bundle;
 
 import com.google.firebase.messaging.RemoteMessage;
-import com.swrve.sdk.SwrvePushSDK;
 import com.swrve.unity.firebase.MainActivity;
 import com.swrve.unity.firebase.SwrveFirebaseMessagingService;
 
-import org.junit.After;
 import org.junit.Before;
 import org.robolectric.Robolectric;
 import org.robolectric.Shadows;
@@ -21,16 +19,9 @@ public class SwrvePushSupportTest extends SwrveBasePushSupportTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-
         mActivity = Robolectric.buildActivity(MainActivity.class).create().visible().get();
         mShadowActivity = Shadows.shadowOf(mActivity);
         service = Robolectric.setupService(SwrveFirebaseMessagingService.class);
-        SwrvePushSDK.createInstance(mActivity);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
     }
 
     @Override

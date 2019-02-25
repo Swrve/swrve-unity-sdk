@@ -1,14 +1,15 @@
 #import "UnitySwrveExternC.h"
-#import "UnitySwrveCommon.h"
+#import "UnitySwrve.h"
 #import "UnitySwrveHelper.h"
-#import "UnitySwrveCommonMessageController.h"
 #import "SwrveBaseConversation.h"
-#import "SwrvePushConstants.h"
 
 #if !defined(SWRVE_NO_PUSH)
 #import <UserNotifications/UserNotifications.h>
-#import "SwrvePermissions.h"
 #endif //!defined(SWRVE_NO_PUSH)
+
+#import "SwrveNotificationManager.h"
+#import "SwrvePermissions.h"
+#import "SwrveCampaignInfluence.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -24,6 +25,11 @@ extern "C"
     {
         return [UnitySwrveHelper language];
     }
+    
+   void _swrveUserId(char* userId)
+   {
+       [[UnitySwrve sharedInstance] setUserId:[UnitySwrveHelper CStringToNSString:userId]];
+   }
 
     char* _swrveiOSTimeZone()
     {
@@ -70,39 +76,32 @@ extern "C"
         return [UnitySwrveHelper IDFA];
     }
 
-    void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet, char* jsonUICategorySet)
+
+    void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet)
     {
-        return [UnitySwrveHelper registerForPushNotifications:[UnitySwrveHelper CStringToNSString:jsonUNCategorySet] withBackwardsCompatibility:[UnitySwrveHelper CStringToNSString:jsonUICategorySet]];
+        #if !defined(SWRVE_NO_PUSH)
+        return [UnitySwrveHelper registerForPushNotifications:[UnitySwrveHelper CStringToNSString:jsonUNCategorySet]];
+        #endif
     }
 
     void _swrveiOSInitNative(char* jsonConfig)
     {
-        [UnitySwrveCommonDelegate init:jsonConfig];
+        [UnitySwrve init:jsonConfig];
     }
 
     void _swrveiOSShowConversation(char* conversation)
     {
-        [[UnitySwrveMessageEventHandler alloc] showConversationFromString:[UnitySwrveHelper CStringToNSString:conversation]];
-    }
-
-    void _swrveiOSStartLocation()
-    {
-        [[UnitySwrveCommonDelegate sharedInstance] initLocation];
-    }
-
-    void _swrveiOSLocationUserUpdate(char* jsonMap)
-    {
-        [[UnitySwrveCommonDelegate sharedInstance] locationUserUpdate:[UnitySwrveHelper CStringToNSString:jsonMap]];
-    }
-
-    char* _swrveiOSPlotNotifications()
-    {
-        return [UnitySwrveHelper NSStringCopy:[[UnitySwrveCommonDelegate sharedInstance] plotNotifications]];
+        [[UnitySwrve sharedInstance] showConversationFromString:[UnitySwrveHelper CStringToNSString:conversation]];
     }
 
     bool _swrveiOSIsSupportedOSVersion()
     {
         return [UnitySwrveHelper isSupportediOSVersion];
+    }
+    
+    bool _swrveiOSIsConversationDisplaying()
+    {
+        return [[UnitySwrve sharedInstance] isConversationDisplaying];
     }
 
     char* _swrveInfluencedDataJson()
@@ -114,8 +113,8 @@ extern "C"
         NSUserDefaults* serviceExtensionDefaults = nil;
         NSDictionary* serviceExtensionInfluence = nil;
 
-        if ([UnitySwrveCommonDelegate sharedInstance] != nil && [[UnitySwrveCommonDelegate sharedInstance] appGroupIdentifier] != nil){
-            serviceExtensionDefaults = [[NSUserDefaults alloc] initWithSuiteName:[[UnitySwrveCommonDelegate sharedInstance] appGroupIdentifier]];
+        if ([UnitySwrve sharedInstance] != nil && [[UnitySwrve sharedInstance] appGroupIdentifier] != nil){
+            serviceExtensionDefaults = [[NSUserDefaults alloc] initWithSuiteName:[[UnitySwrve sharedInstance] appGroupIdentifier]];
             serviceExtensionInfluence = [serviceExtensionDefaults dictionaryForKey:SwrveInfluenceDataKey];
         }
 
@@ -167,37 +166,32 @@ extern "C"
     {
 #if !defined(SWRVE_NO_PUSH)
         // This methods will return the current status for old iOS versions or get it and send it to the Unity SDK component asynchronously
-        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"10.0")) {
-            __block NSString* prefabNameStr = [UnitySwrveHelper CStringToNSString:componentName];
-            UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
-            [center getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings *_Nonnull settings) {
-                NSString *pushAuthorizationFromSettings = swrve_permission_status_unknown;
-                if (settings.authorizationStatus == UNAuthorizationStatusAuthorized) {
-                    pushAuthorizationFromSettings = swrve_permission_status_authorized;
-                } else if (settings.authorizationStatus == UNAuthorizationStatusDenied) {
-                    pushAuthorizationFromSettings = swrve_permission_status_denied;
-                } else if (settings.authorizationStatus == UNAuthorizationStatusNotDetermined) {
-                    pushAuthorizationFromSettings = swrve_permission_status_unknown;
-                }
+        __block NSString* prefabNameStr = [UnitySwrveHelper CStringToNSString:componentName];
+        UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+        [center getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings *_Nonnull settings) {
+            NSString *pushAuthorizationFromSettings = swrve_permission_status_unknown;
+            if (settings.authorizationStatus == UNAuthorizationStatusAuthorized) {
+                pushAuthorizationFromSettings = swrve_permission_status_authorized;
+            } else if (settings.authorizationStatus == UNAuthorizationStatusDenied) {
+                pushAuthorizationFromSettings = swrve_permission_status_denied;
+            } else if (settings.authorizationStatus == UNAuthorizationStatusNotDetermined) {
+                pushAuthorizationFromSettings = swrve_permission_status_unknown;
+            }
 #ifdef UNITY_IOS
-                UnitySendMessage([UnitySwrveHelper NSStringCopy:prefabNameStr], [UnitySwrveHelper NSStringCopy:@"SetPushNotificationsPermissionStatus"], [UnitySwrveHelper NSStringCopy:pushAuthorizationFromSettings]);
+            UnitySendMessage([UnitySwrveHelper NSStringCopy:prefabNameStr], [UnitySwrveHelper NSStringCopy:@"SetPushNotificationsPermissionStatus"], [UnitySwrveHelper NSStringCopy:pushAuthorizationFromSettings]);
 #else
 #pragma unused(prefabNameStr)
 #endif
-            }];
-        } else {
-            UIUserNotificationType uiUserNotificationType = [[[SwrveCommon sharedUIApplication] currentUserNotificationSettings] types];
-            NSString *pushAuthorization = nil;
-            if (uiUserNotificationType  & UIUserNotificationTypeAlert){
-                // Best guess is that user can receive notifications. No API available for lockscreen and notification center
-                pushAuthorization = swrve_permission_status_authorized;
-            } else {
-                pushAuthorization = swrve_permission_status_denied;
-            }
-            return [UnitySwrveHelper NSStringCopy:pushAuthorization];
-        }
+        }];
 #endif
         return nil;
+    }
+
+    void _clearAllAuthenticatedNotifications(void)
+    {
+#if !defined(SWRVE_NO_PUSH)
+        [SwrveNotificationManager clearAllAuthenticatedNotifications];
+#endif
     }
 
     char* _swrveBackgroundRefreshStatus()
@@ -216,10 +210,10 @@ extern "C"
 #endif
         return [UnitySwrveHelper NSStringCopy:backgroundRefreshStatus];
     }
-    
+
     void _swrveiOSUpdateQaUser(char* jsonMap)
     {
-        [[UnitySwrveCommonDelegate sharedInstance] updateQAUser:[UnitySwrveHelper CStringToNSString:jsonMap]];
+        [[UnitySwrve sharedInstance] updateQAUser:[UnitySwrveHelper CStringToNSString:jsonMap]];
     }
 
 #ifdef __cplusplus

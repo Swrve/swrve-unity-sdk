@@ -22,16 +22,16 @@ public class SwrveCommonBuildComponent
     {
         fileName = Path.GetFullPath (fileName);
         UnityEngine.Debug.Log ("[####] Building " + fileName);
-		UnityEngine.Debug.Log ("With: " + PlayerSettings.iOS.sdkVersion + ", opt: " + opt + ", scenes: " + mainScenes + ", id: " + applicationIdentifier);
+        UnityEngine.Debug.Log ("With: " + PlayerSettings.iOS.sdkVersion + ", opt: " + opt + ", scenes: " + mainScenes + ", id: " + applicationIdentifier);
 
 #if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
-		PlayerSettings.applicationIdentifier = applicationIdentifier;
+        PlayerSettings.applicationIdentifier = applicationIdentifier;
 #else
-		PlayerSettings.bundleIdentifier = applicationIdentifier;
+        PlayerSettings.bundleIdentifier = applicationIdentifier;
 #endif
 
 #if UNITY_5 || UNITY_2017_1_OR_NEWER
-#if UNITY_2017_1_OR_NEWER
+#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTargetGroup.iOS, BuildTarget.iOS);
 #else
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
@@ -54,19 +54,19 @@ public class SwrveCommonBuildComponent
         UnityEngine.Debug.Log ("Built " + fileName);
     }
 
-	protected static void BuildAndroid (string fileName, BuildOptions opt, string[] mainScenes, string applicationIdentifier)
+    protected static void BuildAndroid (string fileName, BuildOptions opt, string[] mainScenes, string applicationIdentifier)
     {
         UnityEngine.Debug.Log ("[####] Building " + fileName);
-#if UNITY_2017_1_OR_NEWER
+#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTargetGroup.Android, BuildTarget.Android);
 #else
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.Android);
 #endif
 
 #if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
-		PlayerSettings.applicationIdentifier = applicationIdentifier;
+        PlayerSettings.applicationIdentifier = applicationIdentifier;
 #else
-		PlayerSettings.bundleIdentifier = applicationIdentifier;
+        PlayerSettings.bundleIdentifier = applicationIdentifier;
 #endif
         SwrveBuildComponent.AndroidPreBuild ();
 
@@ -151,14 +151,14 @@ public class SwrveCommonBuildComponent
             info.UseShellExecute = false;
             info.WorkingDirectory = workingDirectory;
             info.FileName = androidSDKLocation + "/platform-tools/adb";
-			string applicationIdentifier;
+            string applicationIdentifier;
 #if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
-			applicationIdentifier = PlayerSettings.applicationIdentifier;
+            applicationIdentifier = PlayerSettings.applicationIdentifier;
 #else
-			applicationIdentifier = PlayerSettings.bundleIdentifier;
+            applicationIdentifier = PlayerSettings.bundleIdentifier;
 #endif
 
-			info.Arguments = string.Format("shell monkey -p {0} -c android.intent.category.LAUNCHER 1", applicationIdentifier);
+            info.Arguments = string.Format("shell monkey -p {0} -c android.intent.category.LAUNCHER 1", applicationIdentifier);
             proc = System.Diagnostics.Process.Start (info);
             while (!proc.HasExited) {
                 errorOutput += proc.StandardError.ReadToEnd ();

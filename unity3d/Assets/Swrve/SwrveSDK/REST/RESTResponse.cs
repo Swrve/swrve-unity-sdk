@@ -14,24 +14,13 @@ public class RESTResponse
     public readonly long ResponseCode;
     public readonly Dictionary<string, string> Headers;
 
-    public RESTResponse (string body)
-    {
-        Body = body;
-    }
-
-    public RESTResponse (string body, Dictionary<string, string> headers) : this(body)
-    {
-        Headers = headers;
-    }
-
-    public RESTResponse (WwwDeducedError error)
-    {
-        Error = error;
-    }
-
-    public RESTResponse (long responseCode)
+    public RESTResponse (long responseCode = 0, string responseBody = "", Dictionary<string, string> headers =  null, WwwDeducedError error = WwwDeducedError.NoError)
     {
         ResponseCode = responseCode;
+        Body = responseBody;
+        Error = error;
+        Headers = headers;
+        Error = error;
     }
 }
 }

@@ -64,7 +64,6 @@ MonoBehaviour:
     StoreDataInPlayerPrefs: 0
     PushNotificationEnabled: 0
     GCMSenderId:
-    AndroidPushNotificationTitle: '#Your App Title'
     AutoShowMessagesMaxDelay: 5
   FlushEventsOnApplicationQuit: 1
 --- !u!1002 &11400001

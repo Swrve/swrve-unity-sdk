@@ -44,8 +44,7 @@ public class UNNotificationAction
 
     private string ExtractActionFromEnum (UNUserNotificationAction action)
     {
-        switch (action)
-        {
+        switch (action) {
         case UNUserNotificationAction.UNNotificationActionOptionForeground:
             return @"foreground";
         case UNUserNotificationAction.UNNotificationActionOptionDestructive:
@@ -81,22 +80,21 @@ public class UNNotificationCategory
 
         Dictionary<string, object> retval = new Dictionary<string, object> ();
         retval [IDENTIFIER_KEY] = identifier;
-		retval [OPTIONS_KEY] = categoryOptions;
+        retval [OPTIONS_KEY] = categoryOptions;
         retval [ACTIONS_KEY] = actions.Select(a => a.toDict()).ToList();
         return retval;
     }
 
     private string ExtractOptionFromEnum (UNNotificationCategoryOptions option)
     {
-        switch (option)
-        {
-            case UNNotificationCategoryOptions.UNNotificationCategoryOptionCustomDismissAction:
-                return @"custom_dismiss";
-            case UNNotificationCategoryOptions.UNNotificationCategoryOptionAllowInCarPlay:
-                return @"carplay";
-            case UNNotificationCategoryOptions.UNNotificationCategoryOptionNone:
-            default:
-                return @"";
+        switch (option) {
+        case UNNotificationCategoryOptions.UNNotificationCategoryOptionCustomDismissAction:
+            return @"custom_dismiss";
+        case UNNotificationCategoryOptions.UNNotificationCategoryOptionAllowInCarPlay:
+            return @"carplay";
+        case UNNotificationCategoryOptions.UNNotificationCategoryOptionNone:
+        default:
+            return @"";
         }
     }
 }

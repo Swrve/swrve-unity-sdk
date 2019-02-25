@@ -190,7 +190,8 @@ public abstract class SwrveBaseCampaign
         return true;
     }
 
-    public bool CheckImpressions(SwrveQAUser qaUser) {
+    public bool CheckImpressions(SwrveQAUser qaUser)
+    {
         if (Impressions >= maxImpressions) {
             LogAndAddReason ("{Campaign throttle limit} Campaign " + Id + " has been shown " + maxImpressions + " times already", qaUser);
             return false;
@@ -251,19 +252,10 @@ public abstract class SwrveBaseCampaign
     /// </returns>
     public static SwrveBaseCampaign LoadFromJSON(ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, DateTime initialisedTime, SwrveQAUser qaUser, UnityEngine.Color? defaultBackgroundColor)
     {
-        int id = MiniJsonHelper.GetInt(campaignData, ID_KEY);
-        SwrveBaseCampaign campaign = null;
-
-        if(campaignData.ContainsKey(CONVERSATION_KEY)) {
-            campaign = SwrveConversationCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime);
-        } else if(campaignData.ContainsKey(MESSAGES_KEY)) {
-            campaign = SwrveMessagesCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime, qaUser, defaultBackgroundColor);
-        }
-
+        SwrveBaseCampaign campaign = LoadFromJSONWithNoValidation(swrveAssetsManager, campaignData,initialisedTime, qaUser, defaultBackgroundColor);
         if(campaign == null) {
             return null;
         }
-        campaign.Id = id;
 
         AssignCampaignTriggers(campaign, campaignData);
         campaign.MessageCenter = campaignData.ContainsKey(MESSAGE_CENTER_KEY) && (bool)campaignData[MESSAGE_CENTER_KEY];
@@ -281,6 +273,24 @@ public abstract class SwrveBaseCampaign
             SwrveLog.Log(string.Format("message center campaign: {0}, {1}", campaign.GetType(), campaign.subject));
         }
 
+        return campaign;
+    }
+
+    public static SwrveBaseCampaign LoadFromJSONWithNoValidation(ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, DateTime initialisedTime, SwrveQAUser qaUser, UnityEngine.Color? defaultBackgroundColor)
+    {
+        int id = MiniJsonHelper.GetInt(campaignData, ID_KEY);
+        SwrveBaseCampaign campaign = null;
+
+        if(campaignData.ContainsKey(CONVERSATION_KEY)) {
+            campaign = SwrveConversationCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime);
+        } else if(campaignData.ContainsKey(MESSAGES_KEY)) {
+            campaign = SwrveMessagesCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime, qaUser, defaultBackgroundColor);
+        }
+
+        if(campaign == null) {
+            return null;
+        }
+        campaign.Id = id;
         return campaign;
     }
 

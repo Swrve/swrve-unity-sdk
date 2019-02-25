@@ -22,5 +22,6 @@ public interface ISwrveAssetsManager
         set;
     }
     IEnumerator DownloadAssets(HashSet<SwrveAssetsQueueItem> assetsQueue, Action callBack);
+    IEnumerator DownloadAssets(HashSet<SwrveAssetsQueueItem> assetsQueue, Action<object> callBack, object arg);
 }
 }

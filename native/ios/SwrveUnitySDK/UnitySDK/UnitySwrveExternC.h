@@ -3,28 +3,28 @@ extern "C"
 {
 #endif
 
-    int _swrveiOSConversationVersion();
-    char* _swrveiOSLanguage();
-    char* _swrveiOSTimeZone();
-    char* _swrveiOSAppVersion();
-    char* _swrveiOSUUID();
-    char* _swrveiOSCarrierName();
-    char* _swrveiOSCarrierIsoCountryCode();
-    char* _swrveiOSCarrierCode();
-    char* _swrveiOSLocaleCountry();
-    char* _swrveiOSIDFV();
-    char* _swrveiOSIDFA();
-    void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet, char* jsonUICategorySet);
+    int _swrveiOSConversationVersion(void);
+    char* _swrveiOSLanguage(void);
+    char* _swrveiOSTimeZone(void);
+    char* _swrveiOSAppVersion(void);
+    char* _swrveiOSUUID(void);
+    char* _swrveiOSCarrierName(void);
+    char* _swrveiOSCarrierIsoCountryCode(void);
+    char* _swrveiOSCarrierCode(void);
+    char* _swrveiOSLocaleCountry(void);
+    char* _swrveiOSIDFV(void);
+    char* _swrveiOSIDFA(void);
+    void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet);
     void _swrveiOSInitNative(char* jsonConfig);
     void _swrveiOSShowConversation(char* conversation);
-    void _swrveiOSStartLocation();
-    void _swrveiOSLocationUserUpdate(char* jsonMap);
-    char* _swrveiOSPlotNotifications();
-    bool _swrveiOSIsSupportedOSVersion();
-    char* _swrveInfluencedDataJson();
+    bool _swrveiOSIsSupportedOSVersion(void);
+    bool _swrveiOSIsConversationDisplaying(void);
+    char* _swrveInfluencedDataJson(void);
     char* _swrvePushNotificationStatus(char* componentName);
-    char* _swrveBackgroundRefreshStatus();
+    char* _swrveBackgroundRefreshStatus(void);
     void _swrveiOSUpdateQaUser(char* jsonMap);
+    void _swrveUserId(char* userId);
+    void _clearAllAuthenticatedNotifications(void);
 
 #ifdef __cplusplus
 }

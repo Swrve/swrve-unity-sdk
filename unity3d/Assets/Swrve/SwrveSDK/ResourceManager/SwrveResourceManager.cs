@@ -68,16 +68,17 @@ public class SwrveResourceManager
     /// </summary>
     public Dictionary<string, SwrveResource> UserResources;
 
-	/// <summary>
-	/// Information about the AB Tests a user is part of. To use this feature enable the
-	/// flag abTestDetailsEnabled in your configuration.
-	/// </summary>
+    /// <summary>
+    /// Information about the AB Tests a user is part of. To use this feature enable the
+    /// flag abTestDetailsEnabled in your configuration.
+    /// </summary>
     public List<SwrveABTestDetails> ABTestDetails;
 
-	public SwrveResourceManager() {
-		UserResources = new Dictionary<string, SwrveResource> ();
-		ABTestDetails = new List<SwrveABTestDetails> ();
-	}
+    public SwrveResourceManager()
+    {
+        UserResources = new Dictionary<string, SwrveResource> ();
+        ABTestDetails = new List<SwrveABTestDetails> ();
+    }
 
     /// <summary>
     /// Update the resources with the JSON content coming from the Swrve servers.

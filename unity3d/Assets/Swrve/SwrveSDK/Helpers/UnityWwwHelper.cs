@@ -61,7 +61,7 @@ public class UnityWwwHelper
                 try {
                     if (!string.IsNullOrEmpty (request.downloadHandler.text)) {
                         SwrveLog.LogError (@"Request response headers [""X-Swrve-Error""]: " +
-                                ((IDictionary<string, object>)Json.Deserialize(request.downloadHandler.text))["message"]);
+                                           ((IDictionary<string, object>)Json.Deserialize(request.downloadHandler.text))["message"]);
                     }
                 } catch(Exception e) {
                     SwrveLog.LogError(e.Message);
@@ -77,7 +77,7 @@ public class UnityWwwHelper
 
         return WwwDeducedError.NoError;
     }
-#endif
+#else
     public static WwwDeducedError DeduceWwwError (WWW request)
     {
         // Check response headers for X-Swrve-Error
@@ -118,5 +118,24 @@ public class UnityWwwHelper
 
         return WwwDeducedError.NoError;
     }
+#endif
+
+    public static int parseResponseCode(string statusLine)
+    {
+        int ret = 0;
+
+        string[] components = statusLine.Split(' ');
+        if (components.Length < 3) {
+            Debug.LogError("invalid response status: " + statusLine);
+        } else {
+            if (!int.TryParse(components[1], out ret)) {
+                Debug.LogError("invalid response code: " + components[1]);
+            }
+        }
+
+        return ret;
+    }
+
+
 }
 }

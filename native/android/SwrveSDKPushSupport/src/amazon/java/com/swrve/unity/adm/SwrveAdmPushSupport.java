@@ -2,11 +2,18 @@ package com.swrve.unity.adm;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.amazon.device.messaging.ADM;
+import com.swrve.sdk.SwrveHelper;
+import com.swrve.sdk.SwrveLogger;
+import com.swrve.sdk.SwrveUnityCommon;
+import com.swrve.unity.SwrvePushServiceManagerCommon;
 import com.swrve.unity.SwrvePushSupport;
+import com.swrve.unity.SwrveUnityNotification;
 import com.unity3d.player.UnityPlayer;
 
 public class SwrveAdmPushSupport extends SwrvePushSupport {
@@ -17,9 +24,7 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
     private static final String PROPERTY_PUSH_CONFIG_VERSION_VAL = "1";
 
     // Method names used when sending message from this plugin to Unity class "SwrveSDK/SwrveComponent.cs"
-    public static final String ON_DEVICE_REGISTERED_METHOD = "OnDeviceRegisteredADM";
-    public static final String ON_NOTIFICATION_RECEIVED_METHOD = "OnNotificationReceivedADM";
-    public static final String ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD = "OnOpenedFromPushNotificationADM";
+    private static final String ON_DEVICE_REGISTERED_METHOD = "OnDeviceRegisteredADM";
 
     // Called by Unity
     public static int getVersion() {
@@ -38,7 +43,7 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
     }
 
     // Called by Unity
-    public static boolean initialiseAdm(final String gameObject, final String appTitle,
+    public static boolean initialiseAdm(final String gameObject,
                                         final String iconId, final String materialIconId,
                                         final String largeIconId, final int accentColor) {
         if (!isAdmAvailable()) {
@@ -53,19 +58,18 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
 
         final Activity activity = UnityPlayer.currentActivity;
         try {
-            saveConfig(gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
+            saveConfig(gameObject, activity, iconId, materialIconId, largeIconId, accentColor);
             Context context = activity.getApplicationContext();
 
             final ADM adm = new ADM(context);
             String registrationId = adm.getRegistrationId();
-            if (SwrveAdmHelper.isNullOrEmpty(registrationId)) {
+            if (SwrveHelper.isNullOrEmpty(registrationId)) {
                 Log.i(TAG, "adm.getRegistrationId() returned null. Will call adm.startRegister().");
                 adm.startRegister();
             } else {
                 Log.i(TAG, "adm.getRegistrationId() returned: " + registrationId);
                 notifySDKOfRegistrationId(gameObject, registrationId);
             }
-            sdkIsReadyToReceivePushNotifications(gameObject, ON_NOTIFICATION_RECEIVED_METHOD, ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD);
         } catch (Exception ex) {
             Log.e(TAG, "Couldn't obtain the ADM registration id for the device", ex);
             return false;
@@ -73,29 +77,20 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
         return true;
     }
 
-    private static void saveConfig(String gameObject, Activity activity, String appTitle, String iconId,
+    private static void saveConfig(String gameObject, Activity activity, String iconId,
                                    String materialIconId, String largeIconId, int accentColor) {
         Context context = activity.getApplicationContext();
-        final SharedPreferences prefs = getAdmPreferences(context);
+        final SharedPreferences prefs = SwrvePushServiceManagerCommon.getPreferences(context);
 
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(PROPERTY_PUSH_CONFIG_VERSION, PROPERTY_PUSH_CONFIG_VERSION_VAL);
-        SwrvePushSupport.saveConfig(editor, gameObject, activity, appTitle, iconId, materialIconId, largeIconId, accentColor);
+        SwrvePushSupport.saveConfig(editor, gameObject, activity, iconId, materialIconId, largeIconId, accentColor);
         editor.apply();
     }
 
-    static SharedPreferences getAdmPreferences(Context context) {
-        return context.getSharedPreferences(context.getPackageName() + "_swrve_adm_push", Context.MODE_PRIVATE);
-    }
-
-    static String getGameObject(Context context) {
-        final SharedPreferences prefs = getAdmPreferences(context);
-        return prefs.getString(PROPERTY_GAME_OBJECT_NAME, "SwrveComponent");
-    }
-
     static void onPushTokenUpdated(Context context, String registrationId) {
-        String gameObject = getGameObject(context);
-        if (SwrveAdmHelper.isNullOrEmpty(gameObject)) {
+        String gameObject = SwrvePushServiceManagerCommon.getGameObject(context);
+        if (SwrveHelper.isNullOrEmpty(gameObject)) {
             Log.e(TAG, "Token has been updated, but can't inform UnitySDK because gameObject is empty");
             return;
         }
@@ -104,6 +99,26 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
 
     private static void notifySDKOfRegistrationId(String gameObject, String registrationId) {
         // Call Unity SDK MonoBehaviour container
-        UnityPlayer.UnitySendMessage(gameObject, ON_DEVICE_REGISTERED_METHOD, registrationId);
+        SwrveUnityCommon.UnitySendMessage(gameObject, ON_DEVICE_REGISTERED_METHOD, registrationId);
+    }
+
+    static void processIntent(Context context, Intent intent) {
+        if (intent == null) {
+            return;
+        }
+        try {
+            Bundle extras = intent.getExtras();
+            if (extras != null && !extras.isEmpty()) {
+                Bundle msg = extras.getBundle(SwrvePushSupport.NOTIFICATION_PAYLOAD_KEY);
+                if (msg != null) {
+                    SwrveUnityNotification notificationUnity = SwrveUnityNotification.Builder.build(msg);
+                    // Remove influenced data before letting Unity know
+                    SwrvePushSupport.removeInfluenceCampaign(context, notificationUnity.getId());
+                    SwrveAdmPushSupport.newOpenedNotification(SwrvePushServiceManagerCommon.getGameObject(UnityPlayer.currentActivity), notificationUnity);
+                }
+            }
+        } catch(Exception ex) {
+            SwrveLogger.e("Could not process push notification intent", ex);
+        }
     }
 }

@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.swrve.unity.swrvesdkpushsupport" >
+    package="com.swrve.unity.swrvesdkpushsupport">
+
+    <application>
+        <service
+            android:name="com.swrve.unity.SwrvePushServiceDefaultJobIntentService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <receiver
+            android:name="com.swrve.unity.SwrvePushServiceDefaultReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name="com.swrve.unity.SwrveUnityNotificationEngageReceiver"
+            android:exported="false" />
+    </application>
 </manifest>

@@ -8,7 +8,6 @@ using SwrveUnity;
 
 public partial class SwrveSDK
 {
-private const string SwrveAndroidPushPluginPackageName = "com.swrve.unity.gcm.SwrveGcmPushSupport";
 private const string SwrveAndroidFirebasePushPluginPackageName = "com.swrve.unity.firebase.SwrveFirebasePushSupport";
 private const string SwrveAndroidADMPushPluginPackageName = "com.swrve.unity.adm.SwrveAdmPushSupport";
 private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
@@ -18,19 +17,16 @@ private const string IsInitialisedName = "isInitialised";
 private const string GetConversationVersionName = "getConversationVersion";
 private const string ShowConversationName = "showConversation";
 private const string SetDefaultNotificationChannelName = "setDefaultNotificationChannel";
-private const string SwrveStartLocationName = "startLocation";
-private const string SwrveLocationUserUpdateName = "locationUserUpdate";
-private const string SwrveGetPlotNotificationsName = "getPlotNotifications";
 private const string SwrveIsOSSupportedVersionName = "sdkAvailable";
 private const string GetInfluencedDataJsonName = "getInfluenceDataJson";
-
 private const string QaUserUpdateName = "updateQaUser";
-private const string QaUserLocationCampaignsDownloadedName = "locationCampaignsDownloaded";
+private const string SetUserId = "setUserId";
+private const string ClearAllUserAuthenticatedNotifications = "clearAllAuthenticatedNotifications";
 
 private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
 private const string UnityCurrentActivityName = "currentActivity";
 
-private string gcmDeviceToken;
+private string firebaseDeviceToken;
 private static AndroidJavaObject androidPlugin;
 private static bool androidPushPluginInitialized = false;
 private static bool androidPushPluginInitializedSuccessfully = false;
@@ -45,8 +41,6 @@ private const int AdmPushPluginVersion = 1;
 private const string InitialiseAdmName = "initialiseAdm";
 
 private const string GetVersionName = "getVersion";
-private const string AckReceivedNotificationName = "sdkAcknowledgeReceivedNotification";
-private const string AckOpenedNotificationName = "sdkAcknowledgeOpenedNotification";
 private const string RegisterDeviceName = "registerDevice";
 private const string RequestAdvertisingIdName = "requestAdvertisingId";
 
@@ -137,13 +131,15 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)
     {
-        if (!string.IsNullOrEmpty(gcmDeviceToken)) {
-            deviceInfo["swrve.gcm_token"] = gcmDeviceToken;
+        if (!string.IsNullOrEmpty(firebaseDeviceToken)) {
+            deviceInfo["swrve.gcm_token"] = firebaseDeviceToken;
         }
 
         if (!string.IsNullOrEmpty(admDeviceToken)) {
             deviceInfo["swrve.adm_token"] = admDeviceToken;
         }
+        // Authenticated Push
+        deviceInfo["swrve.can_receive_authenticated_push"] = Boolean.TrueString.ToLower();
 
         string timezone = AndroidGetTimezone();
         if (!string.IsNullOrEmpty(timezone)) {
@@ -173,26 +169,29 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     private string getNativeLanguage()
     {
         string language = null;
-        try {
-            using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
-                AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
-                language = defaultLocale.Call<string>("getLanguage");
-                string country = defaultLocale.Call<string>("getCountry");
-                if (!string.IsNullOrEmpty (country)) {
-                    language += "-" + country;
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
+                    AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
+                    language = defaultLocale.Call<string>("getLanguage");
+                    string country = defaultLocale.Call<string>("getCountry");
+                    if (!string.IsNullOrEmpty (country)) {
+                        language += "-" + country;
+                    }
+                    string variant = defaultLocale.Call<string>("getVariant");
+                    if (!string.IsNullOrEmpty (variant)) {
+                        language += "-" + variant;
+                    }
                 }
-                string variant = defaultLocale.Call<string>("getVariant");
-                if (!string.IsNullOrEmpty (variant)) {
-                    language += "-" + variant;
-                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't get the device language, make sure you are running on an Android device: " + exp.ToString());
             }
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device language, make sure you are running on an Android device: " + exp.ToString());
         }
         return language;
     }
 
-    private AndroidChannel FallbackDefaultChannel() {
+    private AndroidChannel FallbackDefaultChannel()
+    {
         return new AndroidChannel("swrve_default", "Default", AndroidChannel.ImportanceLevel.Default);
     }
 
@@ -206,59 +205,10 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
         }
     }
 
-    private void GooglePlayRegisterForPushNotification(MonoBehaviour container, string senderId)
-    {
-        try {
-            bool registered = false;
-            this.gcmDeviceToken = storage.Load (GcmDeviceTokenSave);
-
-            if (!androidPushPluginInitialized) {
-                androidPushPluginInitialized = true;
-
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
-                    string jniPluginClassName = SwrveAndroidPushPluginPackageName.Replace(".", "/");
-
-                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
-                        androidPlugin = new AndroidJavaClass(SwrveAndroidPushPluginPackageName);
-
-                        if (androidPlugin != null) {
-                            // Check that the version is the same
-                            int pluginVersion = androidPlugin.CallStatic<int>(GetVersionName);
-
-                            if (pluginVersion != GooglePlayPushPluginVersion) {
-                                // Plugin with changes to the public API not supported
-                                androidPlugin = null;
-                                throw new Exception("The version of the Swrve Android Push plugin is different. This Swrve SDK needs version " + GooglePlayPushPluginVersion);
-                            } else {
-                                androidPushPluginInitializedSuccessfully = true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (androidPushPluginInitializedSuccessfully) {
-                registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, senderId, config.AndroidPushNotificationTitle, config.AndroidPushNotificationIconId,
-                  config.AndroidPushNotificationMaterialIconId, config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColor);
-            }
-
-            if (!registered) {
-                SwrveLog.LogError("Could not communicate with the Swrve Android Push plugin. Have you copied all the jars to the directory?");
-            }
-        } catch (Exception exp) {
-            SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
-        }
-    }
-
     public void SetGooglePlayAdvertisingId(string advertisingId)
     {
         this.googlePlayAdvertisingId = advertisingId;
         storage.Save(GoogleAdvertisingIdSave, advertisingId);
-    }
-
-    private void RequestGooglePlayAdvertisingIdGoogle(MonoBehaviour container)
-    {
-        RequestGooglePlayAdvertisingId(container, SwrveAndroidPushPluginPackageName);
     }
 
     private void RequestGooglePlayAdvertisingIdFirebase(MonoBehaviour container)
@@ -330,8 +280,8 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
 
             if (androidADMPluginInitializedSuccessfully) {
                 registered = androidADMPlugin.CallStatic<bool>(
-                    InitialiseAdmName, container.name, config.AndroidPushNotificationTitle, config.AndroidPushNotificationIconId, config.AndroidPushNotificationMaterialIconId,
-                    config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColor);
+                                 InitialiseAdmName, container.name, config.AndroidPushNotificationIconId, config.AndroidPushNotificationMaterialIconId,
+                                 config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColor);
             }
 
             if (!registered) {
@@ -347,7 +297,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     {
         try {
             bool registered = false;
-            this.gcmDeviceToken = storage.Load (GcmDeviceTokenSave);
+            this.firebaseDeviceToken = storage.Load (FirebaseDeviceTokenSave);
 
             if (!androidPushPluginInitialized) {
                 androidPushPluginInitialized = true;
@@ -375,8 +325,8 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
             }
 
             if (androidPushPluginInitializedSuccessfully) {
-                registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, config.AndroidPushNotificationTitle, config.AndroidPushNotificationIconId, config.AndroidPushNotificationMaterialIconId,
-                  config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColor);
+                registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, config.AndroidPushNotificationIconId, config.AndroidPushNotificationMaterialIconId,
+                             config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColor, firebaseDeviceToken);
             }
 
             if (!registered) {
@@ -389,11 +339,13 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
 
     private string AndroidGetTimezone()
     {
-        try {
-            AndroidJavaObject cal = new AndroidJavaObject("java.util.GregorianCalendar");
-            return cal.Call<AndroidJavaObject>("getTimeZone").Call<string>("getID");
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device timezone, make sure you are running on an Android device: " + exp.ToString());
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                AndroidJavaObject cal = new AndroidJavaObject("java.util.GregorianCalendar");
+                return cal.Call<AndroidJavaObject>("getTimeZone").Call<string>("getID");
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't get the device timezone, make sure you are running on an Android device: " + exp.ToString());
+            }
         }
 
         return null;
@@ -401,13 +353,15 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
 
     private string AndroidGetRegion()
     {
-        try {
-            using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
-                AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
-                return defaultLocale.Call<string>("getCountry");
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
+                    AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
+                    return defaultLocale.Call<string>("getCountry");
+                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't get the device region, make sure you are running on an Android device: " + exp.ToString());
             }
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't get the device region, make sure you are running on an Android device: " + exp.ToString());
         }
 
         return null;
@@ -451,7 +405,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     }
 
     /// <summary>
-    /// Used internally by the Google Cloud Messaging plugin to notify
+    /// Used internally by FCM plugin to notify
     /// of a device registration id.
     /// </summary>
     /// <param name="registrationId">
@@ -460,11 +414,11 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     public void RegistrationIdReceived(string registrationId)
     {
         if (!string.IsNullOrEmpty(registrationId)) {
-            bool sendDeviceInfo = (this.gcmDeviceToken != registrationId);
+            bool sendDeviceInfo = (this.firebaseDeviceToken != registrationId);
 
             if (sendDeviceInfo) {
-                this.gcmDeviceToken = registrationId;
-                storage.Save (GcmDeviceTokenSave, gcmDeviceToken);
+                this.firebaseDeviceToken = registrationId;
+                storage.Save (FirebaseDeviceTokenSave, firebaseDeviceToken);
                 if (qaUser != null) {
                     qaUser.UpdateDeviceInfo();
                 }
@@ -496,7 +450,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     }
 
     /// <summary>
-    /// Used internally by the Google Cloud Messaging plugin to notify
+    /// Used internally by the push plugin to notify
     /// of a received push notification, without any user interaction.
     /// </summary>
     /// <param name="notificationJson">
@@ -505,44 +459,9 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     public void NotificationReceived(string notificationJson)
     {
         Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
-        if (androidPlugin != null && notification != null) {
-            string pushId = GetPushId(notification);
-            if (pushId != null) {
-                // Acknowledge the received notification
-                androidPlugin.CallStatic(AckReceivedNotificationName, pushId);
-            }
-        }
-
-        if (PushNotificationListener != null) {
+        if (config.PushNotificationListener != null) {
             try {
-                PushNotificationListener.OnNotificationReceived(parsePayload(notification));
-            } catch (Exception exp) {
-                SwrveLog.LogError("Error processing the push notification: " + exp.Message);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Used internally by the ADM plugin to notify
-    /// of a received push notification, without any user interaction.
-    /// </summary>
-    /// <param name="notificationJson">
-    /// Serialized push notification information.
-    /// </param>
-    public void NotificationReceivedADM(string notificationJson)
-    {
-        Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
-        if (androidADMPlugin != null && notification != null) {
-            string pushId = GetPushId(notification);
-            if (pushId != null) {
-                // Acknowledge the received notification
-                androidADMPlugin.CallStatic(AckReceivedNotificationName, pushId);
-            }
-        }
-
-        if (PushNotificationListener != null) {
-            try {
-                PushNotificationListener.OnNotificationReceived(parsePayload(notification));
+                config.PushNotificationListener.OnNotificationReceived(parsePayload(notification));
             } catch (Exception exp) {
                 SwrveLog.LogError("Error processing the push notification: " + exp.Message);
             }
@@ -567,7 +486,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
     }
 
     /// <summary>
-    /// Used internally by the Google Cloud Messaging plugin to notify
+    /// Used internally by the FCM plugin to notify
     /// of a received push notification when the app was opened from it.
     /// </summary>
     /// <param name="notificationJson">
@@ -584,45 +503,6 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
             LastOpenedNotification = gcmIdent;
         }
 
-        string pushId = GetPushId(notification);
-        if (pushId != null && androidPlugin != null) {
-            // Acknowledge the opened notification
-            androidPlugin.CallStatic(AckOpenedNotificationName, pushId);
-        }
-
-        // Detect if the notification was opened from a rich push button
-        // If so, the two engagement have already been sent by the native SwrveEngageEventSender
-        bool processedNatively = (notification != null && notification.ContainsKey("SWRVE_UNITY_DO_NOT_PROCESS"));
-        if (!processedNatively) {
-          SendPushEngagedEvent(pushId);
-          // Process push deeplink
-          if (notification != null && notification.ContainsKey (PushDeeplinkKey)) {
-              object deeplinkUrl = notification[PushDeeplinkKey];
-              if (deeplinkUrl != null) {
-                  OpenURL(deeplinkUrl.ToString());
-              }
-          }
-        }
-
-        if (PushNotificationListener != null) {
-            try {
-                PushNotificationListener.OnOpenedFromPushNotification(parsePayload(notification));
-            } catch (Exception exp) {
-                SwrveLog.LogError("Error processing the push notification: " + exp.Message);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Used internally by the ADM plugin to notify
-    /// of a received push notification when the app was opened from it.
-    /// </summary>
-    /// <param name="notificationJson">
-    /// Serialized push notification information.
-    /// </param>
-    public void OpenedFromPushNotificationADM(string notificationJson)
-    {
-        Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize (notificationJson);
         if (notification != null && notification.ContainsKey (ADMIdentKey)) {
             string admIdent = (string)notification[ADMIdentKey];
             if(!string.IsNullOrEmpty(admIdent) && (admIdent == LastOpenedNotification)) {
@@ -632,30 +512,69 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
         }
 
         string pushId = GetPushId(notification);
-        SendPushEngagedEvent(pushId);
-        if (pushId != null && androidADMPlugin != null) {
-            // Acknowledge the opened notification
-            androidADMPlugin.CallStatic(AckOpenedNotificationName, pushId);
-        }
+        // Detect if the notification was opened from a rich push button
+        // If so, the two engagement have already been sent by the native SwrveEngageEventSender
+        bool processedNatively = (notification != null && notification.ContainsKey(PushUnityDoNotProcessKey));
+        if (!processedNatively) {
+            SendPushEngagedEvent(pushId);
+            // Process notification deeplink
+            if (notification != null && notification.ContainsKey (PushDeeplinkKey)) {
+                object deeplinkUrl = notification[PushDeeplinkKey];
+                if (deeplinkUrl != null) {
+                    OpenURL(deeplinkUrl.ToString());
+                }
+            }
+            // Process if the notification has campaign instead of deeplink
+            ProcessNotificationForCampaign(notification);
 
-        // Process push deeplink
-        if (notification != null && notification.ContainsKey (PushDeeplinkKey)) {
-            object deeplinkUrl = notification[PushDeeplinkKey];
-            if (deeplinkUrl != null) {
-                OpenURL(deeplinkUrl.ToString());
+        } else {
+            // if a button was pressed, we still have to render the campaign:
+            if(notification != null && notification.ContainsKey(PushButtonToCampaignIdKey)) {
+                object campaignId = notification[PushButtonToCampaignIdKey];
+                if(campaignId != null) {
+                    HandleCampaignFromNotification(campaignId.ToString());
+                }
             }
         }
 
-        if (PushNotificationListener != null) {
+        if (config.PushNotificationListener != null) {
             try {
-                PushNotificationListener.OnOpenedFromPushNotification(notification);
+                config.PushNotificationListener.OnOpenedFromPushNotification(parsePayload(notification));
             } catch (Exception exp) {
                 SwrveLog.LogError("Error processing the push notification: " + exp.Message);
             }
         }
     }
 
-    private Dictionary<string, object> parsePayload(Dictionary<string, object> notification) {
+    private void ProcessNotificationForCampaign (Dictionary<string, object> notification)
+    {
+        if (notification.ContainsKey(PushContentKey)) {
+            Dictionary<string, object> content = (Dictionary<string, object>)Json.Deserialize ((string)notification[PushContentKey]);
+            if (content != null && content.ContainsKey("campaign") && HasCorrectVersion(content)) {
+                Dictionary<string, object> campaign = (Dictionary<string, object>)content["campaign"];
+                if (campaign != null) {
+                    object campaignId = campaign["id"];
+                    if(campaignId != null) {
+                        HandleCampaignFromNotification(campaignId.ToString());
+                    }
+                }
+            }
+        }
+    }
+
+    private bool HasCorrectVersion (Dictionary<string, object> content)
+    {
+        /** Check the push version number **/
+        object version = content["version"];
+        if (version != null) {
+            int contentVersion = Int32.Parse(version.ToString());
+            return (contentVersion >= PushContentVersion);
+        }
+        return false;
+    }
+
+    private Dictionary<string, object> parsePayload(Dictionary<string, object> notification)
+    {
         Dictionary<string, object> payload = notification;
         // Parse nested JSON
         if (notification.ContainsKey(PushNestedJsonKey)) {
@@ -677,11 +596,6 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
 
     private void initNative ()
     {
-        AndroidInitNative();
-    }
-
-    private void AndroidInitNative()
-    {
         try {
             AndroidGetBridge ();
         } catch (Exception exp) {
@@ -696,6 +610,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
             using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
                 if (null == _androidBridge || !swrveAndroidCommonClass.CallStatic<bool> (IsInitialisedName)) {
                     _androidBridge = new AndroidJavaObject (SwrveAndroidUnityCommonName, GetNativeDetails ());
+                    _androidBridge.CallStatic("ready");
                 }
             }
         }
@@ -716,40 +631,6 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
         }
     }
 
-    private void startNativeLocation()
-    {
-        if (SwrveHelper.IsOnDevice ()) {
-            try {
-                AndroidGetBridge ().CallStatic(SwrveStartLocationName);
-            } catch (Exception exp) {
-                SwrveLog.LogWarning ("Couldn't start Swrve location from Android: " + exp.ToString ());
-            }
-        }
-    }
-
-    public void LocationUserUpdate(Dictionary<string, string> map)
-    {
-        if (SwrveHelper.IsOnDevice ()) {
-            try {
-                AndroidGetBridge ().CallStatic(SwrveLocationUserUpdateName, Json.Serialize(map));
-            } catch (Exception exp) {
-                SwrveLog.LogWarning ("Couldn't update location details from Android: " + exp.ToString ());
-            }
-        }
-    }
-
-    public string GetPlotNotifications()
-    {
-        if (SwrveHelper.IsOnDevice ()) {
-            try {
-                return AndroidGetBridge ().CallStatic<string>(SwrveGetPlotNotificationsName);
-            } catch (Exception exp) {
-                SwrveLog.LogWarning ("Couldn't get plot notifications from Android: " + exp.ToString ());
-            }
-        }
-        return "[]";
-    }
-
     private void setNativeConversationVersion()
     {
         try {
@@ -757,6 +638,11 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get conversations version from Android: " + exp.ToString());
         }
+    }
+
+    public static bool IsConversationDisplaying()
+    {
+        return false; // Android handles it's own queue. we just need to check application state.
     }
 
     private bool NativeIsBackPressed ()
@@ -805,15 +691,26 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
         }
     }
 
-    public static void QaUserLocationCampaignsDownloaded ()
+    private void UpdateNativeUserId()
+    {
+        if (SwrveHelper.IsOnDevice ()) {
+            try {
+                AndroidGetBridge().Call(SetUserId, this.profileManager.userId);
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't set userId from Android: " + exp.ToString());
+            }
+        }
+    }
+
+    private void ClearAllAuthenticatedNotifications()
     {
         if (SwrveHelper.IsOnDevice ()) {
             try {
                 using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass (SwrveAndroidUnityCommonName)) {
-                    swrveAndroidCommonClass.CallStatic(QaUserLocationCampaignsDownloadedName);
+                    swrveAndroidCommonClass.CallStatic(ClearAllUserAuthenticatedNotifications);
                 }
             } catch (Exception exp) {
-                SwrveLog.LogWarning("Couldn't update qauser from Android: " + exp.ToString());
+                SwrveLog.LogWarning("Couldn't clear all authenticated notifications from Android: " + exp.ToString());
             }
         }
     }
