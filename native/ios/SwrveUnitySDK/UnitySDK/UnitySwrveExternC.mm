@@ -77,10 +77,10 @@ extern "C"
     }
 
 
-    void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet)
+    void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet, bool provisional)
     {
         #if !defined(SWRVE_NO_PUSH)
-        return [UnitySwrveHelper registerForPushNotifications:[UnitySwrveHelper CStringToNSString:jsonUNCategorySet]];
+        return [UnitySwrveHelper registerForPushNotifications:[UnitySwrveHelper CStringToNSString:jsonUNCategorySet] andProvisional:provisional];
         #endif
     }
 
@@ -167,6 +167,7 @@ extern "C"
 #if !defined(SWRVE_NO_PUSH)
         // This methods will return the current status for old iOS versions or get it and send it to the Unity SDK component asynchronously
         __block NSString* prefabNameStr = [UnitySwrveHelper CStringToNSString:componentName];
+        
         UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
         [center getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings *_Nonnull settings) {
             NSString *pushAuthorizationFromSettings = swrve_permission_status_unknown;
@@ -176,6 +177,12 @@ extern "C"
                 pushAuthorizationFromSettings = swrve_permission_status_denied;
             } else if (settings.authorizationStatus == UNAuthorizationStatusNotDetermined) {
                 pushAuthorizationFromSettings = swrve_permission_status_unknown;
+            } else if (@available(iOS 12.0, *)) {
+                if (settings.authorizationStatus == UNAuthorizationStatusProvisional) {
+                    pushAuthorizationFromSettings = swrve_permission_status_provisional;
+                }
+            } else {
+                // Fallback on earlier versions
             }
 #ifdef UNITY_IOS
             UnitySendMessage([UnitySwrveHelper NSStringCopy:prefabNameStr], [UnitySwrveHelper NSStringCopy:@"SetPushNotificationsPermissionStatus"], [UnitySwrveHelper NSStringCopy:pushAuthorizationFromSettings]);

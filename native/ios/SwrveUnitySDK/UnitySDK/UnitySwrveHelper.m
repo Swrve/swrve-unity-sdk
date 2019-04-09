@@ -183,10 +183,18 @@
     return categorySet;
 }
 
-+(void) registerForPushNotifications:(NSString*)jsonCategorySet {
++(void) registerForPushNotifications:(NSString*)jsonCategorySet andProvisional:(BOOL)provisional {
 #if !defined(SWRVE_NO_PUSH)
     NSSet* pushCategories = [self categoryFromJson:jsonCategorySet];
-    [SwrvePermissions registerForRemoteNotifications:(UNAuthorizationOptionAlert + UNAuthorizationOptionSound + UNAuthorizationOptionBadge) withCategories:pushCategories andSDK:nil];
+    UNAuthorizationOptions notificationAuthOptions = (UNAuthorizationOptionAlert + UNAuthorizationOptionSound + UNAuthorizationOptionBadge);
+    if (provisional) {
+        if (@available(iOS 12.0, *)) {
+            notificationAuthOptions = notificationAuthOptions + UNAuthorizationOptionProvisional;
+        } else {
+            DebugLog(@"Provisional push permission is only supported on iOS 12 and up.");
+        }
+    }
+    [SwrvePermissions registerForRemoteNotifications:notificationAuthOptions withCategories:pushCategories andSDK:nil];
 #endif // !defined(SWRVE_NO_PUSH)
 }
 

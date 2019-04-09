@@ -259,7 +259,7 @@ public static partial class SwrveHelper
 
     public static string EscapeURL(string url)
     {
-#if UNITY_2017_1_OR_NEWER
+#if UNITY_2017_3_OR_NEWER
         return UnityWebRequest.EscapeURL (url);
 #else
         return WWW.EscapeURL (url);

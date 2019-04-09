@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public final static String SWRVE_TEMPORARY_PATH_KEY = "swrveTemporaryPath";
@@ -620,4 +621,18 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
         }
     }
 
+    @Override
+    public void setSessionListener(SwrveSessionListener sessionListener) {
+        // Added for geo but not used in Unity yet
+    }
+
+    @Override
+    public void fetchNotificationCampaigns(Set<Long> campaignIds) {
+        // Added for geo but not used in Unity yet
+    }
+
+    @Override
+    public File getCacheDir(Context context) {
+        return null;
+    }
 }

@@ -67,17 +67,23 @@ public class SwrveComponent : MonoBehaviour
     public void Init (int appId, string apiKey, SwrveConfig config = null)
     {
         if (SDK == null || SDK is SwrveEmpty) {
-            bool supportedOSVersion = true;
+            bool supportedOSAndVersion = true;
 #if !UNITY_EDITOR
-#if UNITY_IPHONE
-            supportedOSVersion = SwrveSDK.IsSupportediOSVersion();
-#endif
 
-#if UNITY_ANDROID
-            supportedOSVersion = SwrveSDK.IsSupportedAndroidVersion();
+#if UNITY_IPHONE
+            supportedOSAndVersion = SwrveSDK.IsSupportediOSVersion();
+#elif UNITY_ANDROID
+            supportedOSAndVersion = SwrveSDK.IsSupportedAndroidVersion();
+#else
+            #warning "We do not officially support this plaform. tracking is disabled."
+            supportedOSAndVersion = false;
+#endif            
+
+#elif !UNITY_IPHONE && !UNITY_ANDROID 
+            #warning "We do not officially support this plaform. tracking is disabled."
+            supportedOSAndVersion = false;
 #endif
-#endif
-            if (supportedOSVersion) {
+            if (supportedOSAndVersion) {
                 SDK = new SwrveSDK ();
             } else {
                 SDK = new SwrveEmpty ();

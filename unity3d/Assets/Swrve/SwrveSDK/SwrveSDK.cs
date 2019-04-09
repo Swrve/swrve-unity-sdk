@@ -38,7 +38,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "6.0";
+    public const string SdkVersion = "6.1";
 
     protected int appId;
     /// <summary>
@@ -254,12 +254,6 @@ public partial class SwrveSDK
                 throw new Exception ("App store must be apple, google, amazon or a custom app store");
 #endif
             }
-#if UNITY_IPHONE
-            // If we had a device token, keep asking for a new one
-            if (config.PushNotificationEnabled && !string.IsNullOrEmpty(iOSdeviceToken)) {
-                RegisterForPushNotificationsIOS();
-            }
-#endif
         }
 #endif
     }

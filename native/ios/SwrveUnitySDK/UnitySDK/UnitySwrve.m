@@ -673,8 +673,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
         NSString *authenticatedPush = userInfo[SwrveNotificationAuthenticatedUserKey];
         if (pushIdentifier && ![pushIdentifier isKindOfClass:[NSNull class]] &&
                 authenticatedPush && ![authenticatedPush isKindOfClass:[NSNull class]]) {
-            [self handleAuthenticatedPushNotification:userInfo];
-            return NO;
+            return [self handleAuthenticatedPushNotification:userInfo withCompletionHandler:completionHandler];
         }
     }
     // We won't call the completionHandler and the customer should handle it themselves
@@ -718,25 +717,47 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     }
 }
 
-+ (void)handleAuthenticatedPushNotification:(NSDictionary *)userInfo {
++ (BOOL)handleAuthenticatedPushNotification:(NSDictionary *)userInfo withCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary *)) completionHandler API_AVAILABLE(ios(7.0))  {
     id pushIdentifier = [userInfo objectForKey:SwrveNotificationIdentifierKey];
     if (pushIdentifier && ![pushIdentifier isKindOfClass:[NSNull class]]) {
 
         NSString *targetedUserId = userInfo[SwrveNotificationAuthenticatedUserKey];
         if (![targetedUserId isEqualToString:[[UnitySwrve sharedInstance] userId]]) {
             DebugLog(@"Could not handle authenticated notification.");
-            return;
+            return NO;
         }
 
         if (@available(iOS 10.0, *)) {
+            //for authenticated push we need to set the title, subtitle and body from the "_sw" dictionary
+            //as these values are removed by the backend from the "aps" dictionary to support silent push.
             UNMutableNotificationContent *notification = [[UNMutableNotificationContent alloc] init];
             notification.userInfo = userInfo;
-            notification.title = userInfo[SwrveNotificationTitleKey];
-            notification.subtitle = userInfo[SwrveNotificationSubtitleKey];
-            notification.body = userInfo[SwrveNotificationBodyKey];
+            
+            NSDictionary *richDict = [userInfo objectForKey:SwrveNotificationContentIdentifierKey];
+            NSDictionary *mediaDict = [richDict objectForKey:SwrveNotificationMediaKey];
+            if (mediaDict) {
+                if ([mediaDict objectForKey:SwrveNotificationTitleKey]) {
+                    notification.title = [mediaDict objectForKey:SwrveNotificationTitleKey];
+                }
+                if ([mediaDict objectForKey:SwrveNotificationSubtitleKey]) {
+                    notification.subtitle = [mediaDict objectForKey:SwrveNotificationSubtitleKey];
+                }
+                if ([mediaDict objectForKey:SwrveNotificationBodyKey]) {
+                    notification.body = [mediaDict objectForKey:SwrveNotificationBodyKey];
+                }
+            }
 
             [SwrvePush handleNotificationContent:notification withAppGroupIdentifier:nil
                     withCompletedContentCallback:^(UNMutableNotificationContent *content) {
+                        
+                        //if media url was present and failed to download, we wont show the push
+                        if ([content.userInfo[SwrveNotificationMediaDownloadFailed] boolValue]) {
+                            DebugLog(@"Media download failed, authenticated push does not support fallback text");
+                            if (completionHandler != nil) {
+                                completionHandler(UIBackgroundFetchResultFailed, nil);
+                            }
+                            return;
+                        }
 
                         NSString *requestIdentifier = [NSDateFormatter localizedStringFromDate:[NSDate date]
                                                                                      dateStyle:NSDateFormatterShortStyle
@@ -754,10 +775,15 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
                             } else {
                                 DebugLog(@"Authenticated Notification error %@", error);
                             }
+                            if (completionHandler != nil) {
+                                completionHandler(UIBackgroundFetchResultNewData, nil);
+                            }
                         }];
                     }];
+            return YES;
         }
     }
+    return NO;
 }
 #endif
 
@@ -778,6 +804,16 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
         [SwrveQA updateQAUser:map];
     }
+}
+    
+- (void)fetchNotificationCampaigns:(NSMutableSet *)campaignIds {
+    // added for geo, not supported in unity yet
+#pragma unused (campaignIds)
+}
+
+- (void)setSwrveSessionDelegate:(id<SwrveSessionDelegate>)sessionDelegate {
+    // added for geo, not supported in unity yet
+#pragma unused (sessionDelegate)
 }
 
 @end

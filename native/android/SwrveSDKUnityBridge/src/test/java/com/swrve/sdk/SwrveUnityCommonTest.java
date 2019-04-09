@@ -13,20 +13,22 @@ import org.json.JSONObject;
 import org.junit.Test;
 import org.robolectric.annotation.Config;
 
-import static junit.framework.Assert.assertEquals;
+import androidx.test.core.app.ApplicationProvider;
+
+import static org.junit.Assert.assertEquals;
 
 public class SwrveUnityCommonTest extends SwrveBaseTest {
 
     @Config(sdk = Build.VERSION_CODES.O)
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Test
-    public void testDefaultNotificationChannel() throws NoSuchFieldException, IllegalAccessException {
+    public void testDefaultNotificationChannel() {
         String channelId = "default-channel-id";
         String channelName = "default-channel-name";
         String channelImportance = "low";
 
         // Emulate call to register from the C# layer
-        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(shadowApplication.getApplicationContext());
+        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
         swrveCommon.setDefaultNotificationChannel(channelId, channelName, channelImportance);
         NotificationChannel notificationChannel = swrveCommon.getDefaultNotificationChannel();
         assertEquals(channelId, notificationChannel.getId());
@@ -37,8 +39,8 @@ public class SwrveUnityCommonTest extends SwrveBaseTest {
     @Test
     public void testSaveAndClearNotificationsId() throws JSONException {
         // Test setup.
-        SharedPreferences prefs = shadowApplication.getApplicationContext().getSharedPreferences(SwrveUnityCommon.SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
-        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(shadowApplication.getApplicationContext());
+        SharedPreferences prefs = ApplicationProvider.getApplicationContext().getSharedPreferences(SwrveUnityCommon.SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
 
         // Save 2 Notifications
         swrveCommon.saveNotificationAuthenticated(0);
@@ -60,12 +62,12 @@ public class SwrveUnityCommonTest extends SwrveBaseTest {
 
     @Test
     public void testMaxAuthenticatedCacheNotifications() throws JSONException {
-        SharedPreferences prefs = shadowApplication.getApplicationContext().getSharedPreferences(SwrveUnityCommon.SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
-        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(shadowApplication.getApplicationContext());
+        SharedPreferences prefs = ApplicationProvider.getApplicationContext().getSharedPreferences(SwrveUnityCommon.SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
 
-        int numberOfnotifications = SwrveUnityCommon.MAX_CACHED_AUTHENTICATED_NOTIFICATIONS + 5;
+        int numberOfNotifications = SwrveUnityCommon.MAX_CACHED_AUTHENTICATED_NOTIFICATIONS + 5;
         // Try save more notifications than should be supported by our cache system.
-        for(int i=0; i<numberOfnotifications; i++) {
+        for (int i = 0; i < numberOfNotifications; i++) {
             swrveCommon.saveNotificationAuthenticated(i);
         }
 

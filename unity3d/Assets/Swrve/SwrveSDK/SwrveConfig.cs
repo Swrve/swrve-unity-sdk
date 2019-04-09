@@ -148,6 +148,11 @@ public class SwrveConfig
     public bool PushNotificationEnabled = false;
 
     /// <summary>
+    /// Events that will register the device for provisional push in iOS.
+    /// </summary>
+    public HashSet<String> ProvisionalPushNotificationEvents = null;
+
+    /// <summary>
     /// Events that will trigger a push notification permission dialog in iOS.
     /// </summary>
     public HashSet<String> PushNotificationEvents = new HashSet<string> ()

@@ -16,7 +16,7 @@
 +(char*) localeCountry;
 +(char*) IDFV;
 +(char*) IDFA;
-+(void) registerForPushNotifications:(NSString*)jsonCategorySet;
++(void) registerForPushNotifications:(NSString*)jsonCategorySet andProvisional:(BOOL)provisional;
 +(bool) isSupportediOSVersion;
 
 +(NSSet*) categoryFromJson:(NSString*)jsonString;

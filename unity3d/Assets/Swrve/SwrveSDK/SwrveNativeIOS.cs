@@ -270,7 +270,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     private static extern string _swrveiOSAppVersion();
 
     [DllImport ("__Internal")]
-    private static extern void _swrveiOSRegisterForPushNotifications(string unJsonCategory);
+    private static extern void _swrveiOSRegisterForPushNotifications(string unJsonCategory, bool isProvisional);
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSLocaleCountry();
@@ -318,11 +318,11 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
     private string iOSdeviceToken;
 
-    protected void RegisterForPushNotificationsIOS()
+    protected void RegisterForPushNotificationsIOS(bool isProvisional)
     {
 #if !UNITY_EDITOR
         try {
-            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.NotificationCategories.Select(a => a.toDict ()).ToList ()));
+            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.NotificationCategories.Select(a => a.toDict ()).ToList ()), isProvisional);
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
 

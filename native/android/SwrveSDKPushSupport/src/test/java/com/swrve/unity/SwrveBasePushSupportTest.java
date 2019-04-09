@@ -2,7 +2,6 @@ package com.swrve.unity;
 
 import android.app.Activity;
 import android.app.Notification;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
@@ -11,7 +10,6 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 
 import com.swrve.sdk.SwrveNotificationBuilder;
@@ -33,11 +31,12 @@ import org.robolectric.shadows.ShadowNotification;
 import java.util.Date;
 import java.util.List;
 
+import androidx.test.core.app.ApplicationProvider;
+
 import static com.swrve.sdk.SwrveNotificationConstants.SOUND_DEFAULT;
 import static com.swrve.sdk.SwrveNotificationConstants.SOUND_KEY;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
 public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
@@ -51,7 +50,7 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
     @Test
     public void testNotifications()  {
 
-        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(shadowApplication.getApplicationContext());
+        new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
         String msgText = "hello";
         Bundle bundle = new Bundle();
         bundle.putString("_p", "10");
@@ -78,7 +77,7 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
     @Test
     public void testCreateNotificationBuilderWithPrefs() {
 
-        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(shadowApplication.getApplicationContext());
+        new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
         String msgTitle = "com.swrve.unity.swrvesdkpushsupport";
         String msgText = "hello";
         String icon = "common_google_signin_btn_icon_dark";
@@ -101,7 +100,7 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
     @Test
     public void testCreateNotificationBuilderWithDefaults() {
 
-        SwrveUnityCommon swrveCommon = new SwrveUnityCommon(shadowApplication.getApplicationContext());
+        new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
         String msgTitle = "com.swrve.unity.swrvesdkpushsupport";
         String msgText = "hello";
         int iconId = 0;
@@ -164,31 +163,5 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
         assertEquals("Notification icon is wrong", icon, notification.icon);
         assertEquals("Notification icon is wrong", colorId, builder.getColor());
         assertEquals("Notification sound is wrong",  sound, notification.sound == null ? null : notification.sound.toString());
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    protected void testNotificationChannelAssert(String channelId, String channelName) {
-        String msgText = "hello";
-        Bundle bundle = new Bundle();
-        bundle.putString("_p", "10");
-        bundle.putString(SwrveNotificationConstants.TEXT_KEY, msgText);
-        bundle.putString("custom", "key");
-
-        serviceOnMessageReceived(bundle);
-
-        // Check a notification has been shown
-        NotificationManager notificationManager = (NotificationManager) RuntimeEnvironment.application.getSystemService(Context.NOTIFICATION_SERVICE);
-        List<Notification> notifications = shadowOf(notificationManager).getAllNotifications();
-        Assert.assertEquals(1, notifications.size());
-        Notification notification = notifications.get(0);
-        assertEquals(msgText, notification.tickerText);
-        assertEquals(channelId, notification.getChannelId());
-
-        // Check that the channel was created by our SDK
-        NotificationChannel channel = (NotificationChannel) shadowOf(notificationManager).getNotificationChannel(channelId);
-        assertNotNull(channel);
-        assertEquals(channelId, channel.getId());
-        assertEquals(channelName, channel.getName());
-        assertEquals(NotificationManager.IMPORTANCE_MIN, channel.getImportance());
     }
 }

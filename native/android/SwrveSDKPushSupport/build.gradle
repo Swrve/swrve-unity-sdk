@@ -49,10 +49,11 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:1.9.0'
     testImplementation 'org.robolectric:shadows-support-v4:3.4-rc2'
     testImplementation 'org.robolectric:shadows-httpclient:3.4-rc2'
+    testImplementation 'androidx.test:core:1.0.0'
 
     // Roboelectric tests
     testImplementation 'junit:junit:4.12'
-    testImplementation('org.robolectric:robolectric:3.5.1') {
+    testImplementation('org.robolectric:robolectric:4.2') {
         exclude group: 'commons-logging', module: 'commons-logging'
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'
     }

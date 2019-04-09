@@ -20,7 +20,7 @@ import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.shadows.ShadowLog;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = Build.VERSION_CODES.LOLLIPOP)
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public abstract class SwrveBaseTest {
 
@@ -28,7 +28,7 @@ public abstract class SwrveBaseTest {
     protected Activity mActivity;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         SwrveLogger.setLogLevel(Log.VERBOSE);
         ShadowLog.stream = System.out;
         shadowApplication = Shadows.shadowOf(RuntimeEnvironment.application);
@@ -39,7 +39,7 @@ public abstract class SwrveBaseTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         // empty
     }
 }

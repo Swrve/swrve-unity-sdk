@@ -3,6 +3,7 @@
 
 public partial class SwrveSDK
 {
+
     private void setNativeInfo (Dictionary<string, string> deviceInfo) {}
     private string getNativeLanguage ()
     {
@@ -20,6 +21,7 @@ public partial class SwrveSDK
         return false;
     }
     public void updateQAUser(Dictionary<string, object> map) {}
+    private void initNative (){}
 }
 
 #endif

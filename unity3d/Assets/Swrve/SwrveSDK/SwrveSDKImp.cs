@@ -849,9 +849,13 @@ public partial class SwrveSDK
             AppendEventToBuffer (eventJson);
 
 #if UNITY_IPHONE
-            // Ask for push notification permission dialog
-            if (config.PushNotificationEnabled && config.PushNotificationEvents != null && config.PushNotificationEvents.Contains(eventName)) {
-                RegisterForPushNotificationsIOS();
+            if (config.PushNotificationEnabled) {
+                // Ask for push notification permission dialog
+                if (config.PushNotificationEvents != null && config.PushNotificationEvents.Contains(eventName)) {
+                    RegisterForPushNotificationsIOS (false);
+                } else if (config.ProvisionalPushNotificationEvents != null && config.ProvisionalPushNotificationEvents.Contains(eventName)) {
+                    RegisterForPushNotificationsIOS (true);
+                }
             }
 #endif
         } else {
