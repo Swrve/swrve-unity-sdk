@@ -8,7 +8,7 @@
 #endif //SWRVE_LOG_IDFA
 #if !defined(SWRVE_NO_PUSH)
 #import <UserNotifications/UserNotifications.h>
-#import "SwrvePushMediaHelper.h"
+#import "SwrveNotificationOptions.h"
 #endif //!defined(SWRVE_NO_PUSH)
 
 @implementation UnitySwrveHelper
@@ -156,12 +156,12 @@
                 NSString *actionId = [actionEntry objectForKey:@"identifier"];
                 NSString *actionTitle = [actionEntry objectForKey:@"title"];
                 NSArray *buttonOptions = [actionEntry objectForKey:@"options"];
-                UNNotificationAction* actionButton = [UNNotificationAction actionWithIdentifier:actionId title:actionTitle options:[SwrvePushMediaHelper actionOptionsForKeys:buttonOptions]];
+                UNNotificationAction* actionButton = [UNNotificationAction actionWithIdentifier:actionId title:actionTitle options:[SwrveNotificationOptions actionOptionsForKeys:buttonOptions]];
                 [actions addObject:actionButton];
             }
 
             NSMutableArray *intentIdentifiers = [NSMutableArray array];
-            UNNotificationCategory* category = [UNNotificationCategory categoryWithIdentifier:identifier actions:actions intentIdentifiers:intentIdentifiers options:[SwrvePushMediaHelper categoryOptionsForKeys:options]];
+            UNNotificationCategory* category = [UNNotificationCategory categoryWithIdentifier:identifier actions:actions intentIdentifiers:intentIdentifiers options:[SwrveNotificationOptions categoryOptionsForKeys:options]];
 
             [categorySet addObject:category];
         }
@@ -260,11 +260,6 @@
         [app registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound | UIRemoteNotificationTypeNewsstandContentAvailability];
 #endif //defined(__IPHONE_8_0)
     }
-}
-
-+(void) initPlot
-{
-    [[UnitySwrveCommonDelegate sharedInstance] initLocation];
 }
 
 + (bool) isSupportediOSVersion {

@@ -17,9 +17,6 @@ extern "C"
     void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet, char* jsonUICategorySet);
     void _swrveiOSInitNative(char* jsonConfig);
     void _swrveiOSShowConversation(char* conversation);
-    void _swrveiOSStartLocation();
-    void _swrveiOSLocationUserUpdate(char* jsonMap);
-    char* _swrveiOSPlotNotifications();
     bool _swrveiOSIsSupportedOSVersion();
     char* _swrveInfluencedDataJson();
     char* _swrvePushNotificationStatus(char* componentName);

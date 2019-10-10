@@ -236,16 +236,6 @@ public class SwrveComponent : MonoBehaviour
     }
 
     // Used by the native internals. Please use the SDK object directly.
-    public void SetLocationSegmentVersion(string locationSegmentVersion)
-    {
-        try {
-            SDK.SetLocationSegmentVersion(int.Parse(locationSegmentVersion));
-        } catch (System.Exception e) {
-            SwrveLog.LogError (e.ToString(), "location");
-        }
-    }
-
-    // Used by the native internals. Please use the SDK object directly.
     public void UserUpdate(string userUpdate)
     {
         try {

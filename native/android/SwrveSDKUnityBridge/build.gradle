@@ -21,7 +21,6 @@ android {
 dependencies {
     api project(':SwrveConversationSDK')
     api project(':UnityFacade')
-    api project(':SwrveLocationSDK')
 
     // Unit tests
     testApi 'org.mockito:mockito-core:1.9.0'

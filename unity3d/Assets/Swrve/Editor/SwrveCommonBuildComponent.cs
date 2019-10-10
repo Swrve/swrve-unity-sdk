@@ -31,7 +31,7 @@ public class SwrveCommonBuildComponent
 #endif
 
 #if UNITY_5 || UNITY_2017_1_OR_NEWER
-#if UNITY_2017_1_OR_NEWER
+#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTargetGroup.iOS, BuildTarget.iOS);
 #else
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
@@ -57,7 +57,7 @@ public class SwrveCommonBuildComponent
 	protected static void BuildAndroid (string fileName, BuildOptions opt, string[] mainScenes, string applicationIdentifier)
     {
         UnityEngine.Debug.Log ("[####] Building " + fileName);
-#if UNITY_2017_1_OR_NEWER
+#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTargetGroup.Android, BuildTarget.Android);
 #else
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.Android);

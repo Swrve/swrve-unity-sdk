@@ -4,6 +4,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
+using UnityEngine;
+using UnityEngine.Networking;
 
 namespace SwrveUnity.Helpers
 {
@@ -44,7 +46,7 @@ public static class SwrveHelper
     public static void Shuffle<T> (this IList<T> list)
     {
         int n = list.Count;
-        Random rnd = new Random ();
+        System.Random rnd = new System.Random ();
         while (n > 1) {
             int k = (rnd.Next (0, n) % n);
             n--;
@@ -197,6 +199,15 @@ public static class SwrveHelper
         available = UnityEngine.Application.platform == platform;
 
         return available;
+    }
+
+      public static string EscapeURL(string url)
+    {
+#if UNITY_2017_1_OR_NEWER
+        return UnityWebRequest.EscapeURL (url);
+#else
+        return WWW.EscapeURL (url);
+#endif
     }
 }
 }

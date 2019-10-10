@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "5.1.3";
+    public const string SdkVersion = "5.2";
 
     protected int appId;
     /// <summary>
@@ -269,7 +269,7 @@ public partial class SwrveSDK
             PlayerPrefs.Save ();
         }
         SwrveLog.Log("Your user id is: " + this.userId);
-        this.escapedUserId = WWW.EscapeURL (this.userId);
+        this.escapedUserId = SwrveHelper.EscapeURL (this.UserId);
 
         // Language
         if (string.IsNullOrEmpty(Language)) {
@@ -710,8 +710,7 @@ public partial class SwrveSDK
         if (Initialised && !abTestUserResourcesDiffConnecting) {
             abTestUserResourcesDiffConnecting = true;
             StringBuilder getRequest = new StringBuilder (abTestResourcesDiffUrl);
-            getRequest.AppendFormat ("?user={0}&api_key={1}&app_version={2}&joined={3}", escapedUserId, apiKey, WWW.EscapeURL (GetAppVersion()), installTimeEpoch);
-
+            getRequest.AppendFormat ("?user={0}&api_key={1}&app_version={2}&joined={3}", escapedUserId, apiKey, SwrveHelper.EscapeURL (GetAppVersion()), installTimeEpoch);
             SwrveLog.Log("AB Test User Resources Diff request: " + getRequest.ToString());
 
             StartTask ("GetUserResourcesDiff_Coroutine", GetUserResourcesDiff_Coroutine (getRequest.ToString (), onResult, onError, AbTestUserResourcesDiffSave));
@@ -1040,11 +1039,6 @@ public partial class SwrveSDK
 #else
         return false;
 #endif
-    }
-
-    public void SetLocationSegmentVersion(int locationSegmentVersion)
-    {
-        this.locationSegmentVersion = locationSegmentVersion;
     }
 
     public void SetConversationVersion(int conversationVersion)

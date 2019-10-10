@@ -7,14 +7,14 @@
 #import <CommonCrypto/CommonHMAC.h>
 
 #import "SwrvePush.h"
-#import "SwrvePushInternalAccess.h"
-#import "SwrvePushConstants.h"
+#import "SwrveNotificationConstants.h"
+#import "SwrveCampaignInfluence.h"
 #import "SwrveQA.h"
 
 static UnitySwrveCommonDelegate *_swrveSharedUnity = NULL;
 static dispatch_once_t sharedInstanceToken = 0;
 
-NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
+NSString *const SwrveNotificationCustomButtonOpenAppIdentiferKey = @"open_app";
 
 @interface UnitySwrveCommonDelegate()
 
@@ -440,42 +440,6 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
     return appGroupIdentifierCache;
 }
 
--(void) initLocation
-{
-#ifdef SWRVE_LOCATION_SDK
-    [SwrvePlot initializeWithLaunchOptions:nil delegate:self];
-#endif
-}
-
--(void) locationUserUpdate:(NSString*) jsonMap
-{
-#ifdef SWRVE_LOCATION_SDK
-    NSError* error = nil;
-    NSDictionary* map =
-        [NSJSONSerialization JSONObjectWithData:[jsonMap dataUsingEncoding:NSUTF8StringEncoding]
-                                        options:NSJSONReadingMutableContainers error:&error];
-    [SwrvePlot userUpdate:map];
-#endif
-}
-
--(NSString*) plotNotifications
-{
-    NSMutableArray* notifications = [NSMutableArray array];
-#ifdef SWRVE_LOCATION_SDK
-    NSArray* plotNotifications = [Plot loadedNotifications];
-    for (uint i = 0; i < [plotNotifications count]; i++) {
-        [notifications addObject:[[((UNNotificationRequest*)plotNotifications[i]).content userInfo] valueForKey:@"action"]];
-    };
-#endif
-    NSData* jsonData = [NSJSONSerialization dataWithJSONObject:notifications options:0 error:nil];
-    return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-}
-
--(void) setLocationSegmentVersion:(int)version {
-    [self sendMessageUp:@"SetLocationSegmentVersion"
-                    msg:[NSString stringWithFormat:@"%d", version]];
-}
-
 -(NSData*) campaignData:(int)category {
     if(SWRVE_CAMPAIGN_LOCATION == category) {
         // We could add a security check here
@@ -510,7 +474,7 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
 }
 
 - (void) pushNotificationResponseReceived:(NSString*) identifier withUserInfo:(NSDictionary *) userInfo {
-    id pushIdentifier = [userInfo objectForKey:SwrvePushIdentifierKey];
+    id pushIdentifier = [userInfo objectForKey:SwrveNotificationIdentifierKey];
     if (pushIdentifier && ![pushIdentifier isKindOfClass:[NSNull class]]) {
         NSString* pushId = @"-1";
         if ([pushIdentifier isKindOfClass:[NSString class]]) {
@@ -531,12 +495,12 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
             // Engagement replaces Influence Data
             [self clearInfluenceDataForPushId:pushId];
 
-            if([identifier isEqualToString:SwrvePushResponseDefaultActionKey]) {
+            if([identifier isEqualToString:SwrveNotificationResponseDefaultActionKey]) {
                 // if the user presses the push directly
-                id pushDeeplinkRaw = [userInfo objectForKey:SwrvePushDeeplinkKey];
+                id pushDeeplinkRaw = [userInfo objectForKey:SwrveNotificationDeeplinkKey];
                 if (pushDeeplinkRaw == nil || ![pushDeeplinkRaw isKindOfClass:[NSString class]]) {
                     // Retrieve old push deeplink for backwards compatibility
-                    pushDeeplinkRaw = [userInfo objectForKey:SwrvePushDeprecatedDeeplinkKey];
+                    pushDeeplinkRaw = [userInfo objectForKey:SwrveNotificationDeprecatedDeeplinkKey];
                 }
                 if ([pushDeeplinkRaw isKindOfClass:[NSString class]]) {
                     NSString* pushDeeplink = (NSString*)pushDeeplinkRaw;
@@ -547,18 +511,18 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
                 [self sendPushResponse:userInfo];
                 DebugLog(@"Performed a Direct Press on Swrve notification with ID %@", pushId);
             } else {
-                NSDictionary *swrveValues = [userInfo objectForKey:SwrvePushContentIdentifierKey];
-                NSArray *swrvebuttons = [swrveValues objectForKey:SwrvePushButtonListKey];
+                NSDictionary *swrveValues = [userInfo objectForKey:SwrveNotificationContentIdentifierKey];
+                NSArray *swrvebuttons = [swrveValues objectForKey:SwrveNotificationButtonListKey];
 
                 if (swrvebuttons != nil && [swrvebuttons count] > 0) {
                     int position = [identifier intValue];
 
                     NSDictionary *selectedButton = [swrvebuttons objectAtIndex:(NSUInteger)position];
-                    NSString *action = [selectedButton objectForKey:SwrvePushButtonActionKey];
-                    NSString *actionType = [selectedButton objectForKey:SwrvePushButtonActionTypeKey];
-                    NSString *actionText = [selectedButton objectForKey:SwrvePushButtonTitleKey];
+                    NSString *action = [selectedButton objectForKey:SwrveNotificationButtonActionKey];
+                    NSString *actionType = [selectedButton objectForKey:SwrveNotificationButtonActionTypeKey];
+                    NSString *actionText = [selectedButton objectForKey:SwrveNotificationButtonTitleKey];
                     // Process deeplink if available in Action
-                    if ([actionType isEqualToString:SwrvePushCustomButtonUrlIdentiferKey]) {
+                    if ([actionType isEqualToString:SwrveNotificationCustomButtonUrlIdentiferKey]) {
                         [self handlePushDeeplinkString:action];
                     }
 
@@ -578,7 +542,7 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
                     [self sendQueuedEvents];
 
                     // If the action is open app we let Unity know about the push payload
-                    if ([actionType isEqualToString:SwrvePushCustomButtonOpenAppIdentiferKey]) {
+                    if ([actionType isEqualToString:SwrveNotificationCustomButtonOpenAppIdentiferKey]) {
                         // Unity will send the engagement event when the app opens
                         [self sendPushResponse:userInfo];
                     } else {
@@ -645,20 +609,6 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
     }
 }
 
-#ifdef SWRVE_LOCATION_SDK
--(void)plotFilterNotifications:(PlotFilterNotifications*)filterNotifications {
-    [SwrvePlot filterLocationCampaigns:filterNotifications];
-}
-
--(void)plotHandleNotification:(UNNotificationRequest*)notification data:(NSString*)data {
-    [SwrvePlot engageLocationCampaign:notification withData:data];
-}
-
--(void)plotNotificationSentEvent:(PlotSentNotification*)notification {
-    [SwrvePlot sentLocationCampaign:notification];
-}
-#endif
-
 + (BOOL) didReceiveRemoteNotification:(NSDictionary*)userInfo withBackgroundCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary*))completionHandler {
     id pushIdentifier = [userInfo objectForKey:SwrveSilentPushIdentifierKey];
     if (pushIdentifier && ![pushIdentifier isKindOfClass:[NSNull class]]) {
@@ -673,7 +623,7 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
             DebugLog(@"Unknown Swrve notification ID class for _sp attribute", nil);
             return NO;
         }
-        [SwrvePush saveInfluencedData:userInfo withPushId:pushId atDate:[NSDate date]];
+        [SwrveCampaignInfluence saveInfluencedData:userInfo withId:pushId withAppGroupID:nil atDate:[NSDate date]];
         DebugLog(@"Got Swrve silent notification with ID %@", pushId);
 
         if (completionHandler != nil) {
@@ -699,15 +649,27 @@ NSString *const SwrvePushCustomButtonOpenAppIdentiferKey = @"open_app";
 }
 
 -(void) updateQAUser:(NSString *)qaJson {
-    
+
     NSError* error = nil;
     NSDictionary* map =
     [NSJSONSerialization JSONObjectWithData:[qaJson dataUsingEncoding:NSUTF8StringEncoding]
                                     options:NSJSONReadingMutableContainers error:&error];
     if (error == nil) {
-        
+
         [SwrveQA updateQAUser:map];
     }
+}
+
+-(NSString *)contentServer {
+    return @""; // added for geo, not supported in unity yet
+}
+
+- (NSString *)joined {
+    return @""; // added for geo, not supported in unity yet
+}
+
+- (NSString *)language {
+    return @""; // added for geo, not supported in unity yet
 }
 
 @end

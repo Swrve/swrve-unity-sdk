@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "SwrveUnitySDK"
-  s.version          = "5.1.3"
+  s.version          = "5.2.0"
   s.summary          = "iOS Common library for Swrve."
   s.homepage         = "http://www.swrve.com"
   s.license          = { "type" => "Apache License, Version 2.0", "file" => "native/ios/#{s.name}/LICENSE" }
@@ -14,6 +14,6 @@ Pod::Spec.new do |s|
   s.source_files = "native/ios/#{s.name}/UnitySDK/**/*.{mm,m,h}"
   s.public_header_files = "native/ios/#{s.name}/UnitySDK/**/*.h"
 
-  s.dependency "SwrveSDKCommon", "~> 5.1.2"
-  s.dependency "SwrveConversationSDK", "~> 5.1.2"
+  s.dependency "SwrveSDKCommon", "~> 5.3.2"
+  s.dependency "SwrveConversationSDK", "~> 5.3.2"
 end

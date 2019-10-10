@@ -3,7 +3,7 @@
 #import "UnitySwrveHelper.h"
 #import "UnitySwrveCommonMessageController.h"
 #import "SwrveBaseConversation.h"
-#import "SwrvePushConstants.h"
+#import "SwrveCampaignInfluence.h"
 
 #if !defined(SWRVE_NO_PUSH)
 #import <UserNotifications/UserNotifications.h>
@@ -83,21 +83,6 @@ extern "C"
     void _swrveiOSShowConversation(char* conversation)
     {
         [[UnitySwrveMessageEventHandler alloc] showConversationFromString:[UnitySwrveHelper CStringToNSString:conversation]];
-    }
-
-    void _swrveiOSStartLocation()
-    {
-        [[UnitySwrveCommonDelegate sharedInstance] initLocation];
-    }
-
-    void _swrveiOSLocationUserUpdate(char* jsonMap)
-    {
-        [[UnitySwrveCommonDelegate sharedInstance] locationUserUpdate:[UnitySwrveHelper CStringToNSString:jsonMap]];
-    }
-
-    char* _swrveiOSPlotNotifications()
-    {
-        return [UnitySwrveHelper NSStringCopy:[[UnitySwrveCommonDelegate sharedInstance] plotNotifications]];
     }
 
     bool _swrveiOSIsSupportedOSVersion()
@@ -216,7 +201,7 @@ extern "C"
 #endif
         return [UnitySwrveHelper NSStringCopy:backgroundRefreshStatus];
     }
-    
+
     void _swrveiOSUpdateQaUser(char* jsonMap)
     {
         [[UnitySwrveCommonDelegate sharedInstance] updateQAUser:[UnitySwrveHelper CStringToNSString:jsonMap]];

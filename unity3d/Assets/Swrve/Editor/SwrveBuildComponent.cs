@@ -21,9 +21,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
 
     private const string POSTPROCESS_JSON = "Assets/Swrve/Editor/postprocess.json";
     private const string TEMPLATE_CONTENT = "REPLACEME";
-    private const string PLOT_PUBLIC_TOKEN_KEY = "publicToken";
     private const string APP_GROUP_ID_PUBLIC_KEY = "appGroupIdentifier";
-    public const string PLOT_TOKEN_KEY = "PlotToken";
     public const string APP_GROUP_ID_KEY = "iOSAppGroupIdentifier";
 
     private static Dictionary<string, object> postprocessJson = null;
@@ -128,6 +126,24 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     {
         string outputPath = "../../buildtemp/tmp_iOS";
 
+#if UNITY_2018_3_OR_NEWER
+        // Build iOS
+        PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.iOS, ManagedStrippingLevel.Disabled);
+        BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
+
+        // Build with mscorlib
+        PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.iOS, ManagedStrippingLevel.Low);
+        BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
+
+        // Build with strip bytecode
+        PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.iOS, ManagedStrippingLevel.Medium);
+        BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
+
+        // Build with strip assemblies
+        PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.iOS, ManagedStrippingLevel.High);
+        BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
+#else
+
         // Build iOS
         PlayerSettings.strippingLevel = StrippingLevel.Disabled;
         BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
@@ -143,12 +159,31 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         // Build with strip assemblies
         PlayerSettings.strippingLevel = StrippingLevel.StripAssemblies;
         BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
+#endif
     }
 
     [MenuItem ("Swrve/Android/Test build with all stripping levels")]
     public static void TestBuildAndroid ()
     {
         string outputPath = "../../buildtemp/tmp_Android.apk";
+
+#if UNITY_2018_3_OR_NEWER
+        // Build Android
+        PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.Disabled);
+        BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
+
+        // Build with mscorlib
+        PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.Low);
+        BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
+
+        // Build with strip bytecode
+        PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.Medium);
+        BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
+
+        // Build with strip assemblies
+        PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.High);
+        BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
+#else
 
         // Build Android
         PlayerSettings.strippingLevel = StrippingLevel.Disabled;
@@ -165,6 +200,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         // Build with strip assemblies
         PlayerSettings.strippingLevel = StrippingLevel.StripAssemblies;
         BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
+#endif
     }
 
 #if !UNITY_5_4_OR_NEWER
@@ -183,7 +219,6 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     public static void AndroidPreBuild()
     {
         AndroidCorrectApplicationId();
-        SetPlotConfigKey("android");
     }
 
     private static void AndroidCorrectApplicationId()
@@ -206,40 +241,6 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
             }
         }
         AssetDatabase.Refresh ();
-    }
-
-    public static void SetPlotConfigKey(string platform, string writePath=null)
-    {
-        platform = platform.ToLower();
-
-        string readPath = null;
-        if("android" == platform) {
-            readPath = "Assets/Plugins/Android/SwrveLocationSDK/assets";
-        } else if("ios" == platform) {
-            readPath = "Assets/Plugins/iOS/SwrveLocationSDK";
-        } else {
-            SwrveLog.Log(string.Format("{0} is an unknown platform, returning", platform));
-            return;
-        }
-        if(!Directory.Exists(readPath)) {
-            return;
-        }
-        readPath = Path.Combine(readPath, "plotconfig.json");
-
-        string plotToken = SwrveBuildComponent.GetPostProcessString(SwrveBuildComponent.PLOT_TOKEN_KEY);
-        if(string.IsNullOrEmpty(plotToken)) {
-            SwrveLog.Log(string.Format("No plot token set in postprocess file, not adding plotconfig.json for {0}", platform));
-            return;
-        }
-
-        if(string.IsNullOrEmpty(writePath)) {
-            writePath = readPath;
-        }
-
-        Dictionary<string, object> plotconfig =
-            (Dictionary<string, object>)Json.Deserialize(File.ReadAllText(readPath));
-        plotconfig[PLOT_PUBLIC_TOKEN_KEY] = plotToken;
-        File.WriteAllText(writePath, Json.Serialize(plotconfig));
     }
 
     public static void SetAppGroupConfigKey(string platform, string writePath=null)

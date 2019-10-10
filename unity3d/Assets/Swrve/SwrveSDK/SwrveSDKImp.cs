@@ -5,6 +5,7 @@ using System.Linq;
 using SwrveUnity;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Networking;
 using SwrveUnityMiniJSON;
 using System.IO;
 using SwrveUnity.REST;
@@ -1180,10 +1181,18 @@ public partial class SwrveSDK
     {
         string filePath = GetTemporaryPathFileName (fileName);
 
+#if UNITY_2017_1_OR_NEWER
+        UnityWebRequest www = UnityWebRequestTexture.GetTexture("file://" + filePath);
+        yield return www.SendWebRequest();
+        if (!www.isNetworkError && !www.isHttpError) {
+            Texture2D loadedTexture = ((DownloadHandlerTexture)www.downloadHandler).texture;
+#else
+
         WWW www = new WWW ("file://" + filePath);
         yield return www;
         if (www != null && www.error == null) {
             Texture2D loadedTexture = www.texture;
+#endif
             texture.Value (loadedTexture);
         } else {
             SwrveLog.LogError ("Could not load asset with WWW " + filePath + ": " + www.error);
@@ -1381,18 +1390,15 @@ public partial class SwrveSDK
                 string deviceName = GetDeviceModel ();
                 string osVersion = SystemInfo.operatingSystem;
                 StringBuilder getRequest = new StringBuilder (resourcesAndCampaignsUrl)
-                .AppendFormat ("?user={0}&api_key={1}&app_version={2}&joined={3}", escapedUserId, ApiKey, WWW.EscapeURL (GetAppVersion ()), installTimeEpoch);
+                .AppendFormat ("?user={0}&api_key={1}&app_version={2}&joined={3}", escapedUserId, ApiKey, SwrveHelper.EscapeURL (GetAppVersion ()), installTimeEpoch);
 
                 if (config.MessagingEnabled) {
                     getRequest.AppendFormat ("&version={0}&orientation={1}&language={2}&app_store={3}&device_width={4}&device_height={5}&device_dpi={6}&os_version={7}&device_name={8}",
                                              CampaignEndpointVersion, config.Orientation.ToString ().ToLower (), Language, config.AppStore,
-                                             deviceWidth, deviceHeight, dpi, WWW.EscapeURL (osVersion), WWW.EscapeURL (deviceName));
+                                             deviceWidth, deviceHeight, dpi, SwrveHelper.EscapeURL (osVersion), SwrveHelper.EscapeURL (deviceName));
                 }
                 if (config.ConversationsEnabled) {
                     getRequest.AppendFormat("&conversation_version={0}", this.conversationVersion);
-                }
-                if (config.LocationEnabled) {
-                    getRequest.AppendFormat("&location_version={0}", this.locationSegmentVersion);
                 }
 
 				if (config.ABTestDetailsEnabled) {
@@ -1500,19 +1506,6 @@ public partial class SwrveSDK
 							}
 						}
 
-                        if (config.LocationEnabled) {
-                            if (root.ContainsKey("location_campaigns")) {
-                                Dictionary<string, object> locationData = (Dictionary<string, object>)root["location_campaigns"];
-#if UNITY_IPHONE
-                                locationData = (Dictionary<string, object>)locationData["campaigns"];
-#endif
-                                string locationJson = SwrveUnityMiniJSON.Json.Serialize(locationData);
-                                SaveLocationCache (locationJson);
-#if UNITY_ANDROID
-                                QaUserLocationCampaignsDownloaded();
-#endif
-                            }
-                        }
                     }
                 }
             } else {
@@ -1745,17 +1738,6 @@ public partial class SwrveSDK
     {
         initNative ();
         setNativeConversationVersion ();
-
-        if (config.LocationAutostart) {
-            startLocation ();
-        }
-    }
-
-    protected void startLocation()
-    {
-        if (config.LocationEnabled) {
-            startNativeLocation ();
-        }
     }
 
     private void ProcessInfluenceData()

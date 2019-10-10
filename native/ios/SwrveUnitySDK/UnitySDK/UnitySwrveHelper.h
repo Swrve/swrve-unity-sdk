@@ -17,7 +17,6 @@
 +(char*) IDFV;
 +(char*) IDFA;
 +(void) registerForPushNotifications:(NSString*)jsonCategorySet withBackwardsCompatibility:(NSString*)backCompatJsonCategorySet;
-+(void) initPlot;
 +(bool) isSupportediOSVersion;
 
 +(NSSet*) categoryFromJson:(NSString*)jsonString;

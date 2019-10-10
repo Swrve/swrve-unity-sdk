@@ -18,9 +18,6 @@ private const string IsInitialisedName = "isInitialised";
 private const string GetConversationVersionName = "getConversationVersion";
 private const string ShowConversationName = "showConversation";
 private const string SetDefaultNotificationChannelName = "setDefaultNotificationChannel";
-private const string SwrveStartLocationName = "startLocation";
-private const string SwrveLocationUserUpdateName = "locationUserUpdate";
-private const string SwrveGetPlotNotificationsName = "getPlotNotifications";
 private const string SwrveIsOSSupportedVersionName = "sdkAvailable";
 private const string GetInfluencedDataJsonName = "getInfluenceDataJson";
 
@@ -714,40 +711,6 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
         }
-    }
-
-    private void startNativeLocation()
-    {
-        if (SwrveHelper.IsOnDevice ()) {
-            try {
-                AndroidGetBridge ().CallStatic(SwrveStartLocationName);
-            } catch (Exception exp) {
-                SwrveLog.LogWarning ("Couldn't start Swrve location from Android: " + exp.ToString ());
-            }
-        }
-    }
-
-    public void LocationUserUpdate(Dictionary<string, string> map)
-    {
-        if (SwrveHelper.IsOnDevice ()) {
-            try {
-                AndroidGetBridge ().CallStatic(SwrveLocationUserUpdateName, Json.Serialize(map));
-            } catch (Exception exp) {
-                SwrveLog.LogWarning ("Couldn't update location details from Android: " + exp.ToString ());
-            }
-        }
-    }
-
-    public string GetPlotNotifications()
-    {
-        if (SwrveHelper.IsOnDevice ()) {
-            try {
-                return AndroidGetBridge ().CallStatic<string>(SwrveGetPlotNotificationsName);
-            } catch (Exception exp) {
-                SwrveLog.LogWarning ("Couldn't get plot notifications from Android: " + exp.ToString ());
-            }
-        }
-        return "[]";
     }
 
     private void setNativeConversationVersion()

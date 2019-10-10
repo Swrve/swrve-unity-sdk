@@ -77,7 +77,7 @@ public class UnityWwwHelper
 
         return WwwDeducedError.NoError;
     }
-#endif
+#else
     public static WwwDeducedError DeduceWwwError (WWW request)
     {
         // Check response headers for X-Swrve-Error
@@ -118,5 +118,6 @@ public class UnityWwwHelper
 
         return WwwDeducedError.NoError;
     }
+#endif
 }
 }

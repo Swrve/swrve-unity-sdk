@@ -283,15 +283,6 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     private static extern string _swrveiOSIDFV();
 
     [DllImport ("__Internal")]
-    private static extern void _swrveiOSStartLocation();
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSPlotNotifications();
-
-    [DllImport ("__Internal")]
-    private static extern void _swrveiOSLocationUserUpdate(string jsonMap);
-
-    [DllImport ("__Internal")]
     private static extern void _swrveiOSInitNative(string jsonConfig);
 
     [DllImport ("__Internal")]
@@ -532,45 +523,6 @@ public void IapApple (int quantity, string productId, double productPrice, strin
             SwrveLog.LogWarning("Couldn't get show conversation correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
 #endif
-    }
-
-    private void startNativeLocation()
-    {
-#if !UNITY_EDITOR
-        try {
-            _swrveiOSStartLocation();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't start Location on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-#endif
-    }
-
-    public void LocationUserUpdate(Dictionary<string, string> map)
-    {
-#if !UNITY_EDITOR
-        try {
-            _swrveiOSLocationUserUpdate(Json.Serialize(map));
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't update location details from iOS: " + exp.ToString ());
-        }
-#endif
-    }
-
-    public string GetPlotNotifications()
-    {
-#if !UNITY_EDITOR
-        try {
-            return _swrveiOSPlotNotifications();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't get plot notifications from iOS: " + exp.ToString ());
-        }
-#endif
-        return "[]";
-    }
-
-    private void startNativeLocationAfterPermission()
-    {
-        startNativeLocation ();
     }
 
     private bool NativeIsBackPressed ()

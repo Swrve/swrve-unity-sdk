@@ -56,6 +56,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         PBXProject project = new PBXProject();
         project.ReadFromString (xcodeproj);
         string targetGuid = project.TargetGuidByName ("Unity-iPhone");
+        project.AddFrameworkToProject(targetGuid, "Webkit.framework", true /*weak*/);
 
         // 6. Add conversations resources to bundle
         if (!AddFolderToProject (project, targetGuid, "Assets/Plugins/iOS/SwrveConversationSDK/Resources", pathToProject, "Libraries/Plugins/iOS/SwrveConversationSDK/Resources")) {
@@ -240,10 +241,13 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         string[] files = System.IO.Directory.GetFiles (folderToCopy);
         for (int i = 0; i < files.Length; i++) {
             string filePath = files [i];
-            if (!filePath.EndsWith (".meta")) {
+            if (!filePath.EndsWith (".meta")
+                    && !filePath.Contains("SwrveConversation-tvos")
+                    && !filePath.Contains("LICENSE")) {
                 string fileName = System.IO.Path.GetFileName (filePath);
                 string newFilePath = Path.Combine(fullDestPath, fileName);
                 System.IO.File.Copy (filePath, newFilePath);
+
                 // Add to the XCode project
                 string relativeProjectPath = Path.Combine (destPath, fileName);
                 string resourceGuid = project.AddFile (relativeProjectPath, relativeProjectPath, PBXSourceTree.Source);

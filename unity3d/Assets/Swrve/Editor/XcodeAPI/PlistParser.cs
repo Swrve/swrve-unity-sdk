@@ -186,7 +186,10 @@ namespace SwrveInternal.iOS.Xcode
         internal static XDocument ParseXmlNoDtd(string text)
         {
             XmlReaderSettings settings = new XmlReaderSettings();
+#if UNITY_2017_1_OR_NEWER
+#else
             settings.ProhibitDtd = false;
+#endif
             settings.XmlResolver = null; // prevent DTD download
 
             XmlReader xmlReader = XmlReader.Create(new StringReader(text), settings);
