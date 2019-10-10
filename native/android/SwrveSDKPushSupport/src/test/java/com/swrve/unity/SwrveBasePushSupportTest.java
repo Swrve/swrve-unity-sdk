@@ -78,7 +78,7 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
     public void testCreateNotificationBuilderWithPrefs() {
 
         new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
-        String msgTitle = "com.swrve.unity.swrvesdkpushsupport";
+        String msgTitle = "Swrve";
         String msgText = "hello";
         String icon = "common_google_signin_btn_icon_dark";
         String materialIcon = "common_full_open_on_phone";
@@ -101,7 +101,7 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
     public void testCreateNotificationBuilderWithDefaults() {
 
         new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
-        String msgTitle = "com.swrve.unity.swrvesdkpushsupport";
+        String msgTitle = "Swrve";
         String msgText = "hello";
         int iconId = 0;
 

@@ -57,6 +57,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         PBXProject project = new PBXProject();
         project.ReadFromString (xcodeproj);
         string targetGuid = project.TargetGuidByName ("Unity-iPhone");
+        project.AddFrameworkToProject(targetGuid, "Webkit.framework", true /*weak*/);
 
         // 6. Add conversations resources to bundle
         if (!AddFolderToProject (project, targetGuid, "Assets/Plugins/iOS/SwrveConversationSDK/Resources", pathToProject, "Libraries/Plugins/iOS/SwrveConversationSDK/Resources")) {
@@ -66,6 +67,9 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         // 7. Add the required frameworks for push notifications
         project.AddFrameworkToProject(targetGuid, "UserNotifications.framework", true /*weak*/);
         project.AddFrameworkToProject(targetGuid, "UserNotificationsUI.framework", true /*weak*/);
+
+        // 8. Add framework required for SwrveCommmonSDK for SwrveUtils. It needs CoreTelephony.framework
+        project.AddFrameworkToProject (targetGuid, "CoreTelephony.framework", false /*weak*/);
 
         string appGroupIndentifier = SwrveBuildComponent.GetPostProcessString(SwrveBuildComponent.APP_GROUP_ID_KEY);
 
@@ -120,19 +124,15 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         proj.AddFrameworkToProject (extensionTarget, "AVFoundation.framework", true /*weak*/);
         proj.AddFrameworkToProject (extensionTarget, "CFNetwork.framework", false /*weak*/);
         proj.AddFrameworkToProject (extensionTarget, "CoreGraphics.framework", false /*weak*/);
-        proj.AddFrameworkToProject (extensionTarget, "CoreLocation.framework", false /*weak*/);
         proj.AddFrameworkToProject (extensionTarget, "CoreMedia.framework", false /*weak*/);
         proj.AddFrameworkToProject (extensionTarget, "CoreMotion.framework", false /*weak*/);
         proj.AddFrameworkToProject (extensionTarget, "CoreVideo.framework", false /*weak*/);
+        proj.AddFrameworkToProject (extensionTarget, "CoreTelephony.framework", false /*weak*/);
         proj.AddFrameworkToProject (extensionTarget, "Foundation.framework", false /*not weak*/);
         proj.AddFrameworkToProject (extensionTarget, "iAd.framework", false /*weak*/);
         proj.AddFrameworkToProject (extensionTarget, "MediaPlayer.framework", true /*weak*/);
         proj.AddFrameworkToProject (extensionTarget, "UIKit.framework", true /*weak*/);
-        proj.AddFrameworkToProject (extensionTarget, "AddressBook.framework", false /*not weak*/);
-        proj.AddFrameworkToProject (extensionTarget, "AssetsLibrary.framework", false /*not weak*/);
         proj.AddFrameworkToProject (extensionTarget, "AdSupport.framework", false /*not weak*/);
-        proj.AddFrameworkToProject (extensionTarget, "Contacts.framework", true /*weak*/);
-        proj.AddFrameworkToProject (extensionTarget, "Photos.framework", true /*weak*/);
 
         // Add Notification Frameworks
         proj.AddFrameworkToProject (extensionTarget, "UserNotifications.framework", false /*not weak*/);

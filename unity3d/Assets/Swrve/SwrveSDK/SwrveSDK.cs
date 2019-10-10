@@ -38,7 +38,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "6.1";
+    public const string SdkVersion = "6.2";
 
     protected int appId;
     /// <summary>

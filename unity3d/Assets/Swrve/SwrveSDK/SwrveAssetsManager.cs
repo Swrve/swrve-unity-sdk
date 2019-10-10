@@ -81,6 +81,10 @@ public class SwrveAssetsManager : ISwrveAssetsManager
         SwrveLog.Log("Downloading asset: " + url);
 #if UNITY_2017_1_OR_NEWER
         UnityWebRequest www = (item.IsImage)? UnityWebRequestTexture.GetTexture(url) : new UnityWebRequest (url);
+        if (!item.IsImage) {
+            DownloadHandlerBuffer dH = new DownloadHandlerBuffer();
+            www.downloadHandler = dH;
+        }        
         yield return www.SendWebRequest();
 
         if (!www.isNetworkError && !www.isHttpError) {
