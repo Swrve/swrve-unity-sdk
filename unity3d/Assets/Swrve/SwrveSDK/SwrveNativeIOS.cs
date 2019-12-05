@@ -235,16 +235,12 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     /// </summary>
     public void RefreshPushPermissions()
     {
+        if(config.PushNotificationEnabled) {
 #if !UNITY_EDITOR
-        string preIOS10NotificationStatus = _swrvePushNotificationStatus (this.prefabName);
-        if (!string.IsNullOrEmpty(preIOS10NotificationStatus)) {
-            this.pushNotificationStatus = preIOS10NotificationStatus;
+            this.pushNotificationStatus = _swrvePushNotificationStatus (this.prefabName);
+            this.silentPushNotificationStatus = _swrveBackgroundRefreshStatus ();
+#endif
         }
-#endif
-
-#if !UNITY_EDITOR
-        this.silentPushNotificationStatus = _swrveBackgroundRefreshStatus ();
-#endif
     }
 
     public void SetPushNotificationsPermissionStatus(string pushStatus)
@@ -388,6 +384,7 @@ public void IapApple (int quantity, string productId, double productPrice, strin
                     if (rawId is Int64) {
                         pushId = ConvertInt64ToInt32Hack ((Int64)rawId).ToString ();
                     }
+
                     SendPushEngagedEvent(pushId);
 
                     // Evaluate and process any default push actions available
@@ -452,13 +449,11 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 #if !UNITY_EDITOR
         try {
             _swrveiOSInitNative(GetNativeDetails ());
+            RefreshPushPermissions();
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't get init the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
         }
 #endif
-        if (config.PushNotificationEnabled) {
-            RefreshPushPermissions();
-        }
     }
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)

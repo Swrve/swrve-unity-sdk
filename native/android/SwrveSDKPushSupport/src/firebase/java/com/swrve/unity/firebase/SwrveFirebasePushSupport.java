@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
@@ -43,7 +43,7 @@ public class SwrveFirebasePushSupport extends SwrvePushSupport {
 	// Called by Unity
 	public static boolean registerDevice(final String gameObject,
 										 final String iconId, final String materialIconId,
-										 final String largeIconId, final int accentColor,
+										 final String largeIconId, final String accentColorHex,
 										 final String currentRegIdInUnity) {
 		if (UnityPlayer.currentActivity != null) {
 			lastGameObjectRegistered = gameObject;
@@ -57,7 +57,7 @@ public class SwrveFirebasePushSupport extends SwrvePushSupport {
 						Context context = activity.getApplicationContext();
 						String registrationId = getRegistrationId(context);
 
-						saveConfig(gameObject, activity, iconId, materialIconId, largeIconId, accentColor);
+						saveConfig(gameObject, activity, iconId, materialIconId, largeIconId, accentColorHex);
 						// Start the Firebase SDK if not already started
 						List<FirebaseApp> apps = FirebaseApp.getApps(activity);
 						if (apps == null || apps.isEmpty()) {
@@ -83,12 +83,12 @@ public class SwrveFirebasePushSupport extends SwrvePushSupport {
 	}
 
 	private static void saveConfig(String gameObject, Activity activity, String iconId,
-								   String materialIconId, String largeIconId, int accentColor) {
+								   String materialIconId, String largeIconId, String accentColorHex) {
 		Context context = activity.getApplicationContext();
 		final SharedPreferences prefs = SwrvePushServiceManagerCommon.getPreferences(context);
 
 		SharedPreferences.Editor editor = prefs.edit();
-		SwrvePushSupport.saveConfig(editor, gameObject, activity, iconId, materialIconId, largeIconId, accentColor);
+		SwrvePushSupport.saveConfig(editor, gameObject, activity, iconId, materialIconId, largeIconId, accentColorHex);
 		editor.apply();
 	}
 

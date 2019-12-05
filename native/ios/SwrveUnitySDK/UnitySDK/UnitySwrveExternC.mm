@@ -165,33 +165,19 @@ extern "C"
     char* _swrvePushNotificationStatus(char* componentName)
     {
 #if !defined(SWRVE_NO_PUSH)
-        // This methods will return the current status for old iOS versions or get it and send it to the Unity SDK component asynchronously
-        __block NSString* prefabNameStr = [UnitySwrveHelper CStringToNSString:componentName];
-        
-        UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
-        [center getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings *_Nonnull settings) {
-            NSString *pushAuthorizationFromSettings = swrve_permission_status_unknown;
-            if (settings.authorizationStatus == UNAuthorizationStatusAuthorized) {
-                pushAuthorizationFromSettings = swrve_permission_status_authorized;
-            } else if (settings.authorizationStatus == UNAuthorizationStatusDenied) {
-                pushAuthorizationFromSettings = swrve_permission_status_denied;
-            } else if (settings.authorizationStatus == UNAuthorizationStatusNotDetermined) {
-                pushAuthorizationFromSettings = swrve_permission_status_unknown;
-            } else if (@available(iOS 12.0, *)) {
-                if (settings.authorizationStatus == UNAuthorizationStatusProvisional) {
-                    pushAuthorizationFromSettings = swrve_permission_status_provisional;
-                }
-            } else {
-                // Fallback on earlier versions
-            }
+        // This methods will return the current status on cache or and it and send it to the Unity SDK component asynchronously
+        __block NSString *prefabNameStr = [UnitySwrveHelper CStringToNSString:componentName];
+        NSString *pushAuthorizationFromSettings = [SwrvePermissions pushAuthorizationWithSDK:[UnitySwrve sharedInstance] WithCallback:^(NSString * _Nonnull pushAuthorization) {
+
 #ifdef UNITY_IOS
-            UnitySendMessage([UnitySwrveHelper NSStringCopy:prefabNameStr], [UnitySwrveHelper NSStringCopy:@"SetPushNotificationsPermissionStatus"], [UnitySwrveHelper NSStringCopy:pushAuthorizationFromSettings]);
+            UnitySendMessage([UnitySwrveHelper NSStringCopy:prefabNameStr], [UnitySwrveHelper NSStringCopy:@"SetPushNotificationsPermissionStatus"], [UnitySwrveHelper NSStringCopy:pushAuthorization]);
 #else
-#pragma unused(prefabNameStr)
+#pragma unused(prefabNameStr, pushAuthorization)
 #endif
         }];
+        return [UnitySwrveHelper NSStringCopy:pushAuthorizationFromSettings];
 #endif
-        return nil;
+        return [UnitySwrveHelper NSStringCopy:swrve_permission_status_unsupported];
     }
 
     void _clearAllAuthenticatedNotifications(void)

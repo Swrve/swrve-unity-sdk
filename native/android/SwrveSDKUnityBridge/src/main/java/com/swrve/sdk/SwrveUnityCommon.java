@@ -7,7 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.RequiresApi;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -42,7 +42,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public final static String PREFAB_NAME_KEY = "prefabName";
     public final static String DEVICE_INFO_KEY = "deviceInfo";
     public final static String API_KEY_KEY = "apiKey";
-    public final static String DEVICE_ID_KEY = "unique_device_Id";
+    public final static String DEVICE_ID_KEY = "deviceId";
     public final static String APP_ID_KEY = "appId";
     public final static String USER_ID_KEY = "userId";
     public final static String SWRVE_PATH_KEY = "swrvePath";
@@ -54,7 +54,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public final static String EVENTS_SERVER_KEY = "eventsServer";
     public final static String CONTENT_SERVER_KEY = "contentServer";
     public final static String HTTP_TIMEOUT_KEY = "httpTimeout";
-    public final static String MAX_EVENTS_PER_FLUSH_KEY = "maxEventsPerFlush";
     public final static int MAX_CACHED_AUTHENTICATED_NOTIFICATIONS = 10;
 
     public final static String EVENT_KEY = "event";
@@ -419,11 +418,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     }
 
     @Override
-    public int getMaxEventsPerFlush() {
-        return getIntDetail(MAX_EVENTS_PER_FLUSH_KEY);
-    }
-
-    @Override
     public JSONObject getDeviceInfo() throws JSONException {
         if (currentDetails.containsKey(DEVICE_INFO_KEY)) {
             return (JSONObject) currentDetails.get(DEVICE_INFO_KEY);
@@ -487,11 +481,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
         } catch (Exception ex) {
             SwrveLogger.e("Exception trying to update QaUser instance", ex);
         }
-    }
-
-    @Override
-    public void setLocationSegmentVersion(final int locationSegmentVersion) {
-        // Not used and to be removed once PP SDK is out of common
     }
 
     @Override

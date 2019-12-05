@@ -430,6 +430,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
     NSMutableDictionary *jsonPacket = [[NSMutableDictionary alloc] init];
     [jsonPacket setValue:[self userId] forKey:@"user"];
+    [jsonPacket setValue:[self deviceId] forKey:@"unique_device_id"];
     [jsonPacket setValue:[NSNumber numberWithInt:SWRVE_VERSION] forKey:@"version"];
     [jsonPacket setValue:NullableNSString([self appVersion]) forKey:@"app_version"];
     [jsonPacket setValue:NullableNSString(sessionToken) forKey:@"session_token"];
@@ -451,8 +452,14 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 }
 
 - (void)mergeWithCurrentDeviceInfo:(NSDictionary *)attributes {
-    #pragma unused(attributes)
-    //to be implemented when user identity
+    // Merge attributes with current set of attributes
+    if (attributes) {
+        @synchronized (self.deviceInfo) {
+            NSMutableDictionary *currentAttributes = [self.deviceInfo mutableCopy];
+            [currentAttributes addEntriesFromDictionary:attributes];
+            self.deviceInfo = currentAttributes;
+        }
+    }
 }
 
 - (void)sendMessageUp:(NSString*)method msg:(NSString*)msg {

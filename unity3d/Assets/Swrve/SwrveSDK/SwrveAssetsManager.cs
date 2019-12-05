@@ -19,6 +19,7 @@ public class SwrveAssetsManager : ISwrveAssetsManager
         Container = container;
         SwrveTemporaryPath = swrveTemporaryPath;
         AssetsOnDisk = new HashSet<string>();
+        MissingAssetsQueue = new HashSet<SwrveAssetsQueueItem>();
     }
 
     public string CdnImages
@@ -37,6 +38,43 @@ public class SwrveAssetsManager : ISwrveAssetsManager
     {
         get;
         set;
+    }
+
+    public HashSet<SwrveAssetsQueueItem> MissingAssetsQueue
+    {
+        get;
+        set;
+    }
+
+    public IEnumerator DownloadAnyMissingAssets (Action callBack) 
+    {
+        if (MissingAssetsQueue.Count > 0) {
+            // Make a copy of the current MissingAssetsQueue so it can processed in the coroutine safely
+            HashSet<SwrveAssetsQueueItem> currentMissingQueue = new HashSet<SwrveAssetsQueueItem>();
+            currentMissingQueue.UnionWith(MissingAssetsQueue);
+            MissingAssetsQueue.Clear();
+            SwrveLog.Log ("There were " + currentMissingQueue.Count + " Assets not yet downloaded. Retrieving them now...");
+            yield return StartTask ("SwrveAssetsManager.DownloadAssetQueue", DownloadAssetQueue(currentMissingQueue));
+
+            if (callBack != null) {
+                callBack.Invoke();
+            }
+        }
+
+        TaskFinished("SwrveAssetsManager.DownloadMissingAssets");
+    }
+
+    public IEnumerator DownloadAssets(HashSet<SwrveAssetsQueueItem> autoShowQueue,  HashSet<SwrveAssetsQueueItem> assetQueue, Action callBack)
+    {
+        yield return StartTask ("SwrveAssetsManager.DownloadAssetQueue", DownloadAssetQueue (autoShowQueue));
+        
+        if (callBack != null) {
+            callBack.Invoke(); // AutoShowMessages;
+        }
+
+        yield return StartTask ("SwrveAssetsManager.DownloadAssetQueue", DownloadAssetQueue (assetQueue));
+
+        TaskFinished("SwrveAssetsManager.DownloadAssets");
     }
 
     public IEnumerator DownloadAssets(HashSet<SwrveAssetsQueueItem> assetsQueue, Action callBack)
@@ -93,6 +131,8 @@ public class SwrveAssetsManager : ISwrveAssetsManager
             } else {
                 SaveBinaryAsset(item, www);
             }
+        } else {
+            MissingAssetsQueue.Add(item);
         }
 #else
         WWW www = new WWW(url);
@@ -104,6 +144,8 @@ public class SwrveAssetsManager : ISwrveAssetsManager
             } else {
                 SaveBinaryAsset(item, www);
             }
+        } else {
+            MissingAssetsQueue.Add(item);
         }
 #endif
         TaskFinished("SwrveAssetsManager.DownloadAsset");

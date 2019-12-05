@@ -7,10 +7,11 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
 
 import com.swrve.sdk.SwrveNotificationBuilder;
 import com.swrve.sdk.SwrveNotificationConstants;
@@ -83,18 +84,18 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
         String icon = "common_google_signin_btn_icon_dark";
         String materialIcon = "common_full_open_on_phone";
         int iconId = mActivity.getResources().getIdentifier(materialIcon, "drawable", mActivity.getPackageName());
-        int colorId = 1;
+        int expectedColorInt = -13022805;
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
         prefs.edit().putString("icon_id", icon).commit();
         prefs.edit().putString("material_icon_id", materialIcon).commit();
-        prefs.edit().putInt("accent_color", colorId).commit();
+        prefs.edit().putString("accent_color_hex", "#3949AB").commit();
 
         Bundle extras = new Bundle();
         extras.putString(SOUND_KEY, SOUND_DEFAULT);
         SwrveNotificationBuilder swrveNotificationBuilder = SwrvePushSupport.createSwrveNotificationBuilder(mActivity, prefs);
         NotificationCompat.Builder builder = swrveNotificationBuilder.build(msgText, extras, SwrveUnityCommonHelper.getGenericEventCampaignTypePush(), null);
-        assertNotification(builder, msgTitle, msgText, iconId, colorId, "content://settings/system/notification_sound");
+        assertNotification(builder, msgTitle, msgText, iconId, expectedColorInt, "content://settings/system/notification_sound");
     }
 
     @Test
@@ -155,13 +156,14 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
         assertEquals("[]", influencedData);
     }
 
-    protected void assertNotification(NotificationCompat.Builder builder, String title, String text, int icon, int colorId, String sound)  {
+    protected void assertNotification(NotificationCompat.Builder builder, String title, String text, int icon, int color, String sound)  {
         Notification notification = builder.build();
         ShadowNotification shadowNotification = shadowOf(notification);
         assertEquals("Notification title is wrong", title, shadowNotification.getContentTitle());
         assertEquals("Notification content text is wrong", text, shadowNotification.getContentText());
         assertEquals("Notification icon is wrong", icon, notification.icon);
-        assertEquals("Notification icon is wrong", colorId, builder.getColor());
+        assertEquals("Notification colorHex is wrong", color, builder.getColor());
         assertEquals("Notification sound is wrong",  sound, notification.sound == null ? null : notification.sound.toString());
     }
+
 }

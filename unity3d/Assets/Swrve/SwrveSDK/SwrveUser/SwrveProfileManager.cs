@@ -33,18 +33,37 @@ public class SwrveProfileManager
     public bool isNewUser;
 
     /// <summary>
-    /// SwrveProfileManager is a class that is reponsable to load from cache and manage any infos related with a SwrveUser.
+    /// SwrveProfileManager is a class that is reponsable to load from cache and manage any info related with a SwrveUser.
     /// </summary>
-    public SwrveProfileManager()
+    public SwrveProfileManager(SwrveInitMode initMode)
     {
-        // Get Device UUID from PlayerPrefs.
+        // Get User UUID from PlayerPrefs
         userId = PlayerPrefs.GetString (SwrveUserIdKey, null);
-        if (string.IsNullOrEmpty (userId)) {
-            userId = SwrveHelper.GetRandomUUID();
-            this.SaveSwrveUserId(userId);
+        if (initMode == SwrveInitMode.AUTO && string.IsNullOrEmpty (userId)) {
+            PrepareAndSetUserId(userId);
         }
-        SwrveLog.Log("Your user id is: " + userId);
+        
+        if (string.IsNullOrEmpty (userId) ) {
+            SwrveLog.Log("The userId is not currently set");
+        } else {
+            SwrveLog.Log("Your current user id is: " + userId);
+        }
     }
+    
+    /// <summary>
+    /// Generates a userId and populates the userId property
+    /// </summary>
+    public void PrepareAndSetUserId(string inputUserId)
+    {   
+        if (string.IsNullOrEmpty(inputUserId) == false) {
+            userId = inputUserId;
+        } else {
+            userId = SwrveHelper.GetRandomUUID();
+        }
+        
+        this.SaveSwrveUserId(userId);
+    }
+
 
     /// <summary>
     /// Update a SwrveUser in cache if is able to match the swrveUserId or externalUserId with an user in our cache, it also set this user as verified -

@@ -23,6 +23,11 @@ public enum AndroidPushProvider {
     NONE
 }
 
+public enum SwrveInitMode {
+    AUTO, 
+    MANAGED
+}
+
 
 /// <summary>
 /// Configuration for the Swrve SDK.
@@ -176,9 +181,9 @@ public class SwrveConfig
     public string AndroidPushNotificationLargeIconId = null;
 
     /// <summary>
-    /// The color (argb) that will be used as accent color for your Android notifications.
+    /// The color (Hex) that will be used as accent color for your Android notifications.
     /// </summary>
-    public int AndroidPushNotificationAccentColor = -1;
+    public string AndroidPushNotificationAccentColorHex = null;
 
     /// <summary>
     /// Push provider type. GOOGLE_FIREBASE is the default. Set to AMAZON_ADM if using Kindle.
@@ -256,6 +261,16 @@ public class SwrveConfig
     /// Disable default In-app renderer and manage messages manually.
     /// </summary>
     public ISwrveTriggeredMessageListener TriggeredMessageListener = null;
+
+    /// <summary>
+    /// Initialisation Mode. AUTO is the default. 
+    /// </summary>
+    public SwrveInitMode InitMode = SwrveInitMode.AUTO;
+
+    /// <summary>
+    /// When initMode is set to a MANAGED state. Continue on startup with the previously given user
+    /// </summary>
+    public bool ManagedModeAutoStartLastUser = true;
 
     /// <summary>
     /// A callback to get notified when user resources have been updated.

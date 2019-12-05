@@ -1,4 +1,4 @@
-#if COCOAPODS
+#if __has_include(<SwrveConversationSDK/SwrveMessageEventHandler.h>)
 #import <SwrveConversationSDK/SwrveMessageEventHandler.h>
 #import <SwrveConversationSDK/SwrveBaseConversation.h>
 #else

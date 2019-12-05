@@ -27,8 +27,8 @@ using System.Runtime.InteropServices;
 #warning "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk.  It is not covered by any performance warranty otherwise offered by Swrve"
 #endif
 
-#if (UNITY_2_6 || UNITY_2_6_1 || UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5)
-#error "The Swrve SDK needs to be compiled with Unity 4.0.0+"
+#if (UNITY_2_6 || UNITY_2_6_1 || UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5 || !UNITY_2017_4_OR_NEWER)
+#error "The Swrve SDK needs to be compiled with Unity 2017.4+"
 #endif
 
 /// <summary>
@@ -38,7 +38,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "6.2";
+    public const string SdkVersion = "7.0";
 
     protected int appId;
     /// <summary>
@@ -118,23 +118,6 @@ public partial class SwrveSDK
     public bool Destroyed = false;
 
     /// <summary>
-    /// Initialise the SDK with the given app id, api key.
-    /// </summary>
-    /// <param name="container">
-    /// MonoBehaviour objecto to act as a container.
-    /// </param>
-    /// <param name="appId">
-    /// App ID for your app, as provided by Swrve.
-    /// </param>
-    /// <param name="apiKey">
-    /// API key for your app, as provided by Swrve.
-    /// </param>
-    public virtual void Init (MonoBehaviour container, int appId, string apiKey)
-    {
-        Init (container, appId, apiKey, new SwrveConfig());
-    }
-
-    /// <summary>
     /// Initialise the SDK with the given app id, api key and config.
     /// </summary>
     /// <param name="container">
@@ -147,10 +130,15 @@ public partial class SwrveSDK
     /// API key for your app, as provided by Swrve.
     /// </param>
     /// <param name="config">
-    /// Configuration object with advanced settings.
+    /// Optional configuration object with advanced settings.
     /// </param>
-    public virtual void Init (MonoBehaviour container, int appId, string apiKey, SwrveConfig config)
+    public virtual void Init (MonoBehaviour container, int appId, string apiKey, SwrveConfig config = null)
     {
+
+        if (config == null) {
+            config = new SwrveConfig();
+        }
+
         this.Container = container;
         this.ResourceManager = new SwrveUnity.ResourceManager.SwrveResourceManager ();
         this.config = config;
@@ -161,7 +149,7 @@ public partial class SwrveSDK
 #if SWRVE_SUPPORTED_PLATFORM
 
         //Init profile manager (it already load/create a default userId)
-        profileManager = new SwrveProfileManager();
+        profileManager = new SwrveProfileManager(config.InitMode);
 
         // Storage path/init.
         swrvePath = GetSwrvePath();
@@ -208,6 +196,9 @@ public partial class SwrveSDK
         abTestResourcesDiffUrl = abTestServer + "/api/1/user_resources_diff";
         resourcesAndCampaignsUrl = abTestServer + "/api/1/user_resources_and_campaigns";
 
+        // Event Buffer
+        eventBufferStringBuilder = new StringBuilder (config.MaxBufferChars);
+
         // REST Client
         restClient = CreateRestClient ();
 
@@ -235,9 +226,11 @@ public partial class SwrveSDK
             InitNative();
         }
 
-        this.InitUser();
+        sdkStarted = ShouldAutoStart();     
 
-        ProcessInfluenceData();
+        if (sdkStarted) {
+            this.InitUser();
+            ProcessInfluenceData();
 
         // In-app messaging features
         if (config.MessagingEnabled) {
@@ -246,16 +239,17 @@ public partial class SwrveSDK
                 throw new Exception ("Language needed to use messaging");
             } else if (string.IsNullOrEmpty(config.AppStore)) {
                 // Default app-store by platform
-#if UNITY_ANDROID
-                config.AppStore = SwrveAppStore.Google;
-#elif UNITY_IPHONE
-                config.AppStore = SwrveAppStore.Apple;
-#else
-                throw new Exception ("App store must be apple, google, amazon or a custom app store");
-#endif
+    #if UNITY_ANDROID
+                    config.AppStore = SwrveAppStore.Google;
+    #elif UNITY_IPHONE
+                    config.AppStore = SwrveAppStore.Apple;
+    #else
+                    throw new Exception ("App store must be apple, google, amazon or a custom app store");
+    #endif
+                }
             }
+    #endif  
         }
-#endif
     }
 
     protected virtual void InitAssetsManager(MonoBehaviour container, String swrveTemporaryPath)
@@ -306,10 +300,14 @@ public partial class SwrveSDK
     public virtual void NamedEvent (string name, Dictionary<string, string> payload = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (name != null && !name.ToLower().StartsWith("swrve.")) {
+        if (!IsSDKReady()) { 
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(name) && !name.ToLower().StartsWith("swrve.")) {
             NamedEventInternal (name, payload);
         } else {
-            SwrveLog.LogError ("Event cannot begin with \"Swrve.\". The event " + name + " will not be sent");
+            SwrveLog.LogError ("Event cannot be null, empty or begin with \"Swrve.\". The event " + name + " will not be sent");
         }
 #endif
     }
@@ -326,6 +324,10 @@ public partial class SwrveSDK
     public virtual void UserUpdate (Dictionary<string, string> attributes)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         if (attributes != null && attributes.Count > 0) {
             Dictionary<string,object> json = new Dictionary<string, object> ();
             json.Add ("attributes", attributes);
@@ -351,6 +353,10 @@ public partial class SwrveSDK
     public virtual void UserUpdate (string name, DateTime date)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         if (name != null) {
             Dictionary<string, string> attributes = new Dictionary<string, string> ();
             var dateUTC = date.Date.ToUniversalTime();
@@ -387,42 +393,16 @@ public partial class SwrveSDK
     public virtual void Purchase (string item, string currency, int cost, int quantity)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return;
+        }
+            
         Dictionary<string,object> json = new Dictionary<string, object> ();
         json.Add ("item", item);
         json.Add ("currency", currency);
         json.Add ("cost", cost);
         json.Add ("quantity", quantity);
         AppendEventToBuffer ("purchase", json);
-#endif
-    }
-
-    /// <summary>
-    /// Buffer the event of a purchase using real currency, where a single item
-    /// (that isn't an in-app currency) was purchased.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "iap" event.
-    /// Note that this method is currently only supported for the Apple App Store,
-    /// and a valid receipt needs to be provided for verification.
-    /// </remarks>
-    /// <param name="quantity">
-    /// Quantity purchased.
-    /// </param>
-    /// <param name="productId">
-    /// Unique product identifier for the item bought. This should match the Swrve resource name.
-    /// </param>
-    /// <param name="productPrice">
-    /// Price of the product purchased in real money. Note that this is the price
-    /// per product, not the total price of the transaction (when quantity > 1).
-    /// </param>
-    /// <param name="currency">
-    /// Real world currency used for this transaction. This must be an ISO currency code.
-    /// </param>
-    public virtual void Iap (int quantity, string productId, double productPrice, string currency)
-    {
-#if SWRVE_SUPPORTED_PLATFORM
-        IapRewards no_rewards = new IapRewards();
-        Iap (quantity, productId, productPrice, currency, no_rewards);
 #endif
     }
 
@@ -448,9 +428,17 @@ public partial class SwrveSDK
     /// included in this purchase that need to be recorded.
     /// This parameter is optional.
     /// </param>
-    public virtual void Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards)
+    public virtual void Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return;
+        }
+
+        if (rewards == null) {
+            rewards = new IapRewards();
+        }
+
         _Iap (quantity, productId, productPrice, currency, rewards, string.Empty, string.Empty, string.Empty, "unknown_store");
 #endif
     }
@@ -470,6 +458,10 @@ public partial class SwrveSDK
     public virtual void CurrencyGiven (string givenCurrency, double amount)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         Dictionary<string, object> json = new Dictionary<string, object> ();
         json.Add ("given_currency", givenCurrency);
         json.Add ("given_amount", amount);
@@ -488,37 +480,35 @@ public partial class SwrveSDK
             return false;
         }
         bool sentEvents = false;
-        if (Initialised) {
-            if (!eventsConnecting) {
-                byte[] eventsPostEncodedData = null;
-                if (eventsPostString == null || eventsPostString.Length == 0) {
-                    eventsPostString = eventBufferStringBuilder.ToString ();
-                    eventBufferStringBuilder.Length = 0;
-                }
-
-                if (eventsPostString.Length > 0) {
-                    long time = GetSessionTime();
-                    eventsPostEncodedData = PostBodyBuilder.BuildEvent(apiKey, appId, this.UserId, GetDeviceUUID(), GetAppVersion(), time, eventsPostString);
-                }
-
-                // eventsConnecting will be true until there is a response or an error from the POST
-                if (eventsPostEncodedData != null) {
-                    eventsConnecting = true;
-                    SwrveLog.Log("Sending events to Swrve");
-                    Dictionary<string, string> requestHeaders = new Dictionary<string, string> {
-                        { @"Content-Type", @"application/json; charset=utf-8" },
-                    };
-#if !UNITY_2017_1_OR_NEWER
-                    requestHeaders["Content-Length"] = eventsPostEncodedData.Length.ToString();
-#endif
-                    sentEvents = true;
-                    StartTask ("PostEvents_Coroutine", PostEvents_Coroutine (requestHeaders, eventsPostEncodedData));
-                } else {
-                    eventsPostString = null;
-                }
-            } else {
-                SwrveLog.LogWarning ("Sending events already in progress");
+        if (!eventsConnecting) {
+            byte[] eventsPostEncodedData = null;
+            if (eventsPostString == null || eventsPostString.Length == 0) {
+                eventsPostString = eventBufferStringBuilder.ToString ();
+                eventBufferStringBuilder.Length = 0;
             }
+
+            if (eventsPostString.Length > 0) {
+                long time = GetSessionTime();
+                eventsPostEncodedData = PostBodyBuilder.BuildEvent(apiKey, appId, this.UserId, GetDeviceUUID(), GetAppVersion(), time, eventsPostString);
+            }
+
+            // eventsConnecting will be true until there is a response or an error from the POST
+            if (eventsPostEncodedData != null) {
+                eventsConnecting = true;
+                SwrveLog.Log("Sending events to Swrve");
+                Dictionary<string, string> requestHeaders = new Dictionary<string, string> {
+                    { @"Content-Type", @"application/json; charset=utf-8" },
+                };
+#if !UNITY_2017_1_OR_NEWER
+                requestHeaders["Content-Length"] = eventsPostEncodedData.Length.ToString();
+#endif
+                sentEvents = true;
+                StartTask ("PostEvents_Coroutine", PostEvents_Coroutine (requestHeaders, eventsPostEncodedData));
+            } else {
+                eventsPostString = null;
+            }
+        } else {
+            SwrveLog.LogWarning ("Sending events already in progress");
         }
 
         return sentEvents;
@@ -526,6 +516,7 @@ public partial class SwrveSDK
         return false;
 #endif
     }
+
     /// <summary>
     /// Handle an deeplink event from an Ad Journey Campaign
     /// </summary>
@@ -534,6 +525,10 @@ public partial class SwrveSDK
     /// </param>
     public virtual void HandleDeeplink (string url)
     {
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         if(deeplinkManager == null) {
             deeplinkManager = new SwrveDeeplinkManager(Container, this);
         }
@@ -549,6 +544,10 @@ public partial class SwrveSDK
     /// </param>
     public virtual void HandleDeferredDeeplink(string url)
     {
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         if(deeplinkManager == null) {
             deeplinkManager = new SwrveDeeplinkManager(Container, this);
         }
@@ -568,6 +567,10 @@ public partial class SwrveSDK
     public virtual void GetUserResources (Action<Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) return;
         if (Initialised) {
             if (userResources != null) {
@@ -591,6 +594,10 @@ public partial class SwrveSDK
     public virtual void GetUserResourcesDiff (Action<Dictionary<string, Dictionary<string, string>>, Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) return;
         if (Initialised && !abTestUserResourcesDiffConnecting) {
             abTestUserResourcesDiffConnecting = true;
@@ -768,6 +775,10 @@ public partial class SwrveSDK
     public virtual void OnSwrvePause ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         applicationPaused = true;
         if (Initialised) {
             FlushToDisk ();
@@ -790,6 +801,12 @@ public partial class SwrveSDK
 #if SWRVE_SUPPORTED_PLATFORM
         applicationPaused = false;
         if (Initialised) {
+            if (!IsSDKReady()) { 
+                return;
+            }
+#if UNITY_IPHONE
+            RefreshPushPermissions();
+#endif
             LoadFromDisk ();
             QueueDeviceInfo ();
             // Session management
@@ -809,12 +826,7 @@ public partial class SwrveSDK
                 ConversationClosed();
             }
 
-
-#if UNITY_IPHONE
-            if (config.PushNotificationEnabled) {
-                RefreshPushPermissions();
-            }
-#endif
+            DownloadAnyMissingAssets();
         }
 #endif
     }
@@ -937,11 +949,6 @@ public partial class SwrveSDK
 #endif
     }
 
-    public void SetConversationVersion(int conversationVersion)
-    {
-        this.conversationVersion = conversationVersion;
-    }
-
     /// <summary>
     /// Gets the app store link of a given app, that was
     /// setup in the dashboard for the current app store.
@@ -979,6 +986,10 @@ public partial class SwrveSDK
     /// </returns>
     public virtual SwrveMessage GetMessageForEvent (string eventName, IDictionary<string, string> payload=null)
     {
+        if (!IsSDKReady()) { 
+            return null;
+        }
+
         if (!checkCampaignRules (eventName, SwrveHelper.GetNow ())) {
             return null;
         }
@@ -1076,6 +1087,10 @@ public partial class SwrveSDK
     /// </returns>
     public virtual SwrveConversation GetConversationForEvent (string eventName, IDictionary<string, string> payload=null)
     {
+        if (!IsSDKReady()) { 
+            return null;
+        }        
+
         if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
             return null;
         }
@@ -1177,11 +1192,19 @@ public partial class SwrveSDK
 
     public virtual void ShowMessageCenterCampaign(SwrveBaseCampaign campaign)
     {
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         ShowMessageCenterCampaign (campaign, GetDeviceOrientation ());
     }
 
     public virtual void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation)
     {
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         ShowCampaign (campaign, false, orientation);
         campaign.Status = SwrveCampaignState.Status.Seen;
         SaveCampaignData(campaign);
@@ -1189,11 +1212,19 @@ public partial class SwrveSDK
 
     public virtual List<SwrveBaseCampaign> GetMessageCenterCampaigns()
     {
+        if (!IsSDKReady()) { 
+            return null;
+        }
+
         return GetMessageCenterCampaigns (GetDeviceOrientation ());
     }
 
     public virtual List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation orientation)
     {
+        if (!IsSDKReady()) { 
+            return null;
+        }
+
         List<SwrveBaseCampaign> result = new List<SwrveBaseCampaign>();
         IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
         while(itCampaign.MoveNext()) {
@@ -1223,6 +1254,10 @@ public partial class SwrveSDK
     public virtual SwrveMessage GetMessageForId (int messageId)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return null;
+        }
+
         SwrveMessage message = null;
         IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
         while (itCampaign.MoveNext() && message == null) {
@@ -1263,6 +1298,10 @@ public partial class SwrveSDK
     public virtual IEnumerator ShowMessageForEvent (string eventName, SwrveMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            yield return null;
+        }
+
         if (config.TriggeredMessageListener != null) {
             // They are using a custom listener
             if (message != null) {
@@ -1291,6 +1330,10 @@ public partial class SwrveSDK
     public virtual IEnumerator ShowConversationForEvent (string eventName, SwrveConversation conversation)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            yield return null;
+        }
+
         yield return Container.StartCoroutine (LaunchConversation (conversation));
         TaskFinished ("ShowConversationForEvent");
 #else
@@ -1304,6 +1347,10 @@ public partial class SwrveSDK
     public virtual void DismissMessage ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         if (config.TriggeredMessageListener != null) {
             config.TriggeredMessageListener.DismissCurrentMessage ();
         } else {
@@ -1325,6 +1372,10 @@ public partial class SwrveSDK
     public virtual void RefreshUserResourcesAndCampaigns ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) { 
+            return;
+        }
+
         LoadResourcesAndCampaigns ();
 #endif
     }
@@ -1341,9 +1392,13 @@ public partial class SwrveSDK
     /// <param name="onError">
     /// Callback that will handle an error for the Identify call.
     /// </param>
-    public void Identify(string userId, OnSuccessIdentify onSuccess, OnErrorIdentify onError)
+    public virtual void Identify(string userId, OnSuccessIdentify onSuccess, OnErrorIdentify onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (config.InitMode == SwrveInitMode.MANAGED) {
+            SwrveLog.LogInfo("Swrve identify: Cannot call identify api in MANAGED initMode.");
+            throw new Exception ("Cannot call identify api in MANAGED initMode.");
+        }
         if (Initialised) {
             if(string.IsNullOrEmpty(userId)) {
                 SwrveLog.LogInfo("Swrve identify: External user id cannot be nil or empty");
@@ -1371,4 +1426,44 @@ public partial class SwrveSDK
         }
 #endif
     }
+
+    /// <summary>
+    /// Start the sdk when in SWRVE_INIT_MODE_MANAGED mode. Can be called multiple times to switch the current userId to something else.
+    /// A new session is started if not already started or if is already started with different userId.
+    /// </summary>
+    /// <param name="userID">
+    /// User id to start sdk with.. 
+    /// </param>
+    public virtual void Start(String userId = null) 
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        if (config.InitMode == SwrveInitMode.AUTO) {
+            throw new Exception("You cannot call this method with the InitMode AUTO");
+        }
+
+        if (!sdkStarted) {
+            sdkStarted = true;
+            profileManager.PrepareAndSetUserId(userId);
+            this.InitUser();
+            ProcessInfluenceData();
+
+        } else {
+            SwitchUser(userId, false);
+        }
+#endif
+    }
+    
+    /// <summary>
+    /// @return true when in SWRVE_INIT_MODE_AUTO mode. When in SWRVE_INIT_MODE_MANAGED mode it will return true after one of the 'start' api's has been called.
+    /// </summary>
+    /// </param>
+    public virtual bool IsStarted()
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        return sdkStarted;
+#else
+        yield return false;
+#endif        
+    }
+
 }

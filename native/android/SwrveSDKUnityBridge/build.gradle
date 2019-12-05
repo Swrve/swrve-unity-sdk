@@ -9,6 +9,7 @@ android {
         targetSdkVersion Integer.parseInt(project.ANDROID_BUILD_TARGET_SDK_VERSION)
         versionCode 1
         versionName "1.0"
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     testOptions {
@@ -24,13 +25,11 @@ dependencies {
     api project(':UnityFacade')
 
     implementation 'com.jakewharton.timber:timber:' + project.TIMBER_VERSION
-    implementation 'com.android.support:support-v4:' + project.ANDROID_DESIGN_TOOLS_VERSION
+    implementation 'androidx.legacy:legacy-support-v4:' + project.ANDROIDX_LEGACY_SUPPORT_V4_VERSION
     implementation 'com.google.code.gson:gson:' + project.GSON_VERSION
 
     // Unit tests
     testImplementation 'org.mockito:mockito-core:1.9.0'
-    testImplementation 'org.robolectric:shadows-support-v4:3.4-rc2'
-    testImplementation 'org.robolectric:shadows-httpclient:3.4-rc2'
     testImplementation 'androidx.test:core:1.0.0'
 
     // Roboelectric tests

@@ -281,7 +281,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
             if (androidADMPluginInitializedSuccessfully) {
                 registered = androidADMPlugin.CallStatic<bool>(
                                  InitialiseAdmName, container.name, config.AndroidPushNotificationIconId, config.AndroidPushNotificationMaterialIconId,
-                                 config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColor);
+                                 config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColorHex);
             }
 
             if (!registered) {
@@ -326,7 +326,7 @@ public void IapGooglePlay (string productId, double productPrice, string currenc
 
             if (androidPushPluginInitializedSuccessfully) {
                 registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, config.AndroidPushNotificationIconId, config.AndroidPushNotificationMaterialIconId,
-                             config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColor, firebaseDeviceToken);
+                             config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColorHex, firebaseDeviceToken);
             }
 
             if (!registered) {

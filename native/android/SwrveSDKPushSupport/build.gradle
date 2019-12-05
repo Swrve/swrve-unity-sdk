@@ -9,6 +9,7 @@ android {
         targetSdkVersion Integer.parseInt(project.ANDROID_BUILD_TARGET_SDK_VERSION)
         versionCode 1
         versionName "1.0"
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     testOptions {
@@ -34,7 +35,7 @@ dependencies {
     api project(':SwrveSDKUnityBridge')
     api project(':UnityFacade')
 
-    implementation 'com.android.support:support-v4:' + project.ANDROID_DESIGN_TOOLS_VERSION
+    implementation 'androidx.legacy:legacy-support-v4:' + project.ANDROIDX_LEGACY_SUPPORT_V4_VERSION
     implementation 'com.google.code.gson:gson:' + project.GSON_VERSION
 
     // This file is not distributed with Swrve source code.
@@ -43,12 +44,10 @@ dependencies {
     amazonCompileOnly fileTree(dir: "providedLibs", include: ['amazon-device-messaging*.jar'])
 
     firebaseApi 'com.google.firebase:firebase-messaging:' + project.FIREBASE_MESSAGING_VERSION
-    firebaseApi 'com.google.android.gms:play-services-ads:' + project.PLAY_SERVICES_ADS_VERSION
+    firebaseApi 'com.google.android.gms:play-services-ads-identifier:' + project.PLAY_SERVICES_ADS_VERSION
 
     // Unit tests
     testImplementation 'org.mockito:mockito-core:1.9.0'
-    testImplementation 'org.robolectric:shadows-support-v4:3.4-rc2'
-    testImplementation 'org.robolectric:shadows-httpclient:3.4-rc2'
     testImplementation 'androidx.test:core:1.0.0'
 
     // Roboelectric tests

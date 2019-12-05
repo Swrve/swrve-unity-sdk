@@ -132,7 +132,7 @@ public class SwrveQAUser
     public void TriggerFailure (string eventName, string globalReason)
     {
         try {
-            if (CanMakeTriggerRequest ()) {
+            if (CanMakeTriggerRequest () && !string.IsNullOrEmpty(eventName)) {
                 string endpoint = getEndpoint("talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/trigger");
                 Dictionary<string, object> triggerJson = new Dictionary<string, object> ();
                 triggerJson.Add ("trigger_name", eventName);
@@ -150,7 +150,8 @@ public class SwrveQAUser
     public void Trigger (string eventName, SwrveBaseMessage baseMessage)
     {
         try {
-            if (CanMakeTriggerRequest ()) {
+            if (CanMakeTriggerRequest () && !string.IsNullOrEmpty(eventName)) {
+                
                 lastTriggerRequestTime = SwrveHelper.GetMilliseconds ();
 
                 Dictionary<int, string> _reasons = campaignReasons;

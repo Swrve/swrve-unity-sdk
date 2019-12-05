@@ -1,11 +1,11 @@
 package com.swrve.unity;
 
 import android.content.Intent;
-import android.support.v4.app.JobIntentService;
+import androidx.core.app.SwrveJobIntentService;
 
 import com.swrve.sdk.SwrveLogger;
 
-public class SwrvePushServiceDefaultJobIntentService extends JobIntentService {
+public class SwrvePushServiceDefaultJobIntentService extends SwrveJobIntentService {
 
     @Override
     protected void onHandleWork(Intent intent) {

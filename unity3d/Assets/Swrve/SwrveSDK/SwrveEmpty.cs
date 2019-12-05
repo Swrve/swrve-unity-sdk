@@ -19,7 +19,7 @@ using SwrveUnity.IAP;
 /// </remarks>
 public class SwrveEmpty : SwrveSDK
 {
-    public override void Init (MonoBehaviour container, int appId, string apiKey, SwrveConfig config)
+    public override void Init (MonoBehaviour container, int appId, string apiKey, SwrveConfig config = null)
     {
         this.Container = container;
         this.ResourceManager = new SwrveUnity.ResourceManager.SwrveResourceManager ();
@@ -110,11 +110,7 @@ public class SwrveEmpty : SwrveSDK
     {
     }
 
-    public override void Iap (int quantity, string productId, double productPrice, string currency)
-    {
-    }
-
-    public override void Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards)
+    public override void Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards = null)
     {
     }
 
@@ -189,5 +185,19 @@ public class SwrveEmpty : SwrveSDK
     public override SwrveMessage GetMessageForId (int messageId)
     {
         return null;
+    }
+
+    public override void Identify(string userId, OnSuccessIdentify onSuccess, OnErrorIdentify onError)
+    { 
+        // do nothing
+    }
+
+    public override void Start(String userId = null) 
+    {
+    }
+    
+    public override bool IsStarted()
+    {
+        return false;
     }
 }

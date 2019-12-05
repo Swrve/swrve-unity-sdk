@@ -124,15 +124,19 @@ public class SwrveComponent : MonoBehaviour
 
     public void Update ()
     {
-        if (SDK != null && SDK.Initialised) {
-            SDK.Update ();
+        if (SDK != null) {
+            if (SDK.Initialised) {
+                SDK.Update ();
+            }
 #if UNITY_IPHONE
             if (!deviceTokenSent) {
                 deviceTokenSent = SDK.ObtainIOSDeviceToken();
             }
+
             SDK.ProcessRemoteNotifications();
-#endif
+#endif            
         }
+
     }
 
 #if UNITY_ANDROID
@@ -140,7 +144,7 @@ public class SwrveComponent : MonoBehaviour
     /// of a device registration id.
     public virtual void OnDeviceRegistered(string registrationId)
     {
-        if (SDK != null && SDK.Initialised) {
+        if (SDK != null) {
             SDK.RegistrationIdReceived(registrationId);
         }
     }
@@ -149,7 +153,7 @@ public class SwrveComponent : MonoBehaviour
     /// of a received push notification.
     public virtual void OnNotificationReceived(string notificationJson)
     {
-        if (SDK != null && SDK.Initialised) {
+        if (SDK != null) {
             SDK.NotificationReceived(notificationJson);
         }
     }
@@ -158,7 +162,7 @@ public class SwrveComponent : MonoBehaviour
     /// of the push notification that opened the app.
     public virtual void OnOpenedFromPushNotification(string notificationJson)
     {
-        if (SDK != null && SDK.Initialised) {
+        if (SDK != null) {
             SDK.OpenedFromPushNotification(notificationJson);
         }
     }
@@ -167,7 +171,7 @@ public class SwrveComponent : MonoBehaviour
     /// of a device registration id.
     public virtual void OnDeviceRegisteredADM(string registrationId)
     {
-        if (SDK != null && SDK.Initialised) {
+        if (SDK != null) {
             SDK.RegistrationIdReceivedADM(registrationId);
         }
     }
@@ -176,7 +180,7 @@ public class SwrveComponent : MonoBehaviour
     /// of the Advertising Id.
     public virtual void OnNewAdvertisingId(string advertisingId)
     {
-        if (SDK != null && SDK.Initialised) {
+        if (SDK != null) {
             SDK.SetGooglePlayAdvertisingId(advertisingId);
         }
     }

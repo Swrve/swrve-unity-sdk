@@ -45,7 +45,7 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
     // Called by Unity
     public static boolean initialiseAdm(final String gameObject,
                                         final String iconId, final String materialIconId,
-                                        final String largeIconId, final int accentColor) {
+                                        final String largeIconId, final String accentColorHex) {
         if (!isAdmAvailable()) {
             Log.e(TAG, "Won't initialise ADM. ADM class not found.");
             return false;
@@ -58,7 +58,7 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
 
         final Activity activity = UnityPlayer.currentActivity;
         try {
-            saveConfig(gameObject, activity, iconId, materialIconId, largeIconId, accentColor);
+            saveConfig(gameObject, activity, iconId, materialIconId, largeIconId, accentColorHex);
             Context context = activity.getApplicationContext();
 
             final ADM adm = new ADM(context);
@@ -78,13 +78,13 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
     }
 
     private static void saveConfig(String gameObject, Activity activity, String iconId,
-                                   String materialIconId, String largeIconId, int accentColor) {
+                                   String materialIconId, String largeIconId, String accentColorHex) {
         Context context = activity.getApplicationContext();
         final SharedPreferences prefs = SwrvePushServiceManagerCommon.getPreferences(context);
 
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(PROPERTY_PUSH_CONFIG_VERSION, PROPERTY_PUSH_CONFIG_VERSION_VAL);
-        SwrvePushSupport.saveConfig(editor, gameObject, activity, iconId, materialIconId, largeIconId, accentColor);
+        SwrvePushSupport.saveConfig(editor, gameObject, activity, iconId, materialIconId, largeIconId, accentColorHex);
         editor.apply();
     }
 

@@ -121,6 +121,7 @@ public partial class SwrveSDK
     protected SwrveOrientation currentOrientation;
     protected IInputManager inputManager = NativeInputManager.Instance;
     protected string prefabName;
+    protected bool sdkStarted;
     private bool applicationPaused = false;
 
     // Messaging rules
@@ -136,7 +137,7 @@ public partial class SwrveSDK
     internal List<SwrveBaseCampaign> campaignDisplayQueue = new List<SwrveBaseCampaign> (); // Conversation / Message queue
 
     // Deeplink Manager
-    private SwrveDeeplinkManager deeplinkManager;
+    protected SwrveDeeplinkManager deeplinkManager;
 
     // QA
     protected SwrveQAUser qaUser;
@@ -155,6 +156,21 @@ public partial class SwrveSDK
     internal SwrveQAUser GetQAUser()
     {
         return this.qaUser;
+    }
+
+    internal bool GetStarted()
+    {
+        return this.sdkStarted;
+    }
+
+    internal bool IsSDKReady ()
+    {
+        if (config.InitMode == SwrveInitMode.MANAGED && sdkStarted == false) {
+            SwrveLog.LogWarning("Warning: SwrveSDK needs to be started in MANAGED mode before calling this api.");
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private void EnableEventSending()
@@ -216,6 +232,11 @@ public partial class SwrveSDK
             SwrveLog.Log ("Swrve path (tried again): " + path);
         }
         return path;
+    }
+
+    protected void SetConversationVersion(int conversationVersion)
+    {
+        this.conversationVersion = conversationVersion;
     }
 
     protected static string GetSwrveTemporaryCachePath ()
@@ -462,6 +483,9 @@ public partial class SwrveSDK
             NamedEventInternal("Swrve.first_session", null, false);
         }
 
+#if UNITY_IPHONE
+        RefreshPushPermissions();
+#endif
         this.QueueDeviceInfo();
         this.StartCampaignsAndResourcesTimer();
         this.SendQueuedEvents();
@@ -496,12 +520,26 @@ public partial class SwrveSDK
         storage.SetSecureFailedListener(delegate() {
             NamedEventInternal ("Swrve.signature_invalid", null, false);
         });
+
+        // Re initialize Event Buffer
+        eventBufferStringBuilder = new StringBuilder (config.MaxBufferChars);
+
         this.InitUser();
     }
 
+private bool ShouldAutoStart () {
+    if (config.InitMode == SwrveInitMode.AUTO) {
+        return true;
+    } else if(config.InitMode == SwrveInitMode.MANAGED && config.ManagedModeAutoStartLastUser && string.IsNullOrEmpty (profileManager.userId) == false) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
     private void InitUser()
     {
-        // some variables and confis that are for the specific user that is running.
+        // some variables and config that are for the specific user that is running.
         this.lastSessionTick = SwrveHelper.GetMilliseconds();
 
         // Save init time
@@ -509,8 +547,6 @@ public partial class SwrveSDK
         showMessagesAfterDelay = initialisedTime;
         autoShowMessagesEnabled = true;
         trackingState = SwrveSdkState.ON;
-
-        eventBufferStringBuilder = new StringBuilder (config.MaxBufferChars);
 
         CheckUserTimes();
 
@@ -1496,6 +1532,8 @@ public partial class SwrveSDK
     {
         List<SwrveBaseCampaign> newCampaigns = new List<SwrveBaseCampaign> ();
         HashSet<SwrveAssetsQueueItem> assetsQueue = new HashSet<SwrveAssetsQueueItem>();
+        // this queue will be merged to above to ensure it's at the front for downloading
+        HashSet<SwrveAssetsQueueItem> priorityAssetsQueue = new HashSet<SwrveAssetsQueueItem>();
 
         try {
             // Stop if we got an empty json
@@ -1584,12 +1622,33 @@ public partial class SwrveSDK
                             continue;
                         }
 
+                        // if the Campaign triggers include the DefaultAutoShowMessagesTrigger
+                        bool isAnAutoShowCampaign = false;
+                        List<SwrveTrigger> triggers = campaign.GetTriggers();
+
+                        for(int t = 0; t < triggers.Count; t++){
+                            if(string.Equals(triggers[t].GetEventName(), DefaultAutoShowMessagesTrigger)) {
+                                isAnAutoShowCampaign = true;
+                                break;
+                            }
+                        }
+
                         if (campaign.GetType() == typeof(SwrveConversationCampaign)) {
                             SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign) campaign;
-                            assetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
+                            if (isAnAutoShowCampaign) {
+                                priorityAssetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
+                            } else {
+                                assetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
+                            }
+
                         } else if (campaign.GetType() == typeof(SwrveMessagesCampaign)) {
                             SwrveMessagesCampaign messageCampaign = (SwrveMessagesCampaign) campaign;
-                            assetsQueue.UnionWith(messageCampaign.GetImageAssets());
+                            if (isAnAutoShowCampaign) {
+                                priorityAssetsQueue.UnionWith(messageCampaign.GetImageAssets());
+                            } else {
+                                assetsQueue.UnionWith(messageCampaign.GetImageAssets());
+                            }
+
                         }
 
                         // Do we have to make retrieve the previous state?
@@ -1621,7 +1680,7 @@ public partial class SwrveSDK
             SwrveLog.LogError ("Could not process campaigns: " + exp.ToString ());
         }
 
-        StartTask ("SwrveAssetsManager.DownloadAssets", this.SwrveAssetsManager.DownloadAssets(assetsQueue, AutoShowMessages));
+        StartTask ("SwrveAssetsManager.DownloadAssets", this.SwrveAssetsManager.DownloadAssets(priorityAssetsQueue, assetsQueue, AutoShowMessages));
         campaigns = new List<SwrveBaseCampaign> (newCampaigns);
     }
 
@@ -1644,6 +1703,11 @@ public partial class SwrveSDK
     internal ISwrveAssetsManager GetSwrveAssetsManager ()
     {
         return this.SwrveAssetsManager;
+    }
+
+    internal void DownloadAnyMissingAssets ()
+    {
+        StartTask ("SwrveAssetsManager.DownloadMissingAssets", this.SwrveAssetsManager.DownloadAnyMissingAssets(AutoShowMessages));
     }
 
     private void LoadResourcesAndCampaigns ()
@@ -1943,9 +2007,10 @@ public partial class SwrveSDK
             lastPushEngagedId = pushId;
             NamedEventInternal ("Swrve.Messages.Push-" + pushId + ".engaged", null, false);
             SwrveLog.Log ("Got Swrve notification with ID " + pushId);
-            Container.StartCoroutine (WaitASecondAndSendEvents_Coroutine());
+            SendQueuedEvents();
         }
     }
+
     private IEnumerator WaitASecondAndSendEvents_Coroutine()
     {
         yield return new WaitForSeconds (1);

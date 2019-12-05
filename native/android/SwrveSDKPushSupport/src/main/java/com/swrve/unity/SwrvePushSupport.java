@@ -33,7 +33,7 @@ public abstract class SwrvePushSupport {
     private static final String PROPERTY_ICON_ID = "icon_id";
     private static final String PROPERTY_MATERIAL_ICON_ID = "material_icon_id";
     private static final String PROPERTY_LARGE_ICON_ID = "large_icon_id";
-    private static final String PROPERTY_ACCENT_COLOR = "accent_color";
+    private static final String PROPERTY_ACCENT_COLOR_HEX = "accent_color_hex";
 
     protected static final String NOTIFICATION_PAYLOAD_KEY = "notification";
 
@@ -65,11 +65,7 @@ public abstract class SwrvePushSupport {
         String iconResourceName = prefs.getString(SwrvePushSupport.PROPERTY_ICON_ID, null);
         String materialIconName = prefs.getString(SwrvePushSupport.PROPERTY_MATERIAL_ICON_ID, null);
         String largeIconName = prefs.getString(SwrvePushSupport.PROPERTY_LARGE_ICON_ID, null);
-        Integer accentColorObject = null;
-        int accentColor = prefs.getInt(SwrvePushSupport.PROPERTY_ACCENT_COLOR, -1);
-        if (accentColor != -1) {
-            accentColorObject = accentColor;
-        }
+        String accentColorHex = prefs.getString(SwrvePushSupport.PROPERTY_ACCENT_COLOR_HEX, null);
         String packageName = context.getPackageName();
 
         PackageManager packageManager = context.getPackageManager();
@@ -105,8 +101,8 @@ public abstract class SwrvePushSupport {
 
         SwrveNotificationConfig.Builder builder = new SwrveNotificationConfig.Builder(iconId, materialIcon, channel).largeIconDrawableId(largeIconId);
 
-        if (accentColorObject != null) {
-            builder.accentColorResourceId(accentColorObject);
+        if (SwrveHelper.isNotNullOrEmpty(accentColorHex)) {
+            builder.accentColorHex(accentColorHex);
         }
 
         return new UnitySwrveNotificationBuilder(context, builder.build());
@@ -162,13 +158,13 @@ public abstract class SwrvePushSupport {
 
     public static void saveConfig(SharedPreferences.Editor editor, String gameObject, Activity activity,
                                   String iconId, String materialIconId,
-                                  String largeIconId, int accentColor) {
+                                  String largeIconId, String accentColorHex) {
         editor.putString(PROPERTY_ACTIVITY_NAME, activity.getLocalClassName());
         editor.putString(PROPERTY_GAME_OBJECT_NAME, gameObject);
         editor.putString(PROPERTY_ICON_ID, iconId);
         editor.putString(PROPERTY_MATERIAL_ICON_ID, materialIconId);
         editor.putString(PROPERTY_LARGE_ICON_ID, largeIconId);
-        editor.putInt(PROPERTY_ACCENT_COLOR, accentColor);
+        editor.putString(PROPERTY_ACCENT_COLOR_HEX, accentColorHex);
     }
 
     private static class UnitySwrveNotificationBuilder extends SwrveNotificationBuilder {

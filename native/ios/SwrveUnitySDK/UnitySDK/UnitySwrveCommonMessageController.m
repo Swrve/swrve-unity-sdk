@@ -50,7 +50,7 @@
         SwrveBaseConversation *conversation = [self conversationFromString:conversationJson];
         if (conversation && self.conversationWindow == nil) {
             self.conversationWindow = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-            self.swrveConversationItemViewController = [SwrveConversationItemViewController initFromStoryboard];
+            self.swrveConversationItemViewController = [SwrveConversationItemViewController initConversation];
             bool success = [SwrveConversationItemViewController showConversation:conversation
                                                               withItemController:self.swrveConversationItemViewController
                                                                 withEventHandler:(id <SwrveMessageEventHandler>) self
