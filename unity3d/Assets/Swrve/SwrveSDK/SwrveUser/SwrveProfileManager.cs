@@ -51,19 +51,20 @@ public class SwrveProfileManager
     }
     
     /// <summary>
-    /// Generates a userId and populates the userId property
+    /// Generates a userId or populates the userId property if provided one
     /// </summary>
-    public void PrepareAndSetUserId(string inputUserId)
+    public void PrepareAndSetUserId(string inputUserId = null)
     {   
         if (string.IsNullOrEmpty(inputUserId) == false) {
-            userId = inputUserId;
-        } else {
+            if (userId != inputUserId) {
+                userId = inputUserId;
+                this.SaveSwrveUserId(userId);
+            }
+        } else if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(inputUserId)) {
             userId = SwrveHelper.GetRandomUUID();
+            this.SaveSwrveUserId(userId);
         }
-        
-        this.SaveSwrveUserId(userId);
     }
-
 
     /// <summary>
     /// Update a SwrveUser in cache if is able to match the swrveUserId or externalUserId with an user in our cache, it also set this user as verified -
