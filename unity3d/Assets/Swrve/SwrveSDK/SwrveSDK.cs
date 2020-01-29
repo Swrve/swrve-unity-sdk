@@ -38,7 +38,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "7.0.1";
+    public const string SdkVersion = "7.0.2";
 
     protected int appId;
     /// <summary>
@@ -226,7 +226,7 @@ public partial class SwrveSDK
             InitNative();
         }
 
-        sdkStarted = ShouldAutoStart();     
+        sdkStarted = ShouldAutoStart();
 
         if (sdkStarted) {
             this.InitUser();
@@ -248,7 +248,7 @@ public partial class SwrveSDK
     #endif
                 }
             }
-    #endif  
+    #endif
         }
     }
 
@@ -300,7 +300,7 @@ public partial class SwrveSDK
     public virtual void NamedEvent (string name, Dictionary<string, string> payload = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -324,7 +324,7 @@ public partial class SwrveSDK
     public virtual void UserUpdate (Dictionary<string, string> attributes)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -353,7 +353,7 @@ public partial class SwrveSDK
     public virtual void UserUpdate (string name, DateTime date)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -393,10 +393,10 @@ public partial class SwrveSDK
     public virtual void Purchase (string item, string currency, int cost, int quantity)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
-            
+
         Dictionary<string,object> json = new Dictionary<string, object> ();
         json.Add ("item", item);
         json.Add ("currency", currency);
@@ -431,7 +431,7 @@ public partial class SwrveSDK
     public virtual void Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -458,7 +458,7 @@ public partial class SwrveSDK
     public virtual void CurrencyGiven (string givenCurrency, double amount)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -525,7 +525,7 @@ public partial class SwrveSDK
     /// </param>
     public virtual void HandleDeeplink (string url)
     {
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -544,7 +544,7 @@ public partial class SwrveSDK
     /// </param>
     public virtual void HandleDeferredDeeplink(string url)
     {
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -567,7 +567,7 @@ public partial class SwrveSDK
     public virtual void GetUserResources (Action<Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -594,7 +594,7 @@ public partial class SwrveSDK
     public virtual void GetUserResourcesDiff (Action<Dictionary<string, Dictionary<string, string>>, Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -775,7 +775,7 @@ public partial class SwrveSDK
     public virtual void OnSwrvePause ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -801,7 +801,7 @@ public partial class SwrveSDK
 #if SWRVE_SUPPORTED_PLATFORM
         applicationPaused = false;
         if (Initialised) {
-            if (!IsSDKReady()) { 
+            if (!IsSDKReady()) {
                 return;
             }
 #if UNITY_IPHONE
@@ -986,7 +986,7 @@ public partial class SwrveSDK
     /// </returns>
     public virtual SwrveMessage GetMessageForEvent (string eventName, IDictionary<string, string> payload=null)
     {
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return null;
         }
 
@@ -1087,9 +1087,9 @@ public partial class SwrveSDK
     /// </returns>
     public virtual SwrveConversation GetConversationForEvent (string eventName, IDictionary<string, string> payload=null)
     {
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return null;
-        }        
+        }
 
         if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
             return null;
@@ -1192,7 +1192,7 @@ public partial class SwrveSDK
 
     public virtual void ShowMessageCenterCampaign(SwrveBaseCampaign campaign)
     {
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -1201,7 +1201,7 @@ public partial class SwrveSDK
 
     public virtual void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation)
     {
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -1212,7 +1212,7 @@ public partial class SwrveSDK
 
     public virtual List<SwrveBaseCampaign> GetMessageCenterCampaigns()
     {
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return null;
         }
 
@@ -1221,7 +1221,7 @@ public partial class SwrveSDK
 
     public virtual List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation orientation)
     {
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return null;
         }
 
@@ -1254,7 +1254,7 @@ public partial class SwrveSDK
     public virtual SwrveMessage GetMessageForId (int messageId)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return null;
         }
 
@@ -1298,7 +1298,7 @@ public partial class SwrveSDK
     public virtual IEnumerator ShowMessageForEvent (string eventName, SwrveMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             yield return null;
         }
 
@@ -1330,7 +1330,7 @@ public partial class SwrveSDK
     public virtual IEnumerator ShowConversationForEvent (string eventName, SwrveConversation conversation)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             yield return null;
         }
 
@@ -1347,7 +1347,7 @@ public partial class SwrveSDK
     public virtual void DismissMessage ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -1372,7 +1372,7 @@ public partial class SwrveSDK
     public virtual void RefreshUserResourcesAndCampaigns ()
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) { 
+        if (!IsSDKReady()) {
             return;
         }
 
@@ -1432,9 +1432,9 @@ public partial class SwrveSDK
     /// A new session is started if not already started or if is already started with different userId.
     /// </summary>
     /// <param name="userID">
-    /// User id to start sdk with.. 
+    /// User id to start sdk with..
     /// </param>
-    public virtual void Start(String userId = null) 
+    public virtual void Start(String userId = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         if (config.InitMode == SwrveInitMode.AUTO) {
@@ -1452,7 +1452,7 @@ public partial class SwrveSDK
         }
 #endif
     }
-    
+
     /// <summary>
     /// @return true when in SWRVE_INIT_MODE_AUTO mode. When in SWRVE_INIT_MODE_MANAGED mode it will return true after one of the 'start' api's has been called.
     /// </summary>
@@ -1463,7 +1463,7 @@ public partial class SwrveSDK
         return sdkStarted;
 #else
         yield return false;
-#endif        
+#endif
     }
 
 }
