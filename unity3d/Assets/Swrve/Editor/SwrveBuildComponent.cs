@@ -1,9 +1,10 @@
 using System;
-using UnityEditor;
+using System.Text;
 using System.Diagnostics;
-using UnityEngine;
 using System.IO;
 using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
 using SwrveUnityMiniJSON;
 
 public class SwrveBuildComponent : SwrveCommonBuildComponent
@@ -198,7 +199,31 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     [MenuItem ("Swrve/Android Prebuild")]
     public static void AndroidPreBuild()
     {
+        AndroidCheckAndAddManifest();
         AndroidCorrectApplicationId();
+    }
+
+
+    private static void AndroidCheckAndAddManifest()
+    {
+        string androidDir = Path.Combine(Directory.GetCurrentDirectory(), "Assets/Plugins/Android");
+        string amFile = Path.Combine(androidDir, "AndroidManifest.xml");
+
+        if (!File.Exists(amFile))
+        {
+            // Prompt to confirm with the User to generate a new Android Manifest
+            bool generateManifest = EditorUtility.DisplayDialog("Swrve Android Prebuild", "No AndroidManifest.xml file was been found in Assets/Plugins/Android. Generate a basic one?", "Yes", "No");
+
+            if (generateManifest) {
+                StringBuilder manifestSB = new StringBuilder();
+                manifestSB.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+                manifestSB.AppendLine("<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">");
+                manifestSB.AppendLine("    <application android:icon=\"@drawable/app_icon\" android:label=\"@string/app_name\" android:theme=\"@style/UnityThemeSelector\" android:debuggable=\"true\" android:isGame=\"true\" android:name=\"com.swrve.sdk.SwrveUnityApplication\">");
+                manifestSB.AppendLine("    </application>");
+                manifestSB.AppendLine("</manifest>");
+                File.WriteAllText(amFile, manifestSB.ToString());
+            }
+        }
     }
 
     private static void AndroidCorrectApplicationId()
@@ -210,11 +235,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
             string amFile = Path.Combine(project, "_AndroidManifest.xml");
             if (File.Exists (amFile)) {
                 string applicationIdentifier;
-#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
                 applicationIdentifier = PlayerSettings.applicationIdentifier;
-#else
-                applicationIdentifier = PlayerSettings.bundleIdentifier;
-#endif
                 File.WriteAllText (Path.Combine (project, "AndroidManifest.xml"),
                                    File.ReadAllText (amFile).Replace ("${applicationId}", applicationIdentifier)
                                   );

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace SwrveUnity
 {
@@ -26,5 +27,7 @@ public interface ISwrveAssetsManager
     IEnumerator DownloadAssets(HashSet<SwrveAssetsQueueItem> assetsQueue, Action callBack);
     IEnumerator DownloadAssets(HashSet<SwrveAssetsQueueItem> assetsQueue, Action<object> callBack, object arg);
     IEnumerator DownloadAssets(HashSet<SwrveAssetsQueueItem> autoShowQueue,  HashSet<SwrveAssetsQueueItem> assetQueue, Action callBack);
+
+    Coroutine StartTask (string tag, IEnumerator task);
 }
 }

@@ -41,4 +41,8 @@ public class SwrveUnityCommonHelper {
         ISwrveCommon swrveCommon = SwrveCommon.getInstance();
         swrveCommon.saveNotificationAuthenticated(notificationId);
     }
+
+    public static void checkInstance() {
+        SwrveCommon.checkInstanceCreated();
+    }
 }

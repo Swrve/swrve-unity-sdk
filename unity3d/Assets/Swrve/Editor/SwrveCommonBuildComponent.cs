@@ -24,50 +24,28 @@ public class SwrveCommonBuildComponent
         UnityEngine.Debug.Log ("[####] Building " + fileName);
         UnityEngine.Debug.Log ("With: " + PlayerSettings.iOS.sdkVersion + ", opt: " + opt + ", scenes: " + mainScenes + ", id: " + applicationIdentifier);
 
-#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
-        PlayerSettings.applicationIdentifier = applicationIdentifier;
-#else
-        PlayerSettings.bundleIdentifier = applicationIdentifier;
-#endif
-
-#if UNITY_5 || UNITY_2017_1_OR_NEWER
-#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTargetGroup.iOS, BuildTarget.iOS);
-#else
-        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iOS);
-#endif
+        PlayerSettings.applicationIdentifier = applicationIdentifier;
 
 #if UNITY_2018_1_OR_NEWER
-        string error = (BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt).summary.totalErrors > 0)? "Build had errors" : null;
+        var summary = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt).summary;
+        if (summary.result == UnityEditor.Build.Reporting.BuildResult.Failed) {
+            throw new Exception ("Build had " + summary.totalErrors + " errors");
+        }
 #else
         string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt);
-#endif
-
-#else
-        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.iPhone);
-        string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iPhone, opt);
-#endif
-
         if (error != null && !error.Equals (string.Empty)) {
             throw new Exception (error);
         }
+#endif
         UnityEngine.Debug.Log ("Built " + fileName);
     }
 
     protected static void BuildAndroid (string fileName, BuildOptions opt, string[] mainScenes, string applicationIdentifier)
     {
         UnityEngine.Debug.Log ("[####] Building " + fileName);
-#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTargetGroup.Android, BuildTarget.Android);
-#else
-        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTarget.Android);
-#endif
-
-#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
         PlayerSettings.applicationIdentifier = applicationIdentifier;
-#else
-        PlayerSettings.bundleIdentifier = applicationIdentifier;
-#endif
         SwrveBuildComponent.AndroidPreBuild ();
 
         // Fix for ANDROID_HOME Unity bug
@@ -75,14 +53,16 @@ public class SwrveCommonBuildComponent
 
         // Build Android
 #if UNITY_2018_1_OR_NEWER
-        string error = (BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.Android, opt).summary.totalErrors > 0)? "Build had errors" : null;
+        var summary = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.Android, opt).summary;
+        if (summary.result == UnityEditor.Build.Reporting.BuildResult.Failed) {
+            throw new Exception ("Build had " + summary.totalErrors + " errors");
+        }
 #else
         string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.Android, opt);
-#endif
-
         if (error != null && !error.Equals (string.Empty)) {
             throw new Exception (error);
         }
+#endif
         UnityEngine.Debug.Log ("Built " + fileName);
     }
 
@@ -152,11 +132,7 @@ public class SwrveCommonBuildComponent
             info.WorkingDirectory = workingDirectory;
             info.FileName = androidSDKLocation + "/platform-tools/adb";
             string applicationIdentifier;
-#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
             applicationIdentifier = PlayerSettings.applicationIdentifier;
-#else
-            applicationIdentifier = PlayerSettings.bundleIdentifier;
-#endif
 
             info.Arguments = string.Format("shell monkey -p {0} -c android.intent.category.LAUNCHER 1", applicationIdentifier);
             proc = System.Diagnostics.Process.Start (info);

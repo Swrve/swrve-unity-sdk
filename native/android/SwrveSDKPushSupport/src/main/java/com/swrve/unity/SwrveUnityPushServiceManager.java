@@ -40,6 +40,8 @@ public class SwrveUnityPushServiceManager {
     }
 
     public void processRemoteNotification(Bundle msg) {
+        SwrvePushSupport.sendPushDeliveredEvent(msg);
+
         if (!SwrveHelper.isSwrvePush(msg)) {
             SwrveLogger.i("Swrve received a push notification: but not processing as it doesn't contain:"
                     + SwrveNotificationConstants.SWRVE_TRACKING_KEY);
@@ -49,6 +51,7 @@ public class SwrveUnityPushServiceManager {
             SwrveLogger.w("Swrve cannot process push because its intended for different user.");
             return;
         }
+        
 
         try {
             if (SwrveHelper.isSwrvePush(msg)) {

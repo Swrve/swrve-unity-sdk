@@ -21,6 +21,7 @@ void UnitySendRemoteNotification(NSDictionary* notification);
 
 - (long)appId;
 - (NSString *)apiKey;
+- (NSString *)deviceUUID;
 - (NSString *)applicationPath;
 - (NSString *)sigSuffix;
 - (NSString *)appVersion;
@@ -44,11 +45,10 @@ void UnitySendRemoteNotification(NSDictionary* notification);
 - (void)showConversationFromString:(NSString*) conversation;
 - (bool)isConversationDisplaying;
 - (int)conversationClosed;
+- (void)updateQAUser:(NSString *)qaJson;
 
 #if !defined(SWRVE_NO_PUSH)
 + (BOOL)didReceiveRemoteNotification:(NSDictionary *)userInfo withBackgroundCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary*))completionHandler;
 #endif
-
-- (void)updateQAUser:(NSString *)qaJson;
 
 @end

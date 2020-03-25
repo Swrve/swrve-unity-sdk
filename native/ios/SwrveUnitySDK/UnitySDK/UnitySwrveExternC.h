@@ -24,6 +24,7 @@ extern "C"
     char* _swrveBackgroundRefreshStatus(void);
     void _swrveiOSUpdateQaUser(char* jsonMap);
     void _swrveUserId(char* userId);
+    void _saveConfigForPushDelivery(void);
     void _clearAllAuthenticatedNotifications(void);
 
 #ifdef __cplusplus

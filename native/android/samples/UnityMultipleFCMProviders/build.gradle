@@ -27,5 +27,8 @@ android {
 }
 
 dependencies {
-    api project(':SwrveSDKPushSupport')
+    // Requires SwrveSDKPushSupport-firebase-release.aar at least to compile
+    api fileTree(dir: 'libs', include: ['*.aar'])
+
+    api 'com.google.firebase:firebase-messaging:' + project.FIREBASE_MESSAGING_VERSION
 }

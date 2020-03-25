@@ -8,10 +8,7 @@ using SwrveUnity.IAP;
 using SwrveUnity.Helpers;
 using SwrveUnityMiniJSON;
 using SwrveUnity.SwrveUsers;
-
-#if UNITY_5 || UNITY_2017_1_OR_NEWER
 using UnityEngine.iOS;
-#endif
 
 public partial class SwrveSDK
 {
@@ -308,6 +305,9 @@ public void IapApple (int quantity, string productId, double productPrice, strin
     public static extern void _swrveUserId(string userId);
 
     [DllImport ("__Internal")]
+    public static extern void _saveConfigForPushDelivery();
+
+    [DllImport ("__Internal")]
     public static extern void _clearAllAuthenticatedNotifications();
 
 #endif
@@ -319,14 +319,10 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 #if !UNITY_EDITOR
         try {
             _swrveiOSRegisterForPushNotifications (Json.Serialize (config.NotificationCategories.Select(a => a.toDict ()).ToList ()), isProvisional);
+            _saveConfigForPushDelivery();
         } catch (Exception exp) {
             SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-
-#if UNITY_5 || UNITY_5_OR_NEWER || UNITY_2017_1_OR_NEWER
             NotificationServices.RegisterForNotifications(NotificationType.Alert | NotificationType.Badge | NotificationType.Sound);
-#else
-            NotificationServices.RegisterForRemoteNotificationTypes(RemoteNotificationType.Alert | RemoteNotificationType.Badge | RemoteNotificationType.Sound);
-#endif
         }
 #endif
     }
@@ -340,6 +336,16 @@ public void IapApple (int quantity, string productId, double productPrice, strin
 
         return null;
     }
+
+    protected void SaveConfigForPushDelivery()
+    {
+#if !UNITY_EDITOR
+        if(config.PushNotificationEnabled) {
+            _saveConfigForPushDelivery();
+        }
+#endif
+    }
+
 
     protected void ProcessRemoteNotification (RemoteNotification notification)
     {

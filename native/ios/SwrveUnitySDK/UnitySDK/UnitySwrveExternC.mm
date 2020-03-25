@@ -10,6 +10,7 @@
 #import "SwrveNotificationManager.h"
 #import "SwrvePermissions.h"
 #import "SwrveCampaignInfluence.h"
+#import "SwrveCampaignDelivery.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -178,6 +179,15 @@ extern "C"
         return [UnitySwrveHelper NSStringCopy:pushAuthorizationFromSettings];
 #endif
         return [UnitySwrveHelper NSStringCopy:swrve_permission_status_unsupported];
+    }
+
+    void _saveConfigForPushDelivery() {
+        [SwrveCampaignDelivery saveConfigForPushDeliveryWithUserId:[[UnitySwrve sharedInstance] userId]
+                                                WithEventServerUrl:[[UnitySwrve sharedInstance] eventsServer]
+                                                      WithDeviceId:[[UnitySwrve sharedInstance] deviceUUID]
+                                                  WithSessionToken:[[UnitySwrve sharedInstance] sessionToken]
+                                                    WithAppVersion:[[UnitySwrve sharedInstance] appVersion]
+                                                     ForAppGroupID:[[UnitySwrve sharedInstance] appGroupIdentifier]];
     }
 
     void _clearAllAuthenticatedNotifications(void)

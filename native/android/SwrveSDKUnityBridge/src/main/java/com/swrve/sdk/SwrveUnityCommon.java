@@ -298,6 +298,8 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
             if (SwrveHelper.isNotNullOrEmpty(userId)) {
                 SwrveLogger.d("setUserId called: User will change from: %s, To: %s", getStringDetail(USER_ID_KEY), userId);
                 this.currentDetails.put(USER_ID_KEY, userId);
+                // Session token need to update because we changed UserId.
+                sessionKey = SwrveHelper.generateSessionToken(this.getApiKey(), this.getAppId(), userId);
             }
         } catch (Exception ex) {
             SwrveLogger.e("Exception trying to update SwrveUserId", ex);
@@ -456,7 +458,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
 
     @Override
     public int getNextSequenceNumber() {
-        return 0; //
+        return 0;
     }
 
     @CalledByUnity

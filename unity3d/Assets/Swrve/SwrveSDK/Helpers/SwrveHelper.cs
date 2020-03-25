@@ -196,6 +196,9 @@ public static partial class SwrveHelper
         case "user":
             eventName = "Swrve.user_properties_changed";
             break;
+        case "device_update":
+            eventName = "Swrve.device_properties_changed";
+            break;
         }
 
         return eventName;

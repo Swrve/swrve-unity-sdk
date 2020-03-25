@@ -10,8 +10,11 @@ project(":SwrveSDKPush").projectDir = new File(ANDROID_REPO_LOC, "/SwrveSDKPush"
 include ":UnityFacade"
 include ":SwrveSDKPushSupport"
 include ":SwrveSDKUnityBridge"
+include ":SwrveSDKUnityBridgeMultiDex"
 include ":SwrveSDKUnityAndroidBridge"
 include ":SwrveSDKUnityAndroidBridgeTest"
 
 include ":UnityMultipleFCMProviders"
 project(":UnityMultipleFCMProviders").projectDir = file("samples/UnityMultipleFCMProviders")
+include ':UnitySingleFCMProvider'
+project(":UnitySingleFCMProvider").projectDir = file("samples/UnitySingleFCMProvider")

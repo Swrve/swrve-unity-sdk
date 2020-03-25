@@ -143,7 +143,7 @@ public class SwrveDeeplinkManager
                     SwrveMessagesCampaign messageCampaign = (SwrveMessagesCampaign) campaign;
                     assetsQueue.UnionWith(messageCampaign.GetImageAssets());
                 }
-                container.StartCoroutine (assetsManager.DownloadAssets(assetsQueue, AddCampaignToQueue, campaign));
+                assetsManager.StartTask ("SwrveAssetsManager.DownloadAssets", assetsManager.DownloadAssets(assetsQueue, AddCampaignToQueue, campaign));
             }
         } catch (Exception exp) {
             SwrveLog.LogError ("Could not process ad journey campaign: " + exp.ToString ());

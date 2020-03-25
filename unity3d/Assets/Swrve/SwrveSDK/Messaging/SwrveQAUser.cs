@@ -122,10 +122,6 @@ public class SwrveQAUser
         Dictionary<string, string> requestHeaders = new Dictionary<string, string> {
             { @"Content-Type", @"application/json; charset=utf-8" }
         };
-#if !UNITY_2017_1_OR_NEWER
-        requestHeaders["Content-Length"] = qaPostEncodedData.Length.ToString();
-#endif
-
         swrve.Container.StartCoroutine (restClient.Post (endpoint, qaPostEncodedData, requestHeaders, RestListener));
     }
 
@@ -151,7 +147,7 @@ public class SwrveQAUser
     {
         try {
             if (CanMakeTriggerRequest () && !string.IsNullOrEmpty(eventName)) {
-                
+
                 lastTriggerRequestTime = SwrveHelper.GetMilliseconds ();
 
                 Dictionary<int, string> _reasons = campaignReasons;
@@ -204,11 +200,7 @@ public class SwrveQAUser
     }
 
 #if UNITY_IPHONE
-#if UNITY_5 || UNITY_2017_1_OR_NEWER
     public void PushNotification (UnityEngine.iOS.RemoteNotification notification)
-#else
-    public void PushNotification (RemoteNotification notification)
-#endif
     {
         try {
             String endpoint = getEndpoint("talk/game/" + swrve.ApiKey + "/user/" + swrve.UserId + "/push");

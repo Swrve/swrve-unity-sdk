@@ -21,7 +21,7 @@ public partial class SwrveSDK
         return false;
     }
     public void updateQAUser(Dictionary<string, object> map) {}
-    private void initNative (){}
+    private void initNative () {}
 }
 
 #endif

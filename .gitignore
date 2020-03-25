@@ -8,3 +8,4 @@
 native/windows/SwrveUnityBridge/bin
 native/windows/SwrveUnityBridge/obj
 project.lock.json
+.settings/

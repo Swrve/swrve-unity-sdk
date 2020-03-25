@@ -75,12 +75,12 @@ public class SwrveComponent : MonoBehaviour
 #elif UNITY_ANDROID
             supportedOSAndVersion = SwrveSDK.IsSupportedAndroidVersion();
 #else
-            #warning "We do not officially support this plaform. tracking is disabled."
+#warning "We do not officially support this plaform. tracking is disabled."
             supportedOSAndVersion = false;
-#endif            
+#endif
 
-#elif !UNITY_IPHONE && !UNITY_ANDROID 
-            #warning "We do not officially support this plaform. tracking is disabled."
+#elif !UNITY_IPHONE && !UNITY_ANDROID
+#warning "We do not officially support this plaform. tracking is disabled."
             supportedOSAndVersion = false;
 #endif
             if (supportedOSAndVersion) {
@@ -134,7 +134,7 @@ public class SwrveComponent : MonoBehaviour
             }
 
             SDK.ProcessRemoteNotifications();
-#endif            
+#endif
         }
 
     }

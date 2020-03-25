@@ -10,13 +10,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-#if UNITY_2017_1_OR_NEWER
 using UnityEditor.iOS.Xcode;
 using UnityEditor.iOS.Xcode.Extensions;
-#else
-using SwrveInternal.iOS.Xcode;
-using SwrveInternal.iOS.Xcode.Extensions;
-#endif
 
 /// <summary>
 /// Integrates the native code required for Conversations and Location campaigns support on iOS.
@@ -26,16 +21,20 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
     [PostProcessBuild(100)]
     public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
     {
-#if UNITY_5 || UNITY_2017_1_OR_NEWER
-        if (target == BuildTarget.iOS)
-#else
-        if(target == BuildTarget.iPhone)
+        try {
+            if (target == BuildTarget.iOS) {
+                SwrveLog.Log("SwrveIOSPostProcess");
+                CorrectXCodeProject (pathToBuiltProject, true);
+                SilentPushNotifications (pathToBuiltProject);
+                PermissionsDelegateSupport (pathToBuiltProject);
+            }
+        } catch(Exception exp) {
+            UnityEngine.Debug.LogError("Swrve could not post process the iOS build: " + exp);
+#if UNITY_2018_2_OR_NEWER
+            if (Application.isBatchMode) {
+                EditorApplication.Exit(1);
+            }
 #endif
-        {
-            SwrveLog.Log("SwrveIOSPostProcess");
-            CorrectXCodeProject (pathToBuiltProject, true);
-            SilentPushNotifications (pathToBuiltProject);
-            PermissionsDelegateSupport (pathToBuiltProject);
         }
     }
 
@@ -56,7 +55,11 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         // 4. Add required frameworks for Conversations
         PBXProject project = new PBXProject();
         project.ReadFromString (xcodeproj);
+#if UNITY_2019_3_OR_NEWER
+        string targetGuid = project.GetUnityFrameworkTargetGuid();
+#else
         string targetGuid = project.TargetGuidByName ("Unity-iPhone");
+#endif
         project.AddFrameworkToProject(targetGuid, "Webkit.framework", true /*weak*/);
 
         // 6. Add conversations resources to bundle
@@ -95,21 +98,19 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
     private static PBXProject AddExtensionToProject(PBXProject project, string pathToProject)
     {
         PBXProject proj = project;
+#if UNITY_2019_3_OR_NEWER
+        string mainTarget = proj.GetUnityMainTargetGuid();
+#else
         string mainTarget = proj.TargetGuidByName(PBXProject.GetUnityTargetName());
+#endif
 
         // Add Push files to the extension
         CopyFolder("Assets/Plugins/iOS/SwrvePushExtension", pathToProject + "/SwrvePushExtension");
 
-        string extensionTarget = "";
-
-#if UNITY_5_6_OR_NEWER || UNITY_2017_1_OR_NEWER
-        extensionTarget = proj.AddAppExtension(mainTarget, "SwrvePushExtension", PlayerSettings.applicationIdentifier + ".ServiceExtension", "SwrvePushExtension/Info.plist");
-#else
-        extensionTarget = proj.AddAppExtension(mainTarget, "SwrvePushExtension", PlayerSettings.bundleIdentifier + ".ServiceExtension", "SwrvePushExtension/Info.plist");
-#endif
+        string extensionTarget = proj.AddAppExtension(mainTarget, "SwrvePushExtension", PlayerSettings.applicationIdentifier + ".ServiceExtension", "SwrvePushExtension/Info.plist");
 
         // Ensure Service Files are part of the Build Phases
-        proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/NotificationService.h", "SwrvePushExtension/NotificationService.h"));
+        proj.AddFile(pathToProject + "/SwrvePushExtension/NotificationService.h", "SwrvePushExtension/NotificationService.h");
         proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/NotificationService.m", "SwrvePushExtension/NotificationService.m"));
         // Add TeamID from Player Settings to project
         proj.SetTeamId(extensionTarget, PlayerSettings.iOS.appleDeveloperTeamID);
@@ -287,7 +288,9 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
                 // Add to the XCode project
                 string relativeProjectPath = Path.Combine (destPath, fileName);
                 string resourceGuid = project.AddFile (relativeProjectPath, relativeProjectPath, PBXSourceTree.Source);
-                project.AddFileToBuild (targetGuid, resourceGuid);
+                if (filePath.EndsWith(".m")) {
+                    project.AddFileToBuild (targetGuid, resourceGuid);
+                }
             }
         }
 

@@ -485,6 +485,7 @@ public partial class SwrveSDK
 
 #if UNITY_IPHONE
         RefreshPushPermissions();
+        SaveConfigForPushDelivery();
 #endif
         this.QueueDeviceInfo();
         this.StartCampaignsAndResourcesTimer();
@@ -527,15 +528,16 @@ public partial class SwrveSDK
         this.InitUser();
     }
 
-private bool ShouldAutoStart () {
-    if (config.InitMode == SwrveInitMode.AUTO) {
-        return true;
-    } else if(config.InitMode == SwrveInitMode.MANAGED && config.ManagedModeAutoStartLastUser && string.IsNullOrEmpty (profileManager.userId) == false) {
-        return true;
-    } else {
-        return false;
+    private bool ShouldAutoStart ()
+    {
+        if (config.InitMode == SwrveInitMode.AUTO) {
+            return true;
+        } else if(config.InitMode == SwrveInitMode.MANAGED && config.ManagedModeAutoStartLastUser && string.IsNullOrEmpty (profileManager.userId) == false) {
+            return true;
+        } else {
+            return false;
+        }
     }
-}
 
     private void InitUser()
     {
@@ -790,9 +792,6 @@ private bool ShouldAutoStart () {
                 { @"Content-Type", @"application/json; charset=utf-8" },
                 { @"Cache-Control", @"no-cache; charset=utf-8" }
             };
-#if !UNITY_2017_1_OR_NEWER
-            requestHeaders["Content-Length"] = userIdentityPostEncodedData.Length.ToString();
-#endif
             StartTask ("PostIdentity_Coroutine", PostIdentity_Coroutine (requestHeaders, userIdentityPostEncodedData, swrveOnSuccessIdentify, swrveOnErrorIdentify));
         }
     }
@@ -1496,17 +1495,10 @@ private bool ShouldAutoStart () {
     {
         string filePath = GetTemporaryPathFileName (fileName);
 
-#if UNITY_2017_1_OR_NEWER
         UnityWebRequest www = UnityWebRequestTexture.GetTexture("file://" + filePath);
         yield return www.SendWebRequest();
         if (!www.isNetworkError && !www.isHttpError) {
             Texture2D loadedTexture = ((DownloadHandlerTexture)www.downloadHandler).texture;
-#else
-        WWW www = new WWW ("file://" + filePath);
-        yield return www;
-        if (www != null && www.error == null) {
-            Texture2D loadedTexture = www.texture;
-#endif
             texture.Value (loadedTexture);
         } else {
             SwrveLog.LogError ("Could not load asset with WWW " + filePath + ": " + www.error);
@@ -1626,7 +1618,7 @@ private bool ShouldAutoStart () {
                         bool isAnAutoShowCampaign = false;
                         List<SwrveTrigger> triggers = campaign.GetTriggers();
 
-                        for(int t = 0; t < triggers.Count; t++){
+                        for(int t = 0; t < triggers.Count; t++) {
                             if(string.Equals(triggers[t].GetEventName(), DefaultAutoShowMessagesTrigger)) {
                                 isAnAutoShowCampaign = true;
                                 break;

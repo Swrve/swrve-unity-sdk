@@ -24,7 +24,7 @@ public enum AndroidPushProvider {
 }
 
 public enum SwrveInitMode {
-    AUTO, 
+    AUTO,
     MANAGED
 }
 
@@ -263,7 +263,7 @@ public class SwrveConfig
     public ISwrveTriggeredMessageListener TriggeredMessageListener = null;
 
     /// <summary>
-    /// Initialisation Mode. AUTO is the default. 
+    /// Initialisation Mode. AUTO is the default.
     /// </summary>
     public SwrveInitMode InitMode = SwrveInitMode.AUTO;
 

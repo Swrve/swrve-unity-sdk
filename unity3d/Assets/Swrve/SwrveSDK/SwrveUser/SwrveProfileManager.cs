@@ -42,19 +42,19 @@ public class SwrveProfileManager
         if (initMode == SwrveInitMode.AUTO && string.IsNullOrEmpty (userId)) {
             PrepareAndSetUserId(userId);
         }
-        
+
         if (string.IsNullOrEmpty (userId) ) {
             SwrveLog.Log("The userId is not currently set");
         } else {
             SwrveLog.Log("Your current user id is: " + userId);
         }
     }
-    
+
     /// <summary>
     /// Generates a userId or populates the userId property if provided one
     /// </summary>
     public void PrepareAndSetUserId(string inputUserId = null)
-    {   
+    {
         if (string.IsNullOrEmpty(inputUserId) == false) {
             if (userId != inputUserId) {
                 userId = inputUserId;

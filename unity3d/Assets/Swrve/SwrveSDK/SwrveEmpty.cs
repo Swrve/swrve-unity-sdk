@@ -188,14 +188,14 @@ public class SwrveEmpty : SwrveSDK
     }
 
     public override void Identify(string userId, OnSuccessIdentify onSuccess, OnErrorIdentify onError)
-    { 
+    {
         // do nothing
     }
 
-    public override void Start(String userId = null) 
+    public override void Start(String userId = null)
     {
     }
-    
+
     public override bool IsStarted()
     {
         return false;

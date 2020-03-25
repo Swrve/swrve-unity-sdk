@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Required for the Firebase plugin to connect to the correct configuration -->
+    <!-- https://developers.google.com/android/guides/google-services-plugin -->
+    <string name="gcm_defaultSenderId" translatable="false">YOUR_SENDER_ID</string>
+    <string name="google_app_id" translatable="false">YOUR_APP_ID</string>
+    <string name="google_api_key" translatable="false">YOUR_GOOGLE_API_KEY</string>
+</resources>

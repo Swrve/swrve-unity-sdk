@@ -38,7 +38,7 @@ using System.Runtime.InteropServices;
 /// </remarks>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "7.0.2";
+    public const string SdkVersion = "7.1.0";
 
     protected int appId;
     /// <summary>
@@ -232,23 +232,23 @@ public partial class SwrveSDK
             this.InitUser();
             ProcessInfluenceData();
 
-        // In-app messaging features
-        if (config.MessagingEnabled) {
-            // Check language and link token
-            if (string.IsNullOrEmpty(Language)) {
-                throw new Exception ("Language needed to use messaging");
-            } else if (string.IsNullOrEmpty(config.AppStore)) {
-                // Default app-store by platform
-    #if UNITY_ANDROID
+            // In-app messaging features
+            if (config.MessagingEnabled) {
+                // Check language and link token
+                if (string.IsNullOrEmpty(Language)) {
+                    throw new Exception ("Language needed to use messaging");
+                } else if (string.IsNullOrEmpty(config.AppStore)) {
+                    // Default app-store by platform
+#if UNITY_ANDROID
                     config.AppStore = SwrveAppStore.Google;
-    #elif UNITY_IPHONE
+#elif UNITY_IPHONE
                     config.AppStore = SwrveAppStore.Apple;
-    #else
+#else
                     throw new Exception ("App store must be apple, google, amazon or a custom app store");
-    #endif
+#endif
                 }
             }
-    #endif
+#endif
         }
     }
 
@@ -499,9 +499,6 @@ public partial class SwrveSDK
                 Dictionary<string, string> requestHeaders = new Dictionary<string, string> {
                     { @"Content-Type", @"application/json; charset=utf-8" },
                 };
-#if !UNITY_2017_1_OR_NEWER
-                requestHeaders["Content-Length"] = eventsPostEncodedData.Length.ToString();
-#endif
                 sentEvents = true;
                 StartTask ("PostEvents_Coroutine", PostEvents_Coroutine (requestHeaders, eventsPostEncodedData));
             } else {
@@ -1444,9 +1441,11 @@ public partial class SwrveSDK
         if (!sdkStarted) {
             sdkStarted = true;
             profileManager.PrepareAndSetUserId(userId);
+#if UNITY_ANDROID || UNITY_IPHONE
+            UpdateNativeUserId();
+#endif
             this.InitUser();
             ProcessInfluenceData();
-
         } else {
             SwitchUser(userId, false);
         }
