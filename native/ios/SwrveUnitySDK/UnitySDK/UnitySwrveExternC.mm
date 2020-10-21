@@ -11,6 +11,7 @@
 #import "SwrvePermissions.h"
 #import "SwrveCampaignInfluence.h"
 #import "SwrveCampaignDelivery.h"
+#import "SwrveQA.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -100,6 +101,16 @@ extern "C"
         return [UnitySwrveHelper isSupportediOSVersion];
     }
     
+    char* _swrveiOSGetOSDeviceType()
+    {
+        return [UnitySwrveHelper deviceType];
+    }
+
+    char* _swrveiOSGetPlatformOS()
+    {
+        return [UnitySwrveHelper platformOS];
+    }
+
     bool _swrveiOSIsConversationDisplaying()
     {
         return [[UnitySwrve sharedInstance] isConversationDisplaying];
@@ -187,7 +198,8 @@ extern "C"
                                                       WithDeviceId:[[UnitySwrve sharedInstance] deviceUUID]
                                                   WithSessionToken:[[UnitySwrve sharedInstance] sessionToken]
                                                     WithAppVersion:[[UnitySwrve sharedInstance] appVersion]
-                                                     ForAppGroupID:[[UnitySwrve sharedInstance] appGroupIdentifier]];
+                                                     ForAppGroupID:[[UnitySwrve sharedInstance] appGroupIdentifier]
+                                                          isQAUser:[[SwrveQA sharedInstance] isQALogging]];
     }
 
     void _clearAllAuthenticatedNotifications(void)
@@ -217,6 +229,14 @@ extern "C"
     void _swrveiOSUpdateQaUser(char* jsonMap)
     {
         [[UnitySwrve sharedInstance] updateQAUser:[UnitySwrveHelper CStringToNSString:jsonMap]];
+    }
+
+    void _swrveCopyToClipboard(char* content) {
+#if TARGET_OS_IOS /** exclude tvOS **/
+        NSString *contentStr = [UnitySwrveHelper CStringToNSString:content];
+        UIPasteboard *pb = [UIPasteboard generalPasteboard];
+        [pb setString:contentStr];
+#endif
     }
 
 #ifdef __cplusplus

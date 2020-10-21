@@ -22,7 +22,11 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 			for (String key : remoteMessage.getData().keySet()) {
 				pushBundle.putString(key, remoteMessage.getData().get(key));
 			}
-			new SwrveUnityPushServiceManager(this).processRemoteNotification(pushBundle);
+			getSwrveUnityPushServiceManager().processRemoteNotification(pushBundle);
 		}
+	}
+
+	public SwrveUnityPushServiceManager getSwrveUnityPushServiceManager() {
+		return new SwrveUnityPushServiceManager(this);
 	}
 }

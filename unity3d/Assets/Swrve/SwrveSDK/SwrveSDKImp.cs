@@ -40,6 +40,7 @@ public partial class SwrveSDK
     protected const string GoogleAdvertisingIdSave = "Swrve_googleAdvertisingId";
     protected const string AbTestUserResourcesSave = "srcngt2"; // Saved securely
     protected const string AbTestUserResourcesDiffSave = "rsdfngt2"; // Saved securely
+    protected const string RealtimeUserPropertiesSave = "rupp2"; // Saved securely
     protected const string DeviceUUID = "Swrve_Device_UUID";
     protected const string SeqNumSave = "Swrve_SeqNum";
     protected const string ResourcesCampaignTagSave = "cmpg_etag";
@@ -91,6 +92,8 @@ public partial class SwrveSDK
     // AB tests and campaigns
     protected string userResourcesRaw;
     protected Dictionary<string, Dictionary<string, string>> userResources;
+    protected string realtimeUserPropertiesRaw;
+    protected Dictionary<string, string> realtimeUserProperties;
     protected float campaignsAndResourcesFlushFrequency;
     protected float campaignsAndResourcesFlushRefreshDelay;
     protected string lastETag;
@@ -98,14 +101,12 @@ public partial class SwrveSDK
     protected bool campaignsAndResourcesInitialized;
 
     // Messaging related
-    private static readonly int CampaignEndpointVersion = 6;
+    private static readonly int CampaignEndpointVersion = 7;
     private static readonly int CampaignResponseVersion = 2;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
     /** Last campaign to come from /ad_journey_campaign endpoint */
     protected static readonly string LastExternalCampaignSave = "cmcc3"; // Saved securely
     protected static readonly string CampaignsSettingsSave = "Swrve_CampaignsData";
-    protected static readonly string LocationSave = "loccc2"; // Saved securely
-    protected static readonly string QaUserSave = "swrve.q1"; // Saved securely
     private static readonly string WaitTimeFormat = @"HH\:mm\:ss zzz";
     protected static readonly string InstallTimeFormat = "yyyyMMdd";
     private string resourcesAndCampaignsUrl;
@@ -113,11 +114,12 @@ public partial class SwrveSDK
     protected bool campaignsConnecting;
     protected bool autoShowMessagesEnabled;
     protected Dictionary<int, SwrveCampaignState> campaignsState = new Dictionary<int, SwrveCampaignState>();
-    protected List<SwrveBaseCampaign> campaigns = new List<SwrveBaseCampaign> ();
-    protected Dictionary<string, object> campaignSettings = new Dictionary<string, object> ();
-    protected Dictionary<string, string> appStoreLinks = new Dictionary<string, string> ();
+    protected List<SwrveBaseCampaign> campaigns = new List<SwrveBaseCampaign>();
+    protected Dictionary<string, object> campaignSettings = new Dictionary<string, object>();
+    protected Dictionary<string, string> appStoreLinks = new Dictionary<string, string>();
     protected SwrveMessageFormat currentMessage = null;
     protected SwrveMessageFormat currentDisplayingMessage = null;
+    protected SwrveMessageRenderer messageRenderer = null;
     protected SwrveOrientation currentOrientation;
     protected IInputManager inputManager = NativeInputManager.Instance;
     protected string prefabName;
@@ -134,13 +136,10 @@ public partial class SwrveSDK
     private long messagesLeftToShow;
     private int minDelayBetweenMessage;
 
-    internal List<SwrveBaseCampaign> campaignDisplayQueue = new List<SwrveBaseCampaign> (); // Conversation / Message queue
+    internal List<SwrveBaseCampaign> campaignDisplayQueue = new List<SwrveBaseCampaign>(); // Conversation / Message queue
 
     // Deeplink Manager
     protected SwrveDeeplinkManager deeplinkManager;
-
-    // QA
-    protected SwrveQAUser qaUser;
 
     private bool campaignAndResourcesCoroutineEnabled = true;
     private IEnumerator campaignAndResourcesCoroutineInstance;
@@ -153,17 +152,13 @@ public partial class SwrveSDK
     {
         return this.initialisedTime;
     }
-    internal SwrveQAUser GetQAUser()
-    {
-        return this.qaUser;
-    }
 
     internal bool GetStarted()
     {
         return this.sdkStarted;
     }
 
-    internal bool IsSDKReady ()
+    internal bool IsSDKReady()
     {
         if (config.InitMode == SwrveInitMode.MANAGED && sdkStarted == false) {
             SwrveLog.LogWarning("Warning: SwrveSDK needs to be started in MANAGED mode before calling this api.");
@@ -205,31 +200,31 @@ public partial class SwrveSDK
     }
     #endregion
 
-    private void QueueSessionStart ()
+    private void QueueSessionStart()
     {
-        Dictionary<string,object> json = new Dictionary<string, object> ();
-        AppendEventToBuffer ("session_start", json);
+        Dictionary<string, object> json = new Dictionary<string, object>();
+        AppendEventToBuffer("session_start", json);
     }
 
-    protected void NamedEventInternal (string name, Dictionary<string, string> payload = null, bool allowShowMessage = true)
+    protected void NamedEventInternal(string name, Dictionary<string, string> payload = null, bool allowShowMessage = true)
     {
         if (payload == null) {
-            payload = new Dictionary<string, string> ();
+            payload = new Dictionary<string, string>();
         }
 
-        Dictionary<string, object> json = new Dictionary<string, object> ();
-        json.Add ("name", name);
-        json.Add ("payload", payload);
+        Dictionary<string, object> json = new Dictionary<string, object>();
+        json.Add("name", name);
+        json.Add("payload", payload);
 
-        AppendEventToBuffer ("event", json, allowShowMessage);
+        AppendEventToBuffer("event", json, allowShowMessage);
     }
 
-    protected static string GetSwrvePath ()
+    protected static string GetSwrvePath()
     {
         string path = Application.persistentDataPath;
-        if (string.IsNullOrEmpty (path)) {
+        if (string.IsNullOrEmpty(path)) {
             path = Application.temporaryCachePath;
-            SwrveLog.Log ("Swrve path (tried again): " + path);
+            SwrveLog.Log("Swrve path (tried again): " + path);
         }
         return path;
     }
@@ -239,7 +234,7 @@ public partial class SwrveSDK
         this.conversationVersion = conversationVersion;
     }
 
-    protected static string GetSwrveTemporaryCachePath ()
+    protected static string GetSwrveTemporaryCachePath()
     {
         string path = Application.temporaryCachePath;
         if (path == null || path.Length == 0) {
@@ -247,55 +242,53 @@ public partial class SwrveSDK
         }
 #if UNITY_IPHONE
         path = path + "/com.ngt.msgs";
-#elif UNITY_WSA_10_0
-        path = path + "/swrveTemp";
 #endif
-        if (!File.Exists (path)) {
-            Directory.CreateDirectory (path);
+        if (!File.Exists(path)) {
+            Directory.CreateDirectory(path);
         }
         return path;
     }
 
-    private void _Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards, string receipt, string receiptSignature, string transactionId, string appStore)
+    private void _Iap(int quantity, string productId, double productPrice, string currency, IapRewards rewards, string receipt, string receiptSignature, string transactionId, string appStore)
     {
-        if (!_Iap_check_arguments (quantity, productId, productPrice, currency, appStore)) {
-            SwrveLog.LogError ("ERROR: IAP event not sent because it received an illegal argument");
+        if (!_Iap_check_arguments(quantity, productId, productPrice, currency, appStore)) {
+            SwrveLog.LogError("ERROR: IAP event not sent because it received an illegal argument");
             return;
         }
 
-        Dictionary<string, object> json = new Dictionary<string, object> ();
-        json.Add ("app_store", appStore);
-        json.Add ("local_currency", currency);
-        json.Add ("cost", productPrice);
-        json.Add ("product_id", productId);
-        json.Add ("quantity", quantity);
-        json.Add ("rewards", rewards.getRewards ());
+        Dictionary<string, object> json = new Dictionary<string, object>();
+        json.Add("app_store", appStore);
+        json.Add("local_currency", currency);
+        json.Add("cost", productPrice);
+        json.Add("product_id", productId);
+        json.Add("quantity", quantity);
+        json.Add("rewards", rewards.getRewards());
 
-        if (!string.IsNullOrEmpty (GetAppVersion ())) {
-            json.Add ("app_version", GetAppVersion ());
+        if (!string.IsNullOrEmpty(GetAppVersion())) {
+            json.Add("app_version", GetAppVersion());
         }
 
         if (appStore == "apple") {
             // receipt comes from the new wrapper and should be base64 encoded here
-            json.Add ("receipt", receipt);
+            json.Add("receipt", receipt);
             if (!string.IsNullOrEmpty(transactionId)) {
-                json.Add ("transaction_id", transactionId);
+                json.Add("transaction_id", transactionId);
             }
         } else if (appStore == "google") {
-            json.Add ("receipt", receipt);
-            json.Add ("receipt_signature", receiptSignature);
+            json.Add("receipt", receipt);
+            json.Add("receipt_signature", receiptSignature);
         } else {
-            json.Add ("receipt", receipt);
+            json.Add("receipt", receipt);
         }
 
-        AppendEventToBuffer ("iap", json);
+        AppendEventToBuffer("iap", json);
 
         if (config.AutoDownloadCampaignsAndResources) {
             // Send events automatically and check for changes
-            CheckForCampaignsAndResourcesUpdates (false);
+            CheckForCampaignsAndResourcesUpdates(false);
         }
     }
-    internal virtual SwrveOrientation GetDeviceOrientation ()
+    internal virtual SwrveOrientation GetDeviceOrientation()
     {
         ScreenOrientation orientation = Screen.orientation;
         switch (orientation) {
@@ -314,143 +307,143 @@ public partial class SwrveSDK
         }
     }
 
-    private bool _Iap_check_arguments (int quantity, string productId, double productPrice, string currency, string appStore)
+    private bool _Iap_check_arguments(int quantity, string productId, double productPrice, string currency, string appStore)
     {
-        if (String.IsNullOrEmpty (productId)) {
-            SwrveLog.LogError ("IAP event illegal argument: productId cannot be empty");
+        if (String.IsNullOrEmpty(productId)) {
+            SwrveLog.LogError("IAP event illegal argument: productId cannot be empty");
             return false;
         }
-        if (String.IsNullOrEmpty (currency)) {
-            SwrveLog.LogError ("IAP event illegal argument: currency cannot be empty");
+        if (String.IsNullOrEmpty(currency)) {
+            SwrveLog.LogError("IAP event illegal argument: currency cannot be empty");
             return false;
         }
-        if (String.IsNullOrEmpty (appStore)) {
-            SwrveLog.LogError ("IAP event illegal argument: appStore cannot be empty");
+        if (String.IsNullOrEmpty(appStore)) {
+            SwrveLog.LogError("IAP event illegal argument: appStore cannot be empty");
             return false;
         }
 
         if (quantity <= 0) {
-            SwrveLog.LogError ("IAP event illegal argument: quantity must be greater than zero");
+            SwrveLog.LogError("IAP event illegal argument: quantity must be greater than zero");
             return false;
         }
         if (productPrice < 0) {
-            SwrveLog.LogError ("IAP event illegal argument: productPrice must be greater than or equal to zero");
+            SwrveLog.LogError("IAP event illegal argument: productPrice must be greater than or equal to zero");
             return false;
         }
 
         return true;
     }
 
-    private Dictionary<string, Dictionary<string, string>> ProcessUserResources (IList<object> userResources)
+    private Dictionary<string, Dictionary<string, string>> ProcessUserResources(IList<object> userResources)
     {
-        Dictionary<string, Dictionary<string, string>> result = new Dictionary<string, Dictionary<string, string>> ();
+        Dictionary<string, Dictionary<string, string>> result = new Dictionary<string, Dictionary<string, string>>();
         if (userResources != null) {
-            IEnumerator<object> userResourcesIt = userResources.GetEnumerator ();
+            IEnumerator<object> userResourcesIt = userResources.GetEnumerator();
             while (userResourcesIt.MoveNext()) {
                 Dictionary<string, object> userResource = (Dictionary<string, object>)userResourcesIt.Current;
-                string uid = (string)userResource ["uid"];
-                result.Add (uid, NormalizeJson (userResource));
+                string uid = (string)userResource["uid"];
+                result.Add(uid, NormalizeJson(userResource));
             }
         }
 
         return result;
     }
 
-    private Dictionary<string, string> NormalizeJson (Dictionary<string, object> json)
+    private Dictionary<string, string> NormalizeJson(Dictionary<string, object> json)
     {
-        Dictionary<string, string> normalized = new Dictionary<string, string> ();
+        Dictionary<string, string> normalized = new Dictionary<string, string>();
         Dictionary<string, object>.Enumerator enumerator = json.GetEnumerator();
-        while(enumerator.MoveNext()) {
+        while (enumerator.MoveNext()) {
             KeyValuePair<string, object> item = enumerator.Current;
             if (item.Value != null) {
-                normalized.Add (item.Key, item.Value.ToString ());
+                normalized.Add(item.Key, item.Value.ToString());
             }
         }
 
         return normalized;
     }
 
-    private IEnumerator GetUserResourcesDiff_Coroutine (string getRequest, Action<Dictionary<string, Dictionary<string, string>>, Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError, string saveCategory)
+    private IEnumerator GetUserResourcesDiff_Coroutine(string getRequest, Action<Dictionary<string, Dictionary<string, string>>, Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError, string saveCategory)
     {
         Exception wwwException = null;
         string abTestCandidate = null;
-        yield return Container.StartCoroutine(restClient.Get(getRequest, delegate(RESTResponse response) {
+        yield return Container.StartCoroutine(restClient.Get(getRequest, delegate (RESTResponse response) {
             if (response.Error == WwwDeducedError.NoError) {
                 abTestCandidate = response.Body;
-                SwrveLog.Log ("AB Test result: " + abTestCandidate);
-                storage.SaveSecure (saveCategory, abTestCandidate, this.UserId);
+                SwrveLog.Log("AB Test result: " + abTestCandidate);
+                storage.SaveSecure(saveCategory, abTestCandidate, this.UserId);
                 TaskFinished("GetUserResourcesDiff_Coroutine");
             } else {
                 // WWW connection error
-                wwwException = new Exception (response.Error.ToString ());
-                SwrveLog.LogError ("AB Test request failed: " + response.Error.ToString ());
+                wwwException = new Exception(response.Error.ToString());
+                SwrveLog.LogError("AB Test request failed: " + response.Error.ToString());
                 TaskFinished("GetUserResourcesDiff_Coroutine");
             }
         }));
 
         abTestUserResourcesDiffConnecting = false;
 
-        if (wwwException != null || string.IsNullOrEmpty (abTestCandidate)) {
+        if (wwwException != null || string.IsNullOrEmpty(abTestCandidate)) {
             // Try to load from cache
             try {
-                string loadedData = storage.LoadSecure (saveCategory, this.UserId);
-                if (string.IsNullOrEmpty (loadedData)) {
-                    onError.Invoke (wwwException);
+                string loadedData = storage.LoadSecure(saveCategory, this.UserId);
+                if (string.IsNullOrEmpty(loadedData)) {
+                    onError.Invoke(wwwException);
                 } else {
-                    if (ResponseBodyTester.TestUTF8 (loadedData, out abTestCandidate)) {
-                        Dictionary<string, Dictionary<string, string>> userResourcesDiffNew = new Dictionary<string, Dictionary<string, string>> ();
-                        Dictionary<string, Dictionary<string, string>> userResourcesDiffOld = new Dictionary<string, Dictionary<string, string>> ();
-                        ProcessUserResourcesDiff (abTestCandidate, userResourcesDiffNew, userResourcesDiffOld);
-                        onResult.Invoke (userResourcesDiffNew, userResourcesDiffOld, abTestCandidate);
+                    if (ResponseBodyTester.TestUTF8(loadedData, out abTestCandidate)) {
+                        Dictionary<string, Dictionary<string, string>> userResourcesDiffNew = new Dictionary<string, Dictionary<string, string>>();
+                        Dictionary<string, Dictionary<string, string>> userResourcesDiffOld = new Dictionary<string, Dictionary<string, string>>();
+                        ProcessUserResourcesDiff(abTestCandidate, userResourcesDiffNew, userResourcesDiffOld);
+                        onResult.Invoke(userResourcesDiffNew, userResourcesDiffOld, abTestCandidate);
                     } else {
                         // Launch error
-                        onError.Invoke (wwwException);
+                        onError.Invoke(wwwException);
                     }
                 }
             } catch (Exception e) {
-                SwrveLog.LogWarning ("Could not read user resources diff from cache (" + e.ToString () + ")");
-                onError.Invoke (wwwException);
+                SwrveLog.LogWarning("Could not read user resources diff from cache (" + e.ToString() + ")");
+                onError.Invoke(wwwException);
             }
         } else {
             // Launch listener
-            if (!string.IsNullOrEmpty (abTestCandidate)) {
-                Dictionary<string, Dictionary<string, string>> userResourcesDiffNew = new Dictionary<string, Dictionary<string, string>> ();
-                Dictionary<string, Dictionary<string, string>> userResourcesDiffOld = new Dictionary<string, Dictionary<string, string>> ();
-                ProcessUserResourcesDiff (abTestCandidate, userResourcesDiffNew, userResourcesDiffOld);
-                onResult.Invoke (userResourcesDiffNew, userResourcesDiffOld, abTestCandidate);
+            if (!string.IsNullOrEmpty(abTestCandidate)) {
+                Dictionary<string, Dictionary<string, string>> userResourcesDiffNew = new Dictionary<string, Dictionary<string, string>>();
+                Dictionary<string, Dictionary<string, string>> userResourcesDiffOld = new Dictionary<string, Dictionary<string, string>>();
+                ProcessUserResourcesDiff(abTestCandidate, userResourcesDiffNew, userResourcesDiffOld);
+                onResult.Invoke(userResourcesDiffNew, userResourcesDiffOld, abTestCandidate);
             }
         }
     }
 
-    private void ProcessUserResourcesDiff (string abTestJson, Dictionary<string, Dictionary<string, string>> newResources, Dictionary<string, Dictionary<string, string>> oldResources)
+    private void ProcessUserResourcesDiff(string abTestJson, Dictionary<string, Dictionary<string, string>> newResources, Dictionary<string, Dictionary<string, string>> oldResources)
     {
-        IList<object> userResourcesDiffJson = (List<object>)Json.Deserialize (abTestJson);
+        IList<object> userResourcesDiffJson = (List<object>)Json.Deserialize(abTestJson);
         if (userResourcesDiffJson != null) {
-            IEnumerator<object> userResourcesIt = userResourcesDiffJson.GetEnumerator ();
+            IEnumerator<object> userResourcesIt = userResourcesDiffJson.GetEnumerator();
             while (userResourcesIt.MoveNext()) {
                 Dictionary<string, object> userResource = (Dictionary<string, object>)userResourcesIt.Current;
-                string uid = (string)userResource ["uid"];
-                Dictionary<string, object> item = (Dictionary<string, object>)userResource ["diff"];
-                IEnumerator<string> itemKey = item.Keys.GetEnumerator ();
+                string uid = (string)userResource["uid"];
+                Dictionary<string, object> item = (Dictionary<string, object>)userResource["diff"];
+                IEnumerator<string> itemKey = item.Keys.GetEnumerator();
 
-                Dictionary<string, string> newItemData = new Dictionary<string, string> ();
-                Dictionary<string, string> oldItemData = new Dictionary<string, string> ();
+                Dictionary<string, string> newItemData = new Dictionary<string, string>();
+                Dictionary<string, string> oldItemData = new Dictionary<string, string>();
                 while (itemKey.MoveNext()) {
-                    Dictionary<string, string> currentKey = NormalizeJson ((Dictionary<string, object>)item [itemKey.Current]);
-                    newItemData.Add (itemKey.Current, currentKey ["new"]);
-                    oldItemData.Add (itemKey.Current, currentKey ["old"]);
+                    Dictionary<string, string> currentKey = NormalizeJson((Dictionary<string, object>)item[itemKey.Current]);
+                    newItemData.Add(itemKey.Current, currentKey["new"]);
+                    oldItemData.Add(itemKey.Current, currentKey["old"]);
                 }
 
-                newResources.Add (uid, newItemData);
-                oldResources.Add (uid, oldItemData);
+                newResources.Add(uid, newItemData);
+                oldResources.Add(uid, oldItemData);
             }
         }
     }
 
-    private string GetDeviceUUID ()
+    private string GetDeviceUUID()
     {
         string deviceUUID = storage.Load(DeviceUUID);
-        if (string.IsNullOrEmpty (deviceUUID)) {
+        if (string.IsNullOrEmpty(deviceUUID)) {
             // Generate a unique device id and save it on our storage.
             deviceUUID = SwrveHelper.GetRandomUUID();
             storage.Save(DeviceUUID, deviceUUID);
@@ -458,9 +451,9 @@ public partial class SwrveSDK
         return deviceUUID;
     }
 
-    private void HandleCampaignFromNotification (string campaignID)
+    private void HandleCampaignFromNotification(string campaignID)
     {
-        if(deeplinkManager == null) {
+        if (deeplinkManager == null) {
             deeplinkManager = new SwrveDeeplinkManager(Container, this);
         }
         deeplinkManager.HandleNotificationToCampaign(campaignID);
@@ -476,10 +469,10 @@ public partial class SwrveSDK
 
         if (config.AutomaticSessionManagement) {
             // Start a new session (will send events)
-            QueueSessionStart ();
-            GenerateNewSessionInterval ();
+            QueueSessionStart();
+            GenerateNewSessionInterval();
         }
-        if(profileManager.isNewUser) {
+        if (profileManager.isNewUser) {
             NamedEventInternal("Swrve.first_session", null, false);
         }
 
@@ -494,9 +487,8 @@ public partial class SwrveSDK
 
     public void SwitchUser(string userId, bool identifiedOnAnotherDevice)
     {
-        qaUser = null;
         // Dont do anything if the current user is the same as the new one
-        if(userId == null || userId == profileManager.userId) {
+        if (userId == null || userId == profileManager.userId) {
             EnableEventSending();
             return;
         }
@@ -512,27 +504,30 @@ public partial class SwrveSDK
         UpdateNativeUserId();
 #endif
         // This isNewUser flag is used to trigger the "Swrve.first_session" event on BeginSession.
-        if(!identifiedOnAnotherDevice) {
+        if (!identifiedOnAnotherDevice) {
             profileManager.isNewUser = false;
         }
 
         // The userId changed so we need to create a storage for the current user.
         storage = CreateStorage();
-        storage.SetSecureFailedListener(delegate() {
-            NamedEventInternal ("Swrve.signature_invalid", null, false);
+        storage.SetSecureFailedListener(delegate () {
+            NamedEventInternal("Swrve.signature_invalid", null, false);
         });
 
+        // This will recreate our SwrveQaUser class and also flush any possible event available in memory from the previous user.
+        SwrveQaUser.Init(Container, config.EventsServer, apiKey, appId, userId, GetAppVersion(), GetDeviceUUID(), storage);
+
         // Re initialize Event Buffer
-        eventBufferStringBuilder = new StringBuilder (config.MaxBufferChars);
+        eventBufferStringBuilder = new StringBuilder(config.MaxBufferChars);
 
         this.InitUser();
     }
 
-    private bool ShouldAutoStart ()
+    private bool ShouldAutoStart()
     {
         if (config.InitMode == SwrveInitMode.AUTO) {
             return true;
-        } else if(config.InitMode == SwrveInitMode.MANAGED && config.ManagedModeAutoStartLastUser && string.IsNullOrEmpty (profileManager.userId) == false) {
+        } else if (config.InitMode == SwrveInitMode.MANAGED && config.ManagedModeAutoStartLastUser && string.IsNullOrEmpty(profileManager.userId) == false) {
             return true;
         } else {
             return false;
@@ -559,56 +554,58 @@ public partial class SwrveSDK
             try {
                 LoadABTestDetails();
             } catch (Exception e) {
-                SwrveLog.LogError ("Error while initializing " + e);
+                SwrveLog.LogError("Error while initializing " + e);
             }
         }
         InitUserResources();
+        InitRealtimeUserProperties();
         // Get device info
         deviceCarrierInfo = new DeviceCarrierInfo();
-        GetDeviceScreenInfo ();
+        GetDeviceScreenInfo();
 
         Initialised = true;
-        this.BeginSession();
+
         // In-app messaging features
         if (config.MessagingEnabled) {
             LoadTalkData();
         }
+        this.BeginSession();
     }
 
     /// <summary>
     /// Check and update the current user IntallTime and UserInitTime on storage. This method update as well the profileManager.isNewUser bool.
     /// </summary>
-    private void CheckUserTimes ()
+    private void CheckUserTimes()
     {
         // save the first time a user gets initiailised for signature key and setting isNewUser in profile manager
-        string userInitTimeSecondsFromFile = storage.Load (UserJoinedTimeSecondsSave, this.UserId);
+        string userInitTimeSecondsFromFile = storage.Load(UserJoinedTimeSecondsSave, this.UserId);
         if (string.IsNullOrEmpty(userInitTimeSecondsFromFile)) {
             profileManager.isNewUser = true;
             userInitTimeSeconds = GetSessionTime();
             storage.Save(UserJoinedTimeSecondsSave, userInitTimeSeconds.ToString(), this.UserId);
         } else {
             profileManager.isNewUser = false;
-            long.TryParse (userInitTimeSecondsFromFile, out userInitTimeSeconds);
+            long.TryParse(userInitTimeSecondsFromFile, out userInitTimeSeconds);
         }
     }
 
-    private string GetNextSeqNum ()
+    private string GetNextSeqNum()
     {
-        string seqNum = storage.Load (SeqNumSave, this.UserId);
+        string seqNum = storage.Load(SeqNumSave, this.UserId);
         // increment value
         int value;
-        seqNum = int.TryParse (seqNum, out value) ? (++value).ToString () : "1";
-        storage.Save (SeqNumSave, seqNum, this.UserId);
+        seqNum = int.TryParse(seqNum, out value) ? (++value).ToString() : "1";
+        storage.Save(SeqNumSave, seqNum, this.UserId);
         return seqNum;
     }
 
-    protected string GetDeviceLanguage ()
+    protected string GetDeviceLanguage()
     {
-        string language = getNativeLanguage ();
+        string language = getNativeLanguage();
 
-        if (string.IsNullOrEmpty (language)) {
+        if (string.IsNullOrEmpty(language)) {
             CultureInfo info = CultureInfo.CurrentUICulture;
-            string cultureLang = info.TwoLetterISOLanguageName.ToLower ();
+            string cultureLang = info.TwoLetterISOLanguageName.ToLower();
             if (cultureLang != "iv") {
                 language = cultureLang;
             }
@@ -617,73 +614,84 @@ public partial class SwrveSDK
         return language;
     }
 
-    protected void InvalidateETag ()
+    protected void InvalidateETag()
     {
         lastETag = string.Empty;
-        storage.Remove (ResourcesCampaignTagSave, this.UserId);
+        storage.Remove(ResourcesCampaignTagSave, this.UserId);
     }
 
-    private void InitUserResources ()
+    private void InitUserResources()
     {
-        userResourcesRaw = storage.LoadSecure (AbTestUserResourcesSave, this.UserId);
-        if (!string.IsNullOrEmpty (userResourcesRaw)) {
-            IList<object> userResourcesJson = (IList<object>)Json.Deserialize (userResourcesRaw);
-            userResources = ProcessUserResources (userResourcesJson);
-            NotifyUpdateUserResources ();
+        userResourcesRaw = storage.LoadSecure(AbTestUserResourcesSave, this.UserId);
+        if (!string.IsNullOrEmpty(userResourcesRaw)) {
+            IList<object> userResourcesJson = (IList<object>)Json.Deserialize(userResourcesRaw);
+            userResources = ProcessUserResources(userResourcesJson);
+            NotifyUpdateUserResources();
         } else {
-            InvalidateETag ();
+            InvalidateETag();
         }
     }
 
-    private void NotifyUpdateUserResources ()
+    private void InitRealtimeUserProperties()
+    {
+        realtimeUserPropertiesRaw = storage.LoadSecure(RealtimeUserPropertiesSave, this.UserId);
+        if (!string.IsNullOrEmpty(realtimeUserPropertiesRaw)) {
+            Dictionary<string, object> realtimeUserPropertiesJson = (Dictionary<string, object>)Json.Deserialize(realtimeUserPropertiesRaw);
+            realtimeUserProperties = NormalizeJson(realtimeUserPropertiesJson);
+        } else {
+            InvalidateETag();
+        }
+    }
+
+    private void NotifyUpdateUserResources()
     {
         if (userResources != null) {
-            ResourceManager.SetResourcesFromJSON (userResources);
+            ResourceManager.SetResourcesFromJSON(userResources);
             if (config.ResourcesUpdatedCallback != null) {
-                config.ResourcesUpdatedCallback.Invoke ();
+                config.ResourcesUpdatedCallback.Invoke();
             }
         }
     }
 
-    private void LoadEventsFromDisk ()
+    private void LoadEventsFromDisk()
     {
         try {
             // Load cached events
-            string loadedEvents = storage.Load (EventsSave, this.UserId);
-            storage.Remove (EventsSave, this.UserId);
+            string loadedEvents = storage.Load(EventsSave, this.UserId);
+            storage.Remove(EventsSave, this.UserId);
             // Add loaded events to buffer
-            if (!string.IsNullOrEmpty (loadedEvents)) {
+            if (!string.IsNullOrEmpty(loadedEvents)) {
                 if (eventBufferStringBuilder.Length != 0) {
-                    eventBufferStringBuilder.Insert (0, ",");
+                    eventBufferStringBuilder.Insert(0, ",");
                 }
-                eventBufferStringBuilder.Insert (0, loadedEvents);
+                eventBufferStringBuilder.Insert(0, loadedEvents);
             }
         } catch (Exception e) {
-            SwrveLog.LogWarning ("Could not read events from cache (" + e.ToString () + ")");
+            SwrveLog.LogWarning("Could not read events from cache (" + e.ToString() + ")");
         }
     }
 
-    private void LoadData ()
+    private void LoadData()
     {
         // Load events
-        LoadEventsFromDisk ();
+        LoadEventsFromDisk();
 
         // Load latest etag
-        lastETag = storage.Load (ResourcesCampaignTagSave, this.UserId);
+        lastETag = storage.Load(ResourcesCampaignTagSave, this.UserId);
 
         // Load user resources and campaign flush settings
-        string strFlushFrequency = storage.Load (ResourcesCampaignFlushFrequencySave, this.UserId);
-        if (!string.IsNullOrEmpty (strFlushFrequency)) {
-            if (float.TryParse (strFlushFrequency, out campaignsAndResourcesFlushFrequency)) {
+        string strFlushFrequency = storage.Load(ResourcesCampaignFlushFrequencySave, this.UserId);
+        if (!string.IsNullOrEmpty(strFlushFrequency)) {
+            if (float.TryParse(strFlushFrequency, out campaignsAndResourcesFlushFrequency)) {
                 campaignsAndResourcesFlushFrequency /= 1000;
             }
         }
         if (campaignsAndResourcesFlushFrequency == 0) {
             campaignsAndResourcesFlushFrequency = DefaultCampaignResourcesFlushFrenquency;
         }
-        string strFlushDelay = storage.Load (ResourcesCampaignFlushDelaySave, this.UserId);
-        if (!string.IsNullOrEmpty (strFlushDelay)) {
-            if (float.TryParse (strFlushDelay, out campaignsAndResourcesFlushRefreshDelay)) {
+        string strFlushDelay = storage.Load(ResourcesCampaignFlushDelaySave, this.UserId);
+        if (!string.IsNullOrEmpty(strFlushDelay)) {
+            if (float.TryParse(strFlushDelay, out campaignsAndResourcesFlushRefreshDelay)) {
                 campaignsAndResourcesFlushRefreshDelay /= 1000;
             }
         }
@@ -698,22 +706,22 @@ public partial class SwrveSDK
     }
 
     // Create a unique key that can be used to create HMAC signatures
-    protected string GetUniqueKey ()
+    protected string GetUniqueKey()
     {
         return apiKey + this.UserId;
     }
 
-    protected virtual IRESTClient CreateRestClient ()
+    protected virtual IRESTClient CreateRestClient()
     {
-        return new RESTClient ();
+        return new RESTClient();
     }
 
-    protected virtual ISwrveStorage CreateStorage ()
+    protected virtual ISwrveStorage CreateStorage()
     {
         if (config.StoreDataInPlayerPrefs) {
-            return new SwrvePlayerPrefsStorage ();
+            return new SwrvePlayerPrefsStorage();
         } else {
-            return new SwrveFileStorage (swrvePath, GetUniqueKey ());
+            return new SwrveFileStorage(swrvePath, GetUniqueKey());
         }
     }
 
@@ -738,11 +746,11 @@ public partial class SwrveSDK
     private bool IdentifyCachedUser(SwrveUser cachedSwrveUser, OnSuccessIdentify onSuccessCallback)
     {
         bool isVerified = false;
-        if(cachedSwrveUser != null && cachedSwrveUser.verified) {
+        if (cachedSwrveUser != null && cachedSwrveUser.verified) {
             SwrveLog.LogInfo("Swrve identify: Identity API call skipped, user loaded from cache. Event sending reenabled.");
             this.SwitchUser(cachedSwrveUser.swrveId, false);
 
-            if(onSuccessCallback != null) {
+            if (onSuccessCallback != null) {
                 onSuccessCallback("Swrve identify: Identity API call skipped, user loaded from cache", cachedSwrveUser.swrveId);
             }
             isVerified = true;
@@ -756,7 +764,7 @@ public partial class SwrveSDK
 
         // Didn't find this user in cache, so execute the identify API.
         // SDK Internal - Identify SuccessCallback
-        SwrveSDK.OnSuccessIdentify swrveOnSuccessIdentify = delegate(string status, string swrveUserId) {
+        SwrveSDK.OnSuccessIdentify swrveOnSuccessIdentify = delegate (string status, string swrveUserId) {
             SwrveLog.LogInfo("Swrve identify: Identity service success " + status);
             // update the swrve user in cache
             profileManager.UpdateSwrveUser(swrveUserId, externalUserId);
@@ -770,8 +778,8 @@ public partial class SwrveSDK
         };
 
         // SDK Internal - Identify ErrorCallback
-        SwrveSDK.OnErrorIdentify swrveOnErrorIdentify = delegate(long httpCode, string errorMessage) {
-            SwrveLog.LogError("Swrve identify: Identity service error code is " + httpCode.ToString() +  " error message: " + errorMessage);
+        SwrveSDK.OnErrorIdentify swrveOnErrorIdentify = delegate (long httpCode, string errorMessage) {
+            SwrveLog.LogError("Swrve identify: Identity service error code is " + httpCode.ToString() + " error message: " + errorMessage);
             this.SwitchUser(unidentifiedSwrveId, true);
 
             if (httpCode == 403) {
@@ -787,21 +795,21 @@ public partial class SwrveSDK
         // Create identity post and start task.
         byte[] userIdentityPostEncodedData = PostBodyBuilder.BuildIdentify(apiKey, unidentifiedSwrveId, externalUserId, GetDeviceUUID());
         if (userIdentityPostEncodedData != null) {
-            SwrveLog.LogInfo("Will send identify API call for user: " + externalUserId );
+            SwrveLog.LogInfo("Will send identify API call for user: " + externalUserId);
             Dictionary<string, string> requestHeaders = new Dictionary<string, string> {
                 { @"Content-Type", @"application/json; charset=utf-8" },
                 { @"Cache-Control", @"no-cache; charset=utf-8" }
             };
-            StartTask ("PostIdentity_Coroutine", PostIdentity_Coroutine (requestHeaders, userIdentityPostEncodedData, swrveOnSuccessIdentify, swrveOnErrorIdentify));
+            StartTask("PostIdentity_Coroutine", PostIdentity_Coroutine(requestHeaders, userIdentityPostEncodedData, swrveOnSuccessIdentify, swrveOnErrorIdentify));
         }
     }
     #endregion
 
     #region WWW coroutines
 
-    private IEnumerator PostEvents_Coroutine (Dictionary<string, string> requestHeaders, byte[] eventsPostEncodedData)
+    private IEnumerator PostEvents_Coroutine(Dictionary<string, string> requestHeaders, byte[] eventsPostEncodedData)
     {
-        yield return Container.StartCoroutine(restClient.Post(eventsUrl, eventsPostEncodedData, requestHeaders, delegate(RESTResponse response) {
+        yield return Container.StartCoroutine(restClient.Post(eventsUrl, eventsPostEncodedData, requestHeaders, delegate (RESTResponse response) {
             if (response.Error != WwwDeducedError.NetworkError) {
                 // - made it there and it was ok
                 // - made it there and it was rejected
@@ -814,16 +822,16 @@ public partial class SwrveSDK
         }));
     }
 
-    private IEnumerator PostIdentity_Coroutine (Dictionary<string, string> requestHeaders, byte[] eventsPostEncodedData, OnSuccessIdentify onSuccessCallback, OnErrorIdentify onErrorCallback)
+    private IEnumerator PostIdentity_Coroutine(Dictionary<string, string> requestHeaders, byte[] eventsPostEncodedData, OnSuccessIdentify onSuccessCallback, OnErrorIdentify onErrorCallback)
     {
-        yield return Container.StartCoroutine(restClient.Post(identifyUrl, eventsPostEncodedData, requestHeaders, delegate(RESTResponse response) {
+        yield return Container.StartCoroutine(restClient.Post(identifyUrl, eventsPostEncodedData, requestHeaders, delegate (RESTResponse response) {
             string status = null;
             string verifiedSwrveUserId = null;
             string errorMessage = null;
             long statusCode = response.ResponseCode;
             if (response.Error == WwwDeducedError.NoError || response.Error == WwwDeducedError.ApplicationErrorHeader) {
                 if (!string.IsNullOrEmpty(response.Body)) {
-                    Dictionary<string, object> root = (Dictionary<string, object>) Json.Deserialize(response.Body);
+                    Dictionary<string, object> root = (Dictionary<string, object>)Json.Deserialize(response.Body);
                     if (root != null) {
                         if (root.ContainsKey("status")) {
                             status = (string)root["status"];
@@ -854,22 +862,22 @@ public partial class SwrveSDK
         }));
     }
 
-    protected virtual void ClearEventBuffer ()
+    protected virtual void ClearEventBuffer()
     {
         eventsPostString = null;
     }
     #endregion
 
     #region Event buffer
-    private void AppendEventToBuffer (string eventType, Dictionary<string, object> eventParameters, bool allowShowMessage = true)
+    private void AppendEventToBuffer(string eventType, Dictionary<string, object> eventParameters, bool allowShowMessage = true)
     {
-        eventParameters.Add ("type", eventType);
-        eventParameters.Add ("seqnum", GetNextSeqNum ());
-        eventParameters.Add ("time", GetSessionTime ());
+        eventParameters.Add("type", eventType);
+        eventParameters.Add("seqnum", GetNextSeqNum());
+        eventParameters.Add("time", GetSessionTime());
 
         // Discard the event if it would cause the buffer to overflow
-        String eventJson = Json.Serialize (eventParameters);
-        string eventName = SwrveHelper.GetEventName (eventParameters);
+        String eventJson = Json.Serialize(eventParameters);
+        string eventName = SwrveHelper.GetEventName(eventParameters);
         bool insideMaxBufferLength = eventBufferStringBuilder.Length + eventJson.Length <= config.MaxBufferChars;
         if (insideMaxBufferLength || config.SendEventsIfBufferTooLarge) {
             // Send buffer if too large
@@ -878,104 +886,96 @@ public partial class SwrveSDK
             }
 
             if (eventBufferStringBuilder.Length > 0) {
-                eventBufferStringBuilder.Append (',');
+                eventBufferStringBuilder.Append(',');
             }
 
-            AppendEventToBuffer (eventJson);
+            AppendEventToBuffer(eventJson);
+            SwrveQaUser.WrappedEvent(eventParameters);
 
 #if UNITY_IPHONE
             if (config.PushNotificationEnabled) {
                 // Ask for push notification permission dialog
                 if (config.PushNotificationEvents != null && config.PushNotificationEvents.Contains(eventName)) {
-                    RegisterForPushNotificationsIOS (false);
+                    RegisterForPushNotificationsIOS(false);
                 } else if (config.ProvisionalPushNotificationEvents != null && config.ProvisionalPushNotificationEvents.Contains(eventName)) {
-                    RegisterForPushNotificationsIOS (true);
+                    RegisterForPushNotificationsIOS(true);
                 }
             }
 #endif
         } else {
-            SwrveLog.LogError ("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");
+            SwrveLog.LogError("Could not append the event to the buffer. Please consider enabling SendEventsIfBufferTooLarge");
         }
 
         if (allowShowMessage) {
             object payload;
             eventParameters.TryGetValue("payload", out payload);
-            ShowBaseMessage (eventName, (IDictionary<string, string>)payload);
+            ShowBaseMessage(eventName, (IDictionary<string, string>)payload);
         }
     }
 
-    protected virtual void AppendEventToBuffer (string eventJson)
+    protected virtual void AppendEventToBuffer(string eventJson)
     {
-        eventBufferStringBuilder.Append (eventJson);
+        eventBufferStringBuilder.Append(eventJson);
     }
     #endregion
 
-    protected virtual Coroutine StartTask (string tag, IEnumerator task)
+    protected virtual Coroutine StartTask(string tag, IEnumerator task)
     {
 
-        return Container.StartCoroutine (task);
+        return Container.StartCoroutine(task);
     }
 
-    protected virtual void TaskFinished (string tag)
+    protected virtual void TaskFinished(string tag)
     {
     }
 
-    protected void ShowBaseMessage (string eventName, IDictionary<string, string> payload)
+    protected void ShowBaseMessage(string eventName, IDictionary<string, string> payload)
     {
-        SwrveBaseMessage baseMessage = GetBaseMessage (eventName, payload);
+        SwrveBaseMessage baseMessage = GetBaseMessage(eventName, payload);
 
         if (null != baseMessage) {
-            if (baseMessage.Campaign.IsA<SwrveConversationCampaign> ()) {
-                StartTask ("ShowConversationForEvent", ShowConversationForEvent (eventName, (SwrveConversation)baseMessage));
+            if (baseMessage.Campaign.IsA<SwrveConversationCampaign>()) {
+                StartTask("ShowConversationForEvent", ShowConversationForEvent(eventName, (SwrveConversation)baseMessage));
             } else {
-                StartTask ("ShowMessageForEvent", ShowMessageForEvent (eventName, (SwrveMessage)baseMessage, config.InAppMessageInstallButtonListener, config.InAppMessageCustomButtonListener, config.InAppMessageListener));
+                StartTask("ShowMessageForEvent", ShowMessageForEvent(eventName, payload, (SwrveMessage)baseMessage, config.InAppMessageInstallButtonListener, config.InAppMessageCustomButtonListener, config.InAppMessageListener, config.InAppMessageClipboardButtonListener));
             }
-        }
-
-        if (qaUser != null) {
-            qaUser.Trigger (eventName, baseMessage);
-        }
-
-        if (baseMessage != null) {
-            NamedEventInternal (
-                baseMessage.GetEventPrefix () + "returned",
-            new Dictionary<string, string> { { "id", baseMessage.Id.ToString () } },
-            false
-            );
         }
     }
 
-    public SwrveBaseMessage GetBaseMessage(string eventName, IDictionary<string, string> payload=null)
+    public SwrveBaseMessage GetBaseMessage(string eventName, IDictionary<string, string> eventPayload = null)
     {
-        if (!checkCampaignRules (eventName, SwrveHelper.GetNow())) {
+        if (!checkGlobalRules(eventName, eventPayload, SwrveHelper.GetNow())) {
             return null;
         }
 
         SwrveBaseMessage baseMessage = null;
-        if (config.ConversationsEnabled) {
-            baseMessage = GetConversationForEvent (eventName, payload);
+        if (config.MessagingEnabled) {
+            baseMessage = GetMessageForEvent(eventName, eventPayload);
         }
-        if ((baseMessage == null) && config.MessagingEnabled) {
-            baseMessage = GetMessageForEvent (eventName, payload);
+
+        if ((baseMessage == null) && config.ConversationsEnabled) {
+            baseMessage = GetConversationForEvent(eventName, eventPayload);
+        } else if ((baseMessage != null) && config.ConversationsEnabled) {
+            SwrveQaUser.CampaignTriggeredConversationNoDisplay(eventName, eventPayload); // Message was selected so we just log it here as a QA user.
         }
 
         if (baseMessage == null) {
-            SwrveLog.Log ("Not showing message: no candidate for " + eventName);
+            SwrveLog.Log("Not showing message: no candidate for " + eventName);
         } else {
-            SwrveLog.Log (string.Format (
-                              "[{0}] {1} has been chosen for {2}\nstate: {3}",
-                              baseMessage, baseMessage.Campaign.Id, eventName, baseMessage.Campaign.State));
+            SwrveLog.Log(string.Format(
+                             "[{0}] {1} has been chosen for {2}\nstate: {3}",
+                             baseMessage, baseMessage.Campaign.Id, eventName, baseMessage.Campaign.State));
         }
 
         return baseMessage;
     }
 
-    private bool IsAlive ()
+    private bool IsAlive()
     {
         return (Container != null && !Destroyed);
     }
 
-    protected virtual void GetDeviceScreenInfo ()
+    protected virtual void GetDeviceScreenInfo()
     {
         deviceWidth = Screen.width;
         deviceHeight = Screen.height;
@@ -987,43 +987,43 @@ public partial class SwrveSDK
         }
     }
 
-    private void QueueDeviceInfo ()
+    private void QueueDeviceInfo()
     {
 #if SWRVE_SUPPORTED_PLATFORM
         Dictionary<string, string> deviceInfo = GetDeviceInfo();
         if (deviceInfo != null && deviceInfo.Count > 0) {
-            Dictionary<string,object> json = new Dictionary<string, object> ();
-            json.Add ("attributes", deviceInfo);
-            AppendEventToBuffer ("device_update", json);
+            Dictionary<string, object> json = new Dictionary<string, object>();
+            json.Add("attributes", deviceInfo);
+            AppendEventToBuffer("device_update", json, false);
         } else {
-            SwrveLog.LogError ("Invoked user update with no update attributes");
+            SwrveLog.LogError("Invoked user update with no update attributes");
         }
 #endif
     }
 
-    private void SendDeviceInfo ()
+    private void SendDeviceInfo()
     {
-        QueueDeviceInfo ();
-        SendQueuedEvents ();
+        QueueDeviceInfo();
+        SendQueuedEvents();
     }
 
-    private IEnumerator WaitAndRefreshResourcesAndCampaigns_Coroutine (float delay)
+    private IEnumerator WaitAndRefreshResourcesAndCampaigns_Coroutine(float delay)
     {
         yield return new WaitForSeconds(delay);
-        RefreshUserResourcesAndCampaigns ();
+        RefreshUserResourcesAndCampaigns();
     }
 
-    private void CheckForCampaignsAndResourcesUpdates (bool invokedByTimer)
+    private void CheckForCampaignsAndResourcesUpdates(bool invokedByTimer)
     {
-        if (!IsAlive ()) {
+        if (!IsAlive()) {
             // The container was destroyed and we should stop
             return;
         }
 
-        bool sentEvents = SendQueuedEvents ();
+        bool sentEvents = SendQueuedEvents();
         if (sentEvents) {
             // Wait for events to be processed and then ask for campaigns and resources
-            Container.StartCoroutine (WaitAndRefreshResourcesAndCampaigns_Coroutine (campaignsAndResourcesFlushRefreshDelay));
+            Container.StartCoroutine(WaitAndRefreshResourcesAndCampaigns_Coroutine(campaignsAndResourcesFlushRefreshDelay));
         }
 
         if (!invokedByTimer) {
@@ -1037,7 +1037,7 @@ public partial class SwrveSDK
     {
         if (campaignAndResourcesCoroutineInstance == null) {
             campaignAndResourcesCoroutineInstance = CheckForCampaignsAndResourcesUpdates_Coroutine();
-            Container.StartCoroutine (campaignAndResourcesCoroutineInstance);
+            Container.StartCoroutine(campaignAndResourcesCoroutineInstance);
         }
         campaignAndResourcesCoroutineEnabled = true;
     }
@@ -1045,62 +1045,63 @@ public partial class SwrveSDK
     private void StopCheckForCampaignAndResources()
     {
         if (campaignAndResourcesCoroutineInstance != null) {
-            Container.StopCoroutine ("campaignAndResourcesCoroutineInstance");
+            Container.StopCoroutine("campaignAndResourcesCoroutineInstance");
             campaignAndResourcesCoroutineInstance = null;
         }
         campaignAndResourcesCoroutineEnabled = false;
     }
 
-    private IEnumerator CheckForCampaignsAndResourcesUpdates_Coroutine ()
+    private IEnumerator CheckForCampaignsAndResourcesUpdates_Coroutine()
     {
         yield return new WaitForSeconds(campaignsAndResourcesFlushFrequency);
-        CheckForCampaignsAndResourcesUpdates (true);
+        CheckForCampaignsAndResourcesUpdates(true);
         if (campaignAndResourcesCoroutineEnabled) {
             campaignAndResourcesCoroutineInstance = null;
             StartCheckForCampaignsAndResources();
         }
     }
 
-    protected virtual long GetSessionTime ()
+    protected virtual long GetSessionTime()
     {
-        return SwrveHelper.GetMilliseconds ();
+        return SwrveHelper.GetMilliseconds();
     }
 
-    private void GenerateNewSessionInterval ()
+    private void GenerateNewSessionInterval()
     {
-        lastSessionTick = GetSessionTime () + (config.NewSessionInterval * 1000);
+        lastSessionTick = GetSessionTime() + (config.NewSessionInterval * 1000);
     }
 
-    public void Update ()
+#pragma warning disable 0618
+    public void Update()
     {
         if (currentDisplayingMessage != null) {
             // Event processing
             if (!currentMessage.Closing) {
-                if (inputManager.GetMouseButtonDown (0)) {
-                    ProcessButtonDown ();
-                } else if (inputManager.GetMouseButtonUp (0)) {
-                    ProcessButtonUp ();
+                if (inputManager.GetMouseButtonDown(0)) {
+                    messageRenderer.ProcessButtonDown(inputManager);
+                } else if (inputManager.GetMouseButtonUp(0)) {
+                    ProcessButtonUp();
                 }
             }
 
-            if (!currentMessage.Closing && NativeIsBackPressed ()) {
-                currentMessage.Dismiss ();
+            if (!currentMessage.Closing && NativeIsBackPressed()) {
+                currentMessage.Dismiss();
             }
         }
     }
 
-    public void OnGUI ()
+    public void OnGUI()
     {
         if (currentDisplayingMessage != null) {
-            SwrveOrientation newOrientation = GetDeviceOrientation ();
+            SwrveOrientation newOrientation = GetDeviceOrientation();
 
             // Orientation changed
             if (newOrientation != currentOrientation) {
                 if (currentDisplayingMessage.Orientation != newOrientation) {
                     // Orientation format change or format rotation
-                    bool otherFormat = currentDisplayingMessage.Message.SupportsOrientation (newOrientation);
+                    bool otherFormat = currentDisplayingMessage.Message.SupportsOrientation(newOrientation);
                     if (otherFormat) {
-                        StartTask ("SwitchMessageOrienation", SwitchMessageOrienation (newOrientation));
+                        StartTask("SwitchMessageOrienation", SwitchMessageOrienation(newOrientation));
                     } else {
                         currentDisplayingMessage.Rotate = true;
                     }
@@ -1114,19 +1115,20 @@ public partial class SwrveSDK
             Matrix4x4 originalTransform = GUI.matrix;
             // Draw message
             GUI.depth = 0;
-            SwrveMessageRenderer.DrawMessage (currentMessage, (int)(Screen.width / 2) + currentMessage.Message.Position.X, Screen.height / 2 + currentMessage.Message.Position.Y);
+            messageRenderer.DrawMessage(Screen.width, Screen.height);
             // Revert previous GUI state
             GUI.matrix = originalTransform;
             GUI.depth = originalGuiDepth;
             // Message listener
             if (currentDisplayingMessage.MessageListener != null) {
-                currentDisplayingMessage.MessageListener.OnShowing (currentDisplayingMessage);
+                currentDisplayingMessage.MessageListener.OnShowing(currentDisplayingMessage);
             }
 
             // Remove reference when message is dismissed
             if (currentMessage.Dismissed) {
                 currentMessage = null;
                 currentDisplayingMessage = null;
+                messageRenderer = null;
                 HandleNextCampaign();
             }
 
@@ -1135,70 +1137,53 @@ public partial class SwrveSDK
         }
     }
 
-    private IEnumerator SwitchMessageOrienation (SwrveOrientation newOrientation)
+    private IEnumerator SwitchMessageOrienation(SwrveOrientation newOrientation)
     {
-        SwrveMessageFormat newFormat = currentMessage.Message.GetFormat (newOrientation);
+        SwrveMessageFormat newFormat = currentMessage.Message.GetFormat(newOrientation);
         if (newFormat != null && newFormat != currentMessage) {
             SwrveMessageFormat oldFormat = currentMessage;
             // Try to load the new message assets
-            CoroutineReference<bool> wereAllLoaded = new CoroutineReference<bool> (false);
+            CoroutineReference<bool> wereAllLoaded = new CoroutineReference<bool>(false);
             yield return StartTask("PreloadFormatAssets", PreloadFormatAssets(newFormat, wereAllLoaded));
-            if (wereAllLoaded.Value ()) {
-                currentOrientation = GetDeviceOrientation ();
-                newFormat.Init (currentOrientation);
+            if (wereAllLoaded.Value()) {
+                currentOrientation = GetDeviceOrientation();
                 // Pass the listeners to the new format object
                 newFormat.MessageListener = oldFormat.MessageListener;
                 newFormat.CustomButtonListener = oldFormat.CustomButtonListener;
                 newFormat.InstallButtonListener = oldFormat.InstallButtonListener;
+                newFormat.ClipboardButtonListener = oldFormat.ClipboardButtonListener;
                 currentMessage = currentDisplayingMessage = newFormat;
 
-                oldFormat.UnloadAssets ();
+                messageRenderer.InitMessage(newFormat, config.InAppMessageConfig, currentOrientation, true);
+
+                oldFormat.UnloadAssets();
             } else {
-                SwrveLog.LogError ("Could not switch orientation. Not all assets could be preloaded");
+                SwrveLog.LogError("Could not switch orientation. Not all assets could be preloaded");
             }
-            TaskFinished ("SwitchMessageOrienation");
+            TaskFinished("SwitchMessageOrienation");
         }
     }
 
-    private void ProcessButtonDown ()
+    private void ProcessButtonUp()
     {
-        Vector3 mousePosition = inputManager.GetMousePosition ();
-        for(int bi = 0; bi < currentMessage.Buttons.Count; bi++) {
-            SwrveButton button = currentMessage.Buttons[bi];
-            if (button.PointerRect.Contains (mousePosition)) {
-                button.Pressed = true;
-            }
-        }
-    }
-
-    private void ProcessButtonUp ()
-    {
-        SwrveButton clickedButton = null;
-        // Capture last button clicked (last rendered, rendered on top)
-        for (int i = currentMessage.Buttons.Count - 1; i >= 0 && clickedButton == null; i--) {
-            SwrveButton button = currentMessage.Buttons [i];
-            Vector3 mousePosition = inputManager.GetMousePosition ();
-            if (button.PointerRect.Contains (mousePosition) && button.Pressed) {
-                clickedButton = button;
-            } else {
-                button.Pressed = false;
-            }
-        }
-
-        if (clickedButton != null) {
-            SwrveLog.Log ("Clicked button " + clickedButton.ActionType);
-            ButtonWasPressedByUser (clickedButton);
-
+        SwrveButtonClickResult clickedResult = messageRenderer.ProcessButtonUp(inputManager);
+        if (clickedResult != null) {
+            SwrveButton clickedButton = clickedResult.Button;
+            SwrveLog.Log("Clicked button " + clickedButton.ActionType);
+            ButtonWasPressedByUser(clickedButton);
+            // Queue the QA Event of the button pressed.
+            string actionType = QaActionType(clickedButton);
+            SwrveQaUser.CampaignButtonClicked(clickedButton.Message.Campaign.Id, clickedButton.Message.Id, clickedButton.Name, actionType, clickedButton.Action);
             try {
                 if (clickedButton.ActionType == SwrveActionType.Install) {
-                    string appId = clickedButton.AppId.ToString ();
-                    if (appStoreLinks.ContainsKey (appId)) {
-                        string appStoreUrl = appStoreLinks [appId];
+                    string appId = clickedButton.AppId.ToString();
+                    if (appStoreLinks.ContainsKey(appId)) {
+                        string appStoreUrl = appStoreLinks[appId];
                         if (!string.IsNullOrEmpty(appStoreUrl)) {
                             bool normalFlow = true;
                             if (currentMessage.InstallButtonListener != null) {
                                 // Launch custom button listener
-                                normalFlow = currentMessage.InstallButtonListener.OnAction (appStoreUrl);
+                                normalFlow = currentMessage.InstallButtonListener.OnAction(appStoreUrl);
                             }
 
                             if (normalFlow) {
@@ -1212,39 +1197,56 @@ public partial class SwrveSDK
                         SwrveLog.LogError("Install button app store url empty!");
                     }
                 } else if (clickedButton.ActionType == SwrveActionType.Custom) {
-                    string buttonAction = clickedButton.Action;
+                    string buttonAction = clickedResult.ResolvedAction;
                     if (currentMessage.CustomButtonListener != null) {
                         // Launch custom button listener
-                        currentMessage.CustomButtonListener.OnAction (buttonAction);
+                        currentMessage.CustomButtonListener.OnAction(buttonAction);
                     } else {
                         SwrveLog.Log("No custom button listener, treating action as URL");
                         if (!string.IsNullOrEmpty(buttonAction)) {
-                            OpenURL (buttonAction);
+                            OpenURL(buttonAction);
                         }
                     }
+                } else if (clickedButton.ActionType == SwrveActionType.CopyToClipboard) {
+                    string buttonAction = clickedResult.ResolvedAction;
+                    SwrveLog.Log("Copying text to clipboard");
+
+                    if (!string.IsNullOrEmpty(buttonAction)) {
+#if UNITY_ANDROID || UNITY_IPHONE
+                        CopyToClipboard(buttonAction);
+#else
+                        SwrveLog.Log("Copy to clipboard is only implemented for Android and iOS");
+#endif
+                    }
+
+                    if (currentMessage.ClipboardButtonListener != null) {
+                        // Launch custom button listener
+                        currentMessage.ClipboardButtonListener.OnAction(buttonAction);
+                    }
                 }
-            } catch(Exception exp) {
+            } catch (Exception exp) {
                 SwrveLog.LogError("Error processing the clicked button: " + exp.Message);
             }
             clickedButton.Pressed = false;
             DismissMessage();
         }
     }
+#pragma warning restore 0618
 
     protected virtual void OpenURL(string url)
     {
-        Application.OpenURL (url);
+        Application.OpenURL(url);
     }
 
     protected void SetMessageMinDelayThrottle()
     {
-        this.showMessagesAfterDelay = SwrveHelper.GetNow() + TimeSpan.FromSeconds (this.minDelayBetweenMessage);
+        this.showMessagesAfterDelay = SwrveHelper.GetNow() + TimeSpan.FromSeconds(this.minDelayBetweenMessage);
     }
 
     public void ConversationClosed()
     {
         // Callback method from the native layer to let us know that the campaigns are closed
-        if(currentMessage == null) {
+        if (currentMessage == null) {
             // There's also no IAM being displayed so go ahead and cycle to next campaign
             HandleNextCampaign();
         }
@@ -1252,21 +1254,26 @@ public partial class SwrveSDK
 
     internal void ShowCampaign(SwrveBaseCampaign campaign, bool isQueued)
     {
-        ShowCampaign(campaign, isQueued, GetDeviceOrientation());
+        ShowCampaign(campaign, isQueued, GetDeviceOrientation(), null);
     }
 
-    private void ShowCampaign(SwrveBaseCampaign campaign, bool isQueued, SwrveOrientation orientation)
+    private void ShowCampaign(SwrveBaseCampaign campaign, bool isQueued, SwrveOrientation orientation, Dictionary<string, string> properties)
     {
-        if(IsMessageDisplaying() == false  && IsConversationDisplaying() == false && applicationPaused == false) {
-            if (campaign.IsA<SwrveMessagesCampaign> ()) {
-                Container.StartCoroutine (LaunchMessage (
-                                              ((SwrveMessagesCampaign)campaign).Messages.Where (a => a.SupportsOrientation (orientation)).First (),
-                                              config.InAppMessageInstallButtonListener, config.InAppMessageCustomButtonListener, config.InAppMessageListener
-                                          ));
-            } else if (campaign.IsA<SwrveConversationCampaign> ()) {
-                Container.StartCoroutine (LaunchConversation(
-                                              ((SwrveConversationCampaign)campaign).Conversation
-                                          ));
+        if (IsMessageDisplaying() == false && IsConversationDisplaying() == false && applicationPaused == false) {
+            if (campaign.IsA<SwrveMessagesCampaign>()) {
+                SwrveMessage inAppMessage = ((SwrveMessagesCampaign)campaign).Messages.Where(a => a.SupportsOrientation(orientation)).First();
+                Container.StartCoroutine(LaunchMessage(
+                                             inAppMessage,
+                                             config.InAppMessageInstallButtonListener,
+                                             config.InAppMessageCustomButtonListener,
+                                             config.InAppMessageClipboardButtonListener,
+                                             config.InAppMessageListener,
+                                             properties
+                                         ));
+            } else if (campaign.IsA<SwrveConversationCampaign>()) {
+                Container.StartCoroutine(LaunchConversation(
+                                             ((SwrveConversationCampaign)campaign).Conversation
+                                         ));
             }
         } else if (isQueued) {
             this.campaignDisplayQueue.Add(campaign);
@@ -1282,64 +1289,69 @@ public partial class SwrveSDK
         }
     }
 
-    private void AutoShowMessages ()
+    private void AutoShowMessages()
     {
         // Don't do anything if we've already shown a message or if its too long after session start
         if (!autoShowMessagesEnabled) {
             return;
         }
 
-        // Only execute if at least 1 call to the /user_resources_and_campaigns api endpoint has been completed
+        // Only execute if at least 1 call to the /user_content api endpoint has been completed
         if (!campaignsAndResourcesInitialized || campaigns == null || campaigns.Count == 0) {
             return;
         }
 
         SwrveBaseMessage baseMessage = null;
         // Process only Conversation campaign types first
-        for(int ci = 0; ci < campaigns.Count; ci++) {
-            if(!campaigns[ci].IsA<SwrveConversationCampaign>()) {
+        for (int ci = 0; ci < campaigns.Count; ci++) {
+            if (!campaigns[ci].IsA<SwrveConversationCampaign>()) {
                 continue;
             }
 
             SwrveConversationCampaign campaign = (SwrveConversationCampaign)campaigns[ci];
-
-            if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger) && campaign.CheckImpressions(qaUser)) {
-                if (campaign.AreAssetsReady ()) {
+            if (campaign.CanTrigger(DefaultAutoShowMessagesTrigger) && campaign.CheckImpressions()) {
+                SwrveConversation conversation = GetConversationForEvent(DefaultAutoShowMessagesTrigger);
+                if (campaign.AreAssetsReady()) {
                     autoShowMessagesEnabled = false;
-                    Container.StartCoroutine (LaunchConversation (campaign.Conversation));
-                    baseMessage = campaign.Conversation;
+                    Container.StartCoroutine(LaunchConversation(conversation));
+                    baseMessage = conversation;
                     break;
-                } else if(qaUser != null) {
-                    int campaignId = campaign.Id;
-                    qaUser.campaignMessages[campaignId] = campaign.Conversation;
-                    qaUser.campaignReasons[campaignId] = "Campaign " + campaignId + " was selected to autoshow, but assets aren't fully downloaded";
                 }
             }
         }
 
-        if(baseMessage == null) {
-            for(int ci = 0; ci < campaigns.Count; ci++) {
-                if(!campaigns[ci].IsA<SwrveMessagesCampaign>()) {
+        if (baseMessage == null) {
+            for (int ci = 0; ci < campaigns.Count; ci++) {
+                if (!campaigns[ci].IsA<SwrveMessagesCampaign>()) {
                     continue;
                 }
 
                 SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)campaigns[ci];
 
-                if (campaign.CanTrigger (DefaultAutoShowMessagesTrigger) && campaign.CheckImpressions(qaUser)) {
+                if (campaign.CanTrigger(DefaultAutoShowMessagesTrigger) && campaign.CheckImpressions()) {
                     if (config.TriggeredMessageListener != null) {
                         // They are using a custom listener
-                        SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
+                        SwrveMessage message = GetMessageForEvent(DefaultAutoShowMessagesTrigger);
                         if (message != null) {
                             autoShowMessagesEnabled = false;
-                            config.TriggeredMessageListener.OnMessageTriggered (message);
+                            config.TriggeredMessageListener.OnMessageTriggered(message);
                             baseMessage = message;
                         }
                     } else {
                         if (currentMessage == null) {
-                            SwrveMessage message = GetMessageForEvent (DefaultAutoShowMessagesTrigger);
+                            SwrveMessage message = GetMessageForEvent(DefaultAutoShowMessagesTrigger);
                             if (message != null) {
                                 autoShowMessagesEnabled = false;
-                                Container.StartCoroutine (LaunchMessage (message, config.InAppMessageInstallButtonListener, config.InAppMessageCustomButtonListener, config.InAppMessageListener));
+
+                                Dictionary<string, string> properties = null;
+                                if (config.InAppMessageConfig != null && config.InAppMessageConfig.PersonalizationProvider != null) {
+                                    properties = config.InAppMessageConfig.PersonalizationProvider.Personalize(null);
+                                }
+                                Container.StartCoroutine(LaunchMessage(message, config.InAppMessageInstallButtonListener,
+                                                                       config.InAppMessageCustomButtonListener,
+                                                                       config.InAppMessageClipboardButtonListener,
+                                                                       config.InAppMessageListener,
+                                                                       properties));
                                 baseMessage = message;
                             }
                         }
@@ -1348,43 +1360,45 @@ public partial class SwrveSDK
                 }
             }
         }
-
-        if (qaUser != null) {
-            qaUser.Trigger (DefaultAutoShowMessagesTrigger, baseMessage);
-        }
     }
 
-    private IEnumerator LaunchMessage (SwrveMessage message, ISwrveInstallButtonListener installButtonListener, ISwrveCustomButtonListener customButtonListener, ISwrveMessageListener messageListener)
+    private IEnumerator LaunchMessage(SwrveMessage message, ISwrveInstallButtonListener installButtonListener,
+                                      ISwrveCustomButtonListener customButtonListener, ISwrveClipboardButtonListener clipboardButtonListener,
+                                      ISwrveMessageListener messageListener, Dictionary<string, string> properties)
     {
         if (message != null) {
-            SwrveOrientation currentOrientation = GetDeviceOrientation ();
-            SwrveMessageFormat selectedFormat = message.GetFormat (currentOrientation);
+            SwrveOrientation currentOrientation = GetDeviceOrientation();
+            SwrveMessageFormat selectedFormat = message.GetFormat(currentOrientation);
             if (selectedFormat != null) {
-                // Temporarily set this as the message that will be shown
-                // if everything goes well
-                currentMessage = selectedFormat;
-                CoroutineReference<bool> wereAllLoaded = new CoroutineReference<bool> (false);
-                yield return StartTask("PreloadFormatAssets", PreloadFormatAssets(selectedFormat, wereAllLoaded));
-                if (wereAllLoaded.Value ()) {
-                    // Choosen orientation
-                    ShowMessageFormat (selectedFormat, installButtonListener, customButtonListener, messageListener);
-                } else {
-                    SwrveLog.LogError ("Could not preload all the assets for message " + message.Id);
-                    currentMessage = null;
+                // Check if the templating on the message can be resolved
+                SwrveMessageTextTemplatingResolver resolver = new SwrveMessageTextTemplatingResolver();
+                if (resolver.ResolveTemplating(message, properties)) {
+                    // Temporarily set this as the message that will be shown
+                    // if everything goes well
+                    currentMessage = selectedFormat;
+                    CoroutineReference<bool> wereAllLoaded = new CoroutineReference<bool>(false);
+                    yield return StartTask("PreloadFormatAssets", PreloadFormatAssets(selectedFormat, wereAllLoaded));
+                    if (wereAllLoaded.Value()) {
+                        // Choosen orientation
+                        ShowMessageFormat(selectedFormat, installButtonListener, customButtonListener, clipboardButtonListener, messageListener, resolver);
+                    } else {
+                        SwrveLog.LogError("Could not preload all the assets for message " + message.Id);
+                        currentMessage = null;
+                    }
                 }
             } else {
-                SwrveLog.LogError ("Could not get a format for the current orientation: " + currentOrientation.ToString ());
+                SwrveLog.LogError("Could not get a format for the current orientation: " + currentOrientation.ToString());
             }
         }
     }
 
-    private bool isValidMessageCenter(SwrveBaseCampaign campaign, SwrveOrientation orientation)
+    private bool IsValidMessageCenter(SwrveBaseCampaign campaign, SwrveOrientation orientation)
     {
         return campaign.MessageCenter
                && campaign.Status != SwrveCampaignState.Status.Deleted
-               && campaign.IsActive (qaUser)
-               && campaign.SupportsOrientation (orientation)
-               && campaign.AreAssetsReady ();
+               && campaign.IsActive()
+               && campaign.SupportsOrientation(orientation)
+               && campaign.AreAssetsReady();
     }
 
     private IEnumerator LaunchConversation(SwrveConversation conversation)
@@ -1392,7 +1406,7 @@ public partial class SwrveSDK
         if (null != conversation) {
             yield return null;
             ShowConversation(conversation.Conversation);
-            ConversationWasShownToUser (conversation);
+            ConversationWasShownToUser(conversation);
         }
     }
 
@@ -1401,216 +1415,193 @@ public partial class SwrveSDK
         SetMessageMinDelayThrottle();
 
         if (null != conversation.Campaign) {
-            conversation.Campaign.WasShownToUser ();
-            SaveCampaignData (conversation.Campaign);
+            conversation.Campaign.WasShownToUser();
+            SaveCampaignData(conversation.Campaign);
         }
     }
 
-    private void NoMessagesWereShown (string eventName, string reason)
+    private void NoMessagesWereShown(string eventName, IDictionary<string, string> eventPayload, string reason)
     {
-        SwrveLog.Log ("Not showing message for " + eventName + ": " + reason);
-        if (qaUser != null) {
-            qaUser.TriggerFailure (eventName, reason);
-        }
+        SwrveLog.Log("Not showing message for " + eventName + ": " + reason);
+        //SwrveQaUser.Instance.CampaignTriggered(eventName, eventPayload, false, reason, null);
     }
 
-    private IEnumerator PreloadFormatAssets (SwrveMessageFormat format, CoroutineReference<bool> wereAllLoaded)
+#pragma warning disable 0618
+
+    /* Returns the path to the downloaded asset */
+    public string AssetPath(string fileName)
     {
-        SwrveLog.Log ("Preloading format");
+        return GetTemporaryPathFileName(fileName);
+    }
+
+    private IEnumerator PreloadFormatAssets(SwrveMessageFormat format, CoroutineReference<bool> wereAllLoaded)
+    {
+        SwrveLog.Log("Preloading format");
         bool allLoaded = true;
-        for(int ii = 0; ii < format.Images.Count; ii++) {
+        for (int ii = 0; ii < format.Images.Count; ii++) {
             SwrveImage image = format.Images[ii];
-            if (image.Texture == null && !string.IsNullOrEmpty (image.File)) {
-                SwrveLog.Log ("Preloading image file " + image.File);
-                CoroutineReference<Texture2D> result = new CoroutineReference<Texture2D> ();
-                yield return StartTask("LoadAsset", LoadAsset (image.File, result));
-                if (result.Value () != null) {
-                    image.Texture = result.Value ();
+            if (image.Texture == null && !string.IsNullOrEmpty(image.File)) {
+                SwrveLog.Log("Preloading image file " + image.File);
+                CoroutineReference<Texture2D> result = new CoroutineReference<Texture2D>();
+                yield return StartTask("LoadAsset", LoadAsset(image.File, result));
+                if (result.Value() != null) {
+                    image.Texture = result.Value();
                 } else {
                     allLoaded = false;
                 }
             }
         }
 
-        for(int bi = 0; bi < format.Buttons.Count; bi++) {
+        for (int bi = 0; bi < format.Buttons.Count; bi++) {
             SwrveButton button = format.Buttons[bi];
-            if (button.Texture == null && !string.IsNullOrEmpty (button.Image)) {
-                SwrveLog.Log ("Preloading button image " + button.Image);
-                CoroutineReference<Texture2D> result = new CoroutineReference<Texture2D> ();
-                yield return StartTask("LoadAsset", LoadAsset (button.Image, result));
-                if (result.Value () != null) {
-                    button.Texture = result.Value ();
+            if (button.Texture == null && !string.IsNullOrEmpty(button.Image)) {
+                SwrveLog.Log("Preloading button image " + button.Image);
+                CoroutineReference<Texture2D> result = new CoroutineReference<Texture2D>();
+                yield return StartTask("LoadAsset", LoadAsset(button.Image, result));
+                if (result.Value() != null) {
+                    button.Texture = result.Value();
                 } else {
                     allLoaded = false;
                 }
             }
         }
 
-        wereAllLoaded.Value (allLoaded);
-        TaskFinished ("PreloadFormatAssets");
+        wereAllLoaded.Value(allLoaded);
+        TaskFinished("PreloadFormatAssets");
     }
+#pragma warning restore 0618
 
-    private bool HasShowTooManyMessagesAlready ()
+    private bool HasShowTooManyMessagesAlready()
     {
         return (messagesLeftToShow <= 0);
     }
 
-    private bool IsTooSoonToShowMessageAfterLaunch (DateTime now)
+    private bool IsTooSoonToShowMessageAfterLaunch(DateTime now)
     {
         return now < showMessagesAfterLaunch;
     }
 
-    private bool IsTooSoonToShowMessageAfterDelay (DateTime now)
+    private bool IsTooSoonToShowMessageAfterDelay(DateTime now)
     {
         return now < showMessagesAfterDelay;
     }
 
-    private SwrveMessageFormat ShowMessageFormat (SwrveMessageFormat format, ISwrveInstallButtonListener installButtonListener, ISwrveCustomButtonListener customButtonListener, ISwrveMessageListener messageListener)
+#pragma warning disable 0618
+    private SwrveMessageFormat ShowMessageFormat(SwrveMessageFormat format,
+            ISwrveInstallButtonListener installButtonListener,
+            ISwrveCustomButtonListener customButtonListener,
+            ISwrveClipboardButtonListener clipboardButtonListener,
+            ISwrveMessageListener messageListener,
+            SwrveMessageTextTemplatingResolver templatingResolver)
     {
-        currentMessage = format;
+        currentMessage = currentDisplayingMessage = format;
         format.MessageListener = messageListener;
         format.CustomButtonListener = customButtonListener;
         format.InstallButtonListener = installButtonListener;
+        format.ClipboardButtonListener = clipboardButtonListener;
 
-        currentDisplayingMessage = currentMessage;
-        currentOrientation = GetDeviceOrientation ();
-        SwrveMessageRenderer.InitMessage (currentDisplayingMessage, currentOrientation);
+        currentOrientation = GetDeviceOrientation();
+        messageRenderer = new SwrveMessageRenderer(config.InAppMessageConfig.Animator, templatingResolver);
+        messageRenderer.InitMessage(format, config.InAppMessageConfig, currentOrientation);
 
         if (messageListener != null) {
-            messageListener.OnShow (format);
+            messageListener.OnShow(format);
         }
 
         // Message was shown to user
-        MessageWasShownToUser (currentDisplayingMessage);
+        MessageWasShownToUser(currentDisplayingMessage);
 
         return format;
     }
+#pragma warning restore 0618
 
     private string GetTemporaryPathFileName(string fileName)
     {
-        return Path.Combine (swrveTemporaryPath, fileName);
+        return Path.Combine(swrveTemporaryPath, fileName);
     }
 
-    private IEnumerator LoadAsset (string fileName, CoroutineReference<Texture2D> texture)
+    private IEnumerator LoadAsset(string fileName, CoroutineReference<Texture2D> texture)
     {
-        string filePath = GetTemporaryPathFileName (fileName);
+        string filePath = GetTemporaryPathFileName(fileName);
 
         UnityWebRequest www = UnityWebRequestTexture.GetTexture("file://" + filePath);
         yield return www.SendWebRequest();
         if (!www.isNetworkError && !www.isHttpError) {
             Texture2D loadedTexture = ((DownloadHandlerTexture)www.downloadHandler).texture;
-            texture.Value (loadedTexture);
+            texture.Value(loadedTexture);
         } else {
-            SwrveLog.LogError ("Could not load asset with WWW " + filePath + ": " + www.error);
+            SwrveLog.LogError("Could not load asset with WWW " + filePath + ": " + www.error);
 
             // Try to load from file system
-            if (CrossPlatformFile.Exists (filePath)) {
-                byte[] byteArray = CrossPlatformFile.ReadAllBytes (filePath);
-                Texture2D loadedTexture = new Texture2D (4, 4);
-                if (loadedTexture.LoadImage (byteArray)) {
-                    texture.Value (loadedTexture);
+            if (CrossPlatformFile.Exists(filePath)) {
+                byte[] byteArray = CrossPlatformFile.ReadAllBytes(filePath);
+                Texture2D loadedTexture = new Texture2D(4, 4);
+                if (loadedTexture.LoadImage(byteArray)) {
+                    texture.Value(loadedTexture);
                 } else {
-                    SwrveLog.LogWarning ("Could not load asset from I/O" + filePath);
+                    SwrveLog.LogWarning("Could not load asset from I/O" + filePath);
                 }
             } else {
-                SwrveLog.LogError ("The file " + filePath + " does not exist.");
+                SwrveLog.LogError("The file " + filePath + " does not exist.");
             }
         }
 
-        TaskFinished ("LoadAsset");
+        TaskFinished("LoadAsset");
     }
 
-    protected virtual void ProcessCampaigns (Dictionary<string, object> root)
+    protected virtual void ProcessCampaigns(Dictionary<string, object> root, bool loadingPreviousCampaignState)
     {
-        List<SwrveBaseCampaign> newCampaigns = new List<SwrveBaseCampaign> ();
+        List<SwrveBaseCampaign> newCampaigns = new List<SwrveBaseCampaign>();
         HashSet<SwrveAssetsQueueItem> assetsQueue = new HashSet<SwrveAssetsQueueItem>();
         // this queue will be merged to above to ensure it's at the front for downloading
         HashSet<SwrveAssetsQueueItem> priorityAssetsQueue = new HashSet<SwrveAssetsQueueItem>();
 
         try {
             // Stop if we got an empty json
-            if (root != null && root.ContainsKey ("version")) {
-                int version = MiniJsonHelper.GetInt (root, "version");
+            if (root != null && root.ContainsKey("version")) {
+                int version = MiniJsonHelper.GetInt(root, "version");
                 if (version == CampaignResponseVersion) {
                     UpdateCdnPaths(root);
 
                     // App data
-                    Dictionary<string, object> appData = (Dictionary<string, object>)root ["game_data"];
+                    Dictionary<string, object> appData = (Dictionary<string, object>)root["game_data"];
                     Dictionary<string, object>.Enumerator appDataEnumerator = appData.GetEnumerator();
                     while (appDataEnumerator.MoveNext()) {
                         string appId = appDataEnumerator.Current.Key;
-                        if (appStoreLinks.ContainsKey (appId)) {
-                            appStoreLinks.Remove (appId);
+                        if (appStoreLinks.ContainsKey(appId)) {
+                            appStoreLinks.Remove(appId);
                         }
-                        Dictionary<string, object> appAppStore = (Dictionary<string, object>)appData [appId];
-                        if (appAppStore != null && appAppStore.ContainsKey ("app_store_url")) {
-                            object appStoreLink = appAppStore ["app_store_url"];
+                        Dictionary<string, object> appAppStore = (Dictionary<string, object>)appData[appId];
+                        if (appAppStore != null && appAppStore.ContainsKey("app_store_url")) {
+                            object appStoreLink = appAppStore["app_store_url"];
                             if (appStoreLink != null && appStoreLink is string) {
-                                appStoreLinks.Add (appId, (string)appStoreLink);
+                                appStoreLinks.Add(appId, (string)appStoreLink);
                             }
                         }
                     }
 
                     // Rules
-                    Dictionary<string, object> rules = (Dictionary<string, object>)root ["rules"];
-                    int delayFirstMessage = (rules.ContainsKey ("delay_first_message")) ? MiniJsonHelper.GetInt (rules, "delay_first_message") : DefaultDelayFirstMessage;
-                    long maxShows = (rules.ContainsKey ("max_messages_per_session")) ? MiniJsonHelper.GetLong (rules, "max_messages_per_session") : DefaultMaxShows;
-                    int minDelay = (rules.ContainsKey ("min_delay_between_messages")) ? MiniJsonHelper.GetInt (rules, "min_delay_between_messages") : DefaultMinDelay;
+                    Dictionary<string, object> rules = (Dictionary<string, object>)root["rules"];
+                    int delayFirstMessage = (rules.ContainsKey("delay_first_message")) ? MiniJsonHelper.GetInt(rules, "delay_first_message") : DefaultDelayFirstMessage;
+                    long maxShows = (rules.ContainsKey("max_messages_per_session")) ? MiniJsonHelper.GetLong(rules, "max_messages_per_session") : DefaultMaxShows;
+                    int minDelay = (rules.ContainsKey("min_delay_between_messages")) ? MiniJsonHelper.GetInt(rules, "min_delay_between_messages") : DefaultMinDelay;
 
-                    DateTime now = SwrveHelper.GetNow ();
+                    DateTime now = SwrveHelper.GetNow();
                     this.minDelayBetweenMessage = minDelay;
                     this.messagesLeftToShow = maxShows;
-                    this.showMessagesAfterLaunch = initialisedTime + TimeSpan.FromSeconds (delayFirstMessage);
+                    this.showMessagesAfterLaunch = initialisedTime + TimeSpan.FromSeconds(delayFirstMessage);
 
-                    SwrveLog.Log ("App rules OK: Delay Seconds: " + delayFirstMessage + " Max shows: " + maxShows);
-                    SwrveLog.Log ("Time is " + now.ToString () + " show messages after " + this.showMessagesAfterLaunch.ToString ());
-
-                    Dictionary<int, string> campaignsDownloaded = null;
-
-                    // QA
-                    bool wasPreviouslyQAUser = (qaUser != null);
-                    if (root.ContainsKey ("qa")) {
-                        Dictionary<string, object> jsonQa = (Dictionary<string, object>)root ["qa"];
-                        SwrveLog.Log ("You are a QA user!");
-                        campaignsDownloaded = new Dictionary<int, string> ();
-                        qaUser = new SwrveQAUser (this, jsonQa);
-#if UNITY_IOS
-                        // This is for Location logging
-                        updateQAUser(jsonQa);
-#endif
-                        if (jsonQa.ContainsKey ("campaigns")) {
-                            IList<object> jsonQaCampaigns = (List<object>)jsonQa ["campaigns"];
-                            for (int i = 0; i < jsonQaCampaigns.Count; i++) {
-                                Dictionary<string, object> jsonQaCampaign = (Dictionary<string, object>)jsonQaCampaigns [i];
-                                int campaignId = MiniJsonHelper.GetInt (jsonQaCampaign, "id");
-                                string campaignReason = (string)jsonQaCampaign ["reason"];
-
-                                SwrveLog.Log ("Campaign " + campaignId + " not downloaded because: " + campaignReason);
-
-                                // Add campaign for QA purposes
-                                campaignsDownloaded.Add (campaignId, campaignReason);
-                            }
-                        }
-                    } else {
-                        qaUser = null;
-                    }
-
-#if UNITY_ANDROID
-                    if (qaUser != null && qaUser.Logging) {
-                        storage.SaveSecure(QaUserSave, "true", this.UserId);
-                        QaUserUpdateInstance();
-                    } else {
-                        storage.SaveSecure(QaUserSave, "false", this.UserId);
-                    }
-#endif
+                    SwrveLog.Log("App rules OK: Delay Seconds: " + delayFirstMessage + " Max shows: " + maxShows);
+                    SwrveLog.Log("Time is " + now.ToString() + " show messages after " + this.showMessagesAfterLaunch.ToString());
 
                     // Campaigns
-                    IList<object> jsonCampaigns = (List<object>)root ["campaigns"];
+                    IList<object> jsonCampaigns = (List<object>)root["campaigns"];
+                    List<SwrveQaUserCampaignInfo> qaUserCampaignInfoList = new List<SwrveQaUserCampaignInfo>();
 
                     for (int i = 0, j = jsonCampaigns.Count; i < j; i++) {
-                        Dictionary<string, object> campaignData = (Dictionary<string, object>)jsonCampaigns [i];
-                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON (SwrveAssetsManager, campaignData, initialisedTime, qaUser, config.DefaultBackgroundColor);
-                        if(campaign == null) {
+                        Dictionary<string, object> campaignData = (Dictionary<string, object>)jsonCampaigns[i];
+                        SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSON(SwrveAssetsManager, campaignData, initialisedTime, config.DefaultBackgroundColor, qaUserCampaignInfoList);
+                        if (campaign == null) {
                             continue;
                         }
 
@@ -1618,93 +1609,86 @@ public partial class SwrveSDK
                         bool isAnAutoShowCampaign = false;
                         List<SwrveTrigger> triggers = campaign.GetTriggers();
 
-                        for(int t = 0; t < triggers.Count; t++) {
-                            if(string.Equals(triggers[t].GetEventName(), DefaultAutoShowMessagesTrigger)) {
+                        for (int t = 0; t < triggers.Count; t++) {
+                            if (string.Equals(triggers[t].GetEventName(), DefaultAutoShowMessagesTrigger)) {
                                 isAnAutoShowCampaign = true;
                                 break;
                             }
                         }
 
                         if (campaign.GetType() == typeof(SwrveConversationCampaign)) {
-                            SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign) campaign;
+                            SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign)campaign;
                             if (isAnAutoShowCampaign) {
                                 priorityAssetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
                             } else {
                                 assetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
                             }
-
+                            qaUserCampaignInfoList.Add(new SwrveQaUserCampaignInfo(campaign.Id, conversationCampaign.Conversation.Id, "conversation", false));
                         } else if (campaign.GetType() == typeof(SwrveMessagesCampaign)) {
-                            SwrveMessagesCampaign messageCampaign = (SwrveMessagesCampaign) campaign;
+                            SwrveMessagesCampaign messageCampaign = (SwrveMessagesCampaign)campaign;
                             if (isAnAutoShowCampaign) {
                                 priorityAssetsQueue.UnionWith(messageCampaign.GetImageAssets());
                             } else {
                                 assetsQueue.UnionWith(messageCampaign.GetImageAssets());
                             }
-
+                            qaUserCampaignInfoList.Add(new SwrveQaUserCampaignInfo(campaign.Id, messageCampaign.Messages[0].Id, "iam", false));
                         }
 
-                        // Do we have to make retrieve the previous state?
-                        if (campaignSettings != null && (wasPreviouslyQAUser || qaUser == null || !qaUser.ResetDevice)) {
+                        if (loadingPreviousCampaignState) {
                             SwrveCampaignState campaignState = null;
                             campaignsState.TryGetValue(campaign.Id, out campaignState);
                             if (campaignState != null) {
                                 campaign.State = campaignState;
                             } else {
-                                campaign.State = new SwrveCampaignState(campaign.Id, campaignSettings);
+                                if (campaignSettings != null) {
+                                    campaign.State = new SwrveCampaignState(campaign.Id, campaignSettings);
+                                }
                             }
                         }
-
                         campaignsState[campaign.Id] = campaign.State;
-                        newCampaigns.Add (campaign);
-                        if (qaUser != null) {
-                            // Add campaign for QA purposes
-                            campaignsDownloaded.Add (campaign.Id, null);
-                        }
+                        newCampaigns.Add(campaign);
                     }
 
-                    // QA logging
-                    if (qaUser != null) {
-                        qaUser.TalkSession (campaignsDownloaded);
-                    }
+                    SwrveQaUser.CampaignsDownloaded(qaUserCampaignInfoList);
                 }
             }
         } catch (Exception exp) {
-            SwrveLog.LogError ("Could not process campaigns: " + exp.ToString ());
+            SwrveLog.LogError("Could not process campaigns: " + exp.ToString());
         }
 
-        StartTask ("SwrveAssetsManager.DownloadAssets", this.SwrveAssetsManager.DownloadAssets(priorityAssetsQueue, assetsQueue, AutoShowMessages));
-        campaigns = new List<SwrveBaseCampaign> (newCampaigns);
+        StartTask("SwrveAssetsManager.DownloadAssets", this.SwrveAssetsManager.DownloadAssets(priorityAssetsQueue, assetsQueue, AutoShowMessages));
+        campaigns = new List<SwrveBaseCampaign>(newCampaigns);
     }
 
-    internal void UpdateCdnPaths (Dictionary<string, object> root)
+    internal void UpdateCdnPaths(Dictionary<string, object> root)
     {
-        if(root.ContainsKey("cdn_root")) {
-            string cdnRoot = (string)root ["cdn_root"];
+        if (root.ContainsKey("cdn_root")) {
+            string cdnRoot = (string)root["cdn_root"];
             this.SwrveAssetsManager.CdnImages = cdnRoot;
-            SwrveLog.Log ("CDN URL " + cdnRoot);
-        } else if(root.ContainsKey("cdn_paths")) {
-            Dictionary<string, object> cdnPaths = (Dictionary<string, object>)root ["cdn_paths"];
-            string cdnImages = (string)cdnPaths ["message_images"];
-            string cdnFonts = (string)cdnPaths ["message_fonts"];
+            SwrveLog.Log("CDN URL " + cdnRoot);
+        } else if (root.ContainsKey("cdn_paths")) {
+            Dictionary<string, object> cdnPaths = (Dictionary<string, object>)root["cdn_paths"];
+            string cdnImages = (string)cdnPaths["message_images"];
+            string cdnFonts = (string)cdnPaths["message_fonts"];
             this.SwrveAssetsManager.CdnImages = cdnImages;
             this.SwrveAssetsManager.CdnFonts = cdnFonts;
-            SwrveLog.Log ("CDN URL images:" + cdnImages + " fonts:" + cdnFonts);
+            SwrveLog.Log("CDN URL images:" + cdnImages + " fonts:" + cdnFonts);
         }
     }
 
-    internal ISwrveAssetsManager GetSwrveAssetsManager ()
+    internal ISwrveAssetsManager GetSwrveAssetsManager()
     {
         return this.SwrveAssetsManager;
     }
 
-    internal void DownloadAnyMissingAssets ()
+    internal void DownloadAnyMissingAssets()
     {
-        StartTask ("SwrveAssetsManager.DownloadMissingAssets", this.SwrveAssetsManager.DownloadAnyMissingAssets(AutoShowMessages));
+        StartTask("SwrveAssetsManager.DownloadMissingAssets", this.SwrveAssetsManager.DownloadAnyMissingAssets(AutoShowMessages));
     }
 
-    private void LoadResourcesAndCampaigns ()
+    private void LoadResourcesAndCampaigns()
     {
-        if (!IsAlive ()) {
+        if (!IsAlive()) {
             return;
         }
         try {
@@ -1712,38 +1696,40 @@ public partial class SwrveSDK
                 if (!config.AutoDownloadCampaignsAndResources) {
 
                     if (campaignsAndResourcesLastRefreshed != 0) {
-                        long currentTime = GetSessionTime ();
+                        long currentTime = GetSessionTime();
                         if (currentTime < campaignsAndResourcesLastRefreshed) {
-                            SwrveLog.Log ("Request to retrieve campaign and user resource data was rate-limited.");
+                            SwrveLog.Log("Request to retrieve campaign and user resource data was rate-limited.");
                             return;
                         }
                     }
 
                     // Set next time gate
-                    campaignsAndResourcesLastRefreshed = GetSessionTime () + (long)(campaignsAndResourcesFlushFrequency * 1000);
+                    campaignsAndResourcesLastRefreshed = GetSessionTime() + (long)(campaignsAndResourcesFlushFrequency * 1000);
                 }
 
                 campaignsConnecting = true;
                 var getRequest = GetCampaignsAndResourcesUrl(resourcesAndCampaignsUrl);
-                StartTask ("GetCampaignsAndResources_Coroutine", GetCampaignsAndResources_Coroutine (getRequest.ToString ()));
+                StartTask("GetCampaignsAndResources_Coroutine", GetCampaignsAndResources_Coroutine(getRequest.ToString()));
             }
         } catch (Exception e) {
-            SwrveLog.LogError ("Error while trying to get user resources and campaign data: " + e);
+            SwrveLog.LogError("Error while trying to get user resources and campaign data: " + e);
         }
     }
 
-    internal string GetCampaignsAndResourcesUrl (string endPoint)
+    internal string GetCampaignsAndResourcesUrl(string endPoint)
     {
         float dpi = (Screen.dpi == 0) ? DefaultDPI : Screen.dpi;
-        string deviceName = GetDeviceModel ();
+        string deviceName = GetDeviceModel();
+        string os = GetPlatformOS();
+        string deviceType = GetDeviceType();
         string osVersion = SystemInfo.operatingSystem;
-        StringBuilder campaignUrl = new StringBuilder (endPoint)
-        .AppendFormat ("?user={0}&api_key={1}&app_version={2}&joined={3}", SwrveHelper.EscapeURL (this.UserId), ApiKey, SwrveHelper.EscapeURL (GetAppVersion ()), userInitTimeSeconds);
+        StringBuilder campaignUrl = new StringBuilder(endPoint)
+        .AppendFormat("?user={0}&api_key={1}&app_version={2}&joined={3}", SwrveHelper.EscapeURL(this.UserId), ApiKey, SwrveHelper.EscapeURL(GetAppVersion()), userInitTimeSeconds);
 
         if (config.MessagingEnabled) {
-            campaignUrl.AppendFormat ("&version={0}&orientation={1}&language={2}&app_store={3}&device_width={4}&device_height={5}&device_dpi={6}&os_version={7}&device_name={8}",
-                                      CampaignEndpointVersion, config.Orientation.ToString ().ToLower (), Language, config.AppStore,
-                                      deviceWidth, deviceHeight, dpi, SwrveHelper.EscapeURL (osVersion), SwrveHelper.EscapeURL (deviceName));
+            campaignUrl.AppendFormat("&version={0}&orientation={1}&language={2}&app_store={3}&device_width={4}&device_height={5}&device_dpi={6}&os_version={7}&device_name={8}&os={9}&device_type={10}",
+                                     CampaignEndpointVersion, config.Orientation.ToString().ToLower(), Language, config.AppStore,
+                                     deviceWidth, deviceHeight, dpi, SwrveHelper.EscapeURL(osVersion), SwrveHelper.EscapeURL(deviceName), os, deviceType);
         }
         if (config.ConversationsEnabled) {
             campaignUrl.AppendFormat("&conversation_version={0}", this.conversationVersion);
@@ -1753,26 +1739,60 @@ public partial class SwrveSDK
             campaignUrl.AppendFormat("&ab_test_details=1");
         }
 
-        if (!string.IsNullOrEmpty (lastETag)) {
-            campaignUrl.AppendFormat ("&etag={0}", lastETag);
+        if (!string.IsNullOrEmpty(lastETag)) {
+            campaignUrl.AppendFormat("&etag={0}", lastETag);
         }
 
         return campaignUrl.ToString();
     }
 
-    private string GetDeviceModel ()
+    private string GetDeviceModel()
     {
         string deviceModel = SystemInfo.deviceModel;
-        if (string.IsNullOrEmpty (deviceModel)) {
+        if (string.IsNullOrEmpty(deviceModel)) {
             deviceModel = "ModelUnknown";
         }
         return deviceModel;
     }
 
-    protected virtual IEnumerator GetCampaignsAndResources_Coroutine (string getRequest)
+    private string GetPlatformOS()
     {
-        SwrveLog.Log ("Campaigns and resources request: " + getRequest);
-        yield return Container.StartCoroutine(restClient.Get(getRequest, delegate(RESTResponse response) {
+#if UNITY_ANDROID
+        return SwrveSDK.GetAndroidPlatformOS();
+#elif UNITY_IPHONE
+        return SwrveSDK.GetiOSPlatformOS();
+#elif UNITY_STANDALONE_WIN
+        return "pc";
+#elif UNITY_STANDALONE_LINUX
+        return "linux";
+#elif UNITY_STANDALONE_OSX
+        return "osx";
+#else
+        return Application.platform.ToString().ToLower();
+#endif
+    }
+
+    private string GetDeviceType()
+    {
+#if UNITY_ANDROID
+        return SwrveSDK.GetAndroidDeviceType();
+#elif UNITY_IPHONE
+        return SwrveSDK.GetOSDeviceType();
+#elif UNITY_STANDALONE_WIN
+        return "desktop";
+#elif UNITY_STANDALONE_LINUX
+        return "desktop";
+#elif UNITY_STANDALONE_OSX
+        return "desktop";
+#else
+        return "mobile";
+#endif
+    }
+
+    protected virtual IEnumerator GetCampaignsAndResources_Coroutine(string getRequest)
+    {
+        SwrveLog.Log("Campaigns and resources request: " + getRequest);
+        yield return Container.StartCoroutine(restClient.Get(getRequest, delegate (RESTResponse response) {
             if (response.Error == WwwDeducedError.NoError) {
                 // Save etag for future requests
                 string etag = null;
@@ -1785,9 +1805,24 @@ public partial class SwrveSDK
                 }
 
                 if (!string.IsNullOrEmpty(response.Body)) {
-                    Dictionary<string, object> root = (Dictionary<string, object>)Json.Deserialize (response.Body);
+                    Dictionary<string, object> root = (Dictionary<string, object>)Json.Deserialize(response.Body);
 
-                    if (root != null) {
+                    if (root != null && root.Count > 0) {
+                        // Check for qa must be first.
+                        Dictionary<string, object> qaUserDictionary = null;
+                        bool loadPreviousCampaignState = true;
+                        if (root.ContainsKey("qa")) {
+                            // qa moved to root in v7 of endpoint.
+                            qaUserDictionary = (Dictionary<string, object>)root["qa"];
+                            bool wasPreviouslyResetDevice = SwrveQaUser.Instance.resetDevice;
+                            bool resetDevice = (bool)qaUserDictionary["reset_device_state"];
+                            if (!wasPreviouslyResetDevice && resetDevice) {
+                                loadPreviousCampaignState = false;
+                            }
+                        }
+
+                        UpdateQaUser(qaUserDictionary);
+
                         // Save flush settings
                         if (root.ContainsKey("flush_frequency")) {
                             string strFlushFrequency = MiniJsonHelper.GetString(root, "flush_frequency");
@@ -1812,24 +1847,11 @@ public partial class SwrveSDK
                             Dictionary<string, object> campaignsData = (Dictionary<string, object>)root["campaigns"];
                             if (config.MessagingEnabled) {
                                 string campaignsJson = SwrveUnityMiniJSON.Json.Serialize(campaignsData);
-                                SaveCampaignsCache (campaignsJson);
+                                SaveCampaignsCache(campaignsJson);
 
                                 AutoShowMessages();
 
-                                ProcessCampaigns (campaignsData);
-                                // Construct debug event
-                                StringBuilder campaignIds = new StringBuilder ();
-                                for (int i = 0, j = campaigns.Count; i < j; i++) {
-                                    SwrveBaseCampaign campaign = campaigns [i];
-                                    if (i != 0) {
-                                        campaignIds.Append (',');
-                                    }
-                                    campaignIds.Append (campaign.Id);
-                                }
-                                Dictionary<string, string> payload = new Dictionary<string, string> ();
-                                payload.Add ("ids", campaignIds.ToString ());
-                                payload.Add ("count", (campaigns == null)? "0" : campaigns.Count.ToString ());
-                                NamedEventInternal ("Swrve.Messages.campaigns_downloaded", payload, false);
+                                ProcessCampaigns(campaignsData, loadPreviousCampaignState);
                             }
 
                             if (config.ABTestDetailsEnabled && campaignsData.ContainsKey("ab_test_details")) {
@@ -1850,10 +1872,19 @@ public partial class SwrveSDK
                                 NotifyUpdateUserResources();
                             }
                         }
+
+                        if (root.ContainsKey("real_time_user_properties")) {
+                            // Process realtime user properties
+                            Dictionary<string, object> realtimeUserPropsDate = (Dictionary<string, object>)root["real_time_user_properties"];
+                            string realtimeUserPropsJson = SwrveUnityMiniJSON.Json.Serialize(realtimeUserPropsDate);
+                            storage.SaveSecure(RealtimeUserPropertiesSave, realtimeUserPropsJson, this.UserId);
+                            realtimeUserProperties = NormalizeJson(realtimeUserPropsDate);
+                            realtimeUserPropertiesRaw = realtimeUserPropsJson;
+                        }
                     }
                 }
             } else {
-                SwrveLog.LogError("Resources and campaigns request error: " + response.Error.ToString () + ":" + response.Body);
+                SwrveLog.LogError("Resources and campaigns request error: " + response.Error.ToString() + ":" + response.Body);
             }
 
             if (!campaignsAndResourcesInitialized) {
@@ -1873,143 +1904,144 @@ public partial class SwrveSDK
         }));
     }
 
-    private void SaveCampaignsCache (string cacheContent)
+    private void SaveCampaignsCache(string cacheContent)
     {
         try {
             if (cacheContent == null) {
                 cacheContent = string.Empty;
             }
-            storage.SaveSecure (CampaignsSave, cacheContent, this.UserId);
+            storage.SaveSecure(CampaignsSave, cacheContent, this.UserId);
         } catch (Exception e) {
-            SwrveLog.LogError ("Error while saving campaigns to the cache " + e);
+            SwrveLog.LogError("Error while saving campaigns to the cache " + e);
         }
     }
 
-    internal void SaveExternalCampaignCache (string cacheContent)
+    internal void SaveExternalCampaignCache(string cacheContent)
     {
         try {
             if (cacheContent == null) {
                 cacheContent = string.Empty;
             }
-            storage.SaveSecure (LastExternalCampaignSave, cacheContent, this.UserId);
+            storage.SaveSecure(LastExternalCampaignSave, cacheContent, this.UserId);
         } catch (Exception e) {
-            SwrveLog.LogError ("Error while saving last external campaign to the cache " + e);
+            SwrveLog.LogError("Error while saving last external campaign to the cache " + e);
         }
     }
 
-    private void SaveCampaignData (SwrveBaseCampaign campaign)
+    private void SaveCampaignData(SwrveBaseCampaign campaign)
     {
         try {
             // Move from SwrveCampaignState to the dictionary
-            campaignSettings ["Next" + campaign.Id] = campaign.Next;
-            campaignSettings ["Impressions" + campaign.Id] = campaign.Impressions;
-            campaignSettings ["Status" + campaign.Id] = campaign.Status.ToString();
+            campaignSettings["Next" + campaign.Id] = campaign.Next;
+            campaignSettings["Impressions" + campaign.Id] = campaign.Impressions;
+            campaignSettings["Status" + campaign.Id] = campaign.Status.ToString();
 
-            string serializedCampaignSettings = Json.Serialize (campaignSettings);
-            storage.Save (CampaignsSettingsSave, serializedCampaignSettings, this.UserId);
+            string serializedCampaignSettings = Json.Serialize(campaignSettings);
+            storage.Save(CampaignsSettingsSave, serializedCampaignSettings, this.UserId);
         } catch (Exception e) {
-            SwrveLog.LogError ("Error while trying to save campaign settings " + e);
+            SwrveLog.LogError("Error while trying to save campaign settings " + e);
         }
     }
 
-    private void LoadTalkData ()
+    private void LoadTalkData()
     {
         // Load campaign settings
         try {
             string campaignSettingsStr;
-            string loadedData = storage.Load (CampaignsSettingsSave, this.UserId);
+            string loadedData = storage.Load(CampaignsSettingsSave, this.UserId);
             if (loadedData != null && loadedData.Length != 0) {
-                if (ResponseBodyTester.TestUTF8 (loadedData, out campaignSettingsStr)) {
-                    campaignSettings = (Dictionary<string, object>)Json.Deserialize (campaignSettingsStr);
+                if (ResponseBodyTester.TestUTF8(loadedData, out campaignSettingsStr)) {
+                    campaignSettings = (Dictionary<string, object>)Json.Deserialize(campaignSettingsStr);
                 }
             }
         } catch (Exception e) {
-            SwrveLog.LogWarning ("Could not read default campaign settings." + e.ToString ());
+            SwrveLog.LogWarning("Could not read default campaign settings." + e.ToString());
         }
 
         // Load campaigns
         try {
-            string loadedData = storage.LoadSecure (CampaignsSave, this.UserId);
-            if (!string.IsNullOrEmpty (loadedData)) {
+            string loadedData = storage.LoadSecure(CampaignsSave, this.UserId);
+            if (!string.IsNullOrEmpty(loadedData)) {
                 string campaignsCandidate = null;
-                if (ResponseBodyTester.TestUTF8 (loadedData, out campaignsCandidate)) {
-                    Dictionary<string, object> campaignsData = (Dictionary<string, object>)Json.Deserialize (campaignsCandidate);
-                    ProcessCampaigns (campaignsData);
+                if (ResponseBodyTester.TestUTF8(loadedData, out campaignsCandidate)) {
+                    Dictionary<string, object> campaignsData = (Dictionary<string, object>)Json.Deserialize(campaignsCandidate);
+                    bool loadingPreviousCampaignState = !SwrveQaUser.Instance.resetDevice;
+                    ProcessCampaigns(campaignsData, loadingPreviousCampaignState);
                 } else {
-                    SwrveLog.Log ("Failed to parse campaigns cache");
-                    InvalidateETag ();
+                    SwrveLog.Log("Failed to parse campaigns cache");
+                    InvalidateETag();
                 }
             } else {
-                InvalidateETag ();
+                InvalidateETag();
             }
         } catch (Exception e) {
-            SwrveLog.LogWarning ("Could not read campaigns from cache, using default (" + e.ToString () + ")");
-            InvalidateETag ();
+            SwrveLog.LogWarning("Could not read campaigns from cache, using default (" + e.ToString() + ")");
+            InvalidateETag();
         }
     }
 
-    private void LoadABTestDetails ()
+    private void LoadABTestDetails()
     {
         // Load ABTest details
         try {
-            string loadedData = storage.LoadSecure (CampaignsSave, this.UserId);
-            if (!string.IsNullOrEmpty (loadedData)) {
+            string loadedData = storage.LoadSecure(CampaignsSave, this.UserId);
+            if (!string.IsNullOrEmpty(loadedData)) {
                 string campaignsCandidate = null;
-                if (ResponseBodyTester.TestUTF8 (loadedData, out campaignsCandidate)) {
-                    Dictionary<string, object> campaignsData = (Dictionary<string, object>)Json.Deserialize (campaignsCandidate);
+                if (ResponseBodyTester.TestUTF8(loadedData, out campaignsCandidate)) {
+                    Dictionary<string, object> campaignsData = (Dictionary<string, object>)Json.Deserialize(campaignsCandidate);
                     if (campaignsData.ContainsKey("ab_test_details")) {
-                        Dictionary<string, object> abTestDetails = (Dictionary<string, object>) campaignsData["ab_test_details"];
+                        Dictionary<string, object> abTestDetails = (Dictionary<string, object>)campaignsData["ab_test_details"];
                         ResourceManager.SetABTestDetailsFromJSON(abTestDetails);
                     }
                 } else {
-                    SwrveLog.Log ("Failed to parse AB test details cache");
+                    SwrveLog.Log("Failed to parse AB test details cache");
                 }
             }
         } catch (Exception e) {
-            SwrveLog.LogWarning ("Could not read ABTest details from cache, using default (" + e.ToString () + ")");
+            SwrveLog.LogWarning("Could not read ABTest details from cache, using default (" + e.ToString() + ")");
         }
     }
 
-    internal Dictionary<string, object> LoadLastExternalCampaign ()
+    internal Dictionary<string, object> LoadLastExternalCampaign()
     {
         // Load the last external campaign that occurred on this device with this user
         Dictionary<string, object> campaignData = null;
         try {
-            string loadedData = storage.LoadSecure (LastExternalCampaignSave, this.UserId);
-            if (!string.IsNullOrEmpty (loadedData)) {
+            string loadedData = storage.LoadSecure(LastExternalCampaignSave, this.UserId);
+            if (!string.IsNullOrEmpty(loadedData)) {
                 string campaignsCandidate = null;
-                if (ResponseBodyTester.TestUTF8 (loadedData, out campaignsCandidate)) {
-                    campaignData = (Dictionary<string, object>)Json.Deserialize (campaignsCandidate);
+                if (ResponseBodyTester.TestUTF8(loadedData, out campaignsCandidate)) {
+                    campaignData = (Dictionary<string, object>)Json.Deserialize(campaignsCandidate);
                 } else {
-                    SwrveLog.Log ("Failed to parse campaigns cache");
+                    SwrveLog.Log("Failed to parse campaigns cache");
                 }
             } else {
                 SwrveLog.Log("No previous external Campaign Found");
             }
         } catch (Exception exception) {
-            SwrveLog.LogWarning ("Could not read campaigns from cache: " + exception);
+            SwrveLog.LogWarning("Could not read campaigns from cache: " + exception);
         }
 
         return campaignData;
     }
 
-    public void SendPushEngagedEvent (string pushId)
+    public void SendPushEngagedEvent(string pushId)
     {
         if (("0" == pushId) || (pushId != lastPushEngagedId)) {
             lastPushEngagedId = pushId;
-            NamedEventInternal ("Swrve.Messages.Push-" + pushId + ".engaged", null, false);
-            SwrveLog.Log ("Got Swrve notification with ID " + pushId);
+            NamedEventInternal("Swrve.Messages.Push-" + pushId + ".engaged", null, false);
+            SwrveLog.Log("Got Swrve notification with ID " + pushId);
             SendQueuedEvents();
         }
     }
 
     private IEnumerator WaitASecondAndSendEvents_Coroutine()
     {
-        yield return new WaitForSeconds (1);
-        SendQueuedEvents ();
+        yield return new WaitForSeconds(1);
+        SendQueuedEvents();
     }
 
-    protected int ConvertInt64ToInt32Hack (Int64 val)
+    protected int ConvertInt64ToInt32Hack(Int64 val)
     {
         // SWRVE-5613
         // Hack to solve Unity issue where the id is an int64
@@ -2023,52 +2055,52 @@ public partial class SwrveSDK
         return deviceCarrierInfo;
     }
 
-    public string GetAppVersion ()
+    public string GetAppVersion()
     {
-        if (string.IsNullOrEmpty (config.AppVersion)) {
-            setNativeAppVersion ();
+        if (string.IsNullOrEmpty(config.AppVersion)) {
+            setNativeAppVersion();
         }
         return config.AppVersion;
     }
 
-    private void ShowConversation (string conversation)
+    private void ShowConversation(string conversation)
     {
 #if UNITY_EDITOR
-        if(null != ConversationEditorCallback) {
+        if (null != ConversationEditorCallback) {
             ConversationEditorCallback(conversation);
             return;
         }
 #endif
-        showNativeConversation (conversation);
+        showNativeConversation(conversation);
     }
 
-    private void SetInputManager (IInputManager inputManager)
+    private void SetInputManager(IInputManager inputManager)
     {
         this.inputManager = inputManager;
     }
 
-    protected void StartCampaignsAndResourcesTimer ()
+    protected void StartCampaignsAndResourcesTimer()
     {
         if (!config.AutoDownloadCampaignsAndResources) {
             return;
         }
 
-        RefreshUserResourcesAndCampaigns ();
+        RefreshUserResourcesAndCampaigns();
 
         // Start repeating timer to auto-send events after a specified frequency. eg: 60s
         StartCheckForCampaignsAndResources();
 
         // Call refresh once after refresh delay (eg: 5s) to ensure campaigns are reloaded after initial events have been sent.
-        Container.StartCoroutine (WaitAndRefreshResourcesAndCampaigns_Coroutine (campaignsAndResourcesFlushRefreshDelay));
+        Container.StartCoroutine(WaitAndRefreshResourcesAndCampaigns_Coroutine(campaignsAndResourcesFlushRefreshDelay));
     }
 
-    protected void DisableAutoShowAfterDelay ()
+    protected void DisableAutoShowAfterDelay()
     {
         // Start timer to disable autoshow
-        Container.StartCoroutine (DisableAutoShowAfterDelay_Coroutine ());
+        Container.StartCoroutine(DisableAutoShowAfterDelay_Coroutine());
     }
 
-    private IEnumerator DisableAutoShowAfterDelay_Coroutine ()
+    private IEnumerator DisableAutoShowAfterDelay_Coroutine()
     {
         yield return new WaitForSeconds(config.AutoShowMessagesMaxDelay);
         autoShowMessagesEnabled = false;
@@ -2096,15 +2128,15 @@ public partial class SwrveSDK
             {"sigSuffix", SwrveFileStorage.SIGNATURE_SUFFIX}
         };
 
-        string jsonString = Json.Serialize (currentDetails);
+        string jsonString = Json.Serialize(currentDetails);
 
         return jsonString;
     }
 
     private void InitNative()
     {
-        initNative ();
-        setNativeConversationVersion ();
+        initNative();
+        setNativeConversationVersion();
     }
 
     private void ProcessInfluenceData()
@@ -2112,13 +2144,13 @@ public partial class SwrveSDK
         // Obtain influence data from native layer
         string influenceDataJson = GetInfluencedDataJsonPerPlatform();
         if (influenceDataJson != null) {
-            List<object> influenceData = (List<object>)Json.Deserialize (influenceDataJson);
+            List<object> influenceData = (List<object>)Json.Deserialize(influenceDataJson);
             if (influenceData != null) {
                 for (int i = 0; i < influenceData.Count; i++) {
-                    CheckInfluenceData ((Dictionary<string, object>)influenceData [i]);
+                    CheckInfluenceData((Dictionary<string, object>)influenceData[i]);
                 }
             } else {
-                SwrveLog.LogError ("Could not parse influence data");
+                SwrveLog.LogError("Could not parse influence data");
             }
         }
     }
@@ -2148,7 +2180,7 @@ public partial class SwrveSDK
 
     public void QueueGenericCampaignEvent(Dictionary<string, object> eventData)
     {
-        AppendEventToBuffer ("generic_campaign_event", eventData, false);
+        AppendEventToBuffer("generic_campaign_event", eventData, false);
     }
 
     public void CheckInfluenceData(Dictionary<string, object> influenceData)
@@ -2168,19 +2200,67 @@ public partial class SwrveSDK
                 // Check if the user was influenced
                 long now = SwrveHelper.GetMilliseconds();
                 if (now <= maxInfluencedMillis) {
-                    Dictionary<string, object> json = new Dictionary<string, object> ();
-                    json.Add ("id", trackingId);
-                    json.Add ("campaignType", "push");
-                    json.Add ("actionType", "influenced");
-                    Dictionary<string, string> payload = new Dictionary<string, string> ();
-                    payload.Add ("delta", ((maxInfluencedMillis - now) / (100 * 60)).ToString());
-                    json.Add ("payload", payload);
-                    AppendEventToBuffer ("generic_campaign_event", json, false);
+                    Dictionary<string, object> json = new Dictionary<string, object>();
+                    json.Add("id", trackingId);
+                    json.Add("campaignType", "push");
+                    json.Add("actionType", "influenced");
+                    Dictionary<string, string> payload = new Dictionary<string, string>();
+                    payload.Add("delta", ((maxInfluencedMillis - now) / (100 * 60)).ToString());
+                    json.Add("payload", payload);
+                    AppendEventToBuffer("generic_campaign_event", json, false);
 
-                    SwrveLog.Log ("User was influenced by push " + trackingId);
-                    Container.StartCoroutine (WaitASecondAndSendEvents_Coroutine());
+                    SwrveLog.Log("User was influenced by push " + trackingId);
+                    Container.StartCoroutine(WaitASecondAndSendEvents_Coroutine());
                 }
             }
         }
     }
+
+    // Region with methods to help with the QaUser
+    // So we don't need to pass to QA dependencies like "SwrveButton".
+    #region SwrveQAHelperArea.
+
+    private void UpdateQaUser(Dictionary<string, object> qaUserDictionary)
+    {
+        if (qaUserDictionary == null) {
+            // If we do not receive the QA dic we do save as normal user.
+            qaUserDictionary = new Dictionary<string, object>();
+            qaUserDictionary.Add("reset_device_state", false);
+            qaUserDictionary.Add("logging", false);
+        }
+        SwrveQaUser.SaveQaUser(qaUserDictionary);
+        SwrveQaUser.Update(qaUserDictionary);
+
+        // Update on Native iOS/Android as well.
+#if UNITY_IOS
+        updateQAUser(qaUserDictionary);
+#endif
+
+#if UNITY_ANDROID
+        updateQAUser();
+#endif
+
+    }
+
+    protected string QaActionType(SwrveButton button)
+    {
+        string actionType = "";
+        switch (button.ActionType) {
+        case SwrveActionType.Install:
+            actionType = "install";
+            break;
+        case SwrveActionType.Dismiss:
+            actionType = "dismiss";
+            break;
+        case SwrveActionType.CopyToClipboard:
+            actionType = "clipboard";
+            break;
+        case SwrveActionType.Custom:
+            actionType = "deeplink";
+            break;
+        }
+        return actionType;
+    }
+
+    #endregion
 }

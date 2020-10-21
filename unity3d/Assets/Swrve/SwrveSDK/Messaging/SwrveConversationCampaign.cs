@@ -33,19 +33,21 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
     /// SwrveConversation that contains the given event in its trigger list and satisfies all the
     /// rules.
     /// </returns>
-    public SwrveConversation GetConversationForEvent(string triggerEvent, IDictionary<string, string> payload, SwrveQAUser qaUser)
+    public SwrveConversation GetConversationForEvent(string triggerEvent, IDictionary<string, string> payload, List<SwrveQaUserCampaignInfo> qaCampaignInfoList)
     {
         if (null == Conversation) {
-            LogAndAddReason ("No conversation in campaign " + Id, qaUser);
+            string reason = "No conversation in campaign " + Id;
+            LogAndAddReason(reason, false, qaCampaignInfoList);
             return null;
         }
 
-        if (CheckCampaignLimits (triggerEvent, payload, qaUser)) {
+        if (CheckCampaignLimits (triggerEvent, payload, qaCampaignInfoList)) {
             SwrveLog.Log (string.Format ("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
             if (AreAssetsReady ()) {
                 return Conversation;
             } else {
-                LogAndAddReason ("Assets not downloaded to show conversation in campaign " + Id, qaUser);
+                string reason = "Assets not downloaded to show conversation in campaign " + Id;
+                LogAndAddReason(reason, false, qaCampaignInfoList);
             }
         }
         return null;

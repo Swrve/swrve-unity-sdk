@@ -1,10 +1,10 @@
-﻿#if !UNITY_ANDROID && !UNITY_IOS && !(UNITY_WSA_10_0 && SWRVE_WINDOWS_SDK)
-    using System.Collections.Generic;
+﻿#if !UNITY_ANDROID && !UNITY_IOS
+using System.Collections.Generic;
 
 public partial class SwrveSDK
 {
 
-    private void setNativeInfo (Dictionary<string, string> deviceInfo) {}
+private void setNativeInfo (Dictionary<string, string> deviceInfo) {}
     private string getNativeLanguage ()
     {
         return null;

@@ -11,7 +11,6 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Bundle;
 
-import com.swrve.sdk.SwrveCampaignDeliveryAsyncTask;
 import com.swrve.sdk.SwrveCampaignInfluence;
 import com.swrve.sdk.SwrveHelper;
 import com.swrve.sdk.SwrveNotificationBuilder;
@@ -191,11 +190,6 @@ public abstract class SwrvePushSupport {
         campaignInfluence.saveInfluencedCampaign(context, pushId, msg, new Date());
     }
 
-    static void sendPushDeliveredEvent(Bundle extras) {
-        SwrveUnityCommonHelper.checkInstance(); // We need be sure that we have a valid "SwrveCommon" instance to be able to send Push Delivery.
-        SwrveCampaignDeliveryAsyncTask task = new SwrveCampaignDeliveryAsyncTask(extras);
-        task.execute();
-    }
     public static void removeInfluenceCampaign(Context context, String pushId) {
         SwrveCampaignInfluence campaignInfluence = new SwrveCampaignInfluence();
         campaignInfluence.removeInfluenceCampaign(context, pushId);

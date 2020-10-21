@@ -3,62 +3,74 @@ package com.swrve.unity;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+
 import androidx.core.app.NotificationCompat;
+import androidx.test.core.app.ApplicationProvider;
 
 import com.swrve.sdk.SwrveNotificationBuilder;
 import com.swrve.sdk.SwrveNotificationConstants;
 import com.swrve.sdk.SwrveUnityCommon;
 import com.swrve.sdk.SwrveUnityCommonHelper;
 import com.unity3d.player.UnityPlayer;
+import com.unity3d.player.UnityPlayerActivity;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
-import org.robolectric.shadows.ShadowActivity;
 import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.shadows.ShadowNotification;
 
 import java.util.Date;
 import java.util.List;
 
-import androidx.test.core.app.ApplicationProvider;
-
 import static com.swrve.sdk.SwrveNotificationConstants.SOUND_DEFAULT;
 import static com.swrve.sdk.SwrveNotificationConstants.SOUND_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
-public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
+public class SwrveUnityPushManagerTest extends SwrveBaseTest {
 
     protected Activity mActivity;
-    protected ShadowActivity mShadowActivity;
-    protected Service service;
 
-    public abstract void serviceOnMessageReceived(Bundle bundle);
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        mActivity = Robolectric.buildActivity(UnityPlayerActivity.class).create().visible().get();
+        new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
+    }
 
     @Test
     public void testNotifications()  {
 
-        new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
         String msgText = "hello";
         Bundle bundle = new Bundle();
         bundle.putString("_p", "10");
         bundle.putString(SwrveNotificationConstants.TEXT_KEY, msgText);
         bundle.putString("custom", "key");
 
-        serviceOnMessageReceived(bundle);
+        SwrveUnityPushServiceManager serviceManagerSpy = spy(new SwrveUnityPushServiceManager(mActivity));
+        SwrveUnityCommonHelper commonHelperMock = mock(SwrveUnityCommonHelper.class);
+        doReturn(commonHelperMock).when(serviceManagerSpy).getSwrveUnityCommonHelper();
+        serviceManagerSpy.processRemoteNotification(bundle);
+
+        verify(commonHelperMock, atLeastOnce()).sendPushDeliveredEvent(mActivity, bundle);
 
         // Check a notification has been shown
         NotificationManager notificationManager = (NotificationManager) RuntimeEnvironment.application.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -78,7 +90,6 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
     @Test
     public void testCreateNotificationBuilderWithPrefs() {
 
-        new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
         String msgTitle = "Swrve";
         String msgText = "hello";
         String icon = "common_google_signin_btn_icon_dark";
@@ -101,7 +112,6 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
     @Test
     public void testCreateNotificationBuilderWithDefaults() {
 
-        new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
         String msgTitle = "Swrve";
         String msgText = "hello";
         int iconId = 0;
@@ -126,7 +136,10 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
         String rawJson = "{\"key\":\"value\"}";
         bundle.putString("_s.SilentPayload", rawJson);
 
-        serviceOnMessageReceived(bundle);
+        SwrveUnityPushServiceManager serviceManagerSpy = spy(new SwrveUnityPushServiceManager(mActivity));
+        SwrveUnityCommonHelper commonHelperMock = mock(SwrveUnityCommonHelper.class);
+        doReturn(commonHelperMock).when(serviceManagerSpy).getSwrveUnityCommonHelper();
+        serviceManagerSpy.processRemoteNotification(bundle);
 
         List<Intent> intents = shadowApplication.getBroadcastIntents();
         assertEquals(1, intents.size());
@@ -165,5 +178,4 @@ public abstract class SwrveBasePushSupportTest extends SwrveBaseTest {
         assertEquals("Notification colorHex is wrong", color, builder.getColor());
         assertEquals("Notification sound is wrong",  sound, notification.sound == null ? null : notification.sound.toString());
     }
-
 }

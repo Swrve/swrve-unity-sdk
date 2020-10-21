@@ -108,7 +108,7 @@ public class SwrveDeeplinkManager
 
                             if (this.sdk.config.MessagingEnabled && version == EXTERNAL_CAMPAIGN_RESPONSE_VERSION) {
                                 this.sdk.SaveExternalCampaignCache(response.Body);
-                                processCampaignJSON(campaignData);
+                                ProcessCampaignJSON(campaignData);
                             }
                         }
                     }
@@ -119,7 +119,7 @@ public class SwrveDeeplinkManager
         }));
     }
 
-    protected virtual void processCampaignJSON (Dictionary<string, object> campaignData)
+    protected virtual void ProcessCampaignJSON (Dictionary<string, object> campaignData)
     {
         HashSet<SwrveAssetsQueueItem> assetsQueue = new HashSet<SwrveAssetsQueueItem>();
         ISwrveAssetsManager assetsManager = this.sdk.GetSwrveAssetsManager();
@@ -130,7 +130,6 @@ public class SwrveDeeplinkManager
                 SwrveBaseCampaign campaign = SwrveBaseCampaign.LoadFromJSONWithNoValidation (assetsManager,
                                              campaignData,
                                              this.sdk.GetInitialisedTime(),
-                                             this.sdk.GetQAUser(),
                                              this.sdk.config.DefaultBackgroundColor);
                 if(campaign == null) {
                     throw new Exception("Campaign was not in a format that could be parsed");

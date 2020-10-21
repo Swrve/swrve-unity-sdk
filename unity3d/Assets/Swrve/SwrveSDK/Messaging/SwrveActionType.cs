@@ -8,7 +8,8 @@ namespace SwrveUnity.Messaging
 public enum SwrveActionType {
     Install,
     Dismiss,
-    Custom
+    Custom,
+    CopyToClipboard
 }
 }
 

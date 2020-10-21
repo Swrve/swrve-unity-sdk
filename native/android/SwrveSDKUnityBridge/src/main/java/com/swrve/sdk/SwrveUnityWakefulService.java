@@ -3,14 +3,6 @@ package com.swrve.sdk;
 import android.app.IntentService;
 import android.content.Intent;
 
-import com.swrve.sdk.rest.IRESTClient;
-import com.swrve.sdk.rest.RESTClient;
-
-import org.json.JSONException;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
 public class SwrveUnityWakefulService extends IntentService {
 
     public SwrveUnityWakefulService() {
@@ -19,6 +11,9 @@ public class SwrveUnityWakefulService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        if (intent == null) {
+            return;
+        }
         try {
             SwrveUnityBackgroundEventSender sender = getBackgroundEventSender();
             sender.handleSendEvents(intent.getExtras());

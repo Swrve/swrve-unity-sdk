@@ -1,7 +1,10 @@
 package com.swrve.sdk;
 
 import android.app.NotificationChannel;
+import android.content.Context;
 import android.os.Bundle;
+
+import java.util.ArrayList;
 
 public class SwrveUnityCommonHelper {
 
@@ -42,7 +45,33 @@ public class SwrveUnityCommonHelper {
         swrveCommon.saveNotificationAuthenticated(notificationId);
     }
 
-    public static void checkInstance() {
-        SwrveCommon.checkInstanceCreated();
+    public static String getPushDeliveredBatchEvent(ArrayList<String> eventsList) throws Exception {
+        return EventHelper.getPushDeliveredBatchEvent(eventsList);
+    }
+
+    public static ArrayList<String> getPushDeliveredEvent(Bundle extras, long time) throws Exception {
+        return EventHelper.getPushDeliveredEvent(extras, time);
+    }
+
+    public void sendPushDeliveredEvent(Context context, Bundle extras) {
+        try {
+            SwrveCommon.checkInstanceCreated(); // We need be sure that we have a valid "SwrveCommon" instance to be able to send Push Delivery.
+            ArrayList<String> eventsList = SwrveUnityCommonHelper.getPushDeliveredEvent(extras, getTime());
+            if (eventsList != null && eventsList.size() > 0) {
+                String eventBody = SwrveUnityCommonHelper.getPushDeliveredBatchEvent(eventsList);
+                String endPoint = SwrveCommon.getInstance().getEventsServer() + "/1/batch";
+                getCampaignDeliveryManager(context).sendCampaignDelivery(endPoint, eventBody);
+            }
+        } catch (Exception e) {
+            SwrveLogger.e("Exception in sendPushDeliveredEvent", e);
+        }
+    }
+
+    protected CampaignDeliveryManager getCampaignDeliveryManager(Context context) {
+        return new CampaignDeliveryManager(context);
+    }
+
+    protected long getTime() {
+        return System.currentTimeMillis();
     }
 }

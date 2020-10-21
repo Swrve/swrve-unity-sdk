@@ -46,6 +46,11 @@ public class SwrveEmpty : SwrveSDK
         //do nothing
     }
 
+    public override void GetRealtimeUserProperties (Action<Dictionary<string, string>, string> onResult, Action<Exception> onError)
+    {
+        //do nothing
+    }
+
     public override void FlushToDisk (bool saveEventsBeingSent = false)
     {
         //do nothing
@@ -66,7 +71,12 @@ public class SwrveEmpty : SwrveSDK
         return null;
     }
 
-    public override IEnumerator ShowMessageForEvent (string eventName, SwrveMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null)
+    public override IEnumerator ShowMessageForEvent (string eventName, SwrveMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null)
+    {
+        yield return null;
+    }
+
+    public override IEnumerator ShowMessageForEvent (string eventName, IDictionary<string, string> payload, SwrveMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null)
     {
         yield return null;
     }
@@ -160,25 +170,20 @@ public class SwrveEmpty : SwrveSDK
     {
     }
 
-    public override void ShowMessageCenterCampaign(SwrveBaseCampaign campaign)
+    public override void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation? orientation = null, Dictionary<string, string> properties = null)
     {
     }
 
-    public override void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation orientation)
-    {
-    }
-
-    public override List<SwrveBaseCampaign> GetMessageCenterCampaigns()
-    {
-        return new List<SwrveBaseCampaign> ();
-    }
-
-    public override List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation orientation)
+    public override List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation? orientation = null, Dictionary<string, string> properties = null)
     {
         return new List<SwrveBaseCampaign> ();
     }
 
     public override void RemoveMessageCenterCampaign(SwrveBaseCampaign campaign)
+    {
+    }
+
+    public override void MarkMessageCenterCampaignAsSeen(SwrveBaseCampaign campaign)
     {
     }
 

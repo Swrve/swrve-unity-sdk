@@ -2,6 +2,7 @@
 
 
 #import "UnitySwrve.h"
+#import "SwrveUtils.h"
 #import "SwrvePermissions.h"
 #if TARGET_OS_IOS /* exclude tvOS */
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
@@ -140,10 +141,16 @@
 +(char*) IDFA
 {
 #ifdef SWRVE_LOG_IDFA
-    if([[ASIdentifierManager sharedManager] isAdvertisingTrackingEnabled])
-    {
+    if (@available(iOS 14, *)) {
         NSString *idfa = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
-        return [UnitySwrveHelper NSStringCopy:idfa];
+        if ([self isValidIDFA:idfa]) {
+            return [UnitySwrveHelper NSStringCopy:idfa];
+        }
+    } else {
+        if([[ASIdentifierManager sharedManager] isAdvertisingTrackingEnabled]) {
+            NSString *idfa = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
+             return [UnitySwrveHelper NSStringCopy:idfa];
+        }
     }
 #endif
     return NULL;
@@ -200,6 +207,23 @@
 
 + (bool) isSupportediOSVersion {
     return [SwrveCommon supportedOS];
+}
+
++ (char *) deviceType {
+    NSString *deviceType = [SwrveUtils platformDeviceType];
+    return [UnitySwrveHelper NSStringCopy:deviceType];
+}
++ (char *) platformOS {
+    UIDevice *device = [UIDevice currentDevice];
+    NSString *platformOS = [[device systemName] lowercaseString];
+    return [UnitySwrveHelper NSStringCopy:platformOS];
+}
+
++ (BOOL)isValidIDFA:(NSString *)idfa {
+    if (idfa == nil) return false;
+    NSString *noDashes = [idfa stringByReplacingOccurrencesOfString: @"-" withString:@""];
+    NSString *idfaNoZerosOrDashes = [noDashes stringByReplacingOccurrencesOfString: @"0" withString:@""];
+    return (idfaNoZerosOrDashes != nil && idfaNoZerosOrDashes.length != 0);
 }
 
 @end

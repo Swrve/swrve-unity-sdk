@@ -5,7 +5,6 @@ import android.os.Build;
 import android.util.Log;
 
 import com.swrve.sdk.SwrveLogger;
-import com.swrve.unity.swrvesdkpushsupport.BuildConfig;
 
 import org.junit.After;
 import org.junit.Before;

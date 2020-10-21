@@ -38,19 +38,20 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
     /// In-app message that contains the given event in its trigger list and satisfies all the
     /// rules.
     /// </returns>
-    public SwrveMessage GetMessageForEvent (string triggerEvent, IDictionary<string, string> payload, SwrveQAUser qaUser)
+    public SwrveMessage GetMessageForEvent (string triggerEvent, IDictionary<string, string> payload, List<SwrveQaUserCampaignInfo> qaCampaignInfoList)
     {
         int messagesCount = Messages.Count;
 
         if (messagesCount == 0) {
-            LogAndAddReason ("No messages in campaign " + Id, qaUser);
+            string reason = "No messages in campaign " + Id;
+            LogAndAddReason (reason, false, qaCampaignInfoList);
             return null;
         }
 
-        if (CheckCampaignLimits (triggerEvent, payload, qaUser)) {
+        if (CheckCampaignLimits (triggerEvent, payload, qaCampaignInfoList)) {
             SwrveLog.Log (string.Format ("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
 
-            return GetNextMessage (messagesCount, qaUser);
+            return GetNextMessage (messagesCount, qaCampaignInfoList);
         }
         return null;
     }
@@ -73,7 +74,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         return null;
     }
 
-    protected SwrveMessage GetNextMessage (int messagesCount, SwrveQAUser qaUser)
+    protected SwrveMessage GetNextMessage (int messagesCount, List<SwrveQaUserCampaignInfo> qaCampaignInfoList)
     {
         if (RandomOrder) {
             List<SwrveMessage> randomMessages = new List<SwrveMessage> (Messages);
@@ -91,7 +92,8 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
             }
         }
 
-        LogAndAddReason ("Campaign " + this.Id + " hasn't finished downloading.", qaUser);
+        string reason = "Campaign " + this.Id + " hasn't finished downloading.";
+        LogAndAddReason (reason, false, qaCampaignInfoList);
         return null;
     }
 
@@ -149,7 +151,7 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         }
     }
 
-    public static SwrveMessagesCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, SwrveQAUser qaUser, Color? defaultBackgroundColor)
+    public static SwrveMessagesCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, Color? defaultBackgroundColor, List<SwrveQaUserCampaignInfo> qaUserCampaignInfoList)
     {
         SwrveMessagesCampaign campaign = new SwrveMessagesCampaign (initialisedTime);
 
@@ -159,11 +161,13 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         try {
             messages = (IList<object>)_messages;
         } catch(Exception e) {
-            campaign.LogAndAddReason ("Campaign [" + id + "] invalid messages found, skipping.  Error: " + e, qaUser);
+            string reason = "Campaign [" + id + "] invalid messages found, skipping.  Error: " + e;
+            campaign.LogAndAddReason(reason, false, qaUserCampaignInfoList);
         }
 
         if (messages == null) {
-            campaign.LogAndAddReason ("Campaign [" + id + "] JSON messages are null, skipping.", qaUser);
+            string reason = "Campaign [" + id + "] JSON messages are null, skipping.";
+            campaign.LogAndAddReason(reason, false, qaUserCampaignInfoList);
             return null;
         }
 
@@ -175,7 +179,8 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
             }
         }
         if (campaign.Messages.Count == 0) {
-            campaign.LogAndAddReason ("Campaign [" + id + "] no messages found, skipping.", qaUser);
+            string reason = "Campaign [" + id + "] no messages found, skipping.";
+            campaign.LogAndAddReason(reason, false, qaUserCampaignInfoList);
         }
 
         return campaign;

@@ -14,7 +14,7 @@ using UnityEditor.iOS.Xcode;
 using UnityEditor.iOS.Xcode.Extensions;
 
 /// <summary>
-/// Integrates the native code required for Conversations and Location campaigns support on iOS.
+/// Integrates the native code required for Conversations support on iOS.
 /// </summary>
 public class SwrveIOSPostProcess : SwrveCommonBuildComponent
 {
@@ -72,11 +72,11 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         project.AddFrameworkToProject(targetGuid, "UserNotificationsUI.framework", true /*weak*/);
 
         // 8. Add framework required for SwrveCommmonSDK for SwrveUtils. It needs CoreTelephony.framework
-        project.AddFrameworkToProject (targetGuid, "CoreTelephony.framework", false /*weak*/);
+        project.AddFrameworkToProject(targetGuid, "CoreTelephony.framework", false /*weak*/);
 
         string appGroupIndentifier = SwrveBuildComponent.GetPostProcessString(SwrveBuildComponent.APP_GROUP_ID_KEY);
 
-        if (string.IsNullOrEmpty (appGroupIndentifier)) {
+        if (string.IsNullOrEmpty(appGroupIndentifier)) {
             SwrveLog.Log ("Swrve iOS Rich Push requires an iOSAppGroupIdentifier set in the postprocess.json file. Without it there will be no influence tracking and potential errors.");
         } else {
             // 8. Add Extension Target for Push
@@ -112,6 +112,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         // Ensure Service Files are part of the Build Phases
         proj.AddFile(pathToProject + "/SwrvePushExtension/NotificationService.h", "SwrvePushExtension/NotificationService.h");
         proj.AddFileToBuild(extensionTarget, proj.AddFile(pathToProject + "/SwrvePushExtension/NotificationService.m", "SwrvePushExtension/NotificationService.m"));
+
         // Add TeamID from Player Settings to project
         proj.SetTeamId(extensionTarget, PlayerSettings.iOS.appleDeveloperTeamID);
 

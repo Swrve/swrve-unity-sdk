@@ -288,9 +288,9 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     return [self queueEvent:@"event" data:json triggerCallback:triggerCallback];;
 }
 
-- (int)queueEvent:(NSString*)eventType data:(NSMutableDictionary*)eventData triggerCallback:(bool)triggerCallback {
+- (int) queueEvent:(NSString*)eventType data:(NSMutableDictionary *)eventData triggerCallback:(bool)triggerCallback {
 #pragma unused(triggerCallback)
-    NSMutableArray* buffer = self.eventBuffer;
+    NSMutableArray *buffer = self.eventBuffer;
     if (buffer) {
         // Add common attributes (if not already present)
         if (![eventData objectForKey:@"type"]) {
@@ -303,20 +303,21 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
         // Convert to string
         NSData *json_data = [NSJSONSerialization dataWithJSONObject:eventData options:0 error:nil];
         if (json_data) {
-            NSString* json_string = [[NSString alloc] initWithData:json_data encoding:NSUTF8StringEncoding];
+            NSString *json_string = [[NSString alloc] initWithData:json_data encoding:NSUTF8StringEncoding];
             @synchronized (buffer) {
                 [self setEventBufferBytes:self.eventBufferBytes + (int)[json_string length]];
                 [buffer addObject:json_string];
             }
         }
+        [SwrveQA wrappedEvent:[eventData copy]];
         [self sendQueuedEvents];
     }
     return SWRVE_SUCCESS;
 }
 
-- (void)sendQueuedEvents {
+- (void) sendQueuedEvents {
     // Early out if length is zero.
-    NSMutableArray* buffer = self.eventBuffer;
+    NSMutableArray *buffer = self.eventBuffer;
     int bytes = self.eventBufferBytes;
 
     @synchronized (buffer) {
@@ -700,14 +701,12 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 }
 
 - (void)updateQAUser:(NSString *)qaJson {
-
-    NSError* error = nil;
-    NSDictionary* map =
+    NSError *error = nil;
+    NSDictionary *map =
     [NSJSONSerialization JSONObjectWithData:[qaJson dataUsingEncoding:NSUTF8StringEncoding]
                                     options:NSJSONReadingMutableContainers error:&error];
     if (error == nil) {
-
-        [SwrveQA updateQAUser:map];
+        [SwrveQA updateQAUser:map andSessionToken:[self sessionToken]];
     }
 }
     

@@ -42,6 +42,7 @@ dependencies {
     // If compiling amazon flavour from source you should download
     // the ADM jar from the Amazon Developer portal: https://developer.amazon.com/device-messaging
     amazonCompileOnly fileTree(dir: "providedLibs", include: ['amazon-device-messaging*.jar'])
+    testImplementation fileTree(dir: "providedLibs", include: ['amazon-device-messaging*.jar'])
 
     firebaseApi 'com.google.firebase:firebase-messaging:' + project.FIREBASE_MESSAGING_VERSION
     firebaseApi 'com.google.android.gms:play-services-ads-identifier:' + project.PLAY_SERVICES_ADS_VERSION

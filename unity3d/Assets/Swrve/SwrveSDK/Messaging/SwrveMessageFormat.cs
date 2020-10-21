@@ -5,6 +5,7 @@ using SwrveUnity.Helpers;
 
 namespace SwrveUnity.Messaging
 {
+#pragma warning disable 0618
 /// <summary>
 /// In-app message format.
 /// </summary>
@@ -58,31 +59,43 @@ public class SwrveMessageFormat
     /// <summary>
     /// Custom button listener to process install button events.
     /// </summary>
+    [System.Obsolete("This property will be removed in 8.0")]
     public ISwrveInstallButtonListener InstallButtonListener;
 
     /// <summary>
     /// Custom button listener to process custom button events.
     /// </summary>
+    [System.Obsolete("This property will be removed in 8.0")]
     public ISwrveCustomButtonListener CustomButtonListener;
+
+    /// <summary>
+    /// Custom button listener to process clipboard button events.
+    /// </summary>
+    [System.Obsolete("This property will be removed in 8.0")]
+    public ISwrveClipboardButtonListener ClipboardButtonListener;
 
     /// <summary>
     /// Custom message listener to process message events.
     /// </summary>
+    [System.Obsolete("This property will be removed in 8.0")]
     public ISwrveMessageListener MessageListener;
 
     /// <summary>
     /// Flag to indicate if the message is closing.
     /// </summary>
+    [System.Obsolete("This property will be removed in 8.0")]
     public bool Closing = false;
 
     /// <summary>
     /// Flag to indicate if the message has been dismissed.
     /// </summary>
+    [System.Obsolete("This property will be removed in 8.0")]
     public bool Dismissed = false;
 
     /// <summary>
     /// Flag to indicate if the message has to be rotated.
     /// </summary>
+    [System.Obsolete("This property will be removed in 8.0")]
     public bool Rotate = false;
 
     private SwrveMessageFormat (SwrveMessage message)
@@ -179,6 +192,9 @@ public class SwrveMessageFormat
         button.Size.Y = IntValueFromAttribute (buttonData, "h");
 
         button.Image = StringValueFromAttribute (buttonData, "image_up");
+        if (buttonData.ContainsKey("text")) {
+            button.Text = StringValueFromAttribute (buttonData, "text");
+        }
         button.Message = message;
 
         if (buttonData.ContainsKey ("name")) {
@@ -191,6 +207,8 @@ public class SwrveMessageFormat
             actionType = SwrveActionType.Install;
         } else if (actionTypeStr.ToLower ().Equals ("custom")) {
             actionType = SwrveActionType.Custom;
+        } else if (actionTypeStr.ToLower ().Equals ("copy_to_clipboard")) {
+            actionType = SwrveActionType.CopyToClipboard;
         }
 
         button.ActionType = actionType;
@@ -215,6 +233,9 @@ public class SwrveMessageFormat
         image.Size.Y = IntValueFromAttribute (imageData, "h");
 
         image.File = StringValueFromAttribute (imageData, "image");
+        if (imageData.ContainsKey("text")) {
+            image.Text = StringValueFromAttribute (imageData, "text");
+        }
 
         return image;
     }
@@ -279,4 +300,5 @@ public class SwrveMessageFormat
         }
     }
 }
+#pragma warning restore 0618
 }

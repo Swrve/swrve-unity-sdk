@@ -18,11 +18,14 @@ extern "C"
     void _swrveiOSInitNative(char* jsonConfig);
     void _swrveiOSShowConversation(char* conversation);
     bool _swrveiOSIsSupportedOSVersion(void);
+    char* _swrveiOSGetOSDeviceType(void);
+    char* _swrveiOSGetPlatformOS(void);
     bool _swrveiOSIsConversationDisplaying(void);
     char* _swrveInfluencedDataJson(void);
     char* _swrvePushNotificationStatus(char* componentName);
     char* _swrveBackgroundRefreshStatus(void);
     void _swrveiOSUpdateQaUser(char* jsonMap);
+    void _swrveCopyToClipboard(char* content);
     void _swrveUserId(char* userId);
     void _saveConfigForPushDelivery(void);
     void _clearAllAuthenticatedNotifications(void);

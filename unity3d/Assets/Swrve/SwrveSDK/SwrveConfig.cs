@@ -248,6 +248,11 @@ public class SwrveConfig
     public ISwrveCustomButtonListener InAppMessageCustomButtonListener = null;
 
     /// <summary>
+    /// Clipboard listener for all in-app messages.
+    /// </summary>
+    public ISwrveClipboardButtonListener InAppMessageClipboardButtonListener = null;
+
+    /// <summary>
     /// In-app message listener.
     /// </summary>
     public ISwrveMessageListener InAppMessageListener = null;
@@ -286,6 +291,8 @@ public class SwrveConfig
     /// This listener does not have any argument, use the resourceManager to get the updated resources.
     /// </summary>
     public Action ResourcesUpdatedCallback;
+
+    public SwrveInAppMessageConfig InAppMessageConfig = new SwrveInAppMessageConfig();
 
     public void CalculateEndpoints (int appId)
     {

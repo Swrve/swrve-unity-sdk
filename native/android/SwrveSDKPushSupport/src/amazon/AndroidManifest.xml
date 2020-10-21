@@ -25,8 +25,12 @@
         <amazon:enable-feature
             android:name="com.amazon.device.messaging" android:required="true"/>
 
-        <!-- You must replace the names in the service and receiver tags
-            with names that are appropriate to your package. -->
+        <service
+             android:name="com.swrve.unity.adm.SwrveAdmHandlerJobService"
+             android:permission="android.permission.BIND_JOB_SERVICE"
+             android:exported="false" />
+
+        <!-- This is needed for devices with older ADM versions -->
         <service
             android:name="com.swrve.unity.adm.SwrveAdmIntentService"
             android:exported="false" />

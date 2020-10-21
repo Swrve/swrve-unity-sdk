@@ -209,8 +209,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         string androidDir = Path.Combine(Directory.GetCurrentDirectory(), "Assets/Plugins/Android");
         string amFile = Path.Combine(androidDir, "AndroidManifest.xml");
 
-        if (!File.Exists(amFile))
-        {
+        if (!File.Exists(amFile)) {
             // Prompt to confirm with the User to generate a new Android Manifest
             bool generateManifest = EditorUtility.DisplayDialog("Swrve Android Prebuild", "No AndroidManifest.xml file was been found in Assets/Plugins/Android. Generate a basic one?", "Yes", "No");
 

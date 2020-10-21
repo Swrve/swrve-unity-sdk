@@ -7,29 +7,22 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+
 import androidx.core.app.NotificationCompat;
 
 import com.swrve.sdk.SwrveHelper;
 import com.swrve.sdk.SwrveLogger;
 import com.swrve.sdk.SwrveNotificationBuilder;
 import com.swrve.sdk.SwrveNotificationConstants;
-import com.swrve.sdk.SwrveNotificationFilter;
-import com.swrve.sdk.SwrveNotificationDetails;
-
 import com.swrve.sdk.SwrveNotificationCustomFilter;
-
+import com.swrve.sdk.SwrveNotificationDetails;
+import com.swrve.sdk.SwrveNotificationFilter;
 import com.swrve.sdk.SwrvePushServiceHelper;
-import com.swrve.sdk.SwrveUnitySDK;
 import com.swrve.sdk.SwrveUnityCommonHelper;
+import com.swrve.sdk.SwrveUnitySDK;
 import com.unity3d.player.UnityPlayer;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import static com.swrve.sdk.SwrveNotificationConstants.SWRVE_NESTED_JSON_PAYLOAD_KEY;
-
 import java.util.Date;
-import java.util.Set;
 
 public class SwrveUnityPushServiceManager {
     private final Context context;
@@ -40,7 +33,7 @@ public class SwrveUnityPushServiceManager {
     }
 
     public void processRemoteNotification(Bundle msg) {
-        SwrvePushSupport.sendPushDeliveredEvent(msg);
+        getSwrveUnityCommonHelper().sendPushDeliveredEvent(context, msg);
 
         if (!SwrveHelper.isSwrvePush(msg)) {
             SwrveLogger.i("Swrve received a push notification: but not processing as it doesn't contain:"
@@ -163,5 +156,9 @@ public class SwrveUnityPushServiceManager {
         final SharedPreferences prefs = SwrvePushServiceManagerCommon.getPreferences(context);
         notificationBuilder = SwrvePushSupport.createSwrveNotificationBuilder(context, prefs);
         return notificationBuilder;
+    }
+
+    public SwrveUnityCommonHelper getSwrveUnityCommonHelper() {
+        return new SwrveUnityCommonHelper();
     }
 }

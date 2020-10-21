@@ -40,11 +40,13 @@ public class SwrveButton : SwrveWidget
     /// <summary>
     /// Has it been pressed
     /// </summary>
+    [System.Obsolete("This property will be removed in 8.0")]
     public bool Pressed = false;
 
     /// <summary>
     /// Pointer bounds.
     /// </summary>
+    [System.Obsolete("This property will be removed in 8.0")]
     public Rect PointerRect;
 }
 }
