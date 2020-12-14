@@ -15,6 +15,7 @@ public abstract class SwrveBaseCampaign
     const string ID_KEY = "id";
     const string CONVERSATION_KEY = "conversation";
     const string MESSAGES_KEY = "messages";
+    const string EMBEDDED_MESSAGE_KEY = "embedded_message";
     const string SUBJECT_KEY = "subject";
     const string MESSAGE_CENTER_KEY = "message_center";
 
@@ -226,13 +227,18 @@ public abstract class SwrveBaseCampaign
     protected void LogAndAddReason (string reason, bool displayed, List<SwrveQaUserCampaignInfo> qaCampaignInfoList)
     {
         if (SwrveQaUser.Instance.loggingEnabled && qaCampaignInfoList != null) {
+            SwrveQaUserCampaignInfo campaignInfo = null;
             if (this is SwrveConversationCampaign) {
                 SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign)this;
-                SwrveQaUserCampaignInfo campaignInfo = new SwrveQaUserCampaignInfo(Id, conversationCampaign.Conversation.Id, "conversation", displayed, reason);
-                qaCampaignInfoList.Add(campaignInfo);
-            } else if (this is SwrveMessagesCampaign) {
-                SwrveMessagesCampaign messagesCampaign = (SwrveMessagesCampaign)this;
-                SwrveQaUserCampaignInfo campaignInfo = new SwrveQaUserCampaignInfo(Id, messagesCampaign.Messages[0].Id, "iam", displayed, reason);
+                campaignInfo = new SwrveQaUserCampaignInfo(Id, conversationCampaign.Conversation.Id, conversationCampaign.GetCampaignType(), displayed, reason);
+            } else if (this is SwrveInAppCampaign) {
+                SwrveInAppCampaign inAppCampaign = (SwrveInAppCampaign)this;
+                campaignInfo = new SwrveQaUserCampaignInfo(Id, inAppCampaign.Messages[0].Id, inAppCampaign.GetCampaignType(), displayed, reason);
+            } else if (this is SwrveEmbeddedCampaign)  {
+                SwrveEmbeddedCampaign embeddedCampaign = (SwrveEmbeddedCampaign)this;
+                campaignInfo = new SwrveQaUserCampaignInfo(Id, embeddedCampaign.Message.Id, embeddedCampaign.GetCampaignType(), displayed, reason);
+            }
+            if (campaignInfo != null) {
                 qaCampaignInfoList.Add(campaignInfo);
             }
         }
@@ -290,7 +296,9 @@ public abstract class SwrveBaseCampaign
         if (campaignData.ContainsKey(CONVERSATION_KEY)) {
             campaign = SwrveConversationCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime);
         } else if (campaignData.ContainsKey(MESSAGES_KEY)) {
-            campaign = SwrveMessagesCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime, defaultBackgroundColor, qaUserCampaignInfoList);
+            campaign = SwrveInAppCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime, defaultBackgroundColor, qaUserCampaignInfoList);
+        } else if (campaignData.ContainsKey(EMBEDDED_MESSAGE_KEY)) {
+            campaign = SwrveEmbeddedCampaign.LoadFromJSON(campaignData, initialisedTime, qaUserCampaignInfoList);
         }
 
         if (campaign == null) {
@@ -299,10 +307,6 @@ public abstract class SwrveBaseCampaign
         campaign.Id = id;
         return campaign;
     }
-
-    public abstract bool AreAssetsReady ();
-
-    public abstract bool SupportsOrientation (SwrveOrientation orientation);
 
     protected static void AssignCampaignTriggers (SwrveBaseCampaign campaign, Dictionary<string, object> campaignData)
     {
@@ -399,11 +403,6 @@ public abstract class SwrveBaseCampaign
         SetMessageMinDelayThrottle ();
     }
 
-    public bool IsA<T> () where T : SwrveBaseCampaign
-    {
-        return GetType () == typeof(T);
-    }
-
     /// <summary>
     /// Check if this campaign will trigger for the given event and payload
     /// </summary>
@@ -415,5 +414,24 @@ public abstract class SwrveBaseCampaign
     {
         return GetTriggers ().Any (trig => trig.CanTrigger (eventName, payload));
     }
+
+    #region Abstract Methods of SwrveBaseCampaign
+    public abstract bool AreAssetsReady ();
+
+    /// <summary>
+    /// Check if this campaign has valide messages for the respective orientation
+    /// </summary>
+    /// <returns>
+    /// True if this campaign contains a message with the given orientation.
+    /// False otherwise.
+    /// </returns>
+    public abstract bool SupportsOrientation (SwrveOrientation orientation);
+
+    /// <summary>
+    /// Return the campaign type.
+    /// </summary>
+    public abstract SwrveQaUserCampaignInfo.SwrveCampaignType GetCampaignType();
+
+    #endregion
 }
 }

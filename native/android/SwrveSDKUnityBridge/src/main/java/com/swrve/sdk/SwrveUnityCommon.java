@@ -49,7 +49,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public final static String APP_ID_KEY = "appId";
     public final static String USER_ID_KEY = "userId";
     public final static String SWRVE_PATH_KEY = "swrvePath";
-    public final static String QAUSER_KEY = "swrve.q1"; // note this
+    public final static String QAUSER_KEY = "swrve.q2"; // note this
     public final static String SIG_SUFFIX_KEY = "sigSuffix";
     public final static String APP_VERSION_KEY = "appVersion";
     public final static String UNIQUE_KEY_KEY = "uniqueKey";
@@ -350,7 +350,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
 
     @Override
     public String getContentURL() {
-        return getStringDetail(CONTENT_SERVER_KEY); // TODO Create jira for this to do later
+        return getStringDetail(CONTENT_SERVER_KEY);
     }
 
     @Override

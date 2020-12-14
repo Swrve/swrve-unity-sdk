@@ -14,7 +14,7 @@ public class SwrveMessageTextTemplatingResolver
     public Dictionary<SwrveWidget, string> TextResolution = new Dictionary<SwrveWidget, string>();
     public Dictionary<SwrveWidget, string> ActionResolution = new Dictionary<SwrveWidget, string>();
 
-    public bool ResolveTemplating(SwrveMessagesCampaign campaign, Dictionary<string, string> properties)
+    public bool ResolveTemplating(SwrveInAppCampaign campaign, Dictionary<string, string> properties)
     {
         for (int i = 0; i < campaign.Messages.Count; i++) {
             if (!ResolveTemplating(campaign.Messages[i], properties)) {

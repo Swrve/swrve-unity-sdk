@@ -3,7 +3,7 @@ import android.os.Bundle;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
-import com.swrve.unity.SwrveUnityPushServiceManager;
+import com.swrve.unity.SwrvePushManagerUnityImp;
 
 public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 
@@ -26,7 +26,7 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 		}
 	}
 
-	public SwrveUnityPushServiceManager getSwrveUnityPushServiceManager() {
-		return new SwrveUnityPushServiceManager(this);
+	public SwrvePushManagerUnityImp getSwrveUnityPushServiceManager() {
+		return new SwrvePushManagerUnityImp(this);
 	}
 }

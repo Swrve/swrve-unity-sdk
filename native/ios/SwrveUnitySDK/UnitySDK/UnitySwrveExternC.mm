@@ -118,12 +118,11 @@ extern "C"
 
     char* _swrveInfluencedDataJson()
     {
-        NSMutableArray* influenceArrayJson = [[NSMutableArray alloc] init];
-
+        NSMutableArray *influenceArrayJson = [NSMutableArray new];
         NSDictionary *influencedData;
-        NSDictionary* mainAppInfluence = [[NSUserDefaults standardUserDefaults] dictionaryForKey:SwrveInfluenceDataKey];
-        NSUserDefaults* serviceExtensionDefaults = nil;
-        NSDictionary* serviceExtensionInfluence = nil;
+        NSDictionary *mainAppInfluence = [[NSUserDefaults standardUserDefaults] dictionaryForKey:SwrveInfluenceDataKey];
+        NSUserDefaults *serviceExtensionDefaults = nil;
+        NSDictionary *serviceExtensionInfluence = nil;
 
         if ([UnitySwrve sharedInstance] != nil && [[UnitySwrve sharedInstance] appGroupIdentifier] != nil){
             serviceExtensionDefaults = [[NSUserDefaults alloc] initWithSuiteName:[[UnitySwrve sharedInstance] appGroupIdentifier]];
@@ -138,23 +137,28 @@ extern "C"
         }
 
         if (influencedData != nil) {
-            for (NSString* trackingId in influencedData) {
-                id maxInfluenceWindowSeconds = [influencedData objectForKey:trackingId];
+            for (NSString *trackingId in influencedData) {
+                // Read details about the influenced item to be queued.
+                NSDictionary *influenceItem = [influencedData objectForKey:trackingId];
+                id maxInfluenceWindowSeconds = [influenceItem objectForKey:@"maxInfluencedMillis"];
+                BOOL isSilentPush = [[influenceItem objectForKey:@"silent"] boolValue];
+
                 if ([maxInfluenceWindowSeconds isKindOfClass:[NSNumber class]]) {
                     long long maxInfluenceWindowSecondsLong = [maxInfluenceWindowSeconds longLongValue];
-                    NSNumber* maxInfluenceWindowMillis = [NSNumber numberWithLongLong:(maxInfluenceWindowSecondsLong*1000)];
+                    NSNumber *maxInfluenceWindowMillis = [NSNumber numberWithLongLong:(maxInfluenceWindowSecondsLong*1000)];
 
                     NSDictionary *influenceJson = [NSDictionary dictionaryWithObjectsAndKeys:
-                    trackingId, @"trackingId",
-                    maxInfluenceWindowMillis, @"maxInfluencedMillis",
-                    nil];
+                                                   trackingId, @"trackingId",
+                                                   [NSNumber numberWithBool: isSilentPush], @"silent",
+                                                   maxInfluenceWindowMillis, @"maxInfluencedMillis",
+                                                   nil];
                     [influenceArrayJson addObject:influenceJson];
                 }
             }
         }
         NSError *error;
         NSData *jsonData = [NSJSONSerialization dataWithJSONObject:influenceArrayJson options:0 error:&error];
-        NSString* influenceDataJson = @"[]";
+        NSString *influenceDataJson = @"[]";
         if (jsonData) {
             influenceDataJson = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 

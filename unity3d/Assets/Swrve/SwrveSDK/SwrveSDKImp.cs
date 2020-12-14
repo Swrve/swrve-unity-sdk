@@ -101,7 +101,8 @@ public partial class SwrveSDK
     protected bool campaignsAndResourcesInitialized;
 
     // Messaging related
-    private static readonly int CampaignEndpointVersion = 7;
+    protected static readonly int CampaignEndpointVersion = 8;
+    protected static readonly int EmbeddedCampaignVersion = 1;
     private static readonly int CampaignResponseVersion = 2;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
     /** Last campaign to come from /ad_journey_campaign endpoint */
@@ -932,12 +933,11 @@ public partial class SwrveSDK
     protected void ShowBaseMessage(string eventName, IDictionary<string, string> payload)
     {
         SwrveBaseMessage baseMessage = GetBaseMessage(eventName, payload);
-
         if (null != baseMessage) {
-            if (baseMessage.Campaign.IsA<SwrveConversationCampaign>()) {
+            if (baseMessage is SwrveConversation) {
                 StartTask("ShowConversationForEvent", ShowConversationForEvent(eventName, (SwrveConversation)baseMessage));
-            } else {
-                StartTask("ShowMessageForEvent", ShowMessageForEvent(eventName, payload, (SwrveMessage)baseMessage, config.InAppMessageInstallButtonListener, config.InAppMessageCustomButtonListener, config.InAppMessageListener, config.InAppMessageClipboardButtonListener));
+            } else { //Handle SwrveEmbeddedCampaign and SwrveInAppCampaign
+                StartTask("ShowMessageForEvent", ShowMessageForEvent(eventName, payload, baseMessage, config.InAppMessageInstallButtonListener, config.InAppMessageCustomButtonListener, config.InAppMessageListener, config.InAppMessageClipboardButtonListener, config.EmbeddedMessageConfig.EmbeddedMessageListener));
             }
         }
     }
@@ -950,7 +950,7 @@ public partial class SwrveSDK
 
         SwrveBaseMessage baseMessage = null;
         if (config.MessagingEnabled) {
-            baseMessage = GetMessageForEvent(eventName, eventPayload);
+            baseMessage = GetBaseMessageForEvent(eventName, eventPayload);
         }
 
         if ((baseMessage == null) && config.ConversationsEnabled) {
@@ -1260,8 +1260,8 @@ public partial class SwrveSDK
     private void ShowCampaign(SwrveBaseCampaign campaign, bool isQueued, SwrveOrientation orientation, Dictionary<string, string> properties)
     {
         if (IsMessageDisplaying() == false && IsConversationDisplaying() == false && applicationPaused == false) {
-            if (campaign.IsA<SwrveMessagesCampaign>()) {
-                SwrveMessage inAppMessage = ((SwrveMessagesCampaign)campaign).Messages.Where(a => a.SupportsOrientation(orientation)).First();
+            if (campaign is SwrveInAppCampaign) {
+                SwrveMessage inAppMessage = ((SwrveInAppCampaign)campaign).Messages.Where(a => a.SupportsOrientation(orientation)).First();
                 Container.StartCoroutine(LaunchMessage(
                                              inAppMessage,
                                              config.InAppMessageInstallButtonListener,
@@ -1270,10 +1270,17 @@ public partial class SwrveSDK
                                              config.InAppMessageListener,
                                              properties
                                          ));
-            } else if (campaign.IsA<SwrveConversationCampaign>()) {
+            } else if (campaign is SwrveConversationCampaign) {
                 Container.StartCoroutine(LaunchConversation(
                                              ((SwrveConversationCampaign)campaign).Conversation
                                          ));
+            } else if (campaign is SwrveEmbeddedCampaign) {
+                SwrveEmbeddedMessage embeddedMessage = ((SwrveEmbeddedCampaign)campaign).Message;
+                if (config.EmbeddedMessageConfig.EmbeddedMessageListener != null) {
+                    config.EmbeddedMessageConfig.EmbeddedMessageListener.OnMessage(embeddedMessage);
+                } else {
+                    SwrveLog.LogError("Could not find a valid EmbeddedMessageListener defined as part of the EmbeddedMessageConfig, be sure that you did set it as parf of the SDK initialisation");
+                }
             }
         } else if (isQueued) {
             this.campaignDisplayQueue.Add(campaign);
@@ -1304,7 +1311,7 @@ public partial class SwrveSDK
         SwrveBaseMessage baseMessage = null;
         // Process only Conversation campaign types first
         for (int ci = 0; ci < campaigns.Count; ci++) {
-            if (!campaigns[ci].IsA<SwrveConversationCampaign>()) {
+            if (!(campaigns[ci] is SwrveConversationCampaign)) {
                 continue;
             }
 
@@ -1321,58 +1328,68 @@ public partial class SwrveSDK
         }
 
         if (baseMessage == null) {
+            // Process SwrveInAppCampaign and SwrveEmbeddedCampaign.
             for (int ci = 0; ci < campaigns.Count; ci++) {
-                if (!campaigns[ci].IsA<SwrveMessagesCampaign>()) {
+                if (!(campaigns[ci] is SwrveInAppCampaign || campaigns[ci] is SwrveEmbeddedCampaign)) {
                     continue;
                 }
 
-                SwrveMessagesCampaign campaign = (SwrveMessagesCampaign)campaigns[ci];
-
+                SwrveBaseCampaign campaign = campaigns[ci];
                 if (campaign.CanTrigger(DefaultAutoShowMessagesTrigger) && campaign.CheckImpressions()) {
-                    if (config.TriggeredMessageListener != null) {
-                        // They are using a custom listener
-                        SwrveMessage message = GetMessageForEvent(DefaultAutoShowMessagesTrigger);
-                        if (message != null) {
-                            autoShowMessagesEnabled = false;
-                            config.TriggeredMessageListener.OnMessageTriggered(message);
-                            baseMessage = message;
-                        }
-                    } else {
-                        if (currentMessage == null) {
-                            SwrveMessage message = GetMessageForEvent(DefaultAutoShowMessagesTrigger);
-                            if (message != null) {
-                                autoShowMessagesEnabled = false;
-
-                                Dictionary<string, string> properties = null;
-                                if (config.InAppMessageConfig != null && config.InAppMessageConfig.PersonalizationProvider != null) {
-                                    properties = config.InAppMessageConfig.PersonalizationProvider.Personalize(null);
+                    SwrveBaseMessage message = GetBaseMessageForEvent(DefaultAutoShowMessagesTrigger);
+                    if(message != null)
+                    {
+                        if(message is SwrveMessage) { // Handle the respective message type "SwrveMessage"
+                            if (config.TriggeredMessageListener != null) {
+                                // They are using a custom listener
+                                if (message != null && message is SwrveMessage) {
+                                    autoShowMessagesEnabled = false;
+                                    config.TriggeredMessageListener.OnMessageTriggered((SwrveMessage)message);
+                                    baseMessage = message;
                                 }
-                                Container.StartCoroutine(LaunchMessage(message, config.InAppMessageInstallButtonListener,
-                                                                       config.InAppMessageCustomButtonListener,
-                                                                       config.InAppMessageClipboardButtonListener,
-                                                                       config.InAppMessageListener,
-                                                                       properties));
-                                baseMessage = message;
+                            } else {
+                                if (currentMessage == null) {
+                                    autoShowMessagesEnabled = false;
+                                    Dictionary<string, string> properties = null;
+                                    if (config.InAppMessageConfig != null && config.InAppMessageConfig.PersonalizationProvider != null) {
+                                        properties = config.InAppMessageConfig.PersonalizationProvider.Personalize(null);
+                                    }
+                                    Container.StartCoroutine(LaunchMessage(message, config.InAppMessageInstallButtonListener,
+                                                                            config.InAppMessageCustomButtonListener,
+                                                                            config.InAppMessageClipboardButtonListener,
+                                                                            config.InAppMessageListener,
+                                                                            properties));
+                                    baseMessage = message;
+                                }
                             }
+                            break;
+                        } else if(message is SwrveEmbeddedMessage) { // Handle the respective message type "SwrveEmbeddedMessage"
+                            if (currentMessage == null) {
+                                if (config.EmbeddedMessageConfig.EmbeddedMessageListener != null) {
+                                    autoShowMessagesEnabled = false;
+                                    config.EmbeddedMessageConfig.EmbeddedMessageListener.OnMessage((SwrveEmbeddedMessage)message);
+                                    baseMessage = message;
+                                }
+                            }
+                            break;
                         }
                     }
-                    break;
                 }
             }
         }
     }
 
-    private IEnumerator LaunchMessage(SwrveMessage message, ISwrveInstallButtonListener installButtonListener,
+    private IEnumerator LaunchMessage(SwrveBaseMessage message, ISwrveInstallButtonListener installButtonListener,
                                       ISwrveCustomButtonListener customButtonListener, ISwrveClipboardButtonListener clipboardButtonListener,
                                       ISwrveMessageListener messageListener, Dictionary<string, string> properties)
     {
-        if (message != null) {
+        if (message != null && message is SwrveMessage) {
             SwrveOrientation currentOrientation = GetDeviceOrientation();
-            SwrveMessageFormat selectedFormat = message.GetFormat(currentOrientation);
+            SwrveMessageFormat selectedFormat = ((SwrveMessage)message).GetFormat(currentOrientation);
             if (selectedFormat != null) {
                 // Check if the templating on the message can be resolved
                 SwrveMessageTextTemplatingResolver resolver = new SwrveMessageTextTemplatingResolver();
-                if (resolver.ResolveTemplating(message, properties)) {
+                if (resolver.ResolveTemplating((SwrveMessage)message, properties)) {
                     // Temporarily set this as the message that will be shown
                     // if everything goes well
                     currentMessage = selectedFormat;
@@ -1616,22 +1633,25 @@ public partial class SwrveSDK
                             }
                         }
 
-                        if (campaign.GetType() == typeof(SwrveConversationCampaign)) {
+                        if (campaign is SwrveConversationCampaign) {
                             SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign)campaign;
                             if (isAnAutoShowCampaign) {
                                 priorityAssetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
                             } else {
                                 assetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
                             }
-                            qaUserCampaignInfoList.Add(new SwrveQaUserCampaignInfo(campaign.Id, conversationCampaign.Conversation.Id, "conversation", false));
-                        } else if (campaign.GetType() == typeof(SwrveMessagesCampaign)) {
-                            SwrveMessagesCampaign messageCampaign = (SwrveMessagesCampaign)campaign;
+                            qaUserCampaignInfoList.Add(new SwrveQaUserCampaignInfo(campaign.Id, conversationCampaign.Conversation.Id, conversationCampaign.GetCampaignType(), false));
+                        } else if (campaign is SwrveInAppCampaign) {
+                            SwrveInAppCampaign messageCampaign = (SwrveInAppCampaign)campaign;
                             if (isAnAutoShowCampaign) {
                                 priorityAssetsQueue.UnionWith(messageCampaign.GetImageAssets());
                             } else {
                                 assetsQueue.UnionWith(messageCampaign.GetImageAssets());
                             }
-                            qaUserCampaignInfoList.Add(new SwrveQaUserCampaignInfo(campaign.Id, messageCampaign.Messages[0].Id, "iam", false));
+                            qaUserCampaignInfoList.Add(new SwrveQaUserCampaignInfo(campaign.Id, messageCampaign.Messages[0].Id, messageCampaign.GetCampaignType(), false));
+                        } else if (campaign is SwrveEmbeddedCampaign) {
+                            SwrveEmbeddedCampaign embeddedCampaign = (SwrveEmbeddedCampaign)campaign;
+                            qaUserCampaignInfoList.Add(new SwrveQaUserCampaignInfo(campaign.Id, embeddedCampaign.Message.Id, embeddedCampaign.GetCampaignType(), false));
                         }
 
                         if (loadingPreviousCampaignState) {
@@ -1727,8 +1747,8 @@ public partial class SwrveSDK
         .AppendFormat("?user={0}&api_key={1}&app_version={2}&joined={3}", SwrveHelper.EscapeURL(this.UserId), ApiKey, SwrveHelper.EscapeURL(GetAppVersion()), userInitTimeSeconds);
 
         if (config.MessagingEnabled) {
-            campaignUrl.AppendFormat("&version={0}&orientation={1}&language={2}&app_store={3}&device_width={4}&device_height={5}&device_dpi={6}&os_version={7}&device_name={8}&os={9}&device_type={10}",
-                                     CampaignEndpointVersion, config.Orientation.ToString().ToLower(), Language, config.AppStore,
+            campaignUrl.AppendFormat("&version={0}&orientation={1}&language={2}&app_store={3}&embedded_campaign_version={4}&device_width={5}&device_height={6}&device_dpi={7}&os_version={8}&device_name={9}&os={10}&device_type={11}",
+                                     CampaignEndpointVersion, config.Orientation.ToString().ToLower(), Language, config.AppStore, EmbeddedCampaignVersion,
                                      deviceWidth, deviceHeight, dpi, SwrveHelper.EscapeURL(osVersion), SwrveHelper.EscapeURL(deviceName), os, deviceType);
         }
         if (config.ConversationsEnabled) {
@@ -2159,20 +2179,8 @@ public partial class SwrveSDK
     {
         string influenceDataJson = null;
 #if !UNITY_EDITOR
-#if UNITY_ANDROID
-        try {
-            influenceDataJson = GetInfluencedDataJson();
-        } catch(Exception exp) {
-            SwrveLog.LogWarning("Couldn't get influence data from the native side correctly, make sure you have the Android plugin inside your project and you are running on an Android device: " + exp.ToString());
-        }
-#endif
-
-#if UNITY_IOS
-        try {
-            influenceDataJson = _swrveInfluencedDataJson();
-        } catch(Exception exp) {
-            SwrveLog.LogWarning("Couldn't get influence data from the native side correctly, make sure you have the iOS plugin inside your project and you are running on an iOS device: " + exp.ToString());
-        }
+#if UNITY_ANDROID || UNITY_IOS
+        influenceDataJson = GetInfluencedDataJson();
 #endif
 #endif
         return influenceDataJson;
@@ -2188,6 +2196,7 @@ public partial class SwrveSDK
         if (influenceData != null) {
             object trackingIdRaw = influenceData["trackingId"];
             object maxInfluencedMillisRaw = influenceData["maxInfluencedMillis"];
+            object silentObj = influenceData["silent"];
             long maxInfluencedMillis = 0;
             if (maxInfluencedMillisRaw != null) {
                 if (maxInfluencedMillisRaw is long || maxInfluencedMillisRaw is Int32 || maxInfluencedMillisRaw is Int64) {
@@ -2206,9 +2215,9 @@ public partial class SwrveSDK
                     json.Add("actionType", "influenced");
                     Dictionary<string, string> payload = new Dictionary<string, string>();
                     payload.Add("delta", ((maxInfluencedMillis - now) / (100 * 60)).ToString());
+                    payload.Add("silent", silentObj.ToString().ToLower());
                     json.Add("payload", payload);
                     AppendEventToBuffer("generic_campaign_event", json, false);
-
                     SwrveLog.Log("User was influenced by push " + trackingId);
                     Container.StartCoroutine(WaitASecondAndSendEvents_Coroutine());
                 }

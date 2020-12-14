@@ -20,10 +20,6 @@ public class SwrveConversation : SwrveBaseMessage
         set;
     }
     public ISwrveAssetsManager SwrveAssetsManager;
-    /// <summary>
-    /// Priority of the message.
-    /// </summary>
-    public int Priority = 9999;
 
     private SwrveConversation (ISwrveAssetsManager swrveAssetsManager, SwrveConversationCampaign campaign)
     {
@@ -126,9 +122,13 @@ public class SwrveConversation : SwrveBaseMessage
         return ConversationAssets.All (asset => this.SwrveAssetsManager.AssetsOnDisk.Contains(asset.Name));
     }
 
-    override public string GetBaseFormattedMessageType()
+    #region SwrveBaseMessage
+
+    override public bool SupportsOrientation (SwrveOrientation orientation)
     {
-        return "Conversation";
+        return true;
     }
+
+    #endregion
 }
 }

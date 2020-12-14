@@ -124,19 +124,15 @@ public class SwrveComponent : MonoBehaviour
 
     public void Update ()
     {
-        if (SDK != null) {
-            if (SDK.Initialised) {
-                SDK.Update ();
-            }
+        if (SDK != null && SDK.Initialised) {
+            SDK.Update ();
 #if UNITY_IPHONE
             if (!deviceTokenSent) {
                 deviceTokenSent = SDK.ObtainIOSDeviceToken();
             }
-
             SDK.ProcessRemoteNotifications();
 #endif
         }
-
     }
 
 #if UNITY_ANDROID

@@ -16,11 +16,6 @@ public class SwrveMessage : SwrveBaseMessage
     public string Name;
 
     /// <summary>
-    /// Priority of the message.
-    /// </summary>
-    public int Priority = 9999;
-
-    /// <summary>
     /// List of formats available for the device.
     /// </summary>
     public List<SwrveMessageFormat> Formats;
@@ -47,7 +42,7 @@ public class SwrveMessage : SwrveBaseMessage
 
     private ISwrveAssetsManager SwrveAssetsManager;
 
-    private SwrveMessage (ISwrveAssetsManager swrveAssetsManager, SwrveMessagesCampaign campaign)
+    private SwrveMessage (ISwrveAssetsManager swrveAssetsManager, SwrveInAppCampaign campaign)
     {
         this.SwrveAssetsManager = swrveAssetsManager;
         this.Campaign = campaign;
@@ -87,7 +82,7 @@ public class SwrveMessage : SwrveBaseMessage
     /// <returns>
     /// Parsed in-app message.
     /// </returns>
-    public static SwrveMessage LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, SwrveMessagesCampaign campaign, Dictionary<string, object> messageData, Color? defaultBackgroundColor)
+    public static SwrveMessage LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, SwrveInAppCampaign campaign, Dictionary<string, object> messageData, Color? defaultBackgroundColor)
     {
         SwrveMessage message = new SwrveMessage (swrveAssetsManager, campaign);
         message.Id = MiniJsonHelper.GetInt (messageData, "id");
@@ -107,20 +102,6 @@ public class SwrveMessage : SwrveBaseMessage
         }
 
         return message;
-    }
-
-    /// <summary>
-    /// Check if the message supports the given orientation
-    /// </summary>
-    /// <returns>
-    /// True if there is any format that supports the given orientation.
-    /// </returns>
-    public bool SupportsOrientation (SwrveOrientation orientation)
-    {
-        if (orientation == SwrveOrientation.Both) {
-            return true;
-        }
-        return (GetFormat (orientation) != null);
     }
 
     /// <summary>
@@ -163,9 +144,22 @@ public class SwrveMessage : SwrveBaseMessage
         return assets.All (asset => this.SwrveAssetsManager.AssetsOnDisk.Contains(asset.Name));
     }
 
-    override public string GetBaseFormattedMessageType()
+    #region SwrveBaseMessage
+
+    /// <summary>
+    /// Check if the message supports the given orientation
+    /// </summary>
+    /// <returns>
+    /// True if there is any format that supports the given orientation.
+    /// </returns>
+    override public bool SupportsOrientation (SwrveOrientation orientation)
     {
-        return "Message";
+        if (orientation == SwrveOrientation.Both) {
+            return true;
+        }
+        return (GetFormat (orientation) != null);
     }
+
+    #endregion
 }
 }

@@ -447,7 +447,6 @@ public void IapApple(int quantity, string productId, double productPrice, string
         }
     }
 
-
     private void ProcessNotificationForCampaign(IDictionary userInfo)
     {
         if (userInfo.Contains(PushContentKey)) {
@@ -571,6 +570,18 @@ public void IapApple(int quantity, string productId, double productPrice, string
 #if !UNITY_EDITOR
         _swrveUserId(UserId);
 #endif
+    }
+
+    public string GetInfluencedDataJson()
+    {
+#if !UNITY_EDITOR
+        try {
+            return _swrveInfluencedDataJson();
+        } catch(Exception exp) {
+            SwrveLog.LogWarning("Couldn't get InfluencedDataJson from the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
+        }
+#endif
+        return null;
     }
 
     private void ClearAllAuthenticatedNotifications()

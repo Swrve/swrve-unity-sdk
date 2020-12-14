@@ -15,7 +15,7 @@ public class SwrveMessageRenderer
     /// <summary>
     /// Used to animate in-app messages.
     /// </summary>
-    [System.Obsolete("Use SwrveInAppConfig instead. This will be removed in 8.0")]
+    [System.Obsolete("Use SwrveInAppMessageConfig instead. This will be removed in 8.0")]
     public static ISwrveMessageAnimator Animator;
 
     private readonly ISwrveMessageAnimator animator;

@@ -19,16 +19,17 @@ public abstract class SwrveBaseMessage
     /// </summary>
     public SwrveBaseCampaign Campaign;
 
-    public string GetBaseMessageType()
-    {
-        return GetBaseFormattedMessageType().ToLower();
-    }
+    /// <summary>
+    /// Priority of the message.
+    /// </summary>
+    public int Priority = 9999;
 
-    public abstract string GetBaseFormattedMessageType();
-
-    public string GetEventPrefix()
-    {
-        return "Swrve." + GetBaseFormattedMessageType() + "s." + GetBaseMessageType() + "_";
-    }
+    /// <summary>
+    /// Check if the message supports the given orientation
+    /// </summary>
+    /// <returns>
+    /// True if there is any format that supports the given orientation.
+    /// </returns>
+    public abstract bool SupportsOrientation (SwrveOrientation orientation);
 }
 }

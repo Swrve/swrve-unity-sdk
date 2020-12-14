@@ -65,7 +65,7 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
         bundle.putString(SwrveNotificationConstants.TEXT_KEY, msgText);
         bundle.putString("custom", "key");
 
-        SwrveUnityPushServiceManager serviceManagerSpy = spy(new SwrveUnityPushServiceManager(mActivity));
+        SwrvePushManagerUnityImp serviceManagerSpy = spy(new SwrvePushManagerUnityImp(mActivity));
         SwrveUnityCommonHelper commonHelperMock = mock(SwrveUnityCommonHelper.class);
         doReturn(commonHelperMock).when(serviceManagerSpy).getSwrveUnityCommonHelper();
         serviceManagerSpy.processRemoteNotification(bundle);
@@ -136,7 +136,7 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
         String rawJson = "{\"key\":\"value\"}";
         bundle.putString("_s.SilentPayload", rawJson);
 
-        SwrveUnityPushServiceManager serviceManagerSpy = spy(new SwrveUnityPushServiceManager(mActivity));
+        SwrvePushManagerUnityImp serviceManagerSpy = spy(new SwrvePushManagerUnityImp(mActivity));
         SwrveUnityCommonHelper commonHelperMock = mock(SwrveUnityCommonHelper.class);
         doReturn(commonHelperMock).when(serviceManagerSpy).getSwrveUnityCommonHelper();
         serviceManagerSpy.processRemoteNotification(bundle);

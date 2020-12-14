@@ -10,7 +10,7 @@ import com.google.gson.reflect.TypeToken;
 import com.swrve.sdk.SwrveHelper;
 import com.swrve.sdk.SwrveLogger;
 import com.swrve.sdk.SwrveNotificationConstants;
-import com.swrve.unity.SwrveUnityPushServiceManager;
+import com.swrve.unity.SwrvePushManagerUnityImp;
 
 import java.util.LinkedList;
 
@@ -63,7 +63,7 @@ public class SwrveAdmPushBase {
             // No duplicate found. Update the cache.
             updateRecentNotificationIdCache(context, recentIds, curId, pushIdCacheSize);
 
-            new SwrveUnityPushServiceManager(context).processRemoteNotification(pushBundle);
+            new SwrvePushManagerUnityImp(context).processMessage(pushBundle);
         }
     }
 

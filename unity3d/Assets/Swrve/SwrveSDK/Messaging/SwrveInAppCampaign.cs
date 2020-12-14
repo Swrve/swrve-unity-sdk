@@ -7,16 +7,16 @@ using SwrveUnity.Helpers;
 namespace SwrveUnity.Messaging
 {
 /// <summary>
-/// Swrve in-app message campaign.
+/// Swrve SwrveInAppCampaign message campaign.
 /// </summary>
-public class SwrveMessagesCampaign : SwrveBaseCampaign
+public class SwrveInAppCampaign : SwrveBaseCampaign
 {
     /// <summary>
     /// List of messages contained in the campaign.
     /// </summary>
     public List<SwrveMessage> Messages;
 
-    private SwrveMessagesCampaign (DateTime initialisedTime) : base (initialisedTime)
+    private SwrveInAppCampaign (DateTime initialisedTime) : base (initialisedTime)
     {
         this.Messages = new List<SwrveMessage> ();
     }
@@ -102,16 +102,6 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         this.Messages.Add (message);
     }
 
-    public override bool AreAssetsReady()
-    {
-        return this.Messages.All (m => m.IsDownloaded ());
-    }
-
-    public override bool SupportsOrientation(SwrveOrientation orientation)
-    {
-        return this.Messages.Any (m => m.SupportsOrientation (orientation));
-    }
-
     /// <summary>
     /// Get all the assets in the in-app campaign messages.
     /// </summary>
@@ -151,9 +141,9 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
         }
     }
 
-    public static SwrveMessagesCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, Color? defaultBackgroundColor, List<SwrveQaUserCampaignInfo> qaUserCampaignInfoList)
+    public static SwrveInAppCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, Color? defaultBackgroundColor, List<SwrveQaUserCampaignInfo> qaUserCampaignInfoList)
     {
-        SwrveMessagesCampaign campaign = new SwrveMessagesCampaign (initialisedTime);
+        SwrveInAppCampaign campaign = new SwrveInAppCampaign (initialisedTime);
 
         object _messages = null;
         campaignData.TryGetValue ("messages", out _messages);
@@ -185,5 +175,24 @@ public class SwrveMessagesCampaign : SwrveBaseCampaign
 
         return campaign;
     }
+
+    #region SwrveBaseCampaign Abstract Methods implementation
+    public override bool AreAssetsReady()
+    {
+        return this.Messages.All (m => m.IsDownloaded ());
+    }
+
+    public override bool SupportsOrientation(SwrveOrientation orientation)
+    {
+        return this.Messages.Any (m => m.SupportsOrientation (orientation));
+    }
+
+    public override SwrveQaUserCampaignInfo.SwrveCampaignType GetCampaignType()
+    {
+        return SwrveQaUserCampaignInfo.SwrveCampaignType.Iam;
+    }
+
+    #endregion
+
 }
 }

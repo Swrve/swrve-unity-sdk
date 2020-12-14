@@ -17,22 +17,34 @@ import com.swrve.sdk.SwrveNotificationConstants;
 import com.swrve.sdk.SwrveNotificationCustomFilter;
 import com.swrve.sdk.SwrveNotificationDetails;
 import com.swrve.sdk.SwrveNotificationFilter;
-import com.swrve.sdk.SwrvePushServiceHelper;
+import com.swrve.sdk.SwrvePushManager;
+import com.swrve.sdk.SwrvePushManagerHelper;
 import com.swrve.sdk.SwrveUnityCommonHelper;
 import com.swrve.sdk.SwrveUnitySDK;
 import com.unity3d.player.UnityPlayer;
 
 import java.util.Date;
 
-public class SwrveUnityPushServiceManager {
+public class SwrvePushManagerUnityImp implements SwrvePushManager {
     private final Context context;
     private SwrveNotificationBuilder notificationBuilder;
 
-    public SwrveUnityPushServiceManager(Context context) {
+    public SwrvePushManagerUnityImp(Context context) {
         this.context = context;
     }
 
+    /**
+     * Process a Bundle push message
+     * @deprecated This method will be removed in next major version. Use processMessage instead.
+     * @param msg Bundle to process
+     */
+    @Deprecated
     public void processRemoteNotification(Bundle msg) {
+        processMessage(msg);
+    }
+
+    @Override
+    public void processMessage(Bundle msg) {
         getSwrveUnityCommonHelper().sendPushDeliveredEvent(context, msg);
 
         if (!SwrveHelper.isSwrvePush(msg)) {
@@ -127,7 +139,7 @@ public class SwrveUnityPushServiceManager {
             SwrveNotificationDetails notificationDetails) {
         Notification notification;
         try {
-            String jsonPayload = SwrvePushServiceHelper.getPayload(msg);
+            String jsonPayload = SwrvePushManagerHelper.getPayload(msg);
             if (SwrveUnitySDK.getNotificationFilter() != null) {
                 SwrveNotificationFilter filter = SwrveUnitySDK.getNotificationFilter();
                 notification = filter.filterNotification(builder, notificationId, notificationDetails, jsonPayload);

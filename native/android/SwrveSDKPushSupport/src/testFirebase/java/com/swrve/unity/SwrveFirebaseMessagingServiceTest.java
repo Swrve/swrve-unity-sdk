@@ -34,14 +34,14 @@ public class SwrveFirebaseMessagingServiceTest extends SwrveBaseTest {
     protected Activity mActivity;
     protected ShadowActivity mShadowActivity;
     protected Service service;
-    protected SwrveUnityPushServiceManager pushServiceManagerMock;
+    protected SwrvePushManagerUnityImp pushServiceManagerMock;
 
     @Before
     public void setUp() throws Exception {
         super.setUp();
         mActivity = Robolectric.buildActivity(MainActivity.class).create().visible().get();
         mShadowActivity = Shadows.shadowOf(mActivity);
-        pushServiceManagerMock = mock(SwrveUnityPushServiceManager.class);
+        pushServiceManagerMock = mock(SwrvePushManagerUnityImp.class);
         service = Robolectric.setupService(SwrveFirebaseMessagingService.class);
     }
 

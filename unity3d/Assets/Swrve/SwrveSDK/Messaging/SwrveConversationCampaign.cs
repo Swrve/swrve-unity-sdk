@@ -53,6 +53,14 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
         return null;
     }
 
+    public static SwrveConversationCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int campaignId, DateTime initialisedTime)
+    {
+        SwrveConversationCampaign campaign = new SwrveConversationCampaign (initialisedTime);
+        campaign.Conversation = SwrveConversation.LoadFromJSON (swrveAssetsManager, campaign, (Dictionary<string, object>)campaignData ["conversation"]);
+        return campaign;
+    }
+
+    #region SwrveBaseCampaign Abstract Methods implementation
     public override bool AreAssetsReady()
     {
         return this.Conversation.AreAssetsReady ();
@@ -63,11 +71,11 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
         return true;
     }
 
-    public static SwrveConversationCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int campaignId, DateTime initialisedTime)
+    public override SwrveQaUserCampaignInfo.SwrveCampaignType GetCampaignType()
     {
-        SwrveConversationCampaign campaign = new SwrveConversationCampaign (initialisedTime);
-        campaign.Conversation = SwrveConversation.LoadFromJSON (swrveAssetsManager, campaign, (Dictionary<string, object>)campaignData ["conversation"]);
-        return campaign;
+        return SwrveQaUserCampaignInfo.SwrveCampaignType.Conversation;
     }
+
+    #endregion
 }
 }

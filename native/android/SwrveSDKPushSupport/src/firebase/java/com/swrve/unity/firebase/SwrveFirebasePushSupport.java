@@ -16,6 +16,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.swrve.sdk.SwrveHelper;
 import com.swrve.sdk.SwrveLogger;
 import com.swrve.sdk.SwrveUnityCommon;
@@ -96,15 +97,14 @@ public class SwrveFirebasePushSupport extends SwrvePushSupport {
 	 * Registers the application with Firebase servers asynchronously.
 	 */
 	private static void registerInBackground(final String gameObject, final Context context) {
-		FirebaseInstanceId firebaseInstanceId = getFirebaseInstanceId();
-		if (firebaseInstanceId != null) {
+		FirebaseMessaging firebaseMessaging = getFirebaseMessagingInstance();
+		if (firebaseMessaging != null) {
 			// Try to obtain the Firebase registration id
-			Task<InstanceIdResult> task = firebaseInstanceId.getInstanceId();
-			task.addOnSuccessListener(new OnSuccessListener<InstanceIdResult>() {
+			Task<String> task = firebaseMessaging.getToken();
+			task.addOnSuccessListener(new OnSuccessListener<String>() {
 				@Override
-				public void onSuccess(InstanceIdResult instanceIdResult) {
+				public void onSuccess(String  newRegistrationId) {
 					try {
-						String newRegistrationId = instanceIdResult.getToken();
 						if (!SwrveHelper.isNullOrEmpty(newRegistrationId)) {
 							// Save registration id and app version
 							storeRegistrationId(context, newRegistrationId);
@@ -201,12 +201,12 @@ public class SwrveFirebasePushSupport extends SwrvePushSupport {
 		return false;
 	}
 
-	private static FirebaseInstanceId getFirebaseInstanceId() {
-		FirebaseInstanceId firebaseInstanceId = null;
+	private static FirebaseMessaging getFirebaseMessagingInstance() {
+		FirebaseMessaging firebaseInstanceId = null;
 		try {
-			firebaseInstanceId = FirebaseInstanceId.getInstance();
+			firebaseInstanceId = FirebaseMessaging.getInstance();
 		} catch (IllegalStateException e) {
-			SwrveLogger.e("Swrve cannot get instance of FirebaseInstanceId and therefore cannot get token registration id.", e);
+			SwrveLogger.e("Swrve cannot get instance of FirebaseMessaging and therefore cannot get token registration id.", e);
 		}
 		return firebaseInstanceId;
 	}

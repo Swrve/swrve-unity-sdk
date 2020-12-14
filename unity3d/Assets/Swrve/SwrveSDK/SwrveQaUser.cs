@@ -13,7 +13,7 @@ public class SwrveQaUser
 {
     private const string LogSourceSDK = "sdk";
     private const string QaLogType = "qa_log_event";
-    protected static readonly string QaUserSave = "swrve.q1"; // Saved securely. Must be the same as native qa key.
+    protected static readonly string QaUserSave = "swrve.q2"; // Saved securely. Must be the same as native qa key.
     private string userId;
     private ISwrveStorage storage;
 

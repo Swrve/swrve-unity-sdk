@@ -16,7 +16,7 @@ public class SwrveTextTemplating
 
     public static string Apply(string text, Dictionary<string, string> properties)
     {
-        if (string.IsNullOrEmpty(text) || properties == null) {
+        if (string.IsNullOrEmpty(text)) {
             return text;
         }
 
@@ -29,7 +29,7 @@ public class SwrveTextTemplating
                 property = property.Substring(0, property.IndexOf("|fallback=\"")); // remove fallback text
             }
 
-            if (properties.ContainsKey(property) && !string.IsNullOrEmpty(properties[property])) {
+            if (properties != null && properties.ContainsKey(property) && !string.IsNullOrEmpty(properties[property])) {
                 text = text.Replace(templateFullValue, properties[property]);
             } else if (fallback != null) {
                 text = text.Replace(templateFullValue, fallback);

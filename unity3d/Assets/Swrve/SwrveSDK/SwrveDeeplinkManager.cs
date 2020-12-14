@@ -134,15 +134,26 @@ public class SwrveDeeplinkManager
                 if(campaign == null) {
                     throw new Exception("Campaign was not in a format that could be parsed");
                 }
-
-                if (campaign.GetType() == typeof(SwrveConversationCampaign)) {
-                    SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign) campaign;
-                    assetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
-                } else if (campaign.GetType() == typeof(SwrveMessagesCampaign)) {
-                    SwrveMessagesCampaign messageCampaign = (SwrveMessagesCampaign) campaign;
-                    assetsQueue.UnionWith(messageCampaign.GetImageAssets());
+                // For embedded Camapign we just trigger the callback, there is not assets do download. 
+                if (campaign is SwrveEmbeddedCampaign) {
+                    if (sdk.config.EmbeddedMessageConfig.EmbeddedMessageListener != null) {
+                        SwrveEmbeddedMessage embeddedMessage = ((SwrveEmbeddedCampaign)campaign).Message;
+                        sdk.config.EmbeddedMessageConfig.EmbeddedMessageListener.OnMessage(embeddedMessage);
+                    } else {
+                        SwrveLog.LogError("Could not find a valid EmbeddedMessageListener defined as part of the EmbeddedMessageConfig, be sure that you did set it as parf of the SDK initialisation");
+                    }
+                } else {
+                    if (campaign is SwrveConversationCampaign) {
+                        SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign) campaign;
+                        assetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
+                    } else if (campaign is SwrveInAppCampaign) {
+                        SwrveInAppCampaign messageCampaign = (SwrveInAppCampaign) campaign;
+                        assetsQueue.UnionWith(messageCampaign.GetImageAssets());   
+                    }
+                    assetsManager.StartTask ("SwrveAssetsManager.DownloadAssets", assetsManager.DownloadAssets(assetsQueue, AddCampaignToQueue, campaign));
                 }
-                assetsManager.StartTask ("SwrveAssetsManager.DownloadAssets", assetsManager.DownloadAssets(assetsQueue, AddCampaignToQueue, campaign));
+
+                
             }
         } catch (Exception exp) {
             SwrveLog.LogError ("Could not process ad journey campaign: " + exp.ToString ());

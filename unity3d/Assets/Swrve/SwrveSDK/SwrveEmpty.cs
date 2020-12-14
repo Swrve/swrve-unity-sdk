@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#pragma warning disable 0436
+#pragma warning disable 0618
+using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections;
@@ -61,7 +63,7 @@ public class SwrveEmpty : SwrveSDK
         return false;
     }
 
-    public override SwrveMessage GetMessageForEvent (string eventName, IDictionary<string, string> payload)
+    public override SwrveBaseMessage GetBaseMessageForEvent (string eventName, IDictionary<string, string> payload)
     {
         return null;
     }
@@ -71,12 +73,12 @@ public class SwrveEmpty : SwrveSDK
         return null;
     }
 
-    public override IEnumerator ShowMessageForEvent (string eventName, SwrveMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null)
+    public override IEnumerator ShowMessageForEvent (string eventName, SwrveBaseMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
     {
         yield return null;
     }
 
-    public override IEnumerator ShowMessageForEvent (string eventName, IDictionary<string, string> payload, SwrveMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null)
+    public override IEnumerator ShowMessageForEvent (string eventName, IDictionary<string, string> payload, SwrveBaseMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
     {
         yield return null;
     }
@@ -170,6 +172,14 @@ public class SwrveEmpty : SwrveSDK
     {
     }
 
+    public override void EmbeddedMessageWasShownToUser(SwrveEmbeddedMessage message)
+    {
+    }
+
+    public override void EmbeddedMessageButtonWasPressed(SwrveEmbeddedMessage message, string buttonName)
+    {
+    }
+
     public override void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation? orientation = null, Dictionary<string, string> properties = null)
     {
     }
@@ -187,6 +197,7 @@ public class SwrveEmpty : SwrveSDK
     {
     }
 
+    [System.Obsolete("Use GetBaseMessageForId instead. This will be removed in 8.0")]
     public override SwrveMessage GetMessageForId (int messageId)
     {
         return null;
@@ -206,3 +217,6 @@ public class SwrveEmpty : SwrveSDK
         return false;
     }
 }
+
+#pragma warning restore 0618
+#pragma warning restore 0436

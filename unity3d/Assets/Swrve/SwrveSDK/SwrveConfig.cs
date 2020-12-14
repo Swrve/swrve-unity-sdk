@@ -292,7 +292,15 @@ public class SwrveConfig
     /// </summary>
     public Action ResourcesUpdatedCallback;
 
+    /// <summary>
+    /// Swrve in-app message config.
+    /// </summary>
     public SwrveInAppMessageConfig InAppMessageConfig = new SwrveInAppMessageConfig();
+
+    /// <summary>
+    /// Swrve embedded message config.
+    /// </summary>
+    public SwrveEmbeddedMessageConfig EmbeddedMessageConfig = new SwrveEmbeddedMessageConfig();
 
     public void CalculateEndpoints (int appId)
     {

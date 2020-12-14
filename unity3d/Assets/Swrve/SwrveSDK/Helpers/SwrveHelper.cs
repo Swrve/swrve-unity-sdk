@@ -83,7 +83,6 @@ public static partial class SwrveHelper
     public static string CreateHMACMD5 (string data, string key)
     {
         string hmacmd5 = null;
-        // TODO rename method
 #if !UNITY_WSA_10_0 || UNITY_EDITOR
         if (fakeReference != null) {
             byte[] bData = System.Text.Encoding.UTF8.GetBytes (data);
