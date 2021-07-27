@@ -18,7 +18,6 @@ public class RESTResponse
     {
         ResponseCode = responseCode;
         Body = responseBody;
-        Error = error;
         Headers = headers;
         Error = error;
     }

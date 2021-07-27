@@ -110,7 +110,7 @@ public class SwrveQaUser
                 Dictionary<string, object> logDetailsCampaigns = new Dictionary<string, object>();
                 logDetailsCampaigns.Add("id", qaUserCampaignInfo.id);
                 logDetailsCampaigns.Add("variant_id", qaUserCampaignInfo.variantId);
-                logDetailsCampaigns.Add("type", qaUserCampaignInfo.type);
+                logDetailsCampaigns.Add("type", qaUserCampaignInfo.type.Value);
                 logDetailsCampaignsList.Add(logDetailsCampaigns);
             }
 
@@ -186,7 +186,7 @@ public class SwrveQaUser
             Dictionary<string, object> logDetailsCampaigns = new Dictionary<string, object>();
             logDetailsCampaigns.Add("id", qaUserCampaignInfo.id);
             logDetailsCampaigns.Add("variant_id", qaUserCampaignInfo.variantId);
-            logDetailsCampaigns.Add("type", qaUserCampaignInfo.type);
+            logDetailsCampaigns.Add("type", qaUserCampaignInfo.type.Value);
             logDetailsCampaigns.Add("displayed", qaUserCampaignInfo.displayed);
             logDetailsCampaigns.Add("reason", qaUserCampaignInfo.reason);
             logDetailsCampaignsList.Add(logDetailsCampaigns);
@@ -217,6 +217,75 @@ public class SwrveQaUser
             SwrveLog.LogError("SwrveQaUser: CampaignButtonClicked exception:" + ex.ToString());
         }
     }
+
+    public static void AssetFailedToDownload(string assetName, string resolvedUrl, string reason)
+    {
+        if (!CanLog()) {
+            return;
+        }
+
+        try {
+            Dictionary<string, object> logDetails = new Dictionary<string, object>();
+            logDetails.Add("asset_name", assetName);
+            logDetails.Add("image_url", resolvedUrl);
+            logDetails.Add("reason", reason);
+
+            SwrveQaUser qaUser = SwrveQaUser.Instance;
+            qaUser.QueueQaLogEvent("asset-failed-to-download", logDetails);
+        } catch (Exception ex) {
+            SwrveLog.LogError("SwrveQaUser: Asset failed to download exception:" + ex.ToString());
+        }
+    }
+
+    public static void AssetFailedToDisplay(int campaignId, int variantId, string assetName, string unresolvedUrl, string resolvedUrl, bool hasFallback, string reason)
+    {
+        if (!CanLog()) {
+            return;
+        }
+
+        try {
+            Dictionary<string, object> logDetails = new Dictionary<string, object>();
+            logDetails.Add("campaign_id", campaignId);
+            logDetails.Add("variant_id", variantId);
+            logDetails.Add("unresolved_url", unresolvedUrl);
+            logDetails.Add("has_fallback", hasFallback);
+            logDetails.Add("reason", reason);
+
+            if (!string.IsNullOrEmpty(resolvedUrl)) {
+                logDetails.Add("image_url", resolvedUrl);
+            }
+
+            if (!string.IsNullOrEmpty(assetName)) {
+                logDetails.Add("asset_name", assetName);
+            }
+
+            SwrveQaUser qaUser = SwrveQaUser.Instance;
+            qaUser.QueueQaLogEvent("asset-failed-to-display", logDetails);
+        } catch (Exception ex) {
+            SwrveLog.LogError("SwrveQaUser: Asset failed to display exception:" + ex.ToString());
+        }
+    }
+
+    public static void EmbeddedPersonalizationFailed(int campaignId, int variantId, string unresolvedData, string reason)
+    {
+        if (!CanLog()) {
+            return;
+        }
+
+        try {
+            Dictionary<string, object> logDetails = new Dictionary<string, object>();
+            logDetails.Add("campaign_id", campaignId);
+            logDetails.Add("variant_id", variantId);
+            logDetails.Add("unresolved_data", unresolvedData);
+            logDetails.Add("reason", reason);
+
+            SwrveQaUser qaUser = SwrveQaUser.Instance;
+            qaUser.QueueQaLogEvent("embedded-personalization-failed", logDetails);
+        } catch (Exception ex) {
+            SwrveLog.LogError("SwrveQaUser: Embedded personalization failed exception:" + ex.ToString());
+        }
+    }
+
 
     public static void WrappedEvent(Dictionary<string, object> eventQueued)
     {

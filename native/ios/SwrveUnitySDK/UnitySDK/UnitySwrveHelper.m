@@ -1,6 +1,4 @@
 #import "UnitySwrveHelper.h"
-
-
 #import "UnitySwrve.h"
 #import "SwrveUtils.h"
 #import "SwrvePermissions.h"
@@ -9,9 +7,6 @@
 #import <CoreTelephony/CTCarrier.h>
 #endif //TARGET_OS_IOS
 
-#ifdef SWRVE_LOG_IDFA
-#import <AdSupport/ASIdentifierManager.h>
-#endif //SWRVE_LOG_IDFA
 #if !defined(SWRVE_NO_PUSH)
 #import <UserNotifications/UserNotifications.h>
 #import "SwrveNotificationOptions.h"
@@ -138,25 +133,6 @@
     return [UnitySwrveHelper NSStringCopy:idfv];
 }
 
-+(char*) IDFA
-{
-#ifdef SWRVE_LOG_IDFA
-    if (@available(iOS 14, *)) {
-        NSString *idfa = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
-        if ([self isValidIDFA:idfa]) {
-            return [UnitySwrveHelper NSStringCopy:idfa];
-        }
-    } else {
-        if([[ASIdentifierManager sharedManager] isAdvertisingTrackingEnabled]) {
-            NSString *idfa = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
-             return [UnitySwrveHelper NSStringCopy:idfa];
-        }
-    }
-#endif
-    return NULL;
-}
-
-
 +(NSSet*) categoryFromJson:(NSString*)jsonString {
     NSMutableSet* categorySet = [NSMutableSet set];
 #if !defined(SWRVE_NO_PUSH)
@@ -198,7 +174,7 @@
         if (@available(iOS 12.0, *)) {
             notificationAuthOptions = notificationAuthOptions + UNAuthorizationOptionProvisional;
         } else {
-            DebugLog(@"Provisional push permission is only supported on iOS 12 and up.");
+            [SwrveLogger error:@"Provisional push permission is only supported on iOS 12 and up."];
         }
     }
     [SwrvePermissions registerForRemoteNotifications:notificationAuthOptions withCategories:pushCategories andSDK:nil];
@@ -217,13 +193,6 @@
     UIDevice *device = [UIDevice currentDevice];
     NSString *platformOS = [[device systemName] lowercaseString];
     return [UnitySwrveHelper NSStringCopy:platformOS];
-}
-
-+ (BOOL)isValidIDFA:(NSString *)idfa {
-    if (idfa == nil) return false;
-    NSString *noDashes = [idfa stringByReplacingOccurrencesOfString: @"-" withString:@""];
-    NSString *idfaNoZerosOrDashes = [noDashes stringByReplacingOccurrencesOfString: @"0" withString:@""];
-    return (idfaNoZerosOrDashes != nil && idfaNoZerosOrDashes.length != 0);
 }
 
 @end

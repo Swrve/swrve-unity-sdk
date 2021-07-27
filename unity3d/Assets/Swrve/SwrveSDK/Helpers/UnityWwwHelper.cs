@@ -34,7 +34,11 @@ public class UnityWwwHelper
     {
 
         // Use UnityWebRequests error detection first
+#if UNITY_2020_1_OR_NEWER
+        if (request.result == UnityWebRequest.Result.ConnectionError) {
+#else
         if (request.isNetworkError) {
+#endif
             SwrveLog.LogError ("Request network error: " + request.error + " in " + request.url);
             return WwwDeducedError.NetworkError;
         }

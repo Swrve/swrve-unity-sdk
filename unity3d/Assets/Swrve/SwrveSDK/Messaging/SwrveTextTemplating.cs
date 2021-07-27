@@ -12,7 +12,9 @@ public class SwrveTextTemplating
     private static readonly Regex pattern = new Regex(patternMatch);
 
     private const string patternFallbackMatch = "\\|fallback=\"([^\\}]*)\"\\}";
+    private const string patternFallbackJSONMatch = "\\|fallback=\\\\\"([^\\}]*)\\\\\"\\}";
     private static readonly Regex patternFallback = new Regex(patternFallbackMatch);
+    private static readonly Regex patternJSONFallback = new Regex(patternFallbackJSONMatch);
 
     public static string Apply(string text, Dictionary<string, string> properties)
     {
@@ -47,6 +49,46 @@ public class SwrveTextTemplating
     {
         string fallback = null;
         Match match = patternFallback.Match(templateFullValue);
+        while (match.Success) {
+            fallback = match.Groups[1].Value;
+            match = match.NextMatch();
+        }
+        return fallback;
+    }
+
+    public static string ApplyToJSON(string json, Dictionary<string, string> properties)
+    {
+        if (string.IsNullOrEmpty(json)) {
+            return json;
+        }
+
+        Match match = pattern.Match(json);
+        while (match.Success) {
+            string templateFullValue = match.Groups[0].Value;
+            string fallback = GetFallBackJSON(templateFullValue);
+            string property = match.Groups[1].Value;
+            if (fallback != null) {
+                property = property.Substring(0, property.IndexOf("|fallback=\\\"")); // remove fallback text
+            }
+
+            if (properties != null && properties.ContainsKey(property) && !string.IsNullOrEmpty(properties[property])) {
+                json = json.Replace(templateFullValue, properties[property]);
+            } else if (fallback != null) {
+                json = json.Replace(templateFullValue, fallback);
+            } else {
+                throw new SwrveSDKTextTemplatingException("TextTemplating: Missing property value for key " + property);
+            }
+            match = match.NextMatch();
+        }
+        return json;
+    }
+
+    // Example of expected template syntax:
+    // {\"key\":"${item.property|fallback=\"fallback text\"}"}
+    private static string GetFallBackJSON(string templateFullValue)
+    {
+        string fallback = null;
+        Match match = patternJSONFallback.Match(templateFullValue);
         while (match.Success) {
             fallback = match.Groups[1].Value;
             match = match.NextMatch();

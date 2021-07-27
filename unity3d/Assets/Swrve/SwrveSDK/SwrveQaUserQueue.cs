@@ -14,7 +14,7 @@ namespace SwrveUnity
 public class SwrveQaUserQueue : ISwrveQaUserQueue
 {
     // Networking Layer
-    private readonly IRESTClient restClient;
+    protected IRESTClient restClient;
 
     // Queue properties
     protected float queueFlushDelay = 4.0f;

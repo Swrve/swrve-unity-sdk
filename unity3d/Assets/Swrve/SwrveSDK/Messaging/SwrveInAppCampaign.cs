@@ -12,13 +12,12 @@ namespace SwrveUnity.Messaging
 public class SwrveInAppCampaign : SwrveBaseCampaign
 {
     /// <summary>
-    /// List of messages contained in the campaign.
+    /// Message contained in the campaign.
     /// </summary>
-    public List<SwrveMessage> Messages;
+    public SwrveMessage Message;
 
-    private SwrveInAppCampaign (DateTime initialisedTime) : base (initialisedTime)
+    private SwrveInAppCampaign(DateTime initialisedTime) : base(initialisedTime)
     {
-        this.Messages = new List<SwrveMessage> ();
     }
 
     /// <summary>
@@ -38,83 +37,43 @@ public class SwrveInAppCampaign : SwrveBaseCampaign
     /// In-app message that contains the given event in its trigger list and satisfies all the
     /// rules.
     /// </returns>
-    public SwrveMessage GetMessageForEvent (string triggerEvent, IDictionary<string, string> payload, List<SwrveQaUserCampaignInfo> qaCampaignInfoList)
+    public SwrveMessage GetMessageForEvent(string triggerEvent, IDictionary<string, string> payload, List<SwrveQaUserCampaignInfo> qaCampaignInfoList, Dictionary<string, string> personalizationProperties)
     {
-        int messagesCount = Messages.Count;
-
-        if (messagesCount == 0) {
-            string reason = "No messages in campaign " + Id;
-            LogAndAddReason (reason, false, qaCampaignInfoList);
+        if (Message == null) {
+            string reason = "No message in campaign " + Id;
+            LogAndAddReason(reason, false, qaCampaignInfoList);
             return null;
         }
 
-        if (CheckCampaignLimits (triggerEvent, payload, qaCampaignInfoList)) {
-            SwrveLog.Log (string.Format ("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
+        if (CheckCampaignLimits(triggerEvent, payload, qaCampaignInfoList)) {
+            SwrveLog.Log(string.Format("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
 
-            return GetNextMessage (messagesCount, qaCampaignInfoList);
+            return GetNextMessage(qaCampaignInfoList, personalizationProperties);
         }
         return null;
     }
 
-    /// <summary>
-    /// Get a message by its identifier.
-    /// </summary>
-    /// <returns>
-    /// The message with the given identifier if it could be found.
-    /// </returns>
-    public SwrveMessage GetMessageForId (int id)
+    protected SwrveMessage GetNextMessage(List<SwrveQaUserCampaignInfo> qaCampaignInfoList, Dictionary<string, string> personalizationProperties)
     {
-        for(int mi = 0; mi < Messages.Count; mi++) {
-            SwrveMessage message = Messages[mi];
-            if (message.Id == id) {
-                return message;
-            }
-        }
-
-        return null;
-    }
-
-    protected SwrveMessage GetNextMessage (int messagesCount, List<SwrveQaUserCampaignInfo> qaCampaignInfoList)
-    {
-        if (RandomOrder) {
-            List<SwrveMessage> randomMessages = new List<SwrveMessage> (Messages);
-            randomMessages.Shuffle ();
-            for(int mi = 0; mi < randomMessages.Count; mi++) {
-                SwrveMessage message = randomMessages[mi];
-                if (message.IsDownloaded ()) {
-                    return message;
-                }
-            }
-        } else if (Next < messagesCount) {
-            SwrveMessage message = Messages [Next];
-            if (message.IsDownloaded ()) {
-                return message;
-            }
+        if (Message.IsDownloaded(personalizationProperties)) {
+            return Message;
         }
 
         string reason = "Campaign " + this.Id + " hasn't finished downloading.";
-        LogAndAddReason (reason, false, qaCampaignInfoList);
+        LogAndAddReason(reason, false, qaCampaignInfoList);
         return null;
     }
 
-    protected void AddMessage (SwrveMessage message)
-    {
-        this.Messages.Add (message);
-    }
-
     /// <summary>
-    /// Get all the assets in the in-app campaign messages.
+    /// Get all the assets in the in-app campaign message.
     /// </summary>
     /// <returns>
     /// All the assets in the in-app campaign.
     /// </returns>
-    public HashSet<SwrveAssetsQueueItem> GetImageAssets ()
+    public HashSet<SwrveAssetsQueueItem> GetImageAssets(Dictionary<string, string> personalizationProperties)
     {
         HashSet<SwrveAssetsQueueItem> assetsQueueImages = new HashSet<SwrveAssetsQueueItem>();
-        for(int mi = 0; mi < Messages.Count; mi++) {
-            SwrveMessage message = Messages[mi];
-            assetsQueueImages.UnionWith(message.SetOfAssets());
-        }
+        assetsQueueImages.UnionWith(Message.SetOfAssets(personalizationProperties));
         return assetsQueueImages;
     }
 
@@ -126,65 +85,53 @@ public class SwrveInAppCampaign : SwrveBaseCampaign
     /// to be manually called if you are implementing your own
     /// in-app message rendering code.
     /// </summary>
-    public void MessageWasShownToUser (SwrveMessageFormat messageFormat)
+    public void MessageWasShownToUser(SwrveMessageFormat messageFormat)
     {
-        base.WasShownToUser ();
-
-        if (Messages.Count > 0) {
-            if (!RandomOrder) {
-                int nextMessage = (Next + 1) % Messages.Count;
-                Next = nextMessage;
-                SwrveLog.Log ("Round Robin: Next message in campaign " + Id + " is " + nextMessage);
-            } else {
-                SwrveLog.Log ("Next message in campaign " + Id + " is random");
-            }
-        }
+        base.WasShownToUser();
     }
 
-    public static SwrveInAppCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, Color? defaultBackgroundColor, List<SwrveQaUserCampaignInfo> qaUserCampaignInfoList)
+    public static SwrveInAppCampaign LoadFromJSON(ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, Color? defaultBackgroundColor, List<SwrveQaUserCampaignInfo> qaUserCampaignInfoList)
     {
-        SwrveInAppCampaign campaign = new SwrveInAppCampaign (initialisedTime);
+        SwrveInAppCampaign campaign = new SwrveInAppCampaign(initialisedTime);
 
-        object _messages = null;
-        campaignData.TryGetValue ("messages", out _messages);
-        IList<object> messages = null;
-        try {
-            messages = (IList<object>)_messages;
-        } catch(Exception e) {
-            string reason = "Campaign [" + id + "] invalid messages found, skipping.  Error: " + e;
-            campaign.LogAndAddReason(reason, false, qaUserCampaignInfoList);
-        }
+        object _message = null;
+        campaignData.TryGetValue("message", out _message);
 
-        if (messages == null) {
-            string reason = "Campaign [" + id + "] JSON messages are null, skipping.";
+        if (_message == null) {
+            string reason = "Campaign [" + id + "] JSON message is null, skipping.";
             campaign.LogAndAddReason(reason, false, qaUserCampaignInfoList);
             return null;
         }
 
-        for (int k = 0, t = messages.Count; k < t; k++) {
-            Dictionary<string, object> messageData = (Dictionary<string, object>)messages [k];
-            SwrveMessage message = SwrveMessage.LoadFromJSON (swrveAssetsManager, campaign, messageData, defaultBackgroundColor);
-            if (message.Formats.Count > 0) {
-                campaign.AddMessage (message);
-            }
+        Dictionary<string, object> messageData = (Dictionary<string, object>)_message;
+        SwrveMessage message = SwrveMessage.LoadFromJSON(swrveAssetsManager, campaign, messageData, defaultBackgroundColor);
+        if (message.Formats.Count > 0) {
+            campaign.Message = message;
         }
-        if (campaign.Messages.Count == 0) {
-            string reason = "Campaign [" + id + "] no messages found, skipping.";
+
+        if (campaign.Message == null) {
+            string reason = "Campaign [" + id + "] no message found, skipping.";
             campaign.LogAndAddReason(reason, false, qaUserCampaignInfoList);
+        }
+
+        if (!campaign.Message.IsSupportedBySDK()) {
+            string reason = "Campaign [" + id + "] is not currently supported by SDK, skipping.";
+            campaign.LogAndAddReason(reason, false, qaUserCampaignInfoList);
+            campaign = null;
         }
 
         return campaign;
     }
 
     #region SwrveBaseCampaign Abstract Methods implementation
-    public override bool AreAssetsReady()
+    public override bool AreAssetsReady(Dictionary<string, string> personalizationProperties)
     {
-        return this.Messages.All (m => m.IsDownloaded ());
+        return this.Message.IsDownloaded(personalizationProperties);
     }
 
     public override bool SupportsOrientation(SwrveOrientation orientation)
     {
-        return this.Messages.Any (m => m.SupportsOrientation (orientation));
+        return this.Message.SupportsOrientation(orientation);
     }
 
     public override SwrveQaUserCampaignInfo.SwrveCampaignType GetCampaignType()

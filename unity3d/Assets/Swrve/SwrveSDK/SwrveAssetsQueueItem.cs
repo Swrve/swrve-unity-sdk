@@ -2,11 +2,12 @@
 {
 public class SwrveAssetsQueueItem
 {
-    public SwrveAssetsQueueItem(string name, string digest, bool isImage)
+    public SwrveAssetsQueueItem(string name, string digest, bool isImage, bool isExternalSource)
     {
         Name = name;
         Digest = digest;
         IsImage = isImage;
+        IsExternalSource = isExternalSource;
     }
 
     public string Name
@@ -26,10 +27,16 @@ public class SwrveAssetsQueueItem
         private set;
     }
 
+    public bool IsExternalSource
+    {
+        get;
+        private set;
+    }
+
     public override bool Equals(object obj)
     {
         SwrveAssetsQueueItem item = obj as SwrveAssetsQueueItem;
-        return item != null && item.Name == this.Name && item.Digest == this.Digest && item.IsImage == this.IsImage;
+        return item != null && item.Name == this.Name && item.Digest == this.Digest && item.IsImage == this.IsImage && item.IsExternalSource == this.IsExternalSource;
     }
 
     public override int GetHashCode()

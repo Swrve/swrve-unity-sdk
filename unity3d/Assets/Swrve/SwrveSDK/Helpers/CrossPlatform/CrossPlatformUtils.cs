@@ -13,7 +13,7 @@ public static class CrossPlatformUtils
     public static UnityWebRequest MakeRequest(string url, string requestMethod, byte[] encodedData, Dictionary<string, string> headers)
     {
         UnityWebRequest request = new UnityWebRequest (url);
-        UploadHandlerRaw uH = new UploadHandlerRaw (encodedData);
+        UploadHandlerRaw uH = (encodedData == null)? null : new UploadHandlerRaw (encodedData);
         DownloadHandlerBuffer dH = new DownloadHandlerBuffer();
         request.uploadHandler = uH;
         request.downloadHandler = dH;

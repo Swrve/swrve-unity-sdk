@@ -23,11 +23,6 @@ public class SwrveButton : SwrveWidget
     public SwrveActionType ActionType;
 
     /// <summary>
-    /// Parent message associated with this button
-    /// </summary>
-    public SwrveMessage Message;
-
-    /// <summary>
     /// ID of the target installation app
     /// </summary>
     public int AppId;
@@ -36,17 +31,5 @@ public class SwrveButton : SwrveWidget
     /// Name of the button
     /// </summary>
     public string Name;
-
-    /// <summary>
-    /// Has it been pressed
-    /// </summary>
-    [System.Obsolete("This property will be removed in 8.0")]
-    public bool Pressed = false;
-
-    /// <summary>
-    /// Pointer bounds.
-    /// </summary>
-    [System.Obsolete("This property will be removed in 8.0")]
-    public Rect PointerRect;
 }
 }

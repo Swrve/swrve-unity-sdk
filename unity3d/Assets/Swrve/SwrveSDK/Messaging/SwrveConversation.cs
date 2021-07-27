@@ -92,7 +92,7 @@ public class SwrveConversation : SwrveBaseMessage
     private void queueImageAsset (Dictionary<string, object> content)
     {
         string asset = (string)content ["value"];
-        ConversationAssets.Add (new SwrveAssetsQueueItem(asset, asset, true));
+        ConversationAssets.Add (new SwrveAssetsQueueItem(asset, asset, true, false));
     }
 
     private void queueFontAsset (Dictionary<string, object> content)
@@ -107,7 +107,7 @@ public class SwrveConversation : SwrveBaseMessage
         string fontFile = (string)style ["font_file"];
         string fontDigest = (string)style ["font_digest"];
         if(!string.IsNullOrEmpty(fontFile) && !string.IsNullOrEmpty(fontDigest) && !fontFile.Equals("_system_font_")) {
-            ConversationAssets.Add (new SwrveAssetsQueueItem(fontFile, fontDigest, false));
+            ConversationAssets.Add (new SwrveAssetsQueueItem(fontFile, fontDigest, false, false));
         }
     }
 

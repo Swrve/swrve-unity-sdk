@@ -96,25 +96,6 @@ public class SwrveConfig
     public SwrveOrientation Orientation = SwrveOrientation.Both;
 
     /// <summary>
-    /// The URL of the server to send events to.
-    /// </summary>
-    public string EventsServer = DefaultEventsServer;
-    public const string DefaultEventsServer =
-        "https://api.swrve.com";
-
-    /// <summary>
-    /// The URL of the server to identity the user.
-    /// </summary>
-    public string IdentityServer = DefaultIdentityServer;
-    public const string DefaultIdentityServer = "https://identity.swrve.com";
-    /// <summary>
-    /// The URL of the server to request campaign and resources data from.
-    /// </summary>
-    public string ContentServer = DefaultContentServer;
-    public const string DefaultContentServer =
-        "https://content.swrve.com";
-
-    /// <summary>
     /// The SDK will send a session start on init and manage app pauses and resumes.
     /// </summary>
     public bool AutomaticSessionManagement = true;
@@ -148,6 +129,21 @@ public class SwrveConfig
     public Stack SelectedStack = Stack.US;
 
     /// <summary>
+    /// The URL of the server to send events to. Set this to override the default event swrve endpoint.
+    /// </summary>
+    public string EventsServer;
+
+    /// <summary>
+    /// The URL of the server to identity the user. Set this to override the default event swrve endpoint.
+    /// </summary>
+    public string IdentityServer;
+
+    /// <summary>
+    /// The URL of the server to request campaign and resources data from. Set this to override the default event swrve endpoint.
+    /// </summary>
+    public string ContentServer;
+
+    /// <summary>
     /// Enable push notification on this app.
     /// </summary>
     public bool PushNotificationEnabled = false;
@@ -160,7 +156,7 @@ public class SwrveConfig
     /// <summary>
     /// Events that will trigger a push notification permission dialog in iOS.
     /// </summary>
-    public HashSet<String> PushNotificationEvents = new HashSet<string> ()
+    public HashSet<String> PushNotificationEvents = new HashSet<string>()
     { "Swrve.session.start"
     };
 
@@ -203,11 +199,6 @@ public class SwrveConfig
     public float AutoShowMessagesMaxDelay = 5;
 
     /// <summary>
-    /// Default in-app background color if none is set in the template.
-    /// </summary>
-    public Color? DefaultBackgroundColor = null;
-
-    /// <summary>
     /// Log Google's Advertising ID as "swrve.GAID". Requires the use of the native google Android plugin.
     /// </summary>
     public bool LogGoogleAdvertisingId = false;
@@ -223,11 +214,6 @@ public class SwrveConfig
     public bool LogAppleIDFV = false;
 
     /// <summary>
-    /// Log iOS IDFV as "swrve.IDFA". This also requires the addition of the custom define 'SWRVE_LOG_IDFA' in your project settings.
-    /// </summary>
-    public bool LogAppleIDFA = false;
-
-    /// <summary>
     // iOS Push Categories
     /// </summary>
     public List<UNNotificationCategory> NotificationCategories = new List<UNNotificationCategory>();
@@ -238,34 +224,9 @@ public class SwrveConfig
     public bool ABTestDetailsEnabled = false;
 
     /// <summary>
-    /// Install button listener for all in-app messages.
-    /// </summary>
-    public ISwrveInstallButtonListener InAppMessageInstallButtonListener = null;
-
-    /// <summary>
-    /// Custom button listener for all in-app messages.
-    /// </summary>
-    public ISwrveCustomButtonListener InAppMessageCustomButtonListener = null;
-
-    /// <summary>
-    /// Clipboard listener for all in-app messages.
-    /// </summary>
-    public ISwrveClipboardButtonListener InAppMessageClipboardButtonListener = null;
-
-    /// <summary>
-    /// In-app message listener.
-    /// </summary>
-    public ISwrveMessageListener InAppMessageListener = null;
-
-    /// <summary>
     /// Listener for push notifications received in the app.
     /// </summary>
     public ISwrvePushNotificationListener PushNotificationListener = null;
-
-    /// <summary>
-    /// Disable default In-app renderer and manage messages manually.
-    /// </summary>
-    public ISwrveTriggeredMessageListener TriggeredMessageListener = null;
 
     /// <summary>
     /// Initialisation Mode. AUTO is the default.
@@ -275,7 +236,7 @@ public class SwrveConfig
     /// <summary>
     /// When initMode is set to a MANAGED state. Continue on startup with the previously given user
     /// </summary>
-    public bool ManagedModeAutoStartLastUser = true;
+    public bool AutoStartLastUser = true;
 
     /// <summary>
     /// A callback to get notified when user resources have been updated.
@@ -301,32 +262,5 @@ public class SwrveConfig
     /// Swrve embedded message config.
     /// </summary>
     public SwrveEmbeddedMessageConfig EmbeddedMessageConfig = new SwrveEmbeddedMessageConfig();
-
-    public void CalculateEndpoints (int appId)
-    {
-        // Default values are saved in the prefab or component instance.
-        if (string.IsNullOrEmpty(EventsServer) || EventsServer == DefaultEventsServer) {
-            EventsServer = CalculateEndpoint(appId, SelectedStack, "api.swrve.com");
-        }
-        if (string.IsNullOrEmpty(ContentServer) || ContentServer == DefaultContentServer) {
-            ContentServer = CalculateEndpoint(appId, SelectedStack, "content.swrve.com");
-        }
-        if (string.IsNullOrEmpty(IdentityServer) || IdentityServer == DefaultIdentityServer) {
-            IdentityServer = CalculateEndpoint(appId, SelectedStack, "identity.swrve.com");
-        }
-    }
-
-    private static string GetStackPrefix(Stack stack)
-    {
-        if (stack == Stack.EU) {
-            return "eu-";
-        }
-        return "";
-    }
-
-    private static string CalculateEndpoint(int appId, Stack stack, string suffix)
-    {
-        return "https://" + appId + "." + GetStackPrefix(stack) + suffix;
-    }
 }
 }

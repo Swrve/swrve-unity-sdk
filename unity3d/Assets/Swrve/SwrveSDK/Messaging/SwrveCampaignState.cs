@@ -20,8 +20,6 @@ public class SwrveCampaignState
 
     public int Impressions;
 
-    public int Next;
-
     public DateTime ShowMessagesAfterDelay;
 
     /// <summary>
@@ -37,12 +35,6 @@ public class SwrveCampaignState
     public SwrveCampaignState (int campaignId, Dictionary<string, object> savedStatesJson)
     {
         string curKey;
-
-        // Load next
-        curKey = "Next" + campaignId;
-        if (savedStatesJson.ContainsKey (curKey)) {
-            Next = MiniJsonHelper.GetInt (savedStatesJson, curKey);
-        }
 
         // Load impressions
         curKey = "Impressions" + campaignId;
@@ -79,8 +71,8 @@ public class SwrveCampaignState
     public override string ToString()
     {
         return string.Format (
-                   "[SwrveCampaignState] Impressions: {0}, Next: {1}, ShowMessagesAfterDelay: {2}, CurStatus: {3}",
-                   Impressions, Next, ShowMessagesAfterDelay, CurStatus
+                   "[SwrveCampaignState] Impressions: {0}, ShowMessagesAfterDelay: {1}, CurStatus: {2}",
+                   Impressions, ShowMessagesAfterDelay, CurStatus
                );
     }
 }

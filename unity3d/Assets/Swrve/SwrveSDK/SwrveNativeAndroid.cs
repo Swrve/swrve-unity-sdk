@@ -26,6 +26,8 @@ private const string SetUserIdName = "setUserId";
 private const string ClearAllUserAuthenticatedNotificationsName = "clearAllAuthenticatedNotifications";
 private const string CopyToClipboardName = "copyToClipboard";
 
+private const string GetAreNotificationsEnabledName = "getAreNotificationsEnabled";
+
 private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
 private const string UnityCurrentActivityName = "currentActivity";
 
@@ -167,6 +169,8 @@ public void IapGooglePlay(string productId, double productPrice, string currency
                 deviceInfo["swrve.GAID"] = googlePlayAdvertisingId;
             }
         }
+
+        deviceInfo["swrve.permission.notifications_enabled"] = GetAreNotificationsEnabled().ToString();
     }
 
     private string getNativeLanguage()
@@ -751,6 +755,20 @@ public void IapGooglePlay(string productId, double productPrice, string currency
                 SwrveLog.LogWarning("Couldn't copy text to clipboard: " + exp.ToString());
             }
         }
+    }
+
+    public static bool GetAreNotificationsEnabled()
+    {
+        if (SwrveHelper.IsOnDevice()) {
+            try {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName)) {
+                    return swrveAndroidCommonClass.CallStatic<bool>(GetAreNotificationsEnabledName);
+                }
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't get areNotificationsEnabled boolean from Android: " + exp.ToString());
+            }
+        }
+        return false;
     }
 }
 

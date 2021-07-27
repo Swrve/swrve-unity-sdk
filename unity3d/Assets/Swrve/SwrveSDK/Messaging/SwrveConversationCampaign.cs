@@ -12,7 +12,7 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
     /// The Swrve Conversation associated with this campaign.
     /// </summary>
     public SwrveConversation Conversation;
-    private SwrveConversationCampaign (DateTime initialisedTime) : base(initialisedTime)
+    private SwrveConversationCampaign(DateTime initialisedTime) : base(initialisedTime)
     {
     }
 
@@ -41,9 +41,9 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
             return null;
         }
 
-        if (CheckCampaignLimits (triggerEvent, payload, qaCampaignInfoList)) {
-            SwrveLog.Log (string.Format ("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
-            if (AreAssetsReady ()) {
+        if (CheckCampaignLimits(triggerEvent, payload, qaCampaignInfoList)) {
+            SwrveLog.Log(string.Format("[{0}] {1} matches a trigger in {2}", this, triggerEvent, Id));
+            if (AreAssetsReady(null)) {
                 return Conversation;
             } else {
                 string reason = "Assets not downloaded to show conversation in campaign " + Id;
@@ -53,17 +53,17 @@ public class SwrveConversationCampaign : SwrveBaseCampaign
         return null;
     }
 
-    public static SwrveConversationCampaign LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int campaignId, DateTime initialisedTime)
+    public static SwrveConversationCampaign LoadFromJSON(ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int campaignId, DateTime initialisedTime)
     {
-        SwrveConversationCampaign campaign = new SwrveConversationCampaign (initialisedTime);
-        campaign.Conversation = SwrveConversation.LoadFromJSON (swrveAssetsManager, campaign, (Dictionary<string, object>)campaignData ["conversation"]);
+        SwrveConversationCampaign campaign = new SwrveConversationCampaign(initialisedTime);
+        campaign.Conversation = SwrveConversation.LoadFromJSON(swrveAssetsManager, campaign, (Dictionary<string, object>)campaignData["conversation"]);
         return campaign;
     }
 
     #region SwrveBaseCampaign Abstract Methods implementation
-    public override bool AreAssetsReady()
+    public override bool AreAssetsReady(Dictionary<string, string> personalizationProperties)
     {
-        return this.Conversation.AreAssetsReady ();
+        return this.Conversation.AreAssetsReady();
     }
 
     public override bool SupportsOrientation(SwrveOrientation orientation)

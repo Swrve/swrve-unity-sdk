@@ -9,7 +9,8 @@ public enum SwrveActionType {
     Install,
     Dismiss,
     Custom,
-    CopyToClipboard
+    CopyToClipboard,
+    Capability
 }
 }
 

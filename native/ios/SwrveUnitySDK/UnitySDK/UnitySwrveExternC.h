@@ -13,7 +13,6 @@ extern "C"
     char* _swrveiOSCarrierCode(void);
     char* _swrveiOSLocaleCountry(void);
     char* _swrveiOSIDFV(void);
-    char* _swrveiOSIDFA(void);
     void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet, bool provisional);
     void _swrveiOSInitNative(char* jsonConfig);
     void _swrveiOSShowConversation(char* conversation);

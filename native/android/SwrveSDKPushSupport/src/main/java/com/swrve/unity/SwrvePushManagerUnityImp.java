@@ -14,7 +14,6 @@ import com.swrve.sdk.SwrveHelper;
 import com.swrve.sdk.SwrveLogger;
 import com.swrve.sdk.SwrveNotificationBuilder;
 import com.swrve.sdk.SwrveNotificationConstants;
-import com.swrve.sdk.SwrveNotificationCustomFilter;
 import com.swrve.sdk.SwrveNotificationDetails;
 import com.swrve.sdk.SwrveNotificationFilter;
 import com.swrve.sdk.SwrvePushManager;
@@ -31,16 +30,6 @@ public class SwrvePushManagerUnityImp implements SwrvePushManager {
 
     public SwrvePushManagerUnityImp(Context context) {
         this.context = context;
-    }
-
-    /**
-     * Process a Bundle push message
-     * @deprecated This method will be removed in next major version. Use processMessage instead.
-     * @param msg Bundle to process
-     */
-    @Deprecated
-    public void processRemoteNotification(Bundle msg) {
-        processMessage(msg);
     }
 
     @Override
@@ -135,22 +124,18 @@ public class SwrvePushManagerUnityImp implements SwrvePushManager {
         return null;
     }
 
-    private Notification applyCustomFilter(NotificationCompat.Builder builder, int notificationId, final Bundle msg,
-            SwrveNotificationDetails notificationDetails) {
+    private Notification applyCustomFilter(NotificationCompat.Builder builder, int notificationId, final Bundle msg, SwrveNotificationDetails notificationDetails) {
         Notification notification;
         try {
             String jsonPayload = SwrvePushManagerHelper.getPayload(msg);
             if (SwrveUnitySDK.getNotificationFilter() != null) {
                 SwrveNotificationFilter filter = SwrveUnitySDK.getNotificationFilter();
                 notification = filter.filterNotification(builder, notificationId, notificationDetails, jsonPayload);
-            } else if (SwrveUnitySDK.getNotificationCustomFilter() != null) {
-                SwrveNotificationCustomFilter customFilter = SwrveUnitySDK.getNotificationCustomFilter();
-                notification = customFilter.filterNotification(builder, notificationId, jsonPayload);
             } else {
                 notification = builder.build();
             }
-        } catch (Exception var9) {
-            SwrveLogger.e("Error calling the custom notification filter.", var9);
+        } catch (Exception ex) {
+            SwrveLogger.e("Error calling the custom notification filter.", ex);
             notification = builder.build();
         }
 

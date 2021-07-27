@@ -20,33 +20,13 @@ public class SwrveMessage : SwrveBaseMessage
     /// </summary>
     public List<SwrveMessageFormat> Formats;
 
-    /// <summary>
-    /// Position of the message in the screen.
-    /// </summary>
-    public Point Position = new Point (0, 0);
-
-    /// <summary>
-    /// Target position used for animation.
-    /// </summary>
-    public Point TargetPosition = new Point (0, 0);
-
-    /// <summary>
-    /// Background alpha.
-    /// </summary>
-    public float BackgroundAlpha = 1f;
-
-    /// <summary>
-    /// Global message animation extra scale.
-    /// </summary>
-    public float AnimationScale = 1f;
-
     private ISwrveAssetsManager SwrveAssetsManager;
 
-    private SwrveMessage (ISwrveAssetsManager swrveAssetsManager, SwrveInAppCampaign campaign)
+    private SwrveMessage(ISwrveAssetsManager swrveAssetsManager, SwrveInAppCampaign campaign)
     {
         this.SwrveAssetsManager = swrveAssetsManager;
         this.Campaign = campaign;
-        this.Formats = new List<SwrveMessageFormat> ();
+        this.Formats = new List<SwrveMessageFormat>();
     }
 
     /// <summary>
@@ -58,9 +38,9 @@ public class SwrveMessage : SwrveBaseMessage
     /// <returns>
     /// The format with the given orientation if available.
     /// </returns>
-    public SwrveMessageFormat GetFormat (SwrveOrientation orientation)
+    public SwrveMessageFormat GetFormat(SwrveOrientation orientation)
     {
-        IEnumerator<SwrveMessageFormat> formatsIt = Formats.GetEnumerator ();
+        IEnumerator<SwrveMessageFormat> formatsIt = Formats.GetEnumerator();
         while (formatsIt.MoveNext()) {
             if (formatsIt.Current.Orientation == orientation) {
                 return formatsIt.Current;
@@ -82,23 +62,23 @@ public class SwrveMessage : SwrveBaseMessage
     /// <returns>
     /// Parsed in-app message.
     /// </returns>
-    public static SwrveMessage LoadFromJSON (ISwrveAssetsManager swrveAssetsManager, SwrveInAppCampaign campaign, Dictionary<string, object> messageData, Color? defaultBackgroundColor)
+    public static SwrveMessage LoadFromJSON(ISwrveAssetsManager swrveAssetsManager, SwrveInAppCampaign campaign, Dictionary<string, object> messageData, Color? defaultBackgroundColor)
     {
-        SwrveMessage message = new SwrveMessage (swrveAssetsManager, campaign);
-        message.Id = MiniJsonHelper.GetInt (messageData, "id");
-        message.Name = (string)messageData ["name"];
+        SwrveMessage message = new SwrveMessage(swrveAssetsManager, campaign);
+        message.Id = MiniJsonHelper.GetInt(messageData, "id");
+        message.Name = (string)messageData["name"];
 
-        if (messageData.ContainsKey ("priority")) {
-            message.Priority = MiniJsonHelper.GetInt (messageData, "priority");
+        if (messageData.ContainsKey("priority")) {
+            message.Priority = MiniJsonHelper.GetInt(messageData, "priority");
         }
 
-        Dictionary<string, object> template = (Dictionary<string, object>)messageData ["template"];
-        IList<object> jsonFormats = (List<object>)template ["formats"];
+        Dictionary<string, object> template = (Dictionary<string, object>)messageData["template"];
+        IList<object> jsonFormats = (List<object>)template["formats"];
 
         for (int i = 0, j = jsonFormats.Count; i < j; i++) {
-            Dictionary<string, object> messageFormatData = (Dictionary<string, object>)jsonFormats [i];
-            SwrveMessageFormat messageFormat = SwrveMessageFormat.LoadFromJSON (swrveAssetsManager, message, messageFormatData, defaultBackgroundColor);
-            message.Formats.Add (messageFormat);
+            Dictionary<string, object> messageFormatData = (Dictionary<string, object>)jsonFormats[i];
+            SwrveMessageFormat messageFormat = SwrveMessageFormat.LoadFromJSON(swrveAssetsManager, message, messageFormatData, defaultBackgroundColor);
+            message.Formats.Add(messageFormat);
         }
 
         return message;
@@ -110,22 +90,42 @@ public class SwrveMessage : SwrveBaseMessage
     /// <returns>
     /// All the assets in the in-app message.
     /// </returns>
-    public HashSet<SwrveAssetsQueueItem> SetOfAssets ()
+    public HashSet<SwrveAssetsQueueItem> SetOfAssets(Dictionary<string, string> personalizationProperties)
     {
-        HashSet<SwrveAssetsQueueItem> messageAssets = new HashSet<SwrveAssetsQueueItem> ();
-        for(int fi = 0; fi < Formats.Count; fi++) {
+        HashSet<SwrveAssetsQueueItem> messageAssets = new HashSet<SwrveAssetsQueueItem>();
+        for (int fi = 0; fi < Formats.Count; fi++) {
             SwrveMessageFormat format = Formats[fi];
-            for(int ii = 0; ii < format.Images.Count; ii++) {
+            for (int ii = 0; ii < format.Images.Count; ii++) {
                 SwrveImage image = format.Images[ii];
-                if (!string.IsNullOrEmpty (image.File)) {
-                    messageAssets.Add (new SwrveAssetsQueueItem(image.File, image.File, true));
+                if (!string.IsNullOrEmpty(image.DynamicImageUrl)) {
+                    try {
+                        string resolvedUrl = SwrveTextTemplating.Apply(image.DynamicImageUrl, personalizationProperties);
+                        byte[] dynamicAssetBytes = System.Text.Encoding.UTF8.GetBytes(resolvedUrl);
+                        messageAssets.Add(new SwrveAssetsQueueItem(SwrveHelper.sha1(dynamicAssetBytes), resolvedUrl, true, true));
+                    } catch (SwrveSDKTextTemplatingException exception) {
+                        SwrveLog.LogWarning("Could not resolve personalization for: " + image.DynamicImageUrl + " " + exception.ToString());
+                    }
+                }
+                if (!string.IsNullOrEmpty(image.File)) {
+                    messageAssets.Add(new SwrveAssetsQueueItem(image.File, image.File, true, false));
                 }
             }
 
-            for(int bi = 0; bi < format.Buttons.Count; bi++) {
+            for (int bi = 0; bi < format.Buttons.Count; bi++) {
                 SwrveButton button = format.Buttons[bi];
-                if (!string.IsNullOrEmpty (button.Image)) {
-                    messageAssets.Add (new SwrveAssetsQueueItem(button.Image, button.Image, true));
+
+                if (!string.IsNullOrEmpty(button.DynamicImageUrl)) {
+                    try {
+                        string resolvedUrl = SwrveTextTemplating.Apply(button.DynamicImageUrl, personalizationProperties);
+                        byte[] dynamicAssetBytes = System.Text.Encoding.UTF8.GetBytes(resolvedUrl);
+                        messageAssets.Add(new SwrveAssetsQueueItem(SwrveHelper.sha1(dynamicAssetBytes), resolvedUrl, true, true));
+                    } catch (SwrveSDKTextTemplatingException exception) {
+                        SwrveLog.LogWarning("Could not resolve personalization for: " + button.DynamicImageUrl + " " + exception.ToString());
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(button.Image)) {
+                    messageAssets.Add(new SwrveAssetsQueueItem(button.Image, button.Image, true, false));
                 }
             }
         }
@@ -133,15 +133,117 @@ public class SwrveMessage : SwrveBaseMessage
     }
 
     /// <summary>
+    /// Check if a single asset name is available on disk.
+    /// </summary>
+    /// <returns>
+    /// True if the asset by that name has an asset on disk.
+    /// </returns>
+    public bool IsAssetDownloaded(string assetName)
+    {
+        if (assetName == null) {
+            return false;
+        }
+
+        return this.SwrveAssetsManager.AssetsOnDisk.Contains(assetName);
+    }
+
+    /// <summary>
     /// Check if the campaign assets have been downloaded.
     /// </summary>
     /// <returns>
-    /// True if the campaign assets have been downloaded.
+    /// True if the campaign has enough assets to be successfully displayed.
     /// </returns>
-    public bool IsDownloaded ()
+    public bool IsDownloaded(Dictionary<string, string> personalizationProperties)
     {
-        HashSet<SwrveAssetsQueueItem> assets = this.SetOfAssets ();
-        return assets.All (asset => this.SwrveAssetsManager.AssetsOnDisk.Contains(asset.Name));
+        if (Formats != null) {
+            for (int fi = 0; fi < Formats.Count; fi++) {
+                SwrveMessageFormat format = Formats[fi];
+                if (!IsButtonAssetDownloaded(format, personalizationProperties) || !IsImageAssetDownloaded(format, personalizationProperties)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Check if there are any features that aren't currenty supported by the SDK in a campaign
+    /// </summary>
+    /// <returns>
+    /// True if there are no features that aren't supported by the SDK
+    /// </returns>
+    public bool IsSupportedBySDK()
+    {
+        if (Formats != null) {
+            for (int fi = 0; fi < Formats.Count; fi++) {
+                SwrveMessageFormat format = Formats[fi];
+                for (int bi = 0; bi < format.Buttons.Count; bi++) {
+                    SwrveButton button = format.Buttons[bi];
+                    if (button.ActionType == SwrveActionType.Capability) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private bool IsButtonAssetDownloaded(SwrveMessageFormat format, Dictionary<string, string> personalizationProperties)
+    {
+        for (int bi = 0; bi < format.Buttons.Count; bi++) {
+            SwrveButton button = format.Buttons[bi];
+            if (!IsAssetDownloaded(button.Image, button, personalizationProperties)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool IsImageAssetDownloaded(SwrveMessageFormat format, Dictionary<string, string> personalizationProperties)
+    {
+        for (int ii = 0; ii < format.Images.Count; ii++) {
+            SwrveImage image = format.Images[ii];
+            if (!IsAssetDownloaded(image.File, image, personalizationProperties)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool IsAssetDownloaded(string baseAsset, SwrveWidget widget, Dictionary<string, string> personalizationProperties)
+    {
+        bool hasBaseImage = IsAssetDownloaded(baseAsset);
+        if (!hasBaseImage && !string.IsNullOrEmpty(widget.DynamicImageUrl)) {
+            return IsDynamicAssetDownloaded(widget.DynamicImageUrl, personalizationProperties);
+        }
+
+        if (!hasBaseImage) {
+            SwrveLog.LogInfo("Asset not yet downloaded: " + baseAsset);
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool IsDynamicAssetDownloaded(string dynamicImageUrl, Dictionary<string, string> personalizationProperties)
+    {
+        try {
+            string resolvedUrl = SwrveTextTemplating.Apply(dynamicImageUrl, personalizationProperties);
+            byte[] dynamicAssetBytes = System.Text.Encoding.UTF8.GetBytes(resolvedUrl);
+            if (IsAssetDownloaded(SwrveHelper.sha1(dynamicAssetBytes))) {
+                return true;
+            } else {
+                SwrveLog.LogInfo("Button dynamic asset not yet downloaded: " + resolvedUrl);
+                return false;
+            }
+        } catch (SwrveSDKTextTemplatingException exception) {
+            SwrveLog.LogWarning("Could not resolve personalization for: " + dynamicImageUrl + " " + exception.ToString());
+            return false;
+        }
     }
 
     #region SwrveBaseMessage
@@ -152,12 +254,12 @@ public class SwrveMessage : SwrveBaseMessage
     /// <returns>
     /// True if there is any format that supports the given orientation.
     /// </returns>
-    override public bool SupportsOrientation (SwrveOrientation orientation)
+    override public bool SupportsOrientation(SwrveOrientation orientation)
     {
         if (orientation == SwrveOrientation.Both) {
             return true;
         }
-        return (GetFormat (orientation) != null);
+        return (GetFormat(orientation) != null);
     }
 
     #endregion

@@ -50,19 +50,13 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         return retval;
     }
 
-    [MenuItem ("Swrve/Export unityPackage")]
-    public static void ExportUnityPackage ()
-    {
-        AssetDatabase.ExportPackage (assets, "../../buildtemp/Swrve.unityPackage", ExportPackageOptions.Recurse);
-    }
-
-    [MenuItem ("Swrve/Export unityPackageAmazon")]
+    [MenuItem ("Swrve/Export Amazon Pacakge")]
     public static void ExportUnityPackageAmazon ()
     {
         AssetDatabase.ExportPackage (assets, "../../buildtemp/SwrveAmazon.unityPackage", ExportPackageOptions.Recurse);
     }
 
-    [MenuItem ("Swrve/Export unityPackageFirebase")]
+    [MenuItem ("Swrve/Export Firebase Pacakge")]
     public static void ExportUnityPackageFirebase ()
     {
         AssetDatabase.ExportPackage (assets, "../../buildtemp/Swrve.unityPackage", ExportPackageOptions.Recurse);
@@ -200,7 +194,6 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     public static void AndroidPreBuild()
     {
         AndroidCheckAndAddManifest();
-        AndroidCorrectApplicationId();
     }
 
 
@@ -223,24 +216,6 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
                 File.WriteAllText(amFile, manifestSB.ToString());
             }
         }
-    }
-
-    private static void AndroidCorrectApplicationId()
-    {
-        string androidDir = Path.Combine (Directory.GetCurrentDirectory (), "Assets/Plugins/Android");
-        string[] dirs = Directory.GetDirectories (androidDir);
-        for (int i = 0; i < dirs.Length; i++) {
-            string project = dirs [i];
-            string amFile = Path.Combine(project, "_AndroidManifest.xml");
-            if (File.Exists (amFile)) {
-                string applicationIdentifier;
-                applicationIdentifier = PlayerSettings.applicationIdentifier;
-                File.WriteAllText (Path.Combine (project, "AndroidManifest.xml"),
-                                   File.ReadAllText (amFile).Replace ("${applicationId}", applicationIdentifier)
-                                  );
-            }
-        }
-        AssetDatabase.Refresh ();
     }
 
     public static void SetAppGroupConfigKey(string platform, string writePath=null)

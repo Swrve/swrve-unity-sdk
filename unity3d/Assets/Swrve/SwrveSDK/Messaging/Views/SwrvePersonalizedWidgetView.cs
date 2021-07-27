@@ -3,21 +3,25 @@ using UnityEngine;
 
 namespace SwrveUnity.Messaging
 {
-#pragma warning disable 0618
 /// <summary>
 /// Used internally to render in-app message personalized text using Unity IMGUI.
 /// </summary>
-public class SwrveMessagePersonalizedWidgetView : SwrveWidgetView
+public class SwrveMessagePersonalizedWidgetView : SwrveWidgetView, ISwrveButtonView
 {
     protected readonly SwrveWidget widget;
 
+    private bool Pressed = false;
+
+    /// <summary>
+    /// Pointer bounds.
+    /// </summary>
+    public Rect PointerRect;
+
     // Visible for tests
     public GUIContent content;
+    public SwrveButton button;
+    public bool isButton;
     protected GUIStyle style;
-    protected int width;
-    protected int height;
-    protected SwrveButton button;
-    protected bool isButton;
 
     protected Color backgroundColor;
     protected Color clickTintColor;
@@ -33,14 +37,48 @@ public class SwrveMessagePersonalizedWidgetView : SwrveWidgetView
         backgroundColor = inAppConfig.PersonalizedTextBackgroundColor;
         clickTintColor = inAppConfig.ButtonClickTintColor;
 
-        if (widget.Texture != null) {
-            FitTextSizeToImage(widget.Texture.width, widget.Texture.height);
-        }
-
         isButton = (widget is SwrveButton);
         if (isButton) {
             button = (SwrveButton)widget;
         }
+    }
+
+    public override string GetTexturePath()
+    {
+        if (isButton) {
+            return this.button.Image;
+        } else {
+            return ((SwrveImage)widget).File;
+        }
+    }
+
+    public override void SetTexture(Texture2D texture)
+    {
+        this.Texture = texture;
+
+        if (Texture != null) {
+            FitTextSizeToImage(Texture.width, Texture.height);
+        }
+    }
+
+    public void ProcessButtonDown(Vector3 mousePosition)
+    {
+        if (isButton && PointerRect.Contains(mousePosition)) {
+            Pressed = true;
+        }
+    }
+
+    public SwrveButtonClickResult ProcessButtonUp(Vector3 mousePosition, SwrveMessageTextTemplatingResolver templatingResolver)
+    {
+        SwrveButtonClickResult clickResult = null;
+        if (isButton && PointerRect.Contains(mousePosition) && Pressed) {
+            string resolvedAction = templatingResolver.ActionResolution[button];
+            clickResult = new SwrveButtonClickResult(button, resolvedAction);
+        }
+
+        Pressed = false;
+
+        return clickResult;
     }
 
     private void FitTextSizeToImage(int maxWidth, int maxHeight)
@@ -53,45 +91,45 @@ public class SwrveMessagePersonalizedWidgetView : SwrveWidgetView
         style.fontSize = (int)(Math.Min(maxWidth * scalex, maxHeight * scaley));
     }
 
-    public void Render(float scale, int centerx, int centery, bool rotatedFormat, ISwrveMessageAnimator animator)
+    public override void Render(float scale, int centerx, int centery, bool rotatedFormat)
     {
-        if (widget.Texture != null) {
-            int textureWidth = widget.Texture.width;
-            int textureHeight = widget.Texture.height;
+        if (Texture != null) {
+            int textureWidth = Texture.width;
+            int textureHeight = Texture.height;
 
-            float computedSize = scale * widget.AnimationScale;
-            Point centerPoint = widget.GetCenteredPosition (textureWidth, textureHeight, computedSize, scale);
+            float computedSize = scale;
+            Point centerPoint = widget.GetCenteredPosition(textureWidth, textureHeight, computedSize, scale);
             centerPoint.X += centerx;
             centerPoint.Y += centery;
-            widget.Rect.x = centerPoint.X;
-            widget.Rect.y = centerPoint.Y;
-            widget.Rect.width = textureWidth * computedSize;
-            widget.Rect.height = textureHeight * computedSize;
+            Rect.x = centerPoint.X;
+            Rect.y = centerPoint.Y;
+            Rect.width = textureWidth * computedSize;
+            Rect.height = textureHeight * computedSize;
 
-            bool pressed = false;
             if (isButton) {
-                pressed = button.Pressed;
                 if (rotatedFormat) {
                     // Rotate 90 degrees the hit area
-                    Point widgetCenter = button.GetCenter (textureWidth, textureHeight, computedSize);
-                    button.PointerRect.x = centerx - (widget.Position.Y * scale) + widgetCenter.Y;
-                    button.PointerRect.y = centery + (widget.Position.X * scale) + widgetCenter.X;
-                    button.PointerRect.width = widget.Rect.height;
-                    button.PointerRect.height = widget.Rect.width;
+                    Point widgetCenter = button.GetCenter(textureWidth, textureHeight, computedSize);
+                    PointerRect.x = centerx - (widget.Position.Y * scale) + widgetCenter.Y;
+                    PointerRect.y = centery + (widget.Position.X * scale) + widgetCenter.X;
+                    PointerRect.width = Rect.height;
+                    PointerRect.height = Rect.width;
                 } else {
-                    button.PointerRect = button.Rect;
-                }
-                if (animator != null) {
-                    animator.AnimateButtonPressed (button);
+                    PointerRect = Rect;
                 }
             }
-            GUI.color = (pressed)? backgroundColor * clickTintColor : backgroundColor;
-            GUI.DrawTexture (widget.Rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0.0f);
+            ImgGUI.color = (Pressed)? backgroundColor * clickTintColor : backgroundColor;
+            ImgGUI.DrawTexture (Rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0.0f);
 
-            GUI.color = (pressed)? Color.white * clickTintColor : Color.white;
-            GUI.Label(widget.Rect, content, style);
+            ImgGUI.color = (Pressed)? Color.white * clickTintColor : Color.white;
+            ImgGUI.Label(Rect, content, style);
         }
     }
+
+    // Visible for tests
+    public SwrveButton GetButton()
+    {
+        return button;
+    }
 }
-#pragma warning restore 0618
 }

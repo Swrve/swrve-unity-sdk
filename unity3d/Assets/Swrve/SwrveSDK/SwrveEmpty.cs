@@ -1,5 +1,4 @@
 ﻿#pragma warning disable 0436
-#pragma warning disable 0618
 using UnityEngine;
 using System;
 using System.Linq;
@@ -21,10 +20,10 @@ using SwrveUnity.IAP;
 /// </remarks>
 public class SwrveEmpty : SwrveSDK
 {
-    public override void Init (MonoBehaviour container, int appId, string apiKey, SwrveConfig config = null)
+    public override void Init(MonoBehaviour container, int appId, string apiKey, SwrveConfig config = null)
     {
         this.Container = container;
-        this.ResourceManager = new SwrveUnity.ResourceManager.SwrveResourceManager ();
+        this.ResourceManager = new SwrveUnity.ResourceManager.SwrveResourceManager();
         this.prefabName = container.name;
         this.appId = appId;
         this.apiKey = apiKey;
@@ -33,67 +32,57 @@ public class SwrveEmpty : SwrveSDK
         this.Initialised = true;
     }
 
-    public override bool SendQueuedEvents ()
+    public override bool SendQueuedEvents()
     {
         return true;
     }
 
-    public override void GetUserResources (Action<Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
+    public override void GetUserResources(Action<Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
         //do nothing
     }
 
-    public override void GetUserResourcesDiff (Action<Dictionary<string, Dictionary<string, string>>, Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
+    public override void GetUserResourcesDiff(Action<Dictionary<string, Dictionary<string, string>>, Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
         //do nothing
     }
 
-    public override void GetRealtimeUserProperties (Action<Dictionary<string, string>, string> onResult, Action<Exception> onError)
+    public override void GetRealtimeUserProperties(Action<Dictionary<string, string>, string> onResult, Action<Exception> onError)
     {
         //do nothing
     }
 
-    public override void FlushToDisk (bool saveEventsBeingSent = false)
+    public override void FlushToDisk(bool saveEventsBeingSent = false)
     {
         //do nothing
     }
 
-    public override bool IsMessageDisplaying ()
+    public override bool IsMessageDisplaying()
     {
         return false;
     }
 
-    public override SwrveBaseMessage GetBaseMessageForEvent (string eventName, IDictionary<string, string> payload)
-    {
-        return null;
-    }
-
-    public override SwrveConversation GetConversationForEvent (string eventName, IDictionary<string, string> payload=null)
-    {
-        return null;
-    }
-
-    public override IEnumerator ShowMessageForEvent (string eventName, SwrveBaseMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
+    protected override IEnumerator ShowMessageForEvent(string eventName, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
     {
         yield return null;
     }
 
-    public override IEnumerator ShowMessageForEvent (string eventName, IDictionary<string, string> payload, SwrveBaseMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
+    protected override IEnumerator ShowMessageForEvent(string eventName, IDictionary<string, string> payload, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
     {
         yield return null;
     }
 
-    public override IEnumerator ShowConversationForEvent (string eventName, SwrveConversation conversation)
+    protected override IEnumerator ShowConversationForEvent(string eventName, SwrveConversation conversation)
     {
         yield return null;
     }
 
-    public override void DismissMessage ()
+    public override void DismissMessage()
     {
         // do nothing
     }
 
-    public override void RefreshUserResourcesAndCampaigns ()
+    public override void RefreshUserResourcesAndCampaigns()
     {
         // do nothing
     }
@@ -103,34 +92,34 @@ public class SwrveEmpty : SwrveSDK
         // do nothing
     }
 
-    public override void NamedEvent (string name, Dictionary<string, string> payload = null)
+    public override void NamedEvent(string name, Dictionary<string, string> payload = null)
     {
         // do nothing
     }
 
-    public override void UserUpdate (Dictionary<string, string> attributes)
+    public override void UserUpdate(Dictionary<string, string> attributes)
     {
         // do nothing
     }
 
-    public override void UserUpdate (string name, DateTime date)
+    public override void UserUpdate(string name, DateTime date)
     {
         // do nothing
     }
 
-    public override void Purchase (string item, string currency, int cost, int quantity)
+    public override void Purchase(string item, string currency, int cost, int quantity)
     {
     }
 
-    public override void Iap (int quantity, string productId, double productPrice, string currency, IapRewards rewards = null)
+    public override void Iap(int quantity, string productId, double productPrice, string currency, IapRewards rewards = null)
     {
     }
 
-    public override void CurrencyGiven (string givenCurrency, double amount)
+    public override void CurrencyGiven(string givenCurrency, double amount)
     {
     }
 
-    public override void HandleDeeplink (string url)
+    public override void HandleDeeplink(string url)
     {
     }
 
@@ -138,37 +127,32 @@ public class SwrveEmpty : SwrveSDK
     {
     }
 
-    public override void LoadFromDisk ()
+    public override void LoadFromDisk()
     {
     }
 
-    public override Dictionary<string, string> GetDeviceInfo ()
+    protected override Dictionary<string, string> GetDeviceInfo()
     {
-        return new Dictionary<string, string> ();
+        return new Dictionary<string, string>();
     }
 
-    public override void OnSwrvePause ()
-    {
-    }
-
-    public override void OnSwrveResume ()
+    public override void OnSwrvePause()
     {
     }
 
-    public override void OnSwrveDestroy ()
+    public override void OnSwrveResume()
     {
     }
 
-    public override List<SwrveBaseCampaign> GetCampaigns ()
-    {
-        return new List<SwrveBaseCampaign> ();
-    }
-
-    public override void ButtonWasPressedByUser (SwrveButton button)
+    public override void OnSwrveDestroy()
     {
     }
 
-    public override void MessageWasShownToUser (SwrveMessageFormat messageFormat)
+    protected override void ButtonWasPressedByUser(SwrveButton button)
+    {
+    }
+
+    protected override void MessageWasShownToUser(SwrveMessageFormat messageFormat)
     {
     }
 
@@ -180,13 +164,22 @@ public class SwrveEmpty : SwrveSDK
     {
     }
 
+    public override string GetPersonalizedEmbeddedMessageData(SwrveEmbeddedMessage message, Dictionary<string, string> personalizationProperties)
+    {
+        return null;
+    }
+    public override string GetPersonalizedText(string text, Dictionary<string, string> personalizationProperties)
+    {
+        return null;
+    }
+
     public override void ShowMessageCenterCampaign(SwrveBaseCampaign campaign, SwrveOrientation? orientation = null, Dictionary<string, string> properties = null)
     {
     }
 
     public override List<SwrveBaseCampaign> GetMessageCenterCampaigns(SwrveOrientation? orientation = null, Dictionary<string, string> properties = null)
     {
-        return new List<SwrveBaseCampaign> ();
+        return new List<SwrveBaseCampaign>();
     }
 
     public override void RemoveMessageCenterCampaign(SwrveBaseCampaign campaign)
@@ -195,12 +188,6 @@ public class SwrveEmpty : SwrveSDK
 
     public override void MarkMessageCenterCampaignAsSeen(SwrveBaseCampaign campaign)
     {
-    }
-
-    [System.Obsolete("Use GetBaseMessageForId instead. This will be removed in 8.0")]
-    public override SwrveMessage GetMessageForId (int messageId)
-    {
-        return null;
     }
 
     public override void Identify(string userId, OnSuccessIdentify onSuccess, OnErrorIdentify onError)
@@ -218,5 +205,4 @@ public class SwrveEmpty : SwrveSDK
     }
 }
 
-#pragma warning restore 0618
 #pragma warning restore 0436

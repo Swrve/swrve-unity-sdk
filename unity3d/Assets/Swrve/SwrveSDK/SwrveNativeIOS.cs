@@ -265,9 +265,6 @@ public void IapApple(int quantity, string productId, double productPrice, string
     private static extern string _swrveiOSLocaleCountry();
 
     [DllImport ("__Internal")]
-    private static extern string _swrveiOSIDFA();
-
-    [DllImport ("__Internal")]
     private static extern string _swrveiOSIDFV();
 
     [DllImport ("__Internal")]
@@ -513,16 +510,6 @@ public void IapApple(int quantity, string productId, double productPrice, string
                 }
             } catch (Exception e) {
                 SwrveLog.LogWarning("Couldn't get device IDFV, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
-            }
-        }
-        if (config.LogAppleIDFA) {
-            try {
-                String idfa = _swrveiOSIDFA();
-                if (!string.IsNullOrEmpty(idfa)) {
-                    deviceInfo ["swrve.IDFA"] = idfa;
-                }
-            } catch (Exception e) {
-                SwrveLog.LogWarning("Couldn't get device IDFA, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
             }
         }
 

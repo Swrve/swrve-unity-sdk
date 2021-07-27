@@ -15,13 +15,11 @@
 +(char*) carrierCode;
 +(char*) localeCountry;
 +(char*) IDFV;
-+(char*) IDFA;
 +(void) registerForPushNotifications:(NSString*)jsonCategorySet andProvisional:(BOOL)provisional;
 +(bool) isSupportediOSVersion;
 +(char*) deviceType;
 +(char*) platformOS;
 
 +(NSSet*) categoryFromJson:(NSString*)jsonString;
-+ (BOOL)isValidIDFA:(NSString *)idfa;
 
 @end

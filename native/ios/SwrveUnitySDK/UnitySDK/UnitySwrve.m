@@ -1,5 +1,6 @@
 #import "UnitySwrve.h"
 #import "UnitySwrveHelper.h"
+#import "SwrveSEConfig.h"
 
 #include <sys/time.h>
 #import <CommonCrypto/CommonHMAC.h>
@@ -11,6 +12,7 @@
 #if !TARGET_OS_TV
 @interface SwrvePush()
 - (BOOL)didReceiveRemoteNotification:(NSDictionary *)userInfo withBackgroundCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary *))completionHandler withLocalUserId:(NSString *) localUserId API_AVAILABLE(ios(7.0));
+- (void)setCommonDelegate:(id <SwrveCommonDelegate>)commonDelegate;
 #endif
 @end
 
@@ -104,14 +106,14 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     if((jsonConfig == nil) || (0 == [jsonConfig length])) {
         return;
     }
-    DebugLog(@"Full config dict: %@", jsonConfig);
+    [SwrveLogger debug:@"Full config dict: %@", jsonConfig];
 
     NSError *error = nil;
     NSDictionary *newConfigDict = [NSJSONSerialization JSONObjectWithData:[jsonConfig dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableContainers error:&error];
     if(error == nil) {
         UnitySwrve *swrve = [UnitySwrve sharedInstance];
         swrve.configDict = newConfigDict;
-        DebugLog(@"Full config dict: %@", swrve.configDict);
+        [SwrveLogger debug:@"Full config dict: %@", swrve.configDict];
 
         swrve.deviceInfo = [swrve.configDict objectForKey:@"deviceInfo"];
         [preferences setObject:jsonConfig forKey:spKey];
@@ -155,7 +157,13 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 }
 
 - (NSString *)userId {
-    return [self stringFromConfig:@"userId"];
+    NSString *userId = [self stringFromConfig:@"userId"];
+    // userId could be nil if app was killed and unity engine has not been started. eg: when receiving a silent push and app is killed
+    if (!userId || [userId isKindOfClass:[NSNull class]]) {
+        NSDictionary *deliveryConfig = [SwrveSEConfig deliveryConfig:[self appGroupIdentifier]];
+        userId = [deliveryConfig objectForKey:SwrveDeliveryRequiredConfigUserIdKey];
+    }
+    return userId;
 }
 
 - (void)setUserId:(NSString *) userID {
@@ -241,7 +249,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 }
 
 - (BOOL)processPermissionRequest:(NSString *)action {
-    DebugLog(@"%@", action);
+    [SwrveLogger debug:@"%@", action];
     return TRUE;
 }
 
@@ -338,7 +346,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
             completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
 
                 if (error){
-                    DebugLog(@"Error opening HTTP stream: %@ %@", [error localizedDescription], [error localizedFailureReason]);
+                    [SwrveLogger error:@"Error opening HTTP stream: %@ %@", [error localizedDescription], [error localizedFailureReason]];
                     [self setEventBufferBytes:self.eventBufferBytes + bytes];
                     NSMutableArray* currentBuffer = self.eventBuffer;
                     @synchronized(currentBuffer) {
@@ -347,8 +355,8 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
                     return;
                 }
                 else{
-                    DebugLog(@"response: %@", response);
-                    DebugLog(@"data: %@", data);
+                    [SwrveLogger debug:@"response: %@", response];
+                    [SwrveLogger debug:@"data: %@", data];
                 }
             }];
 }
@@ -588,7 +596,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
             pushId = [((NSNumber*)pushIdentifier) stringValue];
         }
         else {
-            DebugLog(@"Unknown Swrve notification ID class for _p attribute", nil);
+            [SwrveLogger error:@"Unknown Swrve notification ID class for _p attribute", nil];
             return;
         }
 
@@ -614,7 +622,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
                 // Unity will send the engagement event when the app opens
                 [self sendPushResponse:userInfo];
-                DebugLog(@"Performed a Direct Press on Swrve notification with ID %@", pushId);
+                [SwrveLogger debug:@"Performed a Direct Press on Swrve notification with ID %@", pushId];
             } else {
                 NSDictionary *swrveValues = [userInfo objectForKey:SwrveNotificationContentIdentifierKey];
                 NSArray *swrvebuttons = [swrveValues objectForKey:SwrveNotificationButtonListKey];
@@ -628,7 +636,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
                     NSString *actionText = [selectedButton objectForKey:SwrveNotificationButtonTitleKey];
 
                     // Send button click event
-                    DebugLog(@"Selected Button:'%@' on Swrve notification with ID %@", identifier, pushId);
+                    [SwrveLogger debug:@"Selected Button:'%@' on Swrve notification with ID %@", identifier, pushId];
                     NSMutableDictionary* actionEvent = [[NSMutableDictionary alloc] init];
                     [actionEvent setValue:pushId forKey:@"id"];
                     [actionEvent setValue:@"push" forKey:@"campaignType"];
@@ -663,14 +671,14 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
                     // Then send it onto the Unity layer
                     [self sendPushResponse:userInfo];
                 } else {
-                    DebugLog(@"Receieved a push with an unrecognised identifier %@", identifier);
+                    [SwrveLogger debug:@"Receieved a push with an unrecognised identifier %@", identifier];
                 }
             }
         } else {
-            DebugLog(@"Got Swrve notification with ID %@, ignoring as we already processed it", pushId);
+            [SwrveLogger debug:@"Got Swrve notification with ID %@, ignoring as we already processed it", pushId];
         }
     } else {
-        DebugLog(@"Got unidentified notification", nil);
+        [SwrveLogger debug:@"Got unidentified notification", nil];
         return;
     }
 }
@@ -679,15 +687,16 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     NSURL *url = [NSURL URLWithString:pushDeeplink];
     BOOL canOpen = [[SwrveCommon sharedUIApplication] canOpenURL:url];
     if (url != nil && canOpen) {
-        DebugLog(@"Action - %@ - handled.  Sending to application as URL", pushDeeplink);
+        [SwrveLogger debug:@"Action - %@ - handled.  Sending to application as URL", pushDeeplink];
         [self deeplinkReceived:url];
     } else {
-        DebugLog(@"Could not process push deeplink - %@", pushDeeplink);
+        [SwrveLogger error:@"Could not process push deeplink - %@", pushDeeplink];
     }
 }
 
 + (BOOL)didReceiveRemoteNotification:(NSDictionary *)userInfo withBackgroundCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary*))completionHandler {
     SwrvePush *swrvePush = [SwrvePush new];
+    [swrvePush setCommonDelegate:[UnitySwrve sharedInstance]];
     return [swrvePush didReceiveRemoteNotification:userInfo withBackgroundCompletionHandler:completionHandler withLocalUserId:[[UnitySwrve sharedInstance] userId]];
 }
 
@@ -696,7 +705,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 -(void)deeplinkReceived:(NSURL *)url {
     UIApplication *application = [UIApplication sharedApplication];
     [application openURL:url options:@{} completionHandler:^(BOOL success) {
-        DebugLog(@"Opening url [%@] successfully: %d", url, success);
+        [SwrveLogger debug:@"Opening url [%@] successfully: %d", url, success];
     }];
 }
 

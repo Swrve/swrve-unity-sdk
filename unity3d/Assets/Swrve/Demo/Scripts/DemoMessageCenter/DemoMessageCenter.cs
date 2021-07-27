@@ -14,7 +14,7 @@ public class DemoMessageCenter : MonoBehaviour
     {
         SwrveConfig config = new SwrveConfig();
         config.ResourcesUpdatedCallback = ResourcesUpdatedCallback;
-        config.InAppMessageListener = new MyMessageListener();
+        config.InAppMessageConfig.MessageListener = new MyMessageListener();
 
         // To use the EU stack, include this in your config.
         // config.SelectedStack = SwrveUnity.Stack.EU;

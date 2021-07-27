@@ -10,6 +10,11 @@ namespace SwrveUnity
 public class SwrveInAppMessageConfig
 {
     /// <summary>
+    /// Default in-app background color if none is set in the template.
+    /// </summary>
+    public Color? DefaultBackgroundColor = null;
+
+    /// <summary>
     /// The in-app message button tint color when a button is clicked.
     /// </summary>
     public Color ButtonClickTintColor = new Color (0.5f, 0.5f, 0.5f);
@@ -35,8 +40,24 @@ public class SwrveInAppMessageConfig
     public ISwrveMessagePersonalizationProvider PersonalizationProvider = null;
 
     /// <summary>
-    /// Used to animate in-app messages.
+    /// Custom button listener for all in-app messages.
     /// </summary>
-    public ISwrveMessageAnimator Animator;
+    public ISwrveCustomButtonListener CustomButtonListener = null;
+
+    /// <summary>
+    /// Clipboard listener for all in-app messages.
+    /// </summary>
+    public ISwrveClipboardButtonListener ClipboardButtonListener = null;
+
+    /// <summary>
+    /// In-app message listener.
+    /// </summary>
+    public ISwrveMessageListener MessageListener = null;
+
+    /// <summary>
+    /// Disable default In-app renderer and manage messages manually.
+    /// </summary>
+    public ISwrveTriggeredMessageListener TriggeredMessageListener = null;
+
 }
 }

@@ -9,8 +9,8 @@ Have a look at the quick integration guide at http://docs.swrve.com/developer-do
 
 Requirements
 ------------
-### Unity 2017.4+
-We require a Unity version higher than 2017.4 to be able to integrate easily.
+### Unity 2019.4+
+We require a Unity version higher than 2019.4 to be able to integrate easily.
 
 How to run the demo
 -------------------

@@ -78,7 +78,11 @@ public class RESTClient : IRESTClient
     {
 #if SWRVE_SUPPORTED_PLATFORM
         try {
+#if UNITY_2020_1_OR_NEWER
+            if (www.result != UnityWebRequest.Result.ConnectionError) {
+#else
             if (!www.isNetworkError) {
+#endif
                 // - made it there and it was ok
                 string responseBody = null;
                 bool success = ResponseBodyTester.TestUTF8 (www.downloadHandler.data, out responseBody);
@@ -103,7 +107,8 @@ public class RESTClient : IRESTClient
                 AddMetrics (url, wwwTime, true);
                 listener.Invoke (new RESTResponse (error: UnityWwwHelper.DeduceWwwError (www)));
             }
-        } catch(Exception exp) {
+        }
+        catch(Exception exp) {
             SwrveLog.LogError(exp);
         }
 #endif

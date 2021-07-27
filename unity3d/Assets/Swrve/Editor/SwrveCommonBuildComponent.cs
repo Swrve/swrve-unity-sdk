@@ -27,17 +27,10 @@ public class SwrveCommonBuildComponent
         EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTargetGroup.iOS, BuildTarget.iOS);
         PlayerSettings.applicationIdentifier = applicationIdentifier;
 
-#if UNITY_2018_1_OR_NEWER
         var summary = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt).summary;
         if (summary.result == UnityEditor.Build.Reporting.BuildResult.Failed) {
             throw new Exception ("Build had " + summary.totalErrors + " errors");
         }
-#else
-        string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt);
-        if (error != null && !error.Equals (string.Empty)) {
-            throw new Exception (error);
-        }
-#endif
         UnityEngine.Debug.Log ("Built " + fileName);
     }
 
@@ -48,41 +41,11 @@ public class SwrveCommonBuildComponent
         PlayerSettings.applicationIdentifier = applicationIdentifier;
         SwrveBuildComponent.AndroidPreBuild ();
 
-        // Fix for ANDROID_HOME Unity bug
-        FixAndroidHomeNotFound ();
-
-        // Build Android
-#if UNITY_2018_1_OR_NEWER
         var summary = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.Android, opt).summary;
         if (summary.result == UnityEditor.Build.Reporting.BuildResult.Failed) {
             throw new Exception ("Build had " + summary.totalErrors + " errors");
         }
-#else
-        string error = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.Android, opt);
-        if (error != null && !error.Equals (string.Empty)) {
-            throw new Exception (error);
-        }
-#endif
         UnityEngine.Debug.Log ("Built " + fileName);
-    }
-
-    protected static string FixAndroidHomeNotFound ()
-    {
-        // Get the Android SDK location
-        string androidSDKLocation = EditorPrefs.GetString ("AndroidSdkRoot");
-        if (string.IsNullOrEmpty (androidSDKLocation)) {
-            androidSDKLocation = Environment.GetEnvironmentVariable ("UNITY_ANDROID_HOME");
-            if (string.IsNullOrEmpty (androidSDKLocation)) {
-                androidSDKLocation = Environment.GetEnvironmentVariable ("ANDROID_HOME");
-            }
-            if (string.IsNullOrEmpty (androidSDKLocation)) {
-                // Build machine default location
-                androidSDKLocation = "/Users/Shared/android-sdk/sdk/";
-            }
-            EditorPrefs.SetString ("AndroidSdkRoot", androidSDKLocation);
-        }
-
-        return androidSDKLocation;
     }
 
     protected static void InstallIOSBuild (string workingDirectory, string filePath)

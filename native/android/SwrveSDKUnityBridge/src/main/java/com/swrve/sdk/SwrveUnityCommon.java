@@ -6,11 +6,11 @@ import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 
 import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -297,6 +297,11 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
         return getStringDetail(USER_ID_KEY);
     }
 
+    @Override
+    public boolean isTrackingStateStopped() {
+        return false; // not used in Unity yet
+    }
+
     @CalledByUnity
     public void setUserId(final String userId) {
         try {
@@ -385,18 +390,12 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
 
     @Override
     public void sendEventsInBackground(Context context, String userId, ArrayList<String> events) {
-
         QaUser.wrappedEvents(new ArrayList<>(events)); // use copy of events
+        getSwrveBackgroundEventSender(context).send(userId, events);
+    }
 
-        Intent intent;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            // Avoid using the deprecated wakeful receiver
-            SwrveUnityEventSenderJobService.scheduleJob(context, events);
-        } else {
-            intent = new Intent(context, SwrveUnityWakefulReceiver.class);
-            intent.putStringArrayListExtra(SwrveUnityBackgroundEventSender.EXTRA_EVENTS, events);
-            context.sendBroadcast(intent);
-        }
+    protected SwrveUnityBackgroundEventSender getSwrveBackgroundEventSender(Context context) {
+        return new SwrveUnityBackgroundEventSender(context);
     }
 
     @Override
@@ -439,7 +438,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     }
 
     @Override
-    public JSONObject getDeviceInfo() throws JSONException {
+    public JSONObject getDeviceInfo() {
         if (currentDetails.containsKey(DEVICE_INFO_KEY)) {
             return (JSONObject) currentDetails.get(DEVICE_INFO_KEY);
         }
@@ -486,6 +485,13 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public static String getPlatformOS() {
         final Context context = UnityPlayer.currentActivity;
         return SwrveHelper.getPlatformOS(context);
+    }
+
+    @CalledByUnity
+    public static boolean getAreNotificationsEnabled() {
+        final Context context = UnityPlayer.currentActivity;
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(context);
+        return notificationManagerCompat.areNotificationsEnabled();
     }
 
     @Override

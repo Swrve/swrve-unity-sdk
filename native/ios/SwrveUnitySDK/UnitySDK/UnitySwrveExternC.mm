@@ -10,8 +10,8 @@
 #import "SwrveNotificationManager.h"
 #import "SwrvePermissions.h"
 #import "SwrveCampaignInfluence.h"
-#import "SwrveCampaignDelivery.h"
 #import "SwrveQA.h"
+#import "SwrveSEConfig.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -72,12 +72,6 @@ extern "C"
     {
         return [UnitySwrveHelper IDFV];
     }
-
-    char* _swrveiOSIDFA()
-    {
-        return [UnitySwrveHelper IDFA];
-    }
-
 
     void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet, bool provisional)
     {
@@ -197,13 +191,13 @@ extern "C"
     }
 
     void _saveConfigForPushDelivery() {
-        [SwrveCampaignDelivery saveConfigForPushDeliveryWithUserId:[[UnitySwrve sharedInstance] userId]
-                                                WithEventServerUrl:[[UnitySwrve sharedInstance] eventsServer]
-                                                      WithDeviceId:[[UnitySwrve sharedInstance] deviceUUID]
-                                                  WithSessionToken:[[UnitySwrve sharedInstance] sessionToken]
-                                                    WithAppVersion:[[UnitySwrve sharedInstance] appVersion]
-                                                     ForAppGroupID:[[UnitySwrve sharedInstance] appGroupIdentifier]
-                                                          isQAUser:[[SwrveQA sharedInstance] isQALogging]];
+        [SwrveSEConfig saveAppGroupId:[[UnitySwrve sharedInstance] appGroupIdentifier]
+                               userId:[[UnitySwrve sharedInstance] userId]
+                       eventServerUrl:[[UnitySwrve sharedInstance] eventsServer]
+                             deviceId:[[UnitySwrve sharedInstance] deviceUUID]
+                         sessionToken:[[UnitySwrve sharedInstance] sessionToken]
+                           appVersion:[[UnitySwrve sharedInstance] appVersion]
+                             isQAUser:[[SwrveQA sharedInstance] isQALogging]];
     }
 
     void _clearAllAuthenticatedNotifications(void)

@@ -63,7 +63,7 @@ public class SwrveFirebaseMessagingServiceTest extends SwrveBaseTest {
         serviceSpy.onMessageReceived(message);
 
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
-        Mockito.verify(pushServiceManagerMock, atLeastOnce()).processRemoteNotification(bundleCaptor.capture());
+        Mockito.verify(pushServiceManagerMock, atLeastOnce()).processMessage(bundleCaptor.capture());
         Bundle capturedBundle = bundleCaptor.getAllValues().get(0);
         assertNotNull(capturedBundle);
         assertEquals(capturedBundle.size(), 3);

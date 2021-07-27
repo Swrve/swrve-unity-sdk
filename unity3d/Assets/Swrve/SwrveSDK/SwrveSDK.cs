@@ -27,8 +27,8 @@ using System.Runtime.InteropServices;
 #warning "Please note that the Windows build of the Unity SDK is not supported by Swrve and customers use it at their own risk.  It is not covered by any performance warranty otherwise offered by Swrve"
 #endif
 
-#if (UNITY_2_6 || UNITY_2_6_1 || UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5 || !UNITY_2017_4_OR_NEWER)
-#error "The Swrve SDK needs to be compiled with Unity 2017.4+"
+#if (UNITY_2_6 || UNITY_2_6_1 || UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5 || !UNITY_2019_4_OR_NEWER)
+#error "The Swrve SDK needs to be compiled with Unity 2019.4+"
 #endif
 
 /// <summary>
@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 /// </summary>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "7.3.2";
+    public const string SdkVersion = "8.0.0";
 
     protected int appId;
     /// <summary>
@@ -164,9 +164,10 @@ public partial class SwrveSDK
 
         // Load install date
         string installTimeSecondsFromFile = storage.Load(AppInstallTimeSecondsSave);
-        if (string.IsNullOrEmpty(installTimeSecondsFromFile)) {
+        if (string.IsNullOrEmpty(installTimeSecondsFromFile) || string.Equals("0", installTimeSecondsFromFile)) {
+            // check for "0" because of bug between 6.0.0 and 7.3.2
             installTimeSeconds = GetSessionTime();
-            storage.Save(AppInstallTimeSecondsSave, userInitTimeSeconds.ToString());
+            storage.Save(AppInstallTimeSecondsSave, installTimeSeconds.ToString());
         } else {
             long.TryParse(installTimeSecondsFromFile, out installTimeSeconds);
         }
@@ -187,12 +188,15 @@ public partial class SwrveSDK
         }
 
         // End points
-        config.CalculateEndpoints(appId);
-        string abTestServer = config.ContentServer;
-        eventsUrl = config.EventsServer + "/1/batch";
-        identifyUrl = config.IdentityServer + "/identify";
-        abTestResourcesDiffUrl = abTestServer + "/api/1/user_resources_diff";
-        resourcesAndCampaignsUrl = abTestServer + "/api/1/user_content";
+        contentServer = string.IsNullOrEmpty(config.ContentServer) ? GetSwrveEndpoint(appId, config.SelectedStack, "content.swrve.com") : config.ContentServer;
+        eventsServer = string.IsNullOrEmpty(config.EventsServer) ? GetSwrveEndpoint(appId, config.SelectedStack, "api.swrve.com") : config.EventsServer;
+        identityServer = string.IsNullOrEmpty(config.IdentityServer) ? GetSwrveEndpoint(appId, config.SelectedStack, "identity.swrve.com") : config.IdentityServer;
+
+        // Produce Urls
+        eventsUrl = eventsServer + "/1/batch";
+        identifyUrl = identityServer + "/identify";
+        abTestResourcesDiffUrl = contentServer + "/api/1/user_resources_diff";
+        resourcesAndCampaignsUrl = contentServer + "/api/1/user_content";
 
         // Event Buffer
         eventBufferStringBuilder = new StringBuilder(config.MaxBufferChars);
@@ -219,7 +223,7 @@ public partial class SwrveSDK
             }
         }
 #endif
-        SwrveQaUser.Init(Container, config.EventsServer, apiKey, appId, UserId, GetAppVersion(), GetDeviceUUID(), storage);
+        SwrveQaUser.Init(Container, eventsServer, apiKey, appId, UserId, GetAppVersion(), GetDeviceUUID(), storage);
 
         if (SwrveHelper.IsOnDevice()) {
             InitNative();
@@ -243,7 +247,7 @@ public partial class SwrveSDK
 #elif UNITY_IPHONE
                     config.AppStore = SwrveAppStore.Apple;
 #else
-                    throw new Exception ("App store must be apple, google, amazon or a custom app store");
+                    throw new Exception("App store must be apple, google, amazon or a custom app store");
 #endif
                 }
             }
@@ -254,6 +258,21 @@ public partial class SwrveSDK
     protected virtual void InitAssetsManager(MonoBehaviour container, String swrveTemporaryPath)
     {
         this.SwrveAssetsManager = new SwrveAssetsManager(container, swrveTemporaryPath);
+    }
+
+    /// <summary>
+    /// IOS 14.5 requires user permission to get IFDA. Once given, call this method with the IDFA string
+    /// </summary>
+    /// <param name="idfa">
+    /// IDFA string
+    /// </param>
+    public virtual void SetIDFA(string idfa)
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        idfaString = idfa;
+        storage.Save(IDFAString, idfaString);
+        SendDeviceInfo();
+#endif
     }
 
     /// <summary>
@@ -438,7 +457,7 @@ public partial class SwrveSDK
             rewards = new IapRewards();
         }
 
-        _Iap(quantity, productId, productPrice, currency, rewards, string.Empty, string.Empty, string.Empty, "unknown_store");
+        _Iap(quantity, productId, productPrice, currency, rewards, string.Empty, string.Empty, string.Empty, "unknown");
 #endif
     }
 
@@ -526,7 +545,7 @@ public partial class SwrveSDK
         }
 
         if (deeplinkManager == null) {
-            deeplinkManager = new SwrveDeeplinkManager(Container, this);
+            deeplinkManager = new SwrveDeeplinkManager(Container, this, contentServer);
         }
 
         deeplinkManager.HandleDeeplink(url);
@@ -545,7 +564,7 @@ public partial class SwrveSDK
         }
 
         if (deeplinkManager == null) {
-            deeplinkManager = new SwrveDeeplinkManager(Container, this);
+            deeplinkManager = new SwrveDeeplinkManager(Container, this, contentServer);
         }
 
         deeplinkManager.HandleDeferredDeeplink(url);
@@ -713,10 +732,7 @@ public partial class SwrveSDK
         return swrvePath;
     }
 
-    /// <summary>
-    /// Returns a map of Swrve device properties.
-    /// </summary>
-    public virtual Dictionary<string, string> GetDeviceInfo()
+    protected virtual Dictionary<string, string> GetDeviceInfo()
     {
         string deviceModel = GetDeviceModel();
         string osVersion = SystemInfo.operatingSystem;
@@ -738,6 +754,15 @@ public partial class SwrveSDK
             { "swrve.install_date", installTimeSecondsFormatted },
             { "swrve.device_type", GetDeviceType() }
         };
+
+        if (string.IsNullOrEmpty(idfaString)) {
+            //check storage
+            idfaString = GetIDFA();
+        }
+
+        if (!string.IsNullOrEmpty(idfaString)) {
+            deviceInfo["swrve.IDFA"] = idfaString;
+        }
 
         String tzUtcOffsetSeconds = DateTimeOffset.Now.Offset.TotalSeconds.ToString();
         deviceInfo["swrve.utc_offset_seconds"] = tzUtcOffsetSeconds;
@@ -847,30 +872,7 @@ public partial class SwrveSDK
 #endif
     }
 
-    /// <summary>
-    /// Get the latest available in-app campaigns.
-    /// </summary>
-    /// <returns>
-    /// Latest in-app campagins available to the user.
-    /// </returns>
-    public virtual List<SwrveBaseCampaign> GetCampaigns()
-    {
-#if SWRVE_SUPPORTED_PLATFORM
-        return campaigns;
-#else
-        return new List<SwrveBaseCampaign>();
-#endif
-    }
-
-    /// <summary>
-    /// Notify that a in-app message button was pressed.
-    /// This method is automatically called by the SDK unless
-    /// you are implementing your own rendering code.
-    /// </summary>
-    /// <param name="button">
-    /// Button pressed by the user.
-    /// </param>
-    public virtual void ButtonWasPressedByUser(SwrveButton button)
+    protected virtual void ButtonWasPressedByUser(SwrveButton button)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         if (button != null) {
@@ -893,15 +895,7 @@ public partial class SwrveSDK
 #endif
     }
 
-    /// <summary>
-    /// Notify that a message was displayed to the user.
-    /// This method is automatically called by the SDK unless
-    /// you are implementing your own rendering code.
-    /// </summary>
-    /// <param name="messageFormat">
-    /// Message format displayed to the user
-    /// </param>
-    public virtual void MessageWasShownToUser(SwrveMessageFormat messageFormat)
+    protected virtual void MessageWasShownToUser(SwrveMessageFormat messageFormat)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         try {
@@ -938,69 +932,13 @@ public partial class SwrveSDK
     public virtual bool IsMessageDisplaying()
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        return (currentMessage != null);
+        return (currentMessageView != null);
 #else
         return false;
 #endif
     }
 
-    /// <summary>
-    /// Gets the app store link of a given app, that was
-    /// setup in the dashboard for the current app store.
-    /// </summary>
-    /// <param name="appId">
-    /// App identifier.
-    /// </param>
-    /// <returns>
-    /// The app store link for a given app.
-    /// </returns>
-    public string GetAppStoreLink(int appId)
-    {
-#if SWRVE_SUPPORTED_PLATFORM
-        string appStoreLink = null;
-        if (appStoreLinks != null) {
-            appStoreLinks.TryGetValue(appId.ToString(), out appStoreLink);
-        }
-        return appStoreLink;
-#else
-        return null;
-#endif
-    }
-    [System.Obsolete("Use GetBaseMessageForEvent instead. This will be removed in 8.0")]
-    /// <summary>
-    /// Obtain an In-app message for the given event.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "event" event.
-    /// </remarks>
-    /// <param name="eventName">
-    /// The name of the event that was triggered.
-    /// </param>
-    /// <returns>
-    /// In-app message for the given event.
-    /// </returns>
-    public virtual SwrveMessage GetMessageForEvent(string eventName, IDictionary<string, string> eventPayload = null)
-    {
-        SwrveBaseMessage message = GetBaseMessageForEvent(eventName, eventPayload);
-        if (message != null && message is SwrveMessage) {
-            return (SwrveMessage)message;
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Obtain an SwrveBaseMessage message for the given event.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "event" event.
-    /// </remarks>
-    /// <param name="eventName">
-    /// The name of the event that was triggered.
-    /// </param>
-    /// <returns>
-    /// SwrveBaseMessage message for the given event.
-    /// </returns>
-    public virtual SwrveBaseMessage GetBaseMessageForEvent(string eventName, IDictionary<string, string> eventPayload = null)
+    protected virtual SwrveBaseMessage GetBaseMessageForEvent(string eventName, IDictionary<string, string> eventPayload = null)
     {
         if (!IsSDKReady()) {
             return null;
@@ -1033,6 +971,9 @@ public partial class SwrveSDK
         List<SwrveBaseMessage> candidateMessages = new List<SwrveBaseMessage>();
         SwrveOrientation deviceOrientation = GetDeviceOrientation();
 
+        // Get Personalization Properties in case they are required for IAMs
+        Dictionary<string, string> personalizationProperties = GetPersonalizationProperties(eventPayload);
+
         List<SwrveQaUserCampaignInfo> qaCampaignInfoList = new List<SwrveQaUserCampaignInfo>();
         while (itCampaign.MoveNext() && result == null) {
             if (!(itCampaign.Current is SwrveInAppCampaign || itCampaign.Current is SwrveEmbeddedCampaign)) {
@@ -1041,10 +982,10 @@ public partial class SwrveSDK
 
             SwrveBaseCampaign nextCampaign = itCampaign.Current;
             SwrveBaseMessage nextMessage = null;
-            if(nextCampaign is SwrveEmbeddedCampaign) {
+            if (nextCampaign is SwrveEmbeddedCampaign) {
                 nextMessage = ((SwrveEmbeddedCampaign)nextCampaign).GetMessageForEvent(eventName, eventPayload, qaCampaignInfoList);
-            } else if(nextCampaign is SwrveInAppCampaign) {
-                nextMessage = ((SwrveInAppCampaign)nextCampaign).GetMessageForEvent(eventName, eventPayload, qaCampaignInfoList);
+            } else if (nextCampaign is SwrveInAppCampaign) {
+                nextMessage = ((SwrveInAppCampaign)nextCampaign).GetMessageForEvent(eventName, eventPayload, qaCampaignInfoList, personalizationProperties);
             }
 
             // Check if the message supports the current orientation
@@ -1100,19 +1041,7 @@ public partial class SwrveSDK
 #endif
     }
 
-    /// <summary>
-    /// Obtain a Swrve Message for the given event.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "event" event.
-    /// </remarks>
-    /// <param name="eventName">
-    /// The name of the event that was triggered.
-    /// </param>
-    /// <returns>
-    /// Swrve Message for the given event.
-    /// </returns>
-    public virtual SwrveConversation GetConversationForEvent(string eventName, IDictionary<string, string> eventPayload = null)
+    protected virtual SwrveConversation GetConversationForEvent(string eventName, IDictionary<string, string> eventPayload = null)
     {
         if (!IsSDKReady()) {
             return null;
@@ -1243,8 +1172,8 @@ public partial class SwrveSDK
         if (!orientation.HasValue) {
             orientation = GetDeviceOrientation();
         }
-
-        ShowCampaign(campaign, false, orientation.Value, properties);
+        Dictionary<string, string> personalizationProperties = IncludeRealTimeUserProperties(properties);
+        ShowCampaign(campaign, false, orientation.Value, personalizationProperties);
         campaign.Status = SwrveCampaignState.Status.Seen;
         SaveCampaignData(campaign);
     }
@@ -1275,14 +1204,14 @@ public partial class SwrveSDK
 
         List<SwrveBaseCampaign> result = new List<SwrveBaseCampaign>();
         IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator();
-
+        Dictionary<string, string> personalizationProperties = IncludeRealTimeUserProperties(properties);
         while (itCampaign.MoveNext()) {
             SwrveBaseCampaign campaign = itCampaign.Current;
-            if (IsValidMessageCenter(campaign, orientation.Value)) {
+            if (IsValidMessageCenter(campaign, orientation.Value, personalizationProperties)) {
                 bool add = true;
                 if (properties != null && (campaign is SwrveInAppCampaign)) {
                     SwrveMessageTextTemplatingResolver resolver = new SwrveMessageTextTemplatingResolver();
-                    add = resolver.ResolveTemplating((SwrveInAppCampaign)campaign, properties);
+                    add = resolver.ResolveTemplating((SwrveInAppCampaign)campaign, personalizationProperties);
                 }
                 if (add) {
                     result.Add(campaign);
@@ -1306,12 +1235,12 @@ public partial class SwrveSDK
         }
     }
 
-    /// <summary>
-    /// Mark this campaign as seen. This is done automatically by Swrve but you can call this if you are rendering the messages on your own.
-    /// </summary>
-    /// <param name="campaign">
-    /// The campaign to mark as seen.
-    /// </param>
+/// <summary>
+/// Mark this campaign as seen. This is done automatically by Swrve but you can call this if you are rendering the messages on your own.
+/// </summary>
+/// <param name="campaign">
+/// The campaign to mark as seen.
+/// </param>
     public virtual void MarkMessageCenterCampaignAsSeen(SwrveBaseCampaign campaign)
     {
         if (campaign != null) {
@@ -1320,162 +1249,35 @@ public partial class SwrveSDK
         }
     }
 
-    [System.Obsolete("Use GetBaseMessageForId instead. This will be removed in 8.0")]
-    /// <summary>
-    /// Obtain an in-app message for the given id.
-    /// </summary>
-    /// <param name="messageId">
-    /// The id of the message you want to retrieve.
-    /// </param>
-    /// <returns>
-    /// In-app message for the given id.
-    /// </returns>
-    public virtual SwrveMessage GetMessageForId(int messageId)
+    protected virtual IEnumerator ShowMessageForEvent(string eventName, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
     {
-#if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) {
-            return null;
-        }
-
-        SwrveMessage message = null;
-        IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator();
-        while (itCampaign.MoveNext() && message == null) {
-            if (!(itCampaign.Current is SwrveInAppCampaign)) {
-                continue;
-            }
-
-            SwrveInAppCampaign campaign = (SwrveInAppCampaign)itCampaign.Current;
-            message = campaign.GetMessageForId(messageId);
-            if (message != null) {
-                return message;
-            }
-        }
-
-        SwrveLog.LogWarning("Message with id " + messageId + " not found");
-#endif
-        return null;
+        return ShowMessageForEvent(eventName, null, message, customButtonListener, messageListener, clipboardButtonListener, embeddedMessageListener);
     }
 
-    /// <summary>
-    /// Obtain an in-app message for the given id.
-    /// </summary>
-    /// <param name="messageId">
-    /// The id of the message you want to retrieve.
-    /// </param>
-    /// <returns>
-    /// SwrveBaseMessage for the given id.
-    /// </returns>
-    public virtual SwrveBaseMessage GetBaseMessageForId(int messageId)
-    {
-#if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) {
-            return null;
-        }
-        SwrveBaseMessage message = null;
-        SwrveBaseCampaign campaign = null;
-        IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator();
-        while (itCampaign.MoveNext() && message == null) {
-            if(itCampaign.Current is SwrveInAppCampaign) {
-                campaign = (SwrveInAppCampaign)itCampaign.Current;
-                message = ((SwrveInAppCampaign)campaign).GetMessageForId(messageId);
-            } else if(itCampaign.Current is SwrveEmbeddedCampaign) {
-                campaign = (SwrveEmbeddedCampaign)itCampaign.Current;
-                if(((SwrveEmbeddedCampaign)campaign).Message.Id == messageId) {
-                    message = ((SwrveEmbeddedCampaign)campaign).Message;
-                }
-            }
-        }
-        if (message != null) {
-            return message;
-        } else {
-            SwrveLog.LogWarning("Message with id " + messageId + " not found");
-        }
-
-#endif
-        return null;
-    }
-
-    /// <summary>
-    /// Display a message available for the given trigger event.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "event" event.
-    /// </remarks>
-    /// <param name="eventName">
-    /// The name of the event that was triggered.
-    /// </param>
-    /// <param name="message">
-    /// Message to show.
-    /// </param>
-    /// <param name="installButtonListener">
-    /// Button listener to recieve install button events. If null, the global button listener will be used.
-    /// </param>
-    /// <param name="customButtonListener">
-    /// Button listener to recieve custom button events. If null, the global button listener will be used.
-    /// </param>
-    /// <param name="messageListener">
-    /// Message listener to recieve message events. If null, the global message listener will be used.
-    /// </param>
-    /// <param name="clipboardButtonListener">
-    /// Button listener to recieve custom button events. If null, the global button listener will be used.
-    /// </param>
-    public virtual IEnumerator ShowMessageForEvent(string eventName, SwrveBaseMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
-    {
-        return ShowMessageForEvent(eventName, null, message, installButtonListener, customButtonListener, messageListener, clipboardButtonListener, embeddedMessageListener);
-    }
-
-    /// <summary>
-    /// Display a message available for the given trigger event.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "event" event.
-    /// </remarks>
-    /// <param name="eventName">
-    /// The name of the event that was triggered.
-    /// </param>
-    /// <param name="payload">
-    /// The payload of the event that was triggered.
-    /// </param>
-    /// <param name="message">
-    /// Message to show.
-    /// </param>
-    /// <param name="installButtonListener">
-    /// Button listener to recieve install button events. If null, the global button listener will be used.
-    /// </param>
-    /// <param name="customButtonListener">
-    /// Button listener to recieve custom button events. If null, the global button listener will be used.
-    /// </param>
-    /// <param name="messageListener">
-    /// Message listener to recieve message events. If null, the global message listener will be used.
-    /// </param>
-    /// <param name="clipboardButtonListener">
-    /// Button listener to recieve custom button events. If null, the global button listener will be used.
-    /// </param>
-    public virtual IEnumerator ShowMessageForEvent(string eventName, IDictionary<string, string> payload, SwrveBaseMessage message, ISwrveInstallButtonListener installButtonListener = null, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
+    protected virtual IEnumerator ShowMessageForEvent(string eventName, IDictionary<string, string> payload, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         if (!IsSDKReady()) {
             yield return null;
         }
 
-        if(message is SwrveMessage) {
-            if (config.TriggeredMessageListener != null) {
-                // They are using a custom listener
-                if (message != null) {
-                    config.TriggeredMessageListener.OnMessageTriggered((SwrveMessage)message);
-                }
-            } else {
-                if (currentMessage == null) {
-                    Dictionary<string, string> properties = null;
-                    if (config.InAppMessageConfig != null && config.InAppMessageConfig.PersonalizationProvider != null) {
-                        properties = config.InAppMessageConfig.PersonalizationProvider.Personalize(payload);
+        if (message != null) {
+            Dictionary<string, string> properties = GetPersonalizationProperties(payload);
+            if (message is SwrveMessage) {
+                var triggeredMessageListener = config.InAppMessageConfig.TriggeredMessageListener;
+                if (triggeredMessageListener != null) {
+                    // Using a custom listener
+                    triggeredMessageListener.OnMessageTriggered((SwrveMessage)message);
+                } else {
+                    if (currentMessageView == null) {
+
+                        yield return Container.StartCoroutine(LaunchMessage(message, properties));
                     }
-                    yield return Container.StartCoroutine(LaunchMessage(message, installButtonListener, customButtonListener, clipboardButtonListener, messageListener, properties));
                 }
-            }
-        } else if(message is SwrveEmbeddedMessage) {
-            if (config.EmbeddedMessageConfig.EmbeddedMessageListener != null && message != null) {
-                config.EmbeddedMessageConfig.EmbeddedMessageListener.OnMessage((SwrveEmbeddedMessage)message);
+            } else if (message is SwrveEmbeddedMessage) {
+                if (embeddedMessageListener != null) {
+                    embeddedMessageListener.OnMessage((SwrveEmbeddedMessage)message, properties);
+                }
             }
         }
 
@@ -1485,16 +1287,7 @@ public partial class SwrveSDK
 #endif
     }
 
-    /// <summary>
-    /// Display a conversation for the given trigger event.
-    /// </summary>
-    /// <remarks>
-    /// See the REST API documentation for the "event" event.
-    /// </remarks>
-    /// <param name="eventName">
-    /// The name of the event that was triggered
-    /// </param>
-    public virtual IEnumerator ShowConversationForEvent(string eventName, SwrveConversation conversation)
+    protected virtual IEnumerator ShowConversationForEvent(string eventName, SwrveConversation conversation)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         if (!IsSDKReady()) {
@@ -1509,7 +1302,7 @@ public partial class SwrveSDK
     }
 
     /// <summary>
-    /// Dismisses the current message if any is beign displayed.
+    /// Dismisses the current message if any is being displayed.
     /// </summary>
     public virtual void DismissMessage()
     {
@@ -1518,13 +1311,14 @@ public partial class SwrveSDK
             return;
         }
 
-        if (config.TriggeredMessageListener != null) {
-            config.TriggeredMessageListener.DismissCurrentMessage();
+        var triggeredMessageListener = config.InAppMessageConfig.TriggeredMessageListener;
+        if (triggeredMessageListener != null) {
+            triggeredMessageListener.DismissCurrentMessage();
         } else {
             try {
-                if (currentMessage != null) {
+                if (currentMessageView != null) {
                     SetMessageMinDelayThrottle();
-                    currentMessage.Dismiss();
+                    currentMessageView.Dismiss();
                 }
             } catch (Exception e) {
                 SwrveLog.LogError("Error while dismissing a message " + e);
@@ -1533,9 +1327,9 @@ public partial class SwrveSDK
 #endif
     }
 
-    /// <summary>
-    /// Reload the campaigns and user resources from the server.
-    /// </summary>
+/// <summary>
+/// Reload the campaigns and user resources from the server.
+/// </summary>
     public virtual void RefreshUserResourcesAndCampaigns()
     {
 #if SWRVE_SUPPORTED_PLATFORM
@@ -1547,18 +1341,18 @@ public partial class SwrveSDK
 #endif
     }
 
-    /// <summary>
-    /// Identify users such that they can be tracked and targeted safely across multiple devices, platforms and channels.
-    /// </summary>
-    /// <param name="externalUserId">
-    /// An ID that uniquely identifies your user. Personal identifiable information should not be used. An error may be returned if such information is submitted as the userID eg email, phone number etc.
-    /// </param>
-    /// <param name="onSuccess">
-    /// Callback that will handle a success for the Identify call.
-    /// </param>
-    /// <param name="onError">
-    /// Callback that will handle an error for the Identify call.
-    /// </param>
+/// <summary>
+/// Identify users such that they can be tracked and targeted safely across multiple devices, platforms and channels.
+/// </summary>
+/// <param name="externalUserId">
+/// An ID that uniquely identifies your user. Personal identifiable information should not be used. An error may be returned if such information is submitted as the userID eg email, phone number etc.
+/// </param>
+/// <param name="onSuccess">
+/// Callback that will handle a success for the Identify call.
+/// </param>
+/// <param name="onError">
+/// Callback that will handle an error for the Identify call.
+/// </param>
     public virtual void Identify(string userId, OnSuccessIdentify onSuccess, OnErrorIdentify onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
@@ -1594,13 +1388,13 @@ public partial class SwrveSDK
 #endif
     }
 
-    /// <summary>
-    /// Start the sdk when in SWRVE_INIT_MODE_MANAGED mode. Can be called multiple times to switch the current userId to something else.
-    /// A new session is started if not already started or if is already started with different userId.
-    /// </summary>
-    /// <param name="userID">
-    /// User id to start sdk with.
-    /// </param>
+/// <summary>
+/// Start the sdk when in SWRVE_INIT_MODE_MANAGED mode. Can be called multiple times to switch the current userId to something else.
+/// A new session is started if not already started or if is already started with different userId.
+/// </summary>
+/// <param name="userID">
+/// User id to start sdk with.
+/// </param>
     public virtual void Start(String userId = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
@@ -1670,17 +1464,17 @@ public partial class SwrveSDK
 #endif
     }
 
-    /// <summary>
-    /// Process an embedded message engagement event. This function should be called by your
-    /// implementation to inform Swrve of a button event.
-    ///
-    /// </summary>
-    /// <param name="message">
-    /// Embedded message that has been processed.
-    /// </param>
-    /// <param name="buttonName">
-    /// Button that was pressed.
-    /// </param>
+/// <summary>
+/// Process an embedded message engagement event. This function should be called by your
+/// implementation to inform Swrve of a button event.
+///
+/// </summary>
+/// <param name="message">
+/// Embedded message that has been processed.
+/// </param>
+/// <param name="buttonName">
+/// Button that was pressed.
+/// </param>
     public virtual void EmbeddedMessageButtonWasPressed(SwrveEmbeddedMessage message, string buttonName)
     {
 #if SWRVE_SUPPORTED_PLATFORM
@@ -1699,4 +1493,65 @@ public partial class SwrveSDK
         }
 #endif
     }
+
+/// <summary>
+/// Resolved the personalization for an embedded message's data. This function will make the best attempt
+/// to resolve personalization for your campaign and return the data resolved.
+/// </summary>
+/// <param name="message">
+/// The string that Swrve's text templating will be applied to resulting the keys being resolve in string.
+/// </param>
+/// <param name="personalizationProperties">
+/// Personalization Properties that are required to resolve the Message.data
+/// </param>
+/// <returns>
+/// Return a string value if it could resolve personalization on Message.data. returns null if it could not.
+/// </returns>
+    public virtual string GetPersonalizedEmbeddedMessageData(SwrveEmbeddedMessage message, Dictionary<string, string> personalizationProperties)
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) {
+            return null;
+        }
+
+        try {
+            if (message.type == SwrveEmbeddedMessage.SwrveEmbeddedCampaignType.JSON) {
+                return SwrveTextTemplating.ApplyToJSON(message.data, personalizationProperties);
+            } else {
+                return SwrveTextTemplating.Apply(message.data, personalizationProperties);
+            }
+
+        } catch (SwrveSDKTextTemplatingException exception) {
+            SwrveEmbeddedCampaign campaign = (SwrveEmbeddedCampaign)message.Campaign;
+            SwrveQaUser.EmbeddedPersonalizationFailed(campaign.Id, message.Id, message.data, "Failed to resolve personalization");
+            SwrveLog.LogWarning("Could not resolve personalization for campaign: " + campaign.Id + ".  Exception:" + exception.ToString());
+        }
+#endif
+        return null;
+    }
+
+/// <summary>
+/// Make the best attempt at applying personalization to a string value
+/// </summary>
+/// <param name="text">
+/// The string that Swrve's text templating will be applied to.
+/// </param>
+/// <param name="personalizationProperties">
+/// The properties used for text templating.
+/// </param>
+/// <returns>
+/// Return a string value if it could resolve personalization, null if it could not.
+/// </returns>
+    public virtual string GetPersonalizedText(string text, Dictionary<string, string> personalizationProperties)
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        try {
+            return SwrveTextTemplating.Apply(text, personalizationProperties);
+        } catch (SwrveSDKTextTemplatingException exception) {
+            SwrveLog.LogWarning("Could not resolve personalization: " + exception.ToString());
+        }
+#endif
+        return null;
+    }
+
 }

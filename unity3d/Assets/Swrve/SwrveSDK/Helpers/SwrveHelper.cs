@@ -21,12 +21,12 @@ public static partial class SwrveHelper
 
 #if !UNITY_WSA_10_0 || UNITY_EDITOR
     // Reference to avoid this class from getting stripped
-    private static System.Security.Cryptography.MD5CryptoServiceProvider fakeReference = new System.Security.Cryptography.MD5CryptoServiceProvider ();
+    private static System.Security.Cryptography.MD5CryptoServiceProvider fakeReference = new System.Security.Cryptography.MD5CryptoServiceProvider();
 #endif
 
     private static Regex rgxNonAlphanumeric = new Regex("[^a-zA-Z0-9]");
 
-    public static DateTime GetNow ()
+    public static DateTime GetNow()
     {
         if (Now != null && Now.HasValue) {
             return Now.Value;
@@ -35,7 +35,7 @@ public static partial class SwrveHelper
         return DateTime.Now;
     }
 
-    public static DateTime GetUtcNow ()
+    public static DateTime GetUtcNow()
     {
         if (UtcNow != null && UtcNow.HasValue) {
             return UtcNow.Value;
@@ -44,52 +44,52 @@ public static partial class SwrveHelper
         return DateTime.UtcNow;
     }
 
-    public static void Shuffle<T> (this IList<T> list)
+    public static void Shuffle<T>(this IList<T> list)
     {
         int n = list.Count;
-        System.Random rnd = new System.Random ();
+        System.Random rnd = new System.Random();
         while (n > 1) {
-            int k = (rnd.Next (0, n) % n);
+            int k = (rnd.Next(0, n) % n);
             n--;
-            T value = list [k];
-            list [k] = list [n];
-            list [n] = value;
+            T value = list[k];
+            list[k] = list[n];
+            list[n] = value;
         }
     }
 
-    public static byte[] MD5 (String str)
+    public static byte[] MD5(String str)
     {
-        byte[] inputBytes = System.Text.Encoding.UTF8.GetBytes (str);
-        return SwrveMD5Core.GetHash (inputBytes);
+        byte[] inputBytes = System.Text.Encoding.UTF8.GetBytes(str);
+        return SwrveMD5Core.GetHash(inputBytes);
     }
 
-    public static string ApplyMD5 (String str)
+    public static string ApplyMD5(String str)
     {
-        byte[] hash = MD5 (str);
-        StringBuilder sBuilder = new StringBuilder ();
+        byte[] hash = MD5(str);
+        StringBuilder sBuilder = new StringBuilder();
         for (int i = 0; i < hash.Length; i++) {
-            sBuilder.Append (hash [i].ToString ("x2"));
+            sBuilder.Append(hash[i].ToString("x2"));
         }
 
-        return sBuilder.ToString ();
+        return sBuilder.ToString();
     }
 
-    public static bool CheckBase64 (string str)
+    public static bool CheckBase64(string str)
     {
-        string s = str.Trim ();
-        return (s.Length % 4 == 0) && Regex.IsMatch (s, @"^[a-zA-Z0-9\+/]*={0,3}$", RegexOptions.None);
+        string s = str.Trim();
+        return (s.Length % 4 == 0) && Regex.IsMatch(s, @"^[a-zA-Z0-9\+/]*={0,3}$", RegexOptions.None);
     }
 
-    public static string CreateHMACMD5 (string data, string key)
+    public static string CreateHMACMD5(string data, string key)
     {
         string hmacmd5 = null;
 #if !UNITY_WSA_10_0 || UNITY_EDITOR
         if (fakeReference != null) {
-            byte[] bData = System.Text.Encoding.UTF8.GetBytes (data);
-            byte[] bKey = System.Text.Encoding.UTF8.GetBytes (key);
+            byte[] bData = System.Text.Encoding.UTF8.GetBytes(data);
+            byte[] bKey = System.Text.Encoding.UTF8.GetBytes(key);
             using (HMACMD5 hmac = new HMACMD5(bKey)) {
-                byte[] signature = hmac.ComputeHash (bData);
-                hmacmd5 = System.Convert.ToBase64String (signature);
+                byte[] signature = hmac.ComputeHash(bData);
+                hmacmd5 = System.Convert.ToBase64String(signature);
             }
         }
 #elif NETFX_CORE
@@ -105,7 +105,7 @@ public static partial class SwrveHelper
 
     private static SHA1Managed sha1Managed = new SHA1Managed();
 
-    public static string sha1 (byte[] bytes)
+    public static string sha1(byte[] bytes)
     {
         byte[] hash = sha1Managed.ComputeHash(bytes);
         string hashString = "";
@@ -116,32 +116,32 @@ public static partial class SwrveHelper
         return hashString;
     }
 
-    public static readonly DateTime UnixEpoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    public static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-    public static long GetSeconds ()
+    public static long GetSeconds()
     {
         return (long)(((TimeSpan)(DateTime.UtcNow - UnixEpoch)).TotalSeconds);
     }
 
-    public static long GetMilliseconds ()
+    public static long GetMilliseconds()
     {
         return (long)(((TimeSpan)(DateTime.UtcNow - UnixEpoch)).TotalMilliseconds);
     }
 
-    public static string GetRandomUUID ()
+    public static string GetRandomUUID()
     {
 #if UNITY_IPHONE
         string randomUUID = getNativeRandomUUID();
-        if (!string.IsNullOrEmpty (randomUUID)) {
+        if (!string.IsNullOrEmpty(randomUUID)) {
             return randomUUID;
         }
 #endif
         try {
-            Type type = System.Type.GetType ("System.Guid");
+            Type type = System.Type.GetType("System.Guid");
             if (type != null) {
-                MethodInfo methodInfo = type.GetMethod ("NewGuid");
+                MethodInfo methodInfo = type.GetMethod("NewGuid");
                 if (methodInfo != null) {
-                    object result = methodInfo.Invoke (null, null);
+                    object result = methodInfo.Invoke(null, null);
                     if (result != null) {
                         string stringResult = result.ToString();
                         if (!string.IsNullOrEmpty(stringResult)) {
@@ -151,7 +151,7 @@ public static partial class SwrveHelper
                 }
             }
         } catch (Exception exp) {
-            SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
+            SwrveLog.LogWarning("Couldn't get random UUID: " + exp.ToString());
         }
 
         // Generate random string if all fails
@@ -159,16 +159,16 @@ public static partial class SwrveHelper
         string randomString = string.Empty;
         for (int i = 0; i < 128; i++) {
             System.Random rnd = new System.Random();
-            int rndInt = rnd.Next (chars.Length);
+            int rndInt = rnd.Next(chars.Length);
             randomString += chars[rndInt];
         }
         return randomString;
     }
 
-    public static string GetEventName (Dictionary<string, object> eventParameters)
+    public static string GetEventName(Dictionary<string, object> eventParameters)
     {
         string eventName = string.Empty;
-        string eventType = (string)eventParameters ["type"];
+        string eventType = (string)eventParameters["type"];
 
         switch (eventType) {
         case "session_start":
@@ -184,7 +184,7 @@ public static partial class SwrveHelper
             eventName = "Swrve.iap";
             break;
         case "event":
-            eventName = (string)eventParameters ["name"];
+            eventName = (string)eventParameters["name"];
             break;
         case "purchase":
             eventName = "Swrve.user_purchase";
@@ -203,10 +203,10 @@ public static partial class SwrveHelper
         return eventName;
     }
 
-    public static string EpochToFormat (long epochTime, string format)
+    public static string EpochToFormat(long epochTime, string format)
     {
-        DateTime epoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        return epoch.AddMilliseconds (epochTime).ToString (format);
+        DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        return epoch.AddMilliseconds(epochTime).ToString(format);
     }
 
     public static string FilterNonAlphanumeric(string str)
@@ -243,15 +243,15 @@ public static partial class SwrveHelper
 
     public static Dictionary<string, string> GetUriQueryParameters(string query)
     {
-        Dictionary<string, string> queryParams = new Dictionary<string,string>();
-        string formattedQuery = query.Replace("?","");
+        Dictionary<string, string> queryParams = new Dictionary<string, string>();
+        string formattedQuery = query.Replace("?", "");
         string[] listOfQueries = formattedQuery.Split('&');
-        for(int queryIndex = 0; queryIndex < listOfQueries.Length; queryIndex++) {
+        for (int queryIndex = 0; queryIndex < listOfQueries.Length; queryIndex++) {
             string[] valueKeyCombo = listOfQueries[queryIndex].Split('=');
             string paramKey = valueKeyCombo[0];
             string paramValue = (valueKeyCombo.Length == 2) ? valueKeyCombo[1] : null;
 
-            if(!String.IsNullOrEmpty(paramValue)) {
+            if (!String.IsNullOrEmpty(paramValue)) {
                 queryParams.Add(paramKey, paramValue);
             }
         }
@@ -262,10 +262,32 @@ public static partial class SwrveHelper
     public static string EscapeURL(string url)
     {
 #if UNITY_2017_3_OR_NEWER
-        return UnityWebRequest.EscapeURL (url);
+        return UnityWebRequest.EscapeURL(url);
 #else
         return WWW.EscapeURL (url);
 #endif
+    }
+
+    public static Dictionary<string, string> CombineTwoStringDictionaries(Dictionary<string, string> baseDictionary, Dictionary<string, string> overridingDictionary)
+    {
+        Dictionary<string, string> combinedDictionary = null;
+        if (baseDictionary != null) {
+            combinedDictionary = baseDictionary;
+            if (overridingDictionary != null) {
+                foreach (string key in overridingDictionary.Keys) {
+                    string value = overridingDictionary[key];
+                    if (combinedDictionary.ContainsKey(key)) {
+                        combinedDictionary[key] = value;
+                    } else {
+                        combinedDictionary.Add(key, value);
+                    }
+                }
+            }
+        } else {
+            combinedDictionary = overridingDictionary;
+        }
+
+        return combinedDictionary;
     }
 }
 }

@@ -5,7 +5,6 @@ namespace SwrveUnity.Messaging
 /// <summary>
 /// Implement this interface to respond to messages being
 /// shown, rendered or dismissed.
-/// Config.InAppMessageListener = new YourMessageListener();
 /// </summary>
 public interface ISwrveMessageListener
 {

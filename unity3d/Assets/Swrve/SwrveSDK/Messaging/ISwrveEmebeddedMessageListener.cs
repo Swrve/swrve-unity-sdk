@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SwrveUnity.Messaging
 {
@@ -15,6 +16,9 @@ public interface ISwrveEmbeddedMessageListener
     /// <param name="message">
     /// Embedded message information.
     /// </param>
-    void OnMessage (SwrveEmbeddedMessage message);
+    /// <param name="personalizationProperties">
+    /// String dictionary containing any personalization found.
+    /// </param>
+    void OnMessage(SwrveEmbeddedMessage message, Dictionary<string, string> personalizationProperties);
 }
 }

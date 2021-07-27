@@ -48,11 +48,11 @@ public class SwrveQaUserCampaignInfo
                 return false;
             return this.Value.Equals(((SwrveCampaignType)obOther).Value);
         }
-        
-        public override int GetHashCode() 
-        { 
-            return 0; 
-        } 
+
+        public override int GetHashCode()
+        {
+            return 0;
+        }
     }
 
     public long id;

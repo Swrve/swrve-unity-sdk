@@ -68,7 +68,7 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
         SwrvePushManagerUnityImp serviceManagerSpy = spy(new SwrvePushManagerUnityImp(mActivity));
         SwrveUnityCommonHelper commonHelperMock = mock(SwrveUnityCommonHelper.class);
         doReturn(commonHelperMock).when(serviceManagerSpy).getSwrveUnityCommonHelper();
-        serviceManagerSpy.processRemoteNotification(bundle);
+        serviceManagerSpy.processMessage(bundle);
 
         verify(commonHelperMock, atLeastOnce()).sendPushDeliveredEvent(mActivity, bundle);
 
@@ -139,7 +139,7 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
         SwrvePushManagerUnityImp serviceManagerSpy = spy(new SwrvePushManagerUnityImp(mActivity));
         SwrveUnityCommonHelper commonHelperMock = mock(SwrveUnityCommonHelper.class);
         doReturn(commonHelperMock).when(serviceManagerSpy).getSwrveUnityCommonHelper();
-        serviceManagerSpy.processRemoteNotification(bundle);
+        serviceManagerSpy.processMessage(bundle);
 
         List<Intent> intents = shadowApplication.getBroadcastIntents();
         assertEquals(1, intents.size());

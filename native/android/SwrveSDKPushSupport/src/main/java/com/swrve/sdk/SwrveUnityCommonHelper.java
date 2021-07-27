@@ -50,7 +50,7 @@ public class SwrveUnityCommonHelper {
     }
 
     public static ArrayList<String> getPushDeliveredEvent(Bundle extras, long time) throws Exception {
-        return EventHelper.getPushDeliveredEvent(extras, time);
+        return EventHelper.getPushDeliveredEvent(extras, time, true, "");
     }
 
     public void sendPushDeliveredEvent(Context context, Bundle extras) {

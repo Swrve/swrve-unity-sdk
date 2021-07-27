@@ -58,6 +58,7 @@ public class SwrveUnityCommonHelperTest extends SwrveBaseTest {
                             "\"campaignType\":\"push\"," +
                             "\"id\":\"123\"," +
                             "\"payload\":{" +
+                                "\"displayed\":\"true\"," +
                                 "\"silent\":\"false\"" +
                             "}" +
                         "}" +
