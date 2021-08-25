@@ -23,6 +23,7 @@ private const string SwrveGetPlatformOSName = "getPlatformOS";
 private const string GetInfluencedDataJsonName = "getInfluenceDataJson";
 private const string QaUserUpdateName = "updateQaUser";
 private const string SetUserIdName = "setUserId";
+private const string SetTrackingStateStoppedName = "setTrackingStateStopped";
 private const string ClearAllUserAuthenticatedNotificationsName = "clearAllAuthenticatedNotifications";
 private const string CopyToClipboardName = "copyToClipboard";
 
@@ -727,6 +728,17 @@ public void IapGooglePlay(string productId, double productPrice, string currency
                 AndroidGetBridge().Call(SetUserIdName, this.profileManager.userId);
             } catch (Exception exp) {
                 SwrveLog.LogWarning("Couldn't set userId from Android: " + exp.ToString());
+            }
+        }
+    }
+
+    private void UpdateTrackingStateStopped(bool isTrackingStateStopped)
+    {
+        if (SwrveHelper.IsOnDevice()) {
+            try {
+                AndroidGetBridge().Call(SetTrackingStateStoppedName, isTrackingStateStopped);
+            } catch (Exception exp) {
+                SwrveLog.LogWarning("Couldn't set trackingstate stopped flag from Android: " + exp.ToString());
             }
         }
     }

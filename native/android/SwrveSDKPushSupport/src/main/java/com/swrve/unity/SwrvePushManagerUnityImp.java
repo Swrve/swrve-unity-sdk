@@ -14,83 +14,63 @@ import com.swrve.sdk.SwrveHelper;
 import com.swrve.sdk.SwrveLogger;
 import com.swrve.sdk.SwrveNotificationBuilder;
 import com.swrve.sdk.SwrveNotificationConstants;
-import com.swrve.sdk.SwrveNotificationDetails;
 import com.swrve.sdk.SwrveNotificationFilter;
 import com.swrve.sdk.SwrvePushManager;
-import com.swrve.sdk.SwrvePushManagerHelper;
+import com.swrve.sdk.SwrvePushManagerImpBase;
 import com.swrve.sdk.SwrveUnityCommonHelper;
 import com.swrve.sdk.SwrveUnitySDK;
 import com.unity3d.player.UnityPlayer;
 
 import java.util.Date;
 
-public class SwrvePushManagerUnityImp implements SwrvePushManager {
-    private final Context context;
+import static com.swrve.sdk.SwrveUnityCommonHelper.getGenericEventCampaignTypePush;
+import static com.swrve.unity.SwrvePushServiceManagerCommon.getGameObject;
+
+public class SwrvePushManagerUnityImp extends SwrvePushManagerImpBase implements SwrvePushManager {
+
     private SwrveNotificationBuilder notificationBuilder;
 
     public SwrvePushManagerUnityImp(Context context) {
-        this.context = context;
+        super(context);
     }
 
     @Override
     public void processMessage(Bundle msg) {
-        getSwrveUnityCommonHelper().sendPushDeliveredEvent(context, msg);
-
-        if (!SwrveHelper.isSwrvePush(msg)) {
-            SwrveLogger.i("Swrve received a push notification: but not processing as it doesn't contain:"
-                    + SwrveNotificationConstants.SWRVE_TRACKING_KEY);
-            return;
-        }
-        if (!SwrveUnityCommonHelper.isTargetUser(msg)) {
-            SwrveLogger.w("Swrve cannot process push because its intended for different user.");
-            return;
-        }
-        
-
-        try {
-            if (SwrveHelper.isSwrvePush(msg)) {
-                final SharedPreferences prefs = SwrvePushServiceManagerCommon.getPreferences(context);
-                String activityClassName = SwrvePushSupport.getActivityClassName(context, prefs);
-
-                String silentId = SwrveHelper.getSilentPushId(msg);
-
-                if (SwrveHelper.isNullOrEmpty(silentId)) {
-                    // Only call this listener if there is an activity running
-                    if (UnityPlayer.currentActivity != null) {
-                        // Call Unity SDK MonoBehaviour container
-                        SwrveUnityNotification swrveNotification = SwrveUnityNotification.Builder.build(msg);
-                        SwrvePushSupport.newReceivedNotification(
-                                SwrvePushServiceManagerCommon.getGameObject(UnityPlayer.currentActivity),
-                                swrveNotification);
-                    }
-                    SwrvePushSupport.saveCampaignInfluence(msg, context, SwrveHelper.getRemotePushId(msg));
-                    // Process notification
-                    processNotification(msg, activityClassName);
-                } else {
-                    // Silent push notification
-                    SwrvePushSupport.saveCampaignInfluence(msg, context, silentId);
-                    Intent intent = SwrvePushSupport.getSilentPushIntent(msg);
-                    context.sendBroadcast(intent);
-                }
-            }
-        } catch (Exception ex) {
-            SwrveLogger.e("Error processing push notification", ex);
-        }
+        process(msg);
     }
 
-    private void processNotification(final Bundle msg, String activityClassName) {
+    @Override
+    public void processSilent(final Bundle msg, final String silentId) {
+        Intent intent = SwrvePushSupport.getSilentPushIntent(msg);
+        context.sendBroadcast(intent);
+    }
+
+    @Override
+    public void processNotification(final Bundle msg, String pushId) {
+
+        executeUnityPushNotificationListener(msg);
+
+        final SharedPreferences prefs = SwrvePushServiceManagerCommon.getPreferences(context);
+        String activityClassName = SwrvePushSupport.getActivityClassName(context, prefs);
         // Put the message into a notification and post it.
-        final NotificationManager mNotificationManager = (NotificationManager) context
-                .getSystemService(Context.NOTIFICATION_SERVICE);
+        final NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         final PendingIntent contentIntent = createPendingIntent(msg, activityClassName);
         final Notification notification = createNotification(msg, contentIntent);
         if (notification != null) {
-            // Check if is an authenticated push so we save it to remove from Notification
-            // Manager later. (when switch user.)
-            if (SwrveUnityCommonHelper.isAuthenticatedNotification(msg)) {
+            // Check if is an authenticated push so we save it to remove from NotificationManager later. (when switch user.)
+            if (isAuthenticatedNotification(msg)) {
                 SwrveUnityCommonHelper.saveNotificationWithId(notificationBuilder.getNotificationId());
             }
             showNotification(mNotificationManager, notification);
+        }
+    }
+
+    // Try to execute in csharp unity listener configured SwrveConfig.PushNotificationListener.OnNotificationReceived
+    private void executeUnityPushNotificationListener(final Bundle msg) {
+        // Only call this if there is a unity activity running
+        if (UnityPlayer.currentActivity != null) {
+            SwrveUnityNotification swrveNotification = SwrveUnityNotification.Builder.build(msg);
+            SwrvePushSupport.newReceivedNotification(getGameObject(UnityPlayer.currentActivity), swrveNotification);
         }
     }
 
@@ -101,49 +81,28 @@ public class SwrvePushManagerUnityImp implements SwrvePushManager {
     }
 
     private Notification createNotification(Bundle msg, PendingIntent contentIntent) {
+        Notification notification = null;
         String msgText = msg.getString(SwrveNotificationConstants.TEXT_KEY);
         if (SwrveHelper.isNotNullOrEmpty(msgText)) {
             createSwrveNotificationBuilder();
-            NotificationCompat.Builder mBuilder = notificationBuilder.build(msgText, msg,
-                    SwrveUnityCommonHelper.getGenericEventCampaignTypePush(), null);
+            NotificationCompat.Builder mBuilder = notificationBuilder.build(msgText, msg, getGenericEventCampaignTypePush(), null);
             mBuilder.setContentIntent(contentIntent);
 
             int notificationId = notificationBuilder.getNotificationId();
-            Notification notification = applyCustomFilter((mBuilder), notificationId, msg,
-                    notificationBuilder.getNotificationDetails());
-
+            notification = applyCustomFilter((mBuilder), notificationId, msg, notificationBuilder.getNotificationDetails());
             if (notification == null) {
-                SwrveLogger.d(
-                        "SwrveUnityPushServiceManager: notification suppressed via custom filter. notificationId: %s",
-                        notificationId);
+                SwrveLogger.d("SwrveUnityPushServiceManager: notification suppressed via custom filter. notificationId: %s", notificationId);
             }
-
-            return notification;
         }
-
-        return null;
-    }
-
-    private Notification applyCustomFilter(NotificationCompat.Builder builder, int notificationId, final Bundle msg, SwrveNotificationDetails notificationDetails) {
-        Notification notification;
-        try {
-            String jsonPayload = SwrvePushManagerHelper.getPayload(msg);
-            if (SwrveUnitySDK.getNotificationFilter() != null) {
-                SwrveNotificationFilter filter = SwrveUnitySDK.getNotificationFilter();
-                notification = filter.filterNotification(builder, notificationId, notificationDetails, jsonPayload);
-            } else {
-                notification = builder.build();
-            }
-        } catch (Exception ex) {
-            SwrveLogger.e("Error calling the custom notification filter.", ex);
-            notification = builder.build();
-        }
-
         return notification;
     }
 
+    @Override
+    public SwrveNotificationFilter getNotificationFilter() {
+        return SwrveUnitySDK.getNotificationFilter();
+    }
+
     private PendingIntent createPendingIntent(Bundle msg, String activityClassName) {
-        // Add notification to bundle
         Intent intent = SwrvePushSupport.createIntent(context, msg, activityClassName);
         int id = (int) (new Date().getTime() % Integer.MAX_VALUE);
         return PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -155,7 +114,4 @@ public class SwrvePushManagerUnityImp implements SwrvePushManager {
         return notificationBuilder;
     }
 
-    public SwrveUnityCommonHelper getSwrveUnityCommonHelper() {
-        return new SwrveUnityCommonHelper();
-    }
 }

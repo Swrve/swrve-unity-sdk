@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
+
     public final static String SWRVE_TEMPORARY_PATH_KEY = "swrveTemporaryPath";
     public final static String SDK_VERSION_KEY = "sdkVersion";
     public final static String PREFAB_NAME_KEY = "prefabName";
@@ -48,6 +49,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public final static String DEVICE_ID_KEY = "deviceId";
     public final static String APP_ID_KEY = "appId";
     public final static String USER_ID_KEY = "userId";
+    public final static String TRACKING_STATE_STOPPED_KEY = "isTrackingStateStopped";
     public final static String SWRVE_PATH_KEY = "swrvePath";
     public final static String QAUSER_KEY = "swrve.q2"; // note this
     public final static String SIG_SUFFIX_KEY = "sigSuffix";
@@ -65,11 +67,10 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public final static String PAGE_KEY = "page";
 
     public final static String SHARED_PREFERENCE_FILENAME = "swrve_unity_json_data";
-    public final static String NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY = "notifications_id_cache_list";
+    public final static String PREF_NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY = "notifications_id_cache_list";
+    private final static String PREF_UNITY_SWRVE_COMMON = "UnitySwrveCommon";
 
     public final static String UNITY_USER_UPDATE = "UserUpdate";
-
-    private final static String LOG_TAG = "UnitySwrveCommon";
 
     private Map<String, Object> currentDetails;
     protected WeakReference<Context> context;
@@ -84,10 +85,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     private static boolean readyToDoNativeCalls = false;
     private static List<SwrveNativeCall> nativeCalls = new ArrayList<SwrveNativeCall>();
 
-    /***
-     * Call this method from the Unity Application class or your custom Application
-     * class.
-     */
+    // Call this method from the Unity Application class or your custom Application class.
     public static void onCreate(final Context context) {
         SwrveCommon.setRunnable(new Runnable() {
             @Override
@@ -97,22 +95,19 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
         });
     }
 
+    // This is called when creating SwrveUnityCommon natively. Will use cached details.
     public SwrveUnityCommon(Context context) {
         this(context, null);
     }
 
-    /***
-     * This is the most proper Constructor to call from the Unity layer, via a
-     * native plugin, with a jsonString of settings, which will be then cached
-     * locally.
-     *
-     * @param jsonString JSON String of configuration
-     */
+    // This is generally called from the Unity layer, via a native plugin, with a jsonString of settings, which will be then cached locally.
     public SwrveUnityCommon(String jsonString) {
         this(UnityPlayer.currentActivity, jsonString);
     }
 
-    private SwrveUnityCommon(Context context, String jsonString) {
+    private SwrveUnityCommon(Context context, String jsonDetails) {
+        SwrveLogger.d("UnitySwrveCommon constructor called.");
+
         SwrveCommon.setSwrveCommon(this);
         if (context instanceof Activity) {
             this.context = new WeakReference<>(context.getApplicationContext());
@@ -120,64 +115,77 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
             this.context = new WeakReference<>(context);
         }
 
-        SharedPreferences sp = this.context.get().getSharedPreferences(SHARED_PREFERENCE_FILENAME,
-                Context.MODE_PRIVATE);
-        if (null == jsonString) {
-            try {
-                jsonString = sp.getString(LOG_TAG, "");
-            } catch (Exception e) {
-                SwrveLogger.e("Error loading Unity settings from shared prefs", e);
-            }
+        if (jsonDetails == null) {
+            SwrveLogger.d("UnitySwrveCommon using cached swrve details.");
+            jsonDetails = getCachedCurrentDetails();
         }
 
-        SwrveLogger.d("UnitySwrveCommon constructor called");
-
-        if (null != jsonString) {
+        // init SwrveUnityCommon with jsonDetails
+        if (jsonDetails != null) {
             try {
                 Gson gson = new Gson();
-                this.currentDetails = gson.fromJson(jsonString, new TypeToken<Map<String, Object>>() {
+                currentDetails = gson.fromJson(jsonDetails, new TypeToken<Map<String, Object>>() {
                 }.getType());
 
                 resetDeviceInfo();
-                SharedPreferences.Editor editor = sp.edit();
-                editor.putString(LOG_TAG, jsonString);
-                editor.apply();
-
+                cacheCurrentDetails(jsonDetails);
                 String tempPath = getSwrveTemporaryPath();
                 if (tempPath != null) {
                     this.cacheDir = new File(tempPath);
                 }
                 sessionKey = SwrveHelper.generateSessionToken(this.getApiKey(), this.getAppId(), getUserId());
             } catch (Exception e) {
-                SwrveLogger.e("Error loading settings from JSON", e);
+                SwrveLogger.e("UnitySwrveCommon: Error loading swrve details from JSON", e);
             }
         } else {
-            SwrveLogger.d("UnitySwrveCommon error no jsonString, nothing native will work correctly");
+            SwrveLogger.d("UnitySwrveCommon error swrve details could not be loaded, nothing native will work correctly");
         }
 
         notificationChannelUtil = new SwrveUnityNotifcationChannelUtil(this.context);
     }
 
-    @CalledByUnity
-    public static void ready() {
-        readyToDoNativeCalls();
+    private String getCachedCurrentDetails() {
+        String cachedCurrentDetails = null;
+        SharedPreferences sharedPreferences = this.context.get().getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+        try {
+            cachedCurrentDetails = sharedPreferences.getString(PREF_UNITY_SWRVE_COMMON, "");
+        } catch (Exception e) {
+            SwrveLogger.e("UnitySwrveCommon: Error loading swrve Unity settings from shared prefs", e);
+        }
+        return cachedCurrentDetails;
+    }
+
+    private void cacheCurrentDetails(String details) {
+        SharedPreferences.Editor editor = this.context.get().getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE).edit();
+        editor.putString(PREF_UNITY_SWRVE_COMMON, details);
+        editor.apply();
+    }
+
+    private String currentDetailsToJson() {
+        Gson gson = new Gson();
+        String currentDetailsJson = gson.toJson(currentDetails);
+        return currentDetailsJson;
     }
 
     private void resetDeviceInfo() {
-        if (this.currentDetails != null && this.currentDetails.containsKey(DEVICE_INFO_KEY)) {
-            LinkedTreeMap<String, Object> _deviceInfo = (LinkedTreeMap<String, Object>) this.currentDetails
-                    .get(DEVICE_INFO_KEY);
+        if (currentDetails != null && currentDetails.containsKey(DEVICE_INFO_KEY)) {
+            LinkedTreeMap<String, Object> _deviceInfo = (LinkedTreeMap<String, Object>) currentDetails.get(DEVICE_INFO_KEY);
             try {
                 JSONObject deviceInfo = new JSONObject("{}");
                 for (Map.Entry<String, Object> entry : _deviceInfo.entrySet()) {
                     deviceInfo.put(entry.getKey(), entry.getValue());
                 }
-                this.currentDetails.remove(DEVICE_INFO_KEY);
-                this.currentDetails.put(DEVICE_INFO_KEY, deviceInfo);
+                currentDetails.remove(DEVICE_INFO_KEY);
+                currentDetails.put(DEVICE_INFO_KEY, deviceInfo);
             } catch (JSONException ex) {
                 SwrveLogger.e("Error while creating device info json object", ex);
             }
         }
+    }
+
+    @CalledByUnity
+    public static void ready() {
+        readyToDoNativeCalls();
     }
 
     private String readFile(String userId, String dir, String filename) {
@@ -269,6 +277,14 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
         return 0;
     }
 
+    private boolean getBooleanDetail(String key, boolean defaultValue) {
+        boolean value = defaultValue;
+        if (currentDetails != null && currentDetails.containsKey(key) && currentDetails.get(key) instanceof Boolean) {
+            value = (Boolean) currentDetails.get(key);
+        }
+        return value;
+    }
+
     @Override
     public String getApiKey() {
         return getStringDetail(API_KEY_KEY);
@@ -297,23 +313,36 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
         return getStringDetail(USER_ID_KEY);
     }
 
-    @Override
-    public boolean isTrackingStateStopped() {
-        return false; // not used in Unity yet
-    }
-
     @CalledByUnity
     public void setUserId(final String userId) {
         try {
             if (SwrveHelper.isNotNullOrEmpty(userId)) {
-                SwrveLogger.d("setUserId called: User will change from: %s, To: %s", getStringDetail(USER_ID_KEY),
-                        userId);
-                this.currentDetails.put(USER_ID_KEY, userId);
+                SwrveLogger.d("setUserId called: User will change from: %s, To: %s", getStringDetail(USER_ID_KEY), userId);
+                currentDetails.put(USER_ID_KEY, userId);
                 // Session token need to update because we changed UserId.
                 sessionKey = SwrveHelper.generateSessionToken(this.getApiKey(), this.getAppId(), userId);
+                // persist the "currentDetails" with the updated userId.
+                String currentDetailsJson = currentDetailsToJson();
+                cacheCurrentDetails(currentDetailsJson);
             }
         } catch (Exception ex) {
             SwrveLogger.e("Exception trying to update SwrveUserId", ex);
+        }
+    }
+
+    @Override
+    public boolean isTrackingStateStopped() {
+        return getBooleanDetail(TRACKING_STATE_STOPPED_KEY, false);
+    }
+
+    @CalledByUnity
+    public void setTrackingStateStopped(boolean isTrackingStateStopped) {
+        try {
+            currentDetails.put(TRACKING_STATE_STOPPED_KEY, isTrackingStateStopped);
+            String currentDetailsJson = currentDetailsToJson();
+            cacheCurrentDetails(currentDetailsJson);
+        } catch (Exception ex) {
+            SwrveLogger.e("Exception trying to update TrackingStateStopped", ex);
         }
     }
 
@@ -373,17 +402,17 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public String getCachedData(String userId, String key) {
         String cacheData = null;
         switch (key) {
-        case CACHE_QA:
-            String fileName = QAUSER_KEY + userId;
-            String swrvePath = getSwrvePath();
-            if (new File(swrvePath, fileName).exists()) {
-                cacheData = readFile(userId, swrvePath, fileName);
-            }
-            if (SwrveHelper.isNullOrEmpty(cacheData)) {
-                SwrveLogger.i("No cached Qa file found, starting as normal User On Android Native Side.");
-                return "{\"reset_device_state\":false,\"logging\":false}";
-            }
-            break;
+            case CACHE_QA:
+                String fileName = QAUSER_KEY + userId;
+                String swrvePath = getSwrvePath();
+                if (new File(swrvePath, fileName).exists()) {
+                    cacheData = readFile(userId, swrvePath, fileName);
+                }
+                if (SwrveHelper.isNullOrEmpty(cacheData)) {
+                    SwrveLogger.i("No cached Qa file found, starting as normal User On Android Native Side.");
+                    return "{\"reset_device_state\":false,\"logging\":false}";
+                }
+                break;
         }
         return cacheData;
     }
@@ -400,7 +429,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
 
     @Override
     public void queueConversationEvent(String eventParamName, String eventPayloadName, String page, int conversationId,
-            Map<String, String> payload) {
+                                       Map<String, String> payload) {
         if (payload == null) {
             payload = new HashMap<>();
         }
@@ -415,8 +444,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
 
         ArrayList<String> conversationEvents = new ArrayList<>();
         try {
-            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, payload, getNextSequenceNumber(),
-                    System.currentTimeMillis()));
+            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, payload, getNextSequenceNumber(), System.currentTimeMillis()));
         } catch (JSONException e) {
             SwrveLogger.e("Could not queue conversation events params: " + parameters, e);
         }
@@ -460,8 +488,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
             SwrveBaseConversation conversation = new SwrveBaseConversation(new JSONObject(conversationJson), cacheDir);
             ConversationActivity.showConversation(context.get(), conversation, SwrveOrientation.parse(orientation));
         } catch (Exception exc) {
-            SwrveLogger.e(
-                    "Could not JSONify conversation (or another error), conversation string didn't have the correct structure.");
+            SwrveLogger.e("Could not JSONify conversation (or another error), conversation string didn't have the correct structure.");
         }
     }
 
@@ -532,15 +559,12 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
 
     @Override
     public SwrvePushNotificationListener getNotificationListener() {
-        // Not used, we replace SwrveNotificationEngageReceiver with a Unity version and
-        // inform the Unity layer from there
-        return null;
+        return null; // Not used, we replace SwrveNotificationEngageReceiver with a Unity version and inform the Unity layer from there
     }
 
     @Override
     public SwrveSilentPushListener getSilentPushListener() {
-        // Not used, processed differently in Unity
-        return null;
+        return null; // Not used, processed differently in Unity
     }
 
     @Override
@@ -562,11 +586,9 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public void saveNotificationAuthenticated(int notificationId) {
         try {
             // Load cached notifications
-            final Context context = UnityPlayer.currentActivity;
-            SharedPreferences sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_FILENAME,
-                    Context.MODE_PRIVATE);
-            JSONArray jsonArray = new JSONArray(
-                    sharedPreferences.getString(NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY, "[]"));
+            final Context context = UnityPlayer.currentActivity == null ? this.context.get() : UnityPlayer.currentActivity;
+            SharedPreferences sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+            JSONArray jsonArray = new JSONArray(sharedPreferences.getString(PREF_NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY, "[]"));
 
             // Create a new notification
             JSONObject authenticatedNotification = new JSONObject();
@@ -577,12 +599,11 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
 
             // Save it on cache
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString(NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY, jsonArray.toString());
+            editor.putString(PREF_NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY, jsonArray.toString());
             editor.commit();
         } catch (Exception ex) {
             SwrveLogger.e("Exception trying to save an Authenticated Notification", ex);
         }
-
     }
 
     @CalledByUnity
@@ -592,12 +613,9 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
             // NotificationManager.getActiveNotifications is only available
             // in api 23 and current minVersion is below that
             final Context context = UnityPlayer.currentActivity;
-            SharedPreferences sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_FILENAME,
-                    Context.MODE_PRIVATE);
-            final NotificationManager notificationManager = (NotificationManager) context
-                    .getSystemService(Context.NOTIFICATION_SERVICE);
-            JSONArray allAuthenticatedNotifications = new JSONArray(
-                    sharedPreferences.getString(NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY, "[]"));
+            SharedPreferences sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+            final NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            JSONArray allAuthenticatedNotifications = new JSONArray(sharedPreferences.getString(PREF_NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY, "[]"));
 
             // Remove the notification from Android NotificationManager.NOTIFICATION_SERVICE
             for (int i = 0; i < allAuthenticatedNotifications.length(); i++) {
@@ -608,11 +626,24 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
 
             // Clear our NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY on SharedPreferences
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString(NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY, "[]");
+            editor.putString(PREF_NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY, "[]");
             editor.commit();
         } catch (Exception ex) {
             SwrveLogger.e("Exception trying remove notifications", ex);
         }
+    }
+
+    private JSONArray checkMaxCachedAuthenticatedNotifications(JSONArray allCachedNotifications) throws Exception {
+        if (allCachedNotifications.length() > MAX_CACHED_AUTHENTICATED_NOTIFICATIONS) {
+            JSONArray tidyUpNotifications = new JSONArray();
+            // starting this for at 1 because "0" is the element that will not be keep on our system.
+            for (int i = 1; i < allCachedNotifications.length(); i++) {
+                JSONObject notification = allCachedNotifications.getJSONObject(i);
+                tidyUpNotifications.put(notification);
+            }
+            return tidyUpNotifications;
+        }
+        return allCachedNotifications;
     }
 
     @CalledByUnity
@@ -623,22 +654,8 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
             ClipData clip = ClipData.newPlainText("simple text", content);
             clipboard.setPrimaryClip(clip);
         } catch (Exception e) {
-            SwrveLogger.e("Couldn't copy text to clipboard: %s", e, content);
+            SwrveLogger.e("UnitySwrveCommon could not copy text to clipboard: %s", e, content);
         }
-    }
-
-    private JSONArray checkMaxCachedAuthenticatedNotifications(JSONArray allCachedNotifications) throws Exception {
-        if (allCachedNotifications.length() > MAX_CACHED_AUTHENTICATED_NOTIFICATIONS) {
-            JSONArray tidyUpNotifications = new JSONArray();
-            // starting this for at 1 because "0" is the element that will not be keep on
-            // our system.
-            for (int i = 1; i < allCachedNotifications.length(); i++) {
-                JSONObject notification = allCachedNotifications.getJSONObject(i);
-                tidyUpNotifications.put(notification);
-            }
-            return tidyUpNotifications;
-        }
-        return allCachedNotifications;
     }
 
     @Override
@@ -657,8 +674,7 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
         }
     }
 
-    // Internal method to send a message to the SDK now or when the app finishes
-    // loading.
+    // Internal method to send a message to the SDK now or when the app finishes loading.
     // Call this instead of UnityEditor.UnitySendMessage
     public static void UnitySendMessage(String object, String method, String msg) {
         synchronized (readyNativeCallbacksLock) {

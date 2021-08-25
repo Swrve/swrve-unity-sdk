@@ -6,18 +6,24 @@
 #import <CommonCrypto/CommonHMAC.h>
 
 #if !defined(SWRVE_NO_PUSH)
+
 #import "SwrvePush.h"
 
 // Added public interface for our didReceiveRemoteNotification withLocalUserId into our internal SwrvePush class.
 #if !TARGET_OS_TV
-@interface SwrvePush()
-- (BOOL)didReceiveRemoteNotification:(NSDictionary *)userInfo withBackgroundCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary *))completionHandler withLocalUserId:(NSString *) localUserId API_AVAILABLE(ios(7.0));
+
+@interface SwrvePush ()
+- (BOOL)didReceiveRemoteNotification:(NSDictionary *)userInfo withBackgroundCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary *))completionHandler withLocalUserId:(NSString *)localUserId API_AVAILABLE(ios(7.0));
+
 - (void)setCommonDelegate:(id <SwrveCommonDelegate>)commonDelegate;
+
 #endif
 @end
 
 #import "SwrveNotificationConstants.h"
+
 #endif
+
 #import "SwrveQA.h"
 #import "SwrveCampaignInfluence.h"
 #import "UnitySwrveCommonMessageController.h"
@@ -31,7 +37,7 @@ NSString *const SwrvePushButtonToCampaignIdKey = @"PUSH_BUTTON_TO_CAMPAIGN_ID";
 NSString *const SwrvePushUnityDoNotProcessKey = @"SWRVE_UNITY_DO_NOT_PROCESS";
 NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
-@interface UnitySwrve()
+@interface UnitySwrve ()
 
 #pragma mark - properties & init
 
@@ -39,12 +45,12 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
 // An in-memory buffer of messages that are ready to be sent to the Swrve
 // server the next time sendQueuedEvents is called.
-@property (atomic) NSMutableArray *eventBuffer;
+@property(atomic) NSMutableArray *eventBuffer;
 
 // Count the number of UTF-16 code points stored in buffer
-@property (atomic) int eventBufferBytes;
+@property(atomic) int eventBufferBytes;
 
-@property (atomic) NSDictionary *deviceInfo;
+@property(atomic) NSDictionary *deviceInfo;
 
 @property(nonatomic, strong) NSString *appGroupIdentifierCache;
 
@@ -52,7 +58,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 // This would result in bad engagement reports etc. This var is used to check that the same push id can't be processed in sequence.
 @property(nonatomic, strong) NSString *lastProcessedPushId;
 
-@property (nonatomic, retain) id <SwrvePermissionsDelegate> internalPermissionsDelegate;
+@property(nonatomic, retain) id <SwrvePermissionsDelegate> internalPermissionsDelegate;
 
 /** this is the eventHandler for the conversations, used for getting state for Unity to use */
 @property(nonatomic) UnitySwrveMessageEventHandler *msgEventHandler;
@@ -74,7 +80,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
 - (id)init {
     self = [super init];
-    if(self) {
+    if (self) {
         [self initBuffer];
     }
     return self;
@@ -88,39 +94,53 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     return _swrveSharedUnity;
 }
 
-- (void) shutdown {
+- (void)shutdown {
     [SwrveCommon addSharedInstance:nil];
     sharedInstanceToken = 0;
     _swrveSharedUnity = nil;
     msgEventHandler = nil;
 }
 
-
-+ (void)init:(char*)_jsonConfig {
++ (void)init:(char *)_jsonConfig {
     NSString *jsonConfig = [UnitySwrveHelper CStringToNSString:_jsonConfig];
-    NSString *spKey = SwrveUnityStoreConfigKey;
-    NSUserDefaults *preferences = [NSUserDefaults standardUserDefaults];
-    if((jsonConfig == nil) || (0 == [jsonConfig length])) {
-        jsonConfig = [preferences stringForKey:spKey];
+    NSDictionary *newConfigDict = nil;
+    if ((jsonConfig == nil) || (0 == [jsonConfig length])) {
+        newConfigDict = [UnitySwrve savedConfig];
+    } else {
+        newConfigDict = [UnitySwrve configFromJson:jsonConfig];
     }
-    if((jsonConfig == nil) || (0 == [jsonConfig length])) {
+
+    if (newConfigDict == nil) {
         return;
     }
-    [SwrveLogger debug:@"Full config dict: %@", jsonConfig];
 
-    NSError *error = nil;
-    NSDictionary *newConfigDict = [NSJSONSerialization JSONObjectWithData:[jsonConfig dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableContainers error:&error];
-    if(error == nil) {
-        UnitySwrve *swrve = [UnitySwrve sharedInstance];
-        swrve.configDict = newConfigDict;
-        [SwrveLogger debug:@"Full config dict: %@", swrve.configDict];
-
-        swrve.deviceInfo = [swrve.configDict objectForKey:@"deviceInfo"];
-        [preferences setObject:jsonConfig forKey:spKey];
-        [preferences synchronize];
-    }
+    [SwrveLogger debug:@"Full config dict: %@", newConfigDict];
+    UnitySwrve *swrve = [UnitySwrve sharedInstance];
+    swrve.configDict = newConfigDict;
+    swrve.deviceInfo = [swrve.configDict objectForKey:@"deviceInfo"];
+    [UnitySwrve saveConfig:swrve.configDict];
 }
 
++ (void)saveConfig:(NSDictionary*) dict {
+    [[NSUserDefaults standardUserDefaults] setObject:dict forKey:SwrveUnityStoreConfigKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
++ (NSDictionary *)savedConfig {
+    [SwrveLogger debug:@"UnitySwrve getting saved config from NSUserDefaults.", nil];
+    return [[NSUserDefaults standardUserDefaults] objectForKey:SwrveUnityStoreConfigKey];
+}
+
++ (NSDictionary *)configFromJson:(NSString *)jsonConfig {
+    NSError *error = nil;
+    NSData *data = [jsonConfig dataUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *newConfigDict = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&error];
+    if (error == nil) {
+        return newConfigDict;
+    } else {
+        return nil;
+    }
+}
 
 #pragma mark - getters & setters
 
@@ -157,32 +177,41 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 }
 
 - (NSString *)userId {
-    NSString *userId = [self stringFromConfig:@"userId"];
-    // userId could be nil if app was killed and unity engine has not been started. eg: when receiving a silent push and app is killed
-    if (!userId || [userId isKindOfClass:[NSNull class]]) {
+    NSString *currentUserId = [self stringFromConfig:@"userId"];
+    // currentUserId could be nil if app was killed and unity engine has not been started. eg: when receiving a silent push and app is killed
+    if (!currentUserId || [currentUserId isKindOfClass:[NSNull class]]) {
         NSDictionary *deliveryConfig = [SwrveSEConfig deliveryConfig:[self appGroupIdentifier]];
-        userId = [deliveryConfig objectForKey:SwrveDeliveryRequiredConfigUserIdKey];
+        currentUserId = [deliveryConfig objectForKey:SwrveDeliveryRequiredConfigUserIdKey];
     }
-    return userId;
+    return currentUserId;
 }
 
-- (void)setUserId:(NSString *) userID {
-    if (userID == nil || [userID isEqualToString:@""]) { return; }
+- (void)setUserId:(NSString *)userID {
+    if (userID == nil || [userID isEqualToString:@""]) {return;}
     userId = userID;
     [self.configDict setValue:userID forKey:@"userId"];
     // Update as well in our local native storage our new swrve user id and invalidate current session token
     [self.configDict setValue:nil forKey:@"sessionToken"];
-    [[NSUserDefaults standardUserDefaults] setObject:self.configDict forKey:SwrveUnityStoreConfigKey];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    [UnitySwrve saveConfig:self.configDict];
 }
 
-- (NSString*) userID { return [self userId]; }
+- (NSString *)userID {
+    return [self userId];
+}
 
-- (long) appId {
+- (void)setTrackingStateStopped:(BOOL)isTrackingStateStopped {
+    // Currently the isTrackingStateStopped flag only required for push which is accessed via SwrveSEConfig so no need to save to self.configDict
+    NSString *appGroupId = [self appGroupIdentifier];
+    [SwrveSEConfig saveTrackingStateStopped:appGroupId isTrackingStateStopped:isTrackingStateStopped];
+}
+
+- (long)appId {
     return [self longFromConfig:@"appId"];
 }
 
-- (long) appID { return [self appId]; }
+- (long)appID {
+    return [self appId];
+}
 
 - (NSString *)apiKey {
     return [self stringFromConfig:@"apiKey"];
@@ -192,19 +221,19 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     return [self stringFromConfig:@"deviceId"];
 }
 
--(NSString *)appVersion {
+- (NSString *)appVersion {
     return [self stringFromConfig:@"appVersion"];
 }
 
--(NSString *)uniqueKey {
+- (NSString *)uniqueKey {
     return [self stringFromConfig:@"uniqueKey"];
 }
 
--(NSString *)eventsServer {
+- (NSString *)eventsServer {
     return [self stringFromConfig:@"eventsServer"];
 }
 
--(NSString *)contentServer {
+- (NSString *)contentServer {
     return @""; // added for geo, not supported in unity yet
 }
 
@@ -233,8 +262,10 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     NSString *sessionToken = [self stringFromConfig:@"sessionToken"];
     if (sessionToken == nil || [sessionToken isEqualToString:@""]) {
         sessionToken = [[NSString alloc] initWithString:[self createSessionToken]];
-        [self.configDict setValue:sessionToken forKey:@"sessionToken"];
-        [[NSUserDefaults standardUserDefaults] setObject:self.configDict forKey:SwrveUnityStoreConfigKey];
+        NSMutableDictionary *configCopy = [self.configDict mutableCopy];
+        [configCopy setObject:sessionToken forKey:@"sessionToken"];
+        self.configDict = configCopy;
+        [UnitySwrve saveConfig:self.configDict];
     }
     return sessionToken;
 }
@@ -257,26 +288,26 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     // Get the time since the epoch in seconds
     struct timeval time;
     gettimeofday(&time, NULL);
-    return (((UInt64)time.tv_sec) * 1000) + (((UInt64)time.tv_usec) / 1000);
+    return (((UInt64) time.tv_sec) * 1000) + (((UInt64) time.tv_usec) / 1000);
 }
 
 #pragma mark - conversation handling
 
-- (void) showConversationFromString:(NSString*) conversation {
-    if(self.msgEventHandler == nil){
+- (void)showConversationFromString:(NSString *)conversation {
+    if (self.msgEventHandler == nil) {
         self.msgEventHandler = [UnitySwrveMessageEventHandler alloc];
     }
     [self.msgEventHandler showConversationFromString:conversation];
 }
 
-- (bool) isConversationDisplaying {
-    if(self.msgEventHandler){
+- (bool)isConversationDisplaying {
+    if (self.msgEventHandler) {
         return [self.msgEventHandler isConversationDisplaying];
     }
     return false;
 }
 
-- (int) conversationClosed {
+- (int)conversationClosed {
     // UnitySendMessage requires the message field occupied or we get EXC_BAD_ACCESS.
     [self sendMessageUp:@"NativeConversationClosed" msg:@"closing native conversation.."];
     return SWRVE_SUCCESS;
@@ -286,17 +317,17 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
 - (int)eventInternal:(NSString *)eventName payload:(NSDictionary *)eventPayload triggerCallback:(bool)triggerCallback {
     if (!eventPayload) {
-        eventPayload = [[NSDictionary alloc]init];
+        eventPayload = [[NSDictionary alloc] init];
     }
 
-    NSMutableDictionary* json = [[NSMutableDictionary alloc] init];
+    NSMutableDictionary *json = [[NSMutableDictionary alloc] init];
     [json setValue:NullableNSString(eventName) forKey:@"name"];
     [json setValue:eventPayload forKey:@"payload"];
 
     return [self queueEvent:@"event" data:json triggerCallback:triggerCallback];;
 }
 
-- (int) queueEvent:(NSString*)eventType data:(NSMutableDictionary *)eventData triggerCallback:(bool)triggerCallback {
+- (int)queueEvent:(NSString *)eventType data:(NSMutableDictionary *)eventData triggerCallback:(bool)triggerCallback {
 #pragma unused(triggerCallback)
     NSMutableArray *buffer = self.eventBuffer;
     if (buffer) {
@@ -313,7 +344,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
         if (json_data) {
             NSString *json_string = [[NSString alloc] initWithData:json_data encoding:NSUTF8StringEncoding];
             @synchronized (buffer) {
-                [self setEventBufferBytes:self.eventBufferBytes + (int)[json_string length]];
+                [self setEventBufferBytes:self.eventBufferBytes + (int) [json_string length]];
                 [buffer addObject:json_string];
             }
         }
@@ -323,7 +354,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     return SWRVE_SUCCESS;
 }
 
-- (void) sendQueuedEvents {
+- (void)sendQueuedEvents {
     // Early out if length is zero.
     NSMutableArray *buffer = self.eventBuffer;
     int bytes = self.eventBufferBytes;
@@ -335,52 +366,51 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
         [self initBuffer];
     }
 
-    NSString* session_token = [self createSessionToken];
-    NSString* array_body = [self copyBufferToJson:buffer];
-    NSString* json_string = [self createJSON:session_token events:array_body];
+    NSString *session_token = [self createSessionToken];
+    NSString *array_body = [self copyBufferToJson:buffer];
+    NSString *json_string = [self createJSON:session_token events:array_body];
 
-    NSData* json_data = [json_string dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *json_data = [json_string dataUsingEncoding:NSUTF8StringEncoding];
 
     [self sendHttpPOSTRequest:[self batchUrl]
                      jsonData:json_data
-            completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
+            completionHandler:^(NSURLResponse *response, NSData *data, NSError *error) {
 
-                if (error){
+                if (error) {
                     [SwrveLogger error:@"Error opening HTTP stream: %@ %@", [error localizedDescription], [error localizedFailureReason]];
                     [self setEventBufferBytes:self.eventBufferBytes + bytes];
-                    NSMutableArray* currentBuffer = self.eventBuffer;
-                    @synchronized(currentBuffer) {
+                    NSMutableArray *currentBuffer = self.eventBuffer;
+                    @synchronized (currentBuffer) {
                         [currentBuffer addObjectsFromArray:buffer];
                     }
                     return;
-                }
-                else{
+                } else {
                     [SwrveLogger debug:@"response: %@", response];
                     [SwrveLogger debug:@"data: %@", data];
                 }
             }];
 }
 
-- (void)sendHttpPOSTRequest:(NSURL*)url jsonData:(NSData*)json {
+- (void)sendHttpPOSTRequest:(NSURL *)url jsonData:(NSData *)json {
     [self sendHttpPOSTRequest:url jsonData:json completionHandler:nil];
 }
 
-- (void)sendHttpPOSTRequest:(NSURL*)url jsonData:(NSData*)json completionHandler:(void (^)(NSURLResponse*, NSData*, NSError*))handler {
-    NSMutableURLRequest* request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:[self httpTimeout]];
+- (void)sendHttpPOSTRequest:(NSURL *)url jsonData:(NSData *)json completionHandler:(void (^)(NSURLResponse *, NSData *, NSError *))handler {
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:[self httpTimeout]];
     [request setHTTPMethod:@"POST"];
     [request setHTTPBody:json];
     [request setValue:@"application/json; charset=utf-8" forHTTPHeaderField:@"Content-Type"];
-    [request setValue:[NSString stringWithFormat:@"%lu", (unsigned long)[json length]] forHTTPHeaderField:@"Content-Length"];
+    [request setValue:[NSString stringWithFormat:@"%lu", (unsigned long) [json length]] forHTTPHeaderField:@"Content-Length"];
 
     [self sendHttpRequest:request completionHandler:handler];
 }
 
-- (void)sendHttpRequest:(NSMutableURLRequest*)request completionHandler:(void (^)(NSURLResponse*, NSData*, NSError*))handler {
+- (void)sendHttpRequest:(NSMutableURLRequest *)request completionHandler:(void (^)(NSURLResponse *, NSData *, NSError *))handler {
     // Add http request performance metrics for any previous requests into the header of this request (see JIRA SWRVE-5067 for more details)
-    NSArray* allMetricsToSend;
+    NSArray *allMetricsToSend;
 
     if (allMetricsToSend != nil && [allMetricsToSend count] > 0) {
-        NSString* fullHeader = [allMetricsToSend componentsJoinedByString:@";"];
+        NSString *fullHeader = [allMetricsToSend componentsJoinedByString:@";"];
         [request addValue:fullHeader forHTTPHeaderField:@"Swrve-Latency-Metrics"];
     }
 
@@ -398,23 +428,24 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
 - (NSString *)createSessionToken {
     // Get the time since the epoch in seconds
-    struct timeval time; gettimeofday(&time, NULL);
+    struct timeval time;
+    gettimeofday(&time, NULL);
     const long session_start = time.tv_sec;
 
-    NSString* source = [NSString stringWithFormat:@"%@%ld%@", [self userId], session_start, [self apiKey]];
+    NSString *source = [NSString stringWithFormat:@"%@%ld%@", [self userId], session_start, [self apiKey]];
 
-    NSString* digest = [self createStringWithMD5:source];
+    NSString *digest = [self createStringWithMD5:source];
 
     // $session_token = "$app_id=$user_id=$session_start=$md5_hash";
-    NSString* session_token = [NSString stringWithFormat:@"%ld=%@=%ld=%@",
-                               [self appId],
-                               [self userId],
-                               session_start,
-                               digest];
+    NSString *session_token = [NSString stringWithFormat:@"%ld=%@=%ld=%@",
+                                                         [self appId],
+                                                         [self userId],
+                                                         session_start,
+                                                         digest];
     return session_token;
 }
 
-- (NSString *)createStringWithMD5:(NSString*)source {
+- (NSString *)createStringWithMD5:(NSString *)source {
 #define C "%02x"
 #define CCCC C C C C
 #define DIGEST_FORMAT CCCC CCCC CCCC CCCC
@@ -424,34 +455,34 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     NSData *buffer = [source dataUsingEncoding:NSUTF8StringEncoding];
 
     unsigned char digest[CC_MD5_DIGEST_LENGTH] = {0};
-    unsigned int length = (unsigned int)[buffer length];
+    unsigned int length = (unsigned int) [buffer length];
     CC_MD5_CTX context;
     CC_MD5_Init(&context);
     CC_MD5_Update(&context, [buffer bytes], length);
     CC_MD5_Final(digest, &context);
 
-    NSString* result = [NSString stringWithFormat:digestFormat,
-                        digest[ 0], digest[ 1], digest[ 2], digest[ 3],
-                        digest[ 4], digest[ 5], digest[ 6], digest[ 7],
-                        digest[ 8], digest[ 9], digest[10], digest[11],
-                        digest[12], digest[13], digest[14], digest[15]];
+    NSString *result = [NSString stringWithFormat:digestFormat,
+                                                  digest[0], digest[1], digest[2], digest[3],
+                                                  digest[4], digest[5], digest[6], digest[7],
+                                                  digest[8], digest[9], digest[10], digest[11],
+                                                  digest[12], digest[13], digest[14], digest[15]];
 
     return result;
 }
 
 // Convert the array of strings into a json array.
 // This does not add the square brackets.
-- (NSString *)copyBufferToJson:(NSArray *) buffer {
+- (NSString *)copyBufferToJson:(NSArray *)buffer {
     return [buffer componentsJoinedByString:@",\n"];
 }
 
-- (NSString*) createJSON:(NSString *)sessionToken events:(NSString *)rawEvents {
+- (NSString *)createJSON:(NSString *)sessionToken events:(NSString *)rawEvents {
     NSString *eventArray = [NSString stringWithFormat:@"[%@]", rawEvents];
     NSData *bodyData = [eventArray dataUsingEncoding:NSUTF8StringEncoding];
-    NSArray* body = [NSJSONSerialization
-                     JSONObjectWithData:bodyData
-                     options:NSJSONReadingMutableContainers
-                     error:nil];
+    NSArray *body = [NSJSONSerialization
+            JSONObjectWithData:bodyData
+                       options:NSJSONReadingMutableContainers
+                         error:nil];
 
     NSMutableDictionary *jsonPacket = [[NSMutableDictionary alloc] init];
     [jsonPacket setValue:[self userId] forKey:@"user"];
@@ -467,7 +498,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     return json;
 }
 
--(int) userUpdate:(NSDictionary *)attributes {
+- (int)userUpdate:(NSDictionary *)attributes {
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:attributes options:0 error:nil];
     NSString *json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 
@@ -487,17 +518,17 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     }
 }
 
-- (void)sendMessageUp:(NSString*)method msg:(NSString*)msg {
+- (void)sendMessageUp:(NSString *)method msg:(NSString *)msg {
     UnitySendMessage([UnitySwrveHelper NSStringCopy:[self prefabName]],
-                     [UnitySwrveHelper NSStringCopy:method],
-                     [UnitySwrveHelper NSStringCopy:msg]);
+            [UnitySwrveHelper NSStringCopy:method],
+            [UnitySwrveHelper NSStringCopy:msg]);
 }
 
 
-- (void)sendPushResponse:(NSDictionary*)notification {
-    #if !defined(SWRVE_NO_PUSH)
+- (void)sendPushResponse:(NSDictionary *)notification {
+#if !defined(SWRVE_NO_PUSH)
     UnitySendRemoteNotification(notification);
-    #endif //SWRVE_NO_PUSH
+#endif //SWRVE_NO_PUSH
 }
 
 
@@ -525,7 +556,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
         NSDictionary *dict = [self readAppGroupConfigJSON];
         appGroupIdentifierCache = @"";
 
-        if(dict != nil) {
+        if (dict != nil) {
             if (dict[@"appGroupIdentifier"]) {
                 appGroupIdentifierCache = dict[@"appGroupIdentifier"];
             } else {
@@ -539,11 +570,11 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 }
 
 - (void)sendPushNotificationEngagedEvent:(NSString *)pushId {
-    NSString* eventName = [NSString stringWithFormat:@"Swrve.Messages.Push-%@.engaged", pushId];
+    NSString *eventName = [NSString stringWithFormat:@"Swrve.Messages.Push-%@.engaged", pushId];
     [self eventInternal:eventName payload:nil triggerCallback:true];
 }
 
--(NSData*) campaignData:(int)category {
+- (NSData *)campaignData:(int)category {
 #pragma unused(category)
     return nil;
 }
@@ -552,11 +583,11 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 #pragma unused(campaignId)
 }
 
-- (void)setPermissionsDelegate:(id<SwrvePermissionsDelegate>)permissionsDelegate {
+- (void)setPermissionsDelegate:(id <SwrvePermissionsDelegate>)permissionsDelegate {
     self.internalPermissionsDelegate = permissionsDelegate;
 }
 
-- (id<SwrvePermissionsDelegate>)permissionsDelegate {
+- (id <SwrvePermissionsDelegate>)permissionsDelegate {
     return self.internalPermissionsDelegate;
 }
 
@@ -565,16 +596,17 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler {
 #pragma unused(center, notification)
-    if(completionHandler) {
+    if (completionHandler) {
         completionHandler(UNNotificationPresentationOptionNone);
     }
 
 }
 
 #ifdef __IPHONE_11_0
-- (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void(^)(void))completionHandler {
+
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void (^)(void))completionHandler {
 #else
-- (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void(^)())completionHandler {
+    - (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void(^)())completionHandler {
 #endif
 #pragma unused(center)
 
@@ -585,17 +617,15 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     }
 }
 
-- (void)pushNotificationResponseReceived:(NSString *)identifier withUserInfo:(NSDictionary *) userInfo {
+- (void)pushNotificationResponseReceived:(NSString *)identifier withUserInfo:(NSDictionary *)userInfo {
     id pushIdentifier = [userInfo objectForKey:SwrveNotificationIdentifierKey];
     if (pushIdentifier && ![pushIdentifier isKindOfClass:[NSNull class]]) {
         NSString *pushId = @"-1";
         if ([pushIdentifier isKindOfClass:[NSString class]]) {
-            pushId = (NSString*)pushIdentifier;
-        }
-        else if ([pushIdentifier isKindOfClass:[NSNumber class]]) {
-            pushId = [((NSNumber*)pushIdentifier) stringValue];
-        }
-        else {
+            pushId = (NSString *) pushIdentifier;
+        } else if ([pushIdentifier isKindOfClass:[NSNumber class]]) {
+            pushId = [((NSNumber *) pushIdentifier) stringValue];
+        } else {
             [SwrveLogger error:@"Unknown Swrve notification ID class for _p attribute", nil];
             return;
         }
@@ -608,7 +638,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
             NSString *appGroupId = [self appGroupIdentifier];
             [SwrveCampaignInfluence removeInfluenceDataForId:pushId fromAppGroupId:appGroupId];
 
-            if([identifier isEqualToString:SwrveNotificationResponseDefaultActionKey]) {
+            if ([identifier isEqualToString:SwrveNotificationResponseDefaultActionKey]) {
                 // if the user presses the push directly
                 id pushDeeplinkRaw = [userInfo objectForKey:SwrveNotificationDeeplinkKey];
                 if (pushDeeplinkRaw == nil || ![pushDeeplinkRaw isKindOfClass:[NSString class]]) {
@@ -616,7 +646,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
                     pushDeeplinkRaw = [userInfo objectForKey:SwrveNotificationDeprecatedDeeplinkKey];
                 }
                 if ([pushDeeplinkRaw isKindOfClass:[NSString class]]) {
-                    NSString* pushDeeplink = (NSString*)pushDeeplinkRaw;
+                    NSString *pushDeeplink = (NSString *) pushDeeplinkRaw;
                     [self handlePushDeeplinkString:pushDeeplink];
                 }
 
@@ -624,49 +654,53 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
                 [self sendPushResponse:userInfo];
                 [SwrveLogger debug:@"Performed a Direct Press on Swrve notification with ID %@", pushId];
             } else {
+                if (self.configDict == nil) {
+                    self.configDict = [UnitySwrve savedConfig];
+                }
+
                 NSDictionary *swrveValues = [userInfo objectForKey:SwrveNotificationContentIdentifierKey];
                 NSArray *swrvebuttons = [swrveValues objectForKey:SwrveNotificationButtonListKey];
 
                 if (swrvebuttons != nil && [swrvebuttons count] > 0) {
                     int position = [identifier intValue];
 
-                    NSDictionary *selectedButton = [swrvebuttons objectAtIndex:(NSUInteger)position];
+                    NSDictionary *selectedButton = [swrvebuttons objectAtIndex:(NSUInteger) position];
                     NSString *action = [selectedButton objectForKey:SwrveNotificationButtonActionKey];
                     NSString *actionType = [selectedButton objectForKey:SwrveNotificationButtonActionTypeKey];
                     NSString *actionText = [selectedButton objectForKey:SwrveNotificationButtonTitleKey];
 
                     // Send button click event
                     [SwrveLogger debug:@"Selected Button:'%@' on Swrve notification with ID %@", identifier, pushId];
-                    NSMutableDictionary* actionEvent = [[NSMutableDictionary alloc] init];
+                    NSMutableDictionary *actionEvent = [[NSMutableDictionary alloc] init];
                     [actionEvent setValue:pushId forKey:@"id"];
                     [actionEvent setValue:@"push" forKey:@"campaignType"];
                     [actionEvent setValue:@"button_click" forKey:@"actionType"];
                     [actionEvent setValue:identifier forKey:@"contextId"];
-                    NSMutableDictionary* eventPayload = [[NSMutableDictionary alloc] init];
+                    NSMutableDictionary *eventPayload = [[NSMutableDictionary alloc] init];
                     [eventPayload setValue:actionText forKey:@"buttonText"];
                     [actionEvent setValue:eventPayload forKey:@"payload"];
 
                     // Create generic campaign for button click
-                    (void)[self queueEvent:@"generic_campaign_event" data:actionEvent triggerCallback:NO];
-                    
+                    (void) [self queueEvent:@"generic_campaign_event" data:actionEvent triggerCallback:NO];
+
                     [self sendPushNotificationEngagedEvent:pushId];
                     [self sendQueuedEvents];
                     // Now that we've processed the events, we need to fulfill the action on the Unity later
-                    
+
                     // Create a mutable copy and let unity know that the events are already processed
                     NSMutableDictionary *mutableUserInfo = [userInfo mutableCopy];
                     [mutableUserInfo setValue:@"YES" forKey:SwrvePushUnityDoNotProcessKey];
-                    
+
                     // If the action is open app we let Unity know about the push payload
                     if ([actionType isEqualToString:SwrveNotificationCustomButtonUrlIdentiferKey]) {
                         [self handlePushDeeplinkString:action];
-                    }else if ([actionType isEqualToString:SwrvePushCustomButtonOpenAppIdentiferKey]) {
+                    } else if ([actionType isEqualToString:SwrvePushCustomButtonOpenAppIdentiferKey]) {
                         // This open app action will be ignored as everything has already been done.
-                    }else if([actionType isEqualToString:SwrvePushCustomButtonCampaignIdentifierKey]){
+                    } else if ([actionType isEqualToString:SwrvePushCustomButtonCampaignIdentifierKey]) {
                         // Unity will process the new campaign id Key added to the userInfo and the engagement event
                         [mutableUserInfo setValue:action forKey:SwrvePushButtonToCampaignIdKey];
                     }
-                    
+
                     userInfo = mutableUserInfo;
                     // Then send it onto the Unity layer
                     [self sendPushResponse:userInfo];
@@ -694,7 +728,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     }
 }
 
-+ (BOOL)didReceiveRemoteNotification:(NSDictionary *)userInfo withBackgroundCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary*))completionHandler {
++ (BOOL)didReceiveRemoteNotification:(NSDictionary *)userInfo withBackgroundCompletionHandler:(void (^)(UIBackgroundFetchResult, NSDictionary *))completionHandler {
     SwrvePush *swrvePush = [SwrvePush new];
     [swrvePush setCommonDelegate:[UnitySwrve sharedInstance]];
     return [swrvePush didReceiveRemoteNotification:userInfo withBackgroundCompletionHandler:completionHandler withLocalUserId:[[UnitySwrve sharedInstance] userId]];
@@ -702,7 +736,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
 #endif
 
--(void)deeplinkReceived:(NSURL *)url {
+- (void)deeplinkReceived:(NSURL *)url {
     UIApplication *application = [UIApplication sharedApplication];
     [application openURL:url options:@{} completionHandler:^(BOOL success) {
         [SwrveLogger debug:@"Opening url [%@] successfully: %d", url, success];
@@ -712,21 +746,22 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 - (void)updateQAUser:(NSString *)qaJson {
     NSError *error = nil;
     NSDictionary *map =
-    [NSJSONSerialization JSONObjectWithData:[qaJson dataUsingEncoding:NSUTF8StringEncoding]
-                                    options:NSJSONReadingMutableContainers error:&error];
+            [NSJSONSerialization JSONObjectWithData:[qaJson dataUsingEncoding:NSUTF8StringEncoding]
+                                            options:NSJSONReadingMutableContainers error:&error];
     if (error == nil) {
         [SwrveQA updateQAUser:map andSessionToken:[self sessionToken]];
     }
 }
-    
+
 - (void)fetchNotificationCampaigns:(NSMutableSet *)campaignIds {
     // added for geo, not supported in unity yet
 #pragma unused (campaignIds)
 }
 
-- (void)setSwrveSessionDelegate:(id<SwrveSessionDelegate>)sessionDelegate {
+- (void)setSwrveSessionDelegate:(id <SwrveSessionDelegate>)sessionDelegate {
     // added for geo, not supported in unity yet
 #pragma unused (sessionDelegate)
 }
 
 @end
+

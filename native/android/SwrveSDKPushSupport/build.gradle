@@ -26,6 +26,7 @@ android {
         }
         firebase {
             flavorDimensions "swrve-sdk"
+            getIsDefault().set(true)
         }
     }
 }

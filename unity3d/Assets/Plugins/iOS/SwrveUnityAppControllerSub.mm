@@ -21,7 +21,7 @@
     return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
-- (void)application:(UIApplication*)application didReceiveRemoteNotification:(NSDictionary*)userInfo
+-(void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler
 {
     UIApplicationState swrveState = [application applicationState];
 
@@ -30,6 +30,10 @@
         NSMutableDictionary* mutableUserInfo = [userInfo mutableCopy];
         [mutableUserInfo setValue:@"YES" forKey:@"_swrveForeground"];
         userInfo = mutableUserInfo;
+    }
+    
+    if ([UnityAppController instancesRespondToSelector:@selector(application:didReceiveRemoteNotification:fetchCompletionHandler:)]) {
+        [super application:application didReceiveRemoteNotification:userInfo fetchCompletionHandler:completionHandler];
     }
 }
 

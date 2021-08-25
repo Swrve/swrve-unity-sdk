@@ -26,6 +26,7 @@ extern "C"
     void _swrveiOSUpdateQaUser(char* jsonMap);
     void _swrveCopyToClipboard(char* content);
     void _swrveUserId(char* userId);
+    void _swrveTrackingStateStopped(bool isTrackingStateStopped);
     void _saveConfigForPushDelivery(void);
     void _clearAllAuthenticatedNotifications(void);
 

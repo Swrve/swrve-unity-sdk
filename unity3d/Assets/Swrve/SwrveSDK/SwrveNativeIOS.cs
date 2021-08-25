@@ -194,6 +194,10 @@ public void IapApple(int quantity, string productId, double productPrice, string
                     iOSdeviceToken = hexToken;
                     // Save device token for future launches
                     storage.Save(iOSdeviceTokenSave, iOSdeviceToken);
+
+                    if(IsSDKReady()) {
+                        SendDeviceInfo();
+                    }
                     SendDeviceInfo();
                 }
 
@@ -302,6 +306,9 @@ public void IapApple(int quantity, string productId, double productPrice, string
 
     [DllImport ("__Internal")]
     public static extern void _swrveUserId(string userId);
+
+    [DllImport ("__Internal")]
+    public static extern void _swrveTrackingStateStopped(bool isTrackingStateStopped);
 
     [DllImport ("__Internal")]
     public static extern void _saveConfigForPushDelivery();
@@ -556,6 +563,13 @@ public void IapApple(int quantity, string productId, double productPrice, string
     {
 #if !UNITY_EDITOR
         _swrveUserId(UserId);
+#endif
+    }
+
+    private void UpdateTrackingStateStopped(bool isTrackingStateStopped)
+    {
+#if !UNITY_EDITOR
+        _swrveTrackingStateStopped(isTrackingStateStopped);
 #endif
     }
 

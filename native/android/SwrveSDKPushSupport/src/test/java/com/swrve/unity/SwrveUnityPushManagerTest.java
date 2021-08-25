@@ -38,9 +38,11 @@ import static com.swrve.sdk.SwrveNotificationConstants.SOUND_DEFAULT;
 import static com.swrve.sdk.SwrveNotificationConstants.SOUND_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
@@ -65,12 +67,11 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
         bundle.putString(SwrveNotificationConstants.TEXT_KEY, msgText);
         bundle.putString("custom", "key");
 
-        SwrvePushManagerUnityImp serviceManagerSpy = spy(new SwrvePushManagerUnityImp(mActivity));
-        SwrveUnityCommonHelper commonHelperMock = mock(SwrveUnityCommonHelper.class);
-        doReturn(commonHelperMock).when(serviceManagerSpy).getSwrveUnityCommonHelper();
-        serviceManagerSpy.processMessage(bundle);
+        SwrvePushManagerUnityImp pushManagerSpy = spy(new SwrvePushManagerUnityImp(mActivity));
+        doNothing().when(pushManagerSpy).sendPushDeliveredEvent(any(Bundle.class), anyBoolean(), anyString());
+        pushManagerSpy.processMessage(bundle);
 
-        verify(commonHelperMock, atLeastOnce()).sendPushDeliveredEvent(mActivity, bundle);
+        verify(pushManagerSpy, atLeastOnce()).sendPushDeliveredEvent(bundle, true, "");
 
         // Check a notification has been shown
         NotificationManager notificationManager = (NotificationManager) RuntimeEnvironment.application.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -136,10 +137,11 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
         String rawJson = "{\"key\":\"value\"}";
         bundle.putString("_s.SilentPayload", rawJson);
 
-        SwrvePushManagerUnityImp serviceManagerSpy = spy(new SwrvePushManagerUnityImp(mActivity));
-        SwrveUnityCommonHelper commonHelperMock = mock(SwrveUnityCommonHelper.class);
-        doReturn(commonHelperMock).when(serviceManagerSpy).getSwrveUnityCommonHelper();
-        serviceManagerSpy.processMessage(bundle);
+        SwrvePushManagerUnityImp pushManagerSpy = spy(new SwrvePushManagerUnityImp(mActivity));
+        doNothing().when(pushManagerSpy).sendPushDeliveredEvent(any(Bundle.class), anyBoolean(), anyString());
+        pushManagerSpy.processMessage(bundle);
+
+        verify(pushManagerSpy, atLeastOnce()).sendPushDeliveredEvent(bundle, false, "");
 
         List<Intent> intents = shadowApplication.getBroadcastIntents();
         assertEquals(1, intents.size());

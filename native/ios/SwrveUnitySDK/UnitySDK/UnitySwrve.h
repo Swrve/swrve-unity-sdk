@@ -31,6 +31,7 @@ void UnitySendRemoteNotification(NSDictionary* notification);
 - (NSString *)identityServer;
 - (NSString *)joined;
 - (NSString *)language;
+- (void)setTrackingStateStopped:(BOOL)isTrackingStateStopped;
 
 - (NSURL *)batchUrl;
 - (int)httpTimeout;

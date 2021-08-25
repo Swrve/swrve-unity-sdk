@@ -26,11 +26,9 @@ using SwrveUnity.SwrveUsers;
 /// </summary>
 public partial class SwrveSDK
 {
-    enum SwrveSdkState { ON, EVENT_SENDING_PAUSED };
     private const String Platform = "Unity ";
     private const float DefaultDPI = 160.0f;
     protected const string EventsSave = "Swrve_Events";
-    protected const string SwrveTrackingState = "SwrveSdkState";
     protected const string AppInstallTimeSecondsSave = "Swrve_JoinedDate";
     protected const string UserJoinedTimeSecondsSave = "Swrve_InitTimeDate";
     protected const string iOSdeviceTokenSave = "Swrve_iOSDeviceToken";
@@ -61,7 +59,6 @@ public partial class SwrveSDK
     private const string PushNestedJsonKey = "_s.JsonPayload";
     private const string PushButtonToCampaignIdKey = "PUSH_BUTTON_TO_CAMPAIGN_ID";
     private const string PushUnityDoNotProcessKey = "SWRVE_UNITY_DO_NOT_PROCESS";
-    private SwrveSdkState trackingState = SwrveSdkState.ON;
     private long installTimeSeconds;
     private string installTimeSecondsFormatted;
     private long userInitTimeSeconds;
@@ -146,7 +143,7 @@ public partial class SwrveSDK
     // Deeplink Manager
     protected SwrveDeeplinkManager deeplinkManager;
 
-    private bool campaignAndResourcesCoroutineEnabled = true;
+    protected bool campaignAndResourcesCoroutineEnabled = true;
     private IEnumerator campaignAndResourcesCoroutineInstance;
 
     private int conversationVersion;
@@ -158,51 +155,30 @@ public partial class SwrveSDK
         return this.initialisedTime;
     }
 
-    internal bool GetStarted()
-    {
-        return this.sdkStarted;
-    }
-
     internal protected bool IsSDKReady()
     {
-        if (config.InitMode == SwrveInitMode.MANAGED && sdkStarted == false) {
-            SwrveLog.LogWarning("Warning: SwrveSDK needs to be started in MANAGED mode before calling this api.");
-            return false;
-        } else {
-            return true;
+        bool isSdkReady = true;
+        if (profileManager.GetTrackingState() == SwrveTrackingState.STOPPED) {
+            SwrveLog.LogWarning("Warning: SwrveSDK is stopped and needs to be started before calling this api.");
+            isSdkReady = false;
+        } else if (!IsStarted()) {
+            SwrveLog.LogWarning("Warning: SwrveSDK needs to be started before calling this api.");
+            isSdkReady = false;
         }
+        return isSdkReady;
     }
 
     private void EnableEventSending()
     {
-        trackingState = SwrveSdkState.ON;
+        profileManager.SetTrackingState(SwrveTrackingState.STARTED);
         StartCampaignsAndResourcesTimer();
     }
     private void PauseEventSending()
     {
-        trackingState = SwrveSdkState.EVENT_SENDING_PAUSED;
+        profileManager.SetTrackingState(SwrveTrackingState.EVENT_SENDING_PAUSED);
         StopCheckForCampaignAndResources();
     }
 
-    private void SetAndSaveTrackingState(SwrveSdkState newState)
-    {
-        if (newState != trackingState) {
-            trackingState = newState;
-            storage.Save(SwrveTrackingState, trackingState.ToString());
-        }
-    }
-
-    private void LogTrackingState()
-    {
-        switch (trackingState) {
-        case SwrveSdkState.ON:
-            SwrveLog.LogInfo("SDK tracking state is ON");
-            break;
-        case SwrveSdkState.EVENT_SENDING_PAUSED:
-            SwrveLog.LogInfo("SDK tracking state is EVENT_SENDING_PAUSED");
-            break;
-        }
-    }
     #endregion
 
     private void QueueSessionStart()
@@ -468,10 +444,12 @@ public partial class SwrveSDK
 
     private void HandleCampaignFromNotification(string campaignID)
     {
-        if (deeplinkManager == null) {
-            deeplinkManager = new SwrveDeeplinkManager(Container, this, contentServer);
+        if (IsStarted()) {
+            if (deeplinkManager == null) {
+                deeplinkManager = new SwrveDeeplinkManager(Container, this, contentServer);
+            }
+            deeplinkManager.HandleNotificationToCampaign(campaignID);
         }
-        deeplinkManager.HandleNotificationToCampaign(campaignID);
     }
 
     /// <summary>
@@ -503,9 +481,11 @@ public partial class SwrveSDK
     public void SwitchUser(string userId, bool identifiedOnAnotherDevice)
     {
         // Dont do anything if the current user is the same as the new one
-        if (userId == null || userId == profileManager.userId) {
-            EnableEventSending();
-            return;
+        if (IsStarted()) {
+            if (userId == null || userId == profileManager.userId) {
+                EnableEventSending();
+                return;
+            }
         }
         // Remove notifications from the current authenticated user.
 #if UNITY_ANDROID || UNITY_IPHONE
@@ -541,17 +521,25 @@ public partial class SwrveSDK
 
     private bool ShouldAutoStart()
     {
-        if (config.InitMode == SwrveInitMode.AUTO) {
-            return true;
-        } else if (config.InitMode == SwrveInitMode.MANAGED && config.AutoStartLastUser && string.IsNullOrEmpty(profileManager.userId) == false) {
-            return true;
-        } else {
-            return false;
+        bool shouldAutostart = false;
+        if (config.InitMode == SwrveInitMode.AUTO && config.AutoStartLastUser) {
+            shouldAutostart = true;
+        } else if (config.InitMode == SwrveInitMode.MANAGED && config.AutoStartLastUser) {
+            string savedUserIdFromPrefs = profileManager.userId;
+            if (string.IsNullOrEmpty(savedUserIdFromPrefs) == false) {
+                shouldAutostart = true;
+            }
         }
+        return shouldAutostart;
     }
 
     private void InitUser()
     {
+        sdkStarted = true;
+#if UNITY_ANDROID || UNITY_IPHONE
+        UpdateTrackingStateStopped(false);
+#endif
+
         // some variables and config that are for the specific user that is running.
         this.lastSessionTick = SwrveHelper.GetMilliseconds();
 
@@ -559,7 +547,7 @@ public partial class SwrveSDK
         initialisedTime = SwrveHelper.GetNow();
         showMessagesAfterDelay = initialisedTime;
         autoShowMessagesEnabled = true;
-        trackingState = SwrveSdkState.ON;
+        profileManager.SetTrackingState(SwrveTrackingState.STARTED);
 
         CheckUserTimes();
 
@@ -578,8 +566,6 @@ public partial class SwrveSDK
         // Get device info
         deviceCarrierInfo = new DeviceCarrierInfo();
         GetDeviceScreenInfo();
-
-        Initialised = true;
 
         // In-app messaging features
         if (config.MessagingEnabled) {
@@ -1994,6 +1980,7 @@ public partial class SwrveSDK
             {"apiKey", apiKey},
             {"appId", appId},
             {"userId", this.UserId},
+            {"isTrackingStateStopped", this.profileManager.GetTrackingState() == SwrveTrackingState.STOPPED},
             {"deviceId", GetDeviceUUID()},
             {"appVersion", GetAppVersion()},
             {"uniqueKey", GetUniqueKey()},

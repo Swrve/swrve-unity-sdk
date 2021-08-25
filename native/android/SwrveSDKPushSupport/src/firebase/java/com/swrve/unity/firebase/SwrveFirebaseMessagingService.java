@@ -1,8 +1,10 @@
 package com.swrve.unity.firebase;
+
 import android.os.Bundle;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import com.swrve.sdk.SwrveLogger;
 import com.swrve.unity.SwrvePushManagerUnityImp;
 
 public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
@@ -16,13 +18,16 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
 	@Override
 	public void onMessageReceived(RemoteMessage remoteMessage) {
 		super.onMessageReceived(remoteMessage);
-		if (remoteMessage.getData() != null) {
-			// Convert from map to Bundle
-			Bundle pushBundle = new Bundle();
-			for (String key : remoteMessage.getData().keySet()) {
-				pushBundle.putString(key, remoteMessage.getData().get(key));
+		try {
+			if (remoteMessage.getData() != null) {
+				Bundle pushBundle = new Bundle(); // Convert from map to Bundle
+				for (String key : remoteMessage.getData().keySet()) {
+					pushBundle.putString(key, remoteMessage.getData().get(key));
+				}
+				getSwrveUnityPushServiceManager().processMessage(pushBundle);
 			}
-			getSwrveUnityPushServiceManager().processMessage(pushBundle);
+		} catch (Exception e) {
+			SwrveLogger.e("SwrveFirebaseMessagingService.onMessageReceived Exception", e);
 		}
 	}
 

@@ -26,44 +26,48 @@ public class SwrveAdmPushBase {
             return;
         }
 
-        final Bundle pushBundle = intent.getExtras();
-        if (pushBundle != null && !pushBundle.isEmpty()) {  // has effect of unparcelling Bundle
-            SwrveLogger.i("Received ADM notification: %s", pushBundle.toString());
+        try {
+            final Bundle pushBundle = intent.getExtras();
+            if (pushBundle != null && !pushBundle.isEmpty()) {  // has effect of unparcelling Bundle
+                SwrveLogger.i("Received ADM notification: %s", pushBundle.toString());
 
-            // Deduplicate notification
-            final String timestamp = pushBundle.getString(SwrveNotificationConstants.TIMESTAMP_KEY);
-            if (SwrveHelper.isNullOrEmpty(timestamp)) {
-                SwrveLogger.e("ADM notification: but not processing as it's missing %s", SwrveNotificationConstants.TIMESTAMP_KEY);
-                return;
+                // Deduplicate notification
+                final String timestamp = pushBundle.getString(SwrveNotificationConstants.TIMESTAMP_KEY);
+                if (SwrveHelper.isNullOrEmpty(timestamp)) {
+                    SwrveLogger.e("ADM notification: but not processing as it's missing %s", SwrveNotificationConstants.TIMESTAMP_KEY);
+                    return;
+                }
+
+                // Get tracking key
+                Object rawId = pushBundle.get(SwrveNotificationConstants.SWRVE_TRACKING_KEY);
+                String silentId = SwrveHelper.getSilentPushId(pushBundle);
+                if (rawId == null) {
+                    rawId = silentId;
+                }
+                String msgId = (rawId != null) ? rawId.toString() : null;
+
+                // Check for duplicates. This is a necessary part of using ADM which might clone
+                // a message as part of attempting to deliver it. We de-dupe by
+                // checking against the tracking id and timestamp. (Multiple pushes with the same
+                // tracking id are possible in some scenarios from Swrve).
+                // Id is concatenation of tracking key and timestamp "$_p:$_s.t"
+                String curId = msgId + ":" + timestamp;
+                LinkedList<String> recentIds = getRecentNotificationIdCache(context);
+                if (recentIds.contains(curId)) {
+                    SwrveLogger.i("ADM notification: but not processing because duplicate Id: %s", curId);
+                    return;
+                }
+
+                // Try get de-dupe cache size
+                int pushIdCacheSize = pushBundle.getInt(SwrveNotificationConstants.PUSH_ID_CACHE_SIZE_KEY, DEFAULT_PUSH_ID_CACHE_SIZE);
+
+                // No duplicate found. Update the cache.
+                updateRecentNotificationIdCache(context, recentIds, curId, pushIdCacheSize);
+
+                new SwrvePushManagerUnityImp(context).processMessage(pushBundle);
             }
-
-            // Get tracking key
-            Object rawId = pushBundle.get(SwrveNotificationConstants.SWRVE_TRACKING_KEY);
-            String silentId = SwrveHelper.getSilentPushId(pushBundle);
-            if (rawId == null) {
-                rawId = silentId;
-            }
-            String msgId = (rawId != null) ? rawId.toString() : null;
-
-            // Check for duplicates. This is a necessary part of using ADM which might clone
-            // a message as part of attempting to deliver it. We de-dupe by
-            // checking against the tracking id and timestamp. (Multiple pushes with the same
-            // tracking id are possible in some scenarios from Swrve).
-            // Id is concatenation of tracking key and timestamp "$_p:$_s.t"
-            String curId = msgId + ":" + timestamp;
-            LinkedList<String> recentIds = getRecentNotificationIdCache(context);
-            if (recentIds.contains(curId)) {
-                SwrveLogger.i("ADM notification: but not processing because duplicate Id: %s", curId);
-                return;
-            }
-
-            // Try get de-dupe cache size
-            int pushIdCacheSize = pushBundle.getInt(SwrveNotificationConstants.PUSH_ID_CACHE_SIZE_KEY, DEFAULT_PUSH_ID_CACHE_SIZE);
-
-            // No duplicate found. Update the cache.
-            updateRecentNotificationIdCache(context, recentIds, curId, pushIdCacheSize);
-
-            new SwrvePushManagerUnityImp(context).processMessage(pushBundle);
+        } catch (Exception e) {
+            SwrveLogger.e("SwrveAdmPushBase.onMessageReceived Exception", e);
         }
     }
 
@@ -75,7 +79,8 @@ public class SwrveAdmPushBase {
         SharedPreferences sharedPreferences = context.getSharedPreferences(AMAZON_PREFERENCES, Context.MODE_PRIVATE);
         String jsonString = sharedPreferences.getString(AMAZON_RECENT_PUSH_IDS, "");
         Gson gson = new Gson();
-        LinkedList<String> recentIds = gson.fromJson(jsonString, new TypeToken<LinkedList<String>>() {}.getType());
+        LinkedList<String> recentIds = gson.fromJson(jsonString, new TypeToken<LinkedList<String>>() {
+        }.getType());
         recentIds = recentIds == null ? new LinkedList<String>() : recentIds;
         return recentIds;
     }

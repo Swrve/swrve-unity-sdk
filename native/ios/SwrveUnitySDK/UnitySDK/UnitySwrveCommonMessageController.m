@@ -1,15 +1,13 @@
 #import "UnitySwrveCommonMessageController.h"
 #import "SwrveConversationItemViewController.h"
-#import "SwrveConversationsNavigationController.h"
-#import "SwrveConversationContainerViewController.h"
 #import "SwrveCommon.h"
 #import "UnitySwrve.h"
 
 @class SwrveConversationItemViewController;
 
-@interface UnitySwrveMessageEventHandler()
+@interface UnitySwrveMessageEventHandler ()
 
-@property (nonatomic, retain) SwrveConversationItemViewController* swrveConversationItemViewController;
+@property(nonatomic, retain) SwrveConversationItemViewController *swrveConversationItemViewController;
 
 @end
 
@@ -18,13 +16,13 @@
 @synthesize conversationWindow;
 @synthesize swrveConversationItemViewController;
 
--(void)conversationWasShownToUser:(SwrveBaseConversation*)conversation {
+- (void)conversationWasShownToUser:(SwrveBaseConversation *)conversation {
 #pragma unused(conversation)
     // this is handled on Unity's side
 }
 
-- (void) conversationClosed {
-    @synchronized(self) {
+- (void)conversationClosed {
+    @synchronized (self) {
         self.conversationWindow.hidden = YES;
         self.conversationWindow = nil;
         self.swrveConversationItemViewController = nil;
@@ -32,14 +30,13 @@
     }
 }
 
--(SwrveBaseConversation*) conversationFromString:(NSString*)conversation
-{
-    NSError* jsonError;
+- (SwrveBaseConversation *)conversationFromString:(NSString *)conversation {
+    NSError *jsonError;
     NSDictionary *jsonDict =
-        [NSJSONSerialization JSONObjectWithData:[conversation dataUsingEncoding:NSUTF8StringEncoding]
-                                        options:0
-                                          error:&jsonError];
-    if(nil == jsonDict) {
+            [NSJSONSerialization JSONObjectWithData:[conversation dataUsingEncoding:NSUTF8StringEncoding]
+                                            options:0
+                                              error:&jsonError];
+    if (nil == jsonDict) {
         return nil;
     }
     return [SwrveBaseConversation fromJSON:jsonDict forController:self];
@@ -63,7 +60,7 @@
     }
 }
 
-- (bool) isConversationDisplaying {
+- (bool)isConversationDisplaying {
     return (self.conversationWindow != nil);
 }
 

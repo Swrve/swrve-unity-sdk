@@ -1,7 +1,3 @@
-#if UNITY_IPHONE || UNITY_ANDROID || UNITY_STANDALONE
-#define SWRVE_SUPPORTED_PLATFORM
-#endif
-
 using System;
 using System.Reflection;
 using SwrveUnity.Helpers;

@@ -28,10 +28,15 @@ extern "C"
         return [UnitySwrveHelper language];
     }
     
-   void _swrveUserId(char* userId)
-   {
-       [[UnitySwrve sharedInstance] setUserId:[UnitySwrveHelper CStringToNSString:userId]];
-   }
+    void _swrveUserId(char* userId)
+    {
+        [[UnitySwrve sharedInstance] setUserId:[UnitySwrveHelper CStringToNSString:userId]];
+    }
+
+    void _swrveTrackingStateStopped(bool isTrackingStateStopped)
+    {
+        [[UnitySwrve sharedInstance] setTrackingStateStopped:isTrackingStateStopped];
+    }
 
     char* _swrveiOSTimeZone()
     {

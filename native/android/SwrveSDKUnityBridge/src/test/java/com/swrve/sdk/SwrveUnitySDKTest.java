@@ -48,8 +48,7 @@ public class SwrveUnitySDKTest extends SwrveBaseTest {
     private Activity mActivity;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         SwrveLogger.setLogLevel(Log.VERBOSE);
         ShadowLog.stream = System.out;
         mActivity = Robolectric.buildActivity(MainActivity.class).create().visible().get();
@@ -77,19 +76,19 @@ public class SwrveUnitySDKTest extends SwrveBaseTest {
     }
 
     void initSwrve(Map<String, Object> config) {
-        if(!config.containsKey(SwrveUnityCommon.SDK_VERSION_KEY)) {
+        if (!config.containsKey(SwrveUnityCommon.SDK_VERSION_KEY)) {
             config.put(SwrveUnityCommon.SDK_VERSION_KEY, "5.1");
         }
-        if(!config.containsKey(SwrveUnityCommon.SWRVE_TEMPORARY_PATH_KEY)) {
+        if (!config.containsKey(SwrveUnityCommon.SWRVE_TEMPORARY_PATH_KEY)) {
             config.put(SwrveUnityCommon.SWRVE_TEMPORARY_PATH_KEY, "temp");
         }
-        if(!config.containsKey(SwrveUnityCommon.PREFAB_NAME_KEY)) {
+        if (!config.containsKey(SwrveUnityCommon.PREFAB_NAME_KEY)) {
             config.put(SwrveUnityCommon.PREFAB_NAME_KEY, "SwrvePrefab");
         }
-        if(!config.containsKey(SwrveUnityCommon.DEVICE_INFO_KEY)) {
+        if (!config.containsKey(SwrveUnityCommon.DEVICE_INFO_KEY)) {
             config.put(SwrveUnityCommon.DEVICE_INFO_KEY, dummyDeviceInfoForLocation());
         }
-        if(!config.containsKey(SwrveUnityCommon.USER_ID_KEY)) {
+        if (!config.containsKey(SwrveUnityCommon.USER_ID_KEY)) {
             config.put(SwrveUnityCommon.USER_ID_KEY, "userId");
         }
         new SwrveUnityCommon(new Gson().toJson(config));
@@ -137,7 +136,7 @@ public class SwrveUnitySDKTest extends SwrveBaseTest {
         checkString(appVersion, swrve.getAppVersion());
         checkString(uniqueKey, swrve.getUniqueKey(userId));
         checkString(eventsServer + batchUrl, swrve.getBatchURL());
-        checkString(eventsServer, swrve.getEventsServer());  
+        checkString(eventsServer, swrve.getEventsServer());
         checkString(swrveTemporaryPath, swrve.getSwrveTemporaryPath());
         checkString(sigSuffix, swrve.getSigSuffix());
 
@@ -169,22 +168,16 @@ public class SwrveUnitySDKTest extends SwrveBaseTest {
 
     @Test
     public void testConversations() throws JSONException {
-        try
-        {
+        try {
             new SwrveBaseConversation(new JSONObject(""), null);
             Assert.fail("Expected empty conversation string to throw JSONException");
-        }
-        catch(JSONException e)
-        {
+        } catch (JSONException e) {
             //success
         }
-        try
-        {
+        try {
             new SwrveBaseConversation(new JSONObject("{}"), null);
             Assert.fail("Expected empty json object to throw JSONException");
-        }
-        catch(JSONException e)
-        {
+        } catch (JSONException e) {
             //success
         }
 
@@ -223,16 +216,16 @@ public class SwrveUnitySDKTest extends SwrveBaseTest {
     void checkUnityHelper(String method, String message, int index) {
         List<Object> deets = UnityPlayer.getMessages();
 
-        if(0 > index) {
+        if (0 > index) {
             index = deets.size() - index;
         }
-        deets = (List<Object>)deets.get(index);
+        deets = (List<Object>) deets.get(index);
 
         String obj = "SwrvePrefab";
 
-        String lastObj = (String)deets.get(0);
-        String lastMethod = (String)deets.get(1);
-        String lastMessage = (String)deets.get(2);
+        String lastObj = (String) deets.get(0);
+        String lastMethod = (String) deets.get(1);
+        String lastMessage = (String) deets.get(2);
 
         try {
             JSONObject jmessage = new JSONObject(message);

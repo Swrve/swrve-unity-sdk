@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 /// </summary>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "8.0.0";
+    public const string SdkVersion = "8.1.0";
 
     protected int appId;
     /// <summary>
@@ -229,8 +229,13 @@ public partial class SwrveSDK
             InitNative();
         }
 
-        sdkStarted = ShouldAutoStart();
+        if (profileManager.GetTrackingState() == SwrveTrackingState.STOPPED) {
+            SwrveLog.LogInfo("SwrveSDK is currently in stopped state and will not start until an api is called.");
+        } else {
+            sdkStarted = ShouldAutoStart();
+        }
 
+        Initialised = true;
         if (sdkStarted) {
             this.InitUser();
             ProcessInfluenceData();
@@ -269,6 +274,9 @@ public partial class SwrveSDK
     public virtual void SetIDFA(string idfa)
     {
 #if SWRVE_SUPPORTED_PLATFORM
+        if (!IsSDKReady()) {
+            return;
+        }
         idfaString = idfa;
         storage.Save(IDFAString, idfaString);
         SendDeviceInfo();
@@ -493,8 +501,8 @@ public partial class SwrveSDK
     public virtual bool SendQueuedEvents()
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) {
-            this.LogTrackingState();
+        if (profileManager.GetTrackingState() == SwrveTrackingState.EVENT_SENDING_PAUSED) {
+            SwrveLog.LogInfo("SDK tracking state is EVENT_SENDING_PAUSED");
             return false;
         }
         bool sentEvents = false;
@@ -582,11 +590,9 @@ public partial class SwrveSDK
     public virtual void GetUserResources(Action<Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) {
+        if (!IsSDKReady() || profileManager.GetTrackingState() == SwrveTrackingState.EVENT_SENDING_PAUSED) {
             return;
         }
-
-        if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) return;
         if (Initialised) {
             if (userResources != null) {
                 onResult.Invoke(userResources, userResourcesRaw);
@@ -609,11 +615,9 @@ public partial class SwrveSDK
     public virtual void GetUserResourcesDiff(Action<Dictionary<string, Dictionary<string, string>>, Dictionary<string, Dictionary<string, string>>, string> onResult, Action<Exception> onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) {
+        if (!IsSDKReady() || profileManager.GetTrackingState() == SwrveTrackingState.EVENT_SENDING_PAUSED) {
             return;
         }
-
-        if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) return;
         if (Initialised && !abTestUserResourcesDiffConnecting) {
             abTestUserResourcesDiffConnecting = true;
             StringBuilder getRequest = new StringBuilder(abTestResourcesDiffUrl);
@@ -644,11 +648,10 @@ public partial class SwrveSDK
     public virtual void GetRealtimeUserProperties(Action<Dictionary<string, string>, string> onResult, Action<Exception> onError)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady()) {
+        if (!IsSDKReady() || profileManager.GetTrackingState() == SwrveTrackingState.EVENT_SENDING_PAUSED) {
             return;
         }
 
-        if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) return;
         if (Initialised) {
             if (realtimeUserProperties != null) {
                 onResult.Invoke(realtimeUserProperties, realtimeUserPropertiesRaw);
@@ -678,8 +681,8 @@ public partial class SwrveSDK
     public virtual void FlushToDisk(bool saveEventsBeingSent = false)
     {
 #if SWRVE_SUPPORTED_PLATFORM
-        if (trackingState == SwrveSdkState.EVENT_SENDING_PAUSED) {
-            this.LogTrackingState();
+        if (profileManager.GetTrackingState() == SwrveTrackingState.EVENT_SENDING_PAUSED) {
+            SwrveLog.LogInfo("SDK tracking state is EVENT_SENDING_PAUSED");
             return;
         }
         if (Initialised) {
@@ -752,6 +755,7 @@ public partial class SwrveSDK
             { "swrve.sdk_version", Platform + SdkVersion },
             { "swrve.unity_version", Application.unityVersion },
             { "swrve.install_date", installTimeSecondsFormatted },
+            { "swrve.tracking_state", profileManager.GetTrackingState().ToString() },
             { "swrve.device_type", GetDeviceType() }
         };
 
@@ -785,6 +789,13 @@ public partial class SwrveSDK
                 deviceInfo["swrve.sim_operator.code"] = carrierInfoCarrierCode;
             }
         }
+
+        SwrveInitMode mode = config.InitMode;
+        string initModeDeviceInfo = config.InitMode.ToString().ToLower();
+        if (config.AutoStartLastUser) {
+            initModeDeviceInfo += "_auto";
+        }
+        deviceInfo["swrve.sdk_init_mode"] = initModeDeviceInfo;
 
         return deviceInfo;
     }
@@ -1389,13 +1400,31 @@ public partial class SwrveSDK
     }
 
 /// <summary>
+/// Start the sdk if stopped or autostartlastuser is false.
+/// Tracking will begin using the last user or an auto generated userId if the first time the sdk is started.
+/// </summary>
+    public virtual void Start()
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        if (!sdkStarted) {
+            profileManager.InitUserId();
+#if UNITY_ANDROID || UNITY_IPHONE
+            UpdateNativeUserId();
+#endif
+            this.InitUser();
+            ProcessInfluenceData();
+        }
+#endif
+    }
+
+/// <summary>
 /// Start the sdk when in SWRVE_INIT_MODE_MANAGED mode. Can be called multiple times to switch the current userId to something else.
 /// A new session is started if not already started or if is already started with different userId.
 /// </summary>
 /// <param name="userID">
 /// User id to start sdk with.
 /// </param>
-    public virtual void Start(String userId = null)
+    public virtual void Start(String userId)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         if (config.InitMode == SwrveInitMode.AUTO) {
@@ -1403,8 +1432,7 @@ public partial class SwrveSDK
         }
 
         if (!sdkStarted) {
-            sdkStarted = true;
-            profileManager.PrepareAndSetUserId(userId);
+            profileManager.InitUserId(userId);
 #if UNITY_ANDROID || UNITY_IPHONE
             UpdateNativeUserId();
 #endif
@@ -1426,6 +1454,35 @@ public partial class SwrveSDK
 #else
         yield return false;
 #endif
+    }
+
+    /// <summary>
+    /// Stop the SDK from tracking. The sdk will remain stopped until a start api is called.
+    /// </summary>
+    public virtual void StopTracking()
+    {
+        sdkStarted = false;
+        profileManager.SetTrackingState(SwrveTrackingState.STOPPED);
+#if UNITY_ANDROID || UNITY_IPHONE
+        UpdateTrackingStateStopped(true);
+#endif
+
+        QueueDeviceInfo();
+        SendQueuedEvents();
+
+        StopCheckForCampaignAndResources();
+
+#if UNITY_ANDROID || UNITY_IPHONE
+        ClearAllAuthenticatedNotifications();
+#endif
+
+        try {
+            if (currentMessageView != null) {
+                currentMessageView.Dismiss();
+            }
+        } catch (Exception e) {
+            SwrveLog.LogError("Error while dismissing a message after StopTracking" + e);
+        }
     }
 
     /// <summary>
