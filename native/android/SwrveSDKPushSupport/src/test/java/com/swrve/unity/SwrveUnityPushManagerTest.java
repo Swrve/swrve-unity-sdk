@@ -59,11 +59,13 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
     }
 
     @Test
-    public void testNotifications()  {
+    public void testNotifications() throws Exception {
+        long nowMilliseconds = new Date().getTime();
 
         String msgText = "hello";
         Bundle bundle = new Bundle();
         bundle.putString("_p", "10");
+        bundle.putString("_siw", "720");
         bundle.putString(SwrveNotificationConstants.TEXT_KEY, msgText);
         bundle.putString("custom", "key");
 
@@ -84,7 +86,7 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
         // Fake UnityPlayer.currentActivity
         UnityPlayer.currentActivity = mActivity;
         String influencedData = SwrvePushSupport.getInfluenceDataJson();
-        assertEquals("[]", influencedData);
+        assertCampaignInfluence(nowMilliseconds, influencedData, "10");
     }
 
     @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
@@ -160,12 +162,7 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
         // Fake UnityPlayer.currentActivity
         UnityPlayer.currentActivity = mActivity;
         String influencedData = SwrvePushSupport.getInfluenceDataJson();
-        JSONArray influenceArray = new JSONArray(influencedData);
-        assertEquals(1, influenceArray.length());
-        JSONObject influenceObject = influenceArray.getJSONObject(0);
-        assertEquals("10", influenceObject.getString("trackingId"));
-        long maxInfluencedMillis = influenceObject.getLong("maxInfluencedMillis");
-        assertTrue(maxInfluencedMillis >= nowMilliseconds);
+        assertCampaignInfluence(nowMilliseconds, influencedData, "10");
 
         influencedData = SwrvePushSupport.getInfluenceDataJson();
         assertEquals("[]", influencedData);
@@ -179,5 +176,14 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
         assertEquals("Notification icon is wrong", icon, notification.icon);
         assertEquals("Notification colorHex is wrong", color, builder.getColor());
         assertEquals("Notification sound is wrong",  sound, notification.sound == null ? null : notification.sound.toString());
+    }
+
+    protected void assertCampaignInfluence(long nowMilliseconds, String influencedData, String trackingId) throws Exception {
+        JSONArray influenceArray = new JSONArray(influencedData);
+        assertEquals(1, influenceArray.length());
+        JSONObject influenceObject = influenceArray.getJSONObject(0);
+        assertEquals(trackingId, influenceObject.getString("trackingId"));
+        long maxInfluencedMillis = influenceObject.getLong("maxInfluencedMillis");
+        assertTrue(maxInfluencedMillis >= nowMilliseconds);
     }
 }

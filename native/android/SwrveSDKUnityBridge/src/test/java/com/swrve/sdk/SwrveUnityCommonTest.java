@@ -143,7 +143,7 @@ public class SwrveUnityCommonTest extends SwrveBaseTest {
                 "\"userId\":\"" + aUserId + "\"," +
                 "\"isTrackingStateStopped\":" + isTrackingStateStopped + "," +
                 "\"deviceId\":\"dkbsdvbsdkjvnsdfkjnvskj\"," +
-                "\"appVersion\":\"8.1.0-APP_BUILD_INFO\"," +
+                "\"appVersion\":\"8.1.1-APP_BUILD_INFO\"," +
                 "\"uniqueKey\":\"xfvdfvdfbdbdsfgbdsbsdb\"," +
                 "\"deviceInfo\":{" +
                     "\"swrve.device_name\":\"Google Pixel 5\"," +

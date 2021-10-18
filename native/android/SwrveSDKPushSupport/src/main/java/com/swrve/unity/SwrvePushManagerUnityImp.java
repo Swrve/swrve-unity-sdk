@@ -50,6 +50,8 @@ public class SwrvePushManagerUnityImp extends SwrvePushManagerImpBase implements
 
         executeUnityPushNotificationListener(msg);
 
+        saveCampaignInfluence(msg, pushId);
+
         final SharedPreferences prefs = SwrvePushServiceManagerCommon.getPreferences(context);
         String activityClassName = SwrvePushSupport.getActivityClassName(context, prefs);
         // Put the message into a notification and post it.
