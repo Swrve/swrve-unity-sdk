@@ -45,6 +45,11 @@ public class SwrveMessageFormat
     /// </summary>
     public SwrveMessage Message;
 
+    /// <summary
+    /// Text Calibration Object assoicated with multi-line (empty if not used)
+    /// </summary>
+    public SwrveMessageFormatCalibration Calibration;
+
     /// <summary>
     /// Scale set by the server for this device and format.
     /// </summary>
@@ -109,6 +114,12 @@ public class SwrveMessageFormat
             messageFormat.BackgroundColor = c;
         }
 
+        if (messageFormatData.ContainsKey("calibration"))
+        {
+            Dictionary<string, object> calibrationData = (Dictionary<string, object>)messageFormatData["calibration"];
+            messageFormat.Calibration = SwrveMessageFormatCalibration.LoadFromJSON(calibrationData);
+        }
+
         Dictionary<string, object> sizeJson = (Dictionary<string, object>)messageFormatData["size"];
         messageFormat.Size.X = MiniJsonHelper.GetInt(((Dictionary<string, object>)sizeJson["w"]), "value");
         messageFormat.Size.Y = MiniJsonHelper.GetInt(((Dictionary<string, object>)sizeJson["h"]), "value");
@@ -134,7 +145,23 @@ public class SwrveMessageFormat
         return MiniJsonHelper.GetInt(((Dictionary<string, object>)data[attribute]), "value");
     }
 
-    protected static string StringValueFromAttribute(Dictionary<string, object> data, string attribute)
+    protected static TextAlignment TextAlignmentFromAttribute(Dictionary<string, object> data, string attribute)
+    {
+        string alignmentString = (string)data[attribute];
+        if (alignmentString.ToLower().Equals("right"))
+        {
+            return TextAlignment.Right;
+        }
+
+        if (alignmentString.ToLower().Equals("center"))
+        {
+            return TextAlignment.Center;
+        }
+
+        return TextAlignment.Left;
+    }
+
+        protected static string StringValueFromAttribute(Dictionary<string, object> data, string attribute)
     {
         return (string)(((Dictionary<string, object>)data[attribute])["value"]);
     }
@@ -206,11 +233,39 @@ public class SwrveMessageFormat
             image.DynamicImageUrl = (string)imageData["dynamic_image_url"];
         }
 
-        image.Message = message;
-
         if (imageData.ContainsKey("text")) {
             image.Text = StringValueFromAttribute(imageData, "text");
         }
+
+        if (imageData.ContainsKey("multiline_text"))
+        {
+            image.IsMultiLine = true;
+
+            Dictionary<string, object> multiLineData = (Dictionary<string, object>)imageData["multiline_text"];
+
+            if (multiLineData.ContainsKey("value"))
+            {
+                image.Text = MiniJsonHelper.GetString(multiLineData, "value");
+            }
+
+            if (multiLineData.ContainsKey("font_size"))
+            {
+                image.FontSize = MiniJsonHelper.GetFloat(multiLineData, "font_size");
+            }
+
+            if (multiLineData.ContainsKey("scrollable"))
+            {
+                image.IsScrollable = (bool)multiLineData["scrollable"];
+            }
+
+            if (multiLineData.ContainsKey("h_align"))
+            {
+                image.HorizontalAlignment = TextAlignmentFromAttribute(multiLineData, "h_align");
+            }
+
+        }
+
+        image.Message = message;
 
         return image;
     }

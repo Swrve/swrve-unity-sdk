@@ -1,8 +1,9 @@
 package com.swrve.unity;
 
+import static com.swrve.sdk.notifications.model.SwrveNotificationButton.ActionType.OPEN_CAMPAIGN;
+
 import android.app.Activity;
 import android.app.NotificationChannel;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -18,12 +19,13 @@ import com.swrve.sdk.SwrveNotificationConfig;
 import com.swrve.sdk.SwrveNotificationConstants;
 import com.swrve.sdk.SwrveUnityCommon;
 import com.swrve.sdk.SwrveUnityCommonHelper;
+import com.swrve.sdk.SwrveUnityNotificationBuilder;
+import com.swrve.sdk.notifications.model.SwrveNotificationButton;
 import com.unity3d.player.UnityPlayer;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.Date;
 import java.util.List;
 
 public abstract class SwrvePushSupport {
@@ -42,6 +44,8 @@ public abstract class SwrvePushSupport {
     private static final String ON_NOTIFICATION_RECEIVED_METHOD = "OnNotificationReceived";
     private static final String ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD = "OnOpenedFromPushNotification";
 
+    private final static String PUSH_BUTTON_TO_CAMPAIGN_ID = "PUSH_BUTTON_TO_CAMPAIGN_ID";
+
     static void newReceivedNotification(String gameObject, SwrveUnityNotification notification) {
         if (notification != null) {
             String serializedNotification = notification.toJson();
@@ -51,8 +55,36 @@ public abstract class SwrvePushSupport {
         }
     }
 
-    public static void newOpenedNotification(String gameObject, SwrveUnityNotification notification) {
+    public static void newOpenedNotification(Context context, Intent intent) {
+        if (intent == null) {
+            return;
+        }
+        Bundle extras = intent.getExtras();
+        if (extras == null || extras.isEmpty()) {
+            return;
+        }
+        Bundle pushBundle = extras.getBundle(SwrveNotificationConstants.PUSH_BUNDLE);
+        if (pushBundle == null) {
+            return;
+        }
+        Object rawId = pushBundle.get(SwrveNotificationConstants.SWRVE_TRACKING_KEY);
+        String msgId = (rawId != null) ? rawId.toString() : null;
+        if (SwrveHelper.isNullOrEmpty(msgId)) {
+            return;
+        }
+
+        String contextId = extras.getString(SwrveNotificationConstants.CONTEXT_ID_KEY);
+        if (SwrveHelper.isNotNullOrEmpty(contextId)) {
+            SwrveNotificationButton.ActionType type = (SwrveNotificationButton.ActionType) extras.get(SwrveNotificationConstants.PUSH_ACTION_TYPE_KEY);
+            if (type == OPEN_CAMPAIGN){
+                pushBundle.putString(PUSH_BUTTON_TO_CAMPAIGN_ID, extras.getString(SwrveNotificationConstants.PUSH_ACTION_URL_KEY));
+            }
+        }
+
+        // Inform the Unity native layer
+        SwrveUnityNotification notification = SwrveUnityNotification.Builder.build(pushBundle);
         if (notification != null) {
+            String gameObject = SwrvePushServiceManagerCommon.getGameObject(context);
             String serializedNotification = notification.toJson();
             if (serializedNotification != null) {
                 SwrveUnityCommon.UnitySendMessage(gameObject, ON_OPENED_FROM_PUSH_NOTIFICATION_METHOD, serializedNotification);
@@ -105,7 +137,7 @@ public abstract class SwrvePushSupport {
             builder.accentColorHex(accentColorHex);
         }
 
-        return new UnitySwrveNotificationBuilder(context, builder.build());
+        return new SwrveUnityNotificationBuilder(context, builder.build());
     }
 
     static String getActivityClassName(Context ctx, SharedPreferences prefs) {
@@ -165,29 +197,6 @@ public abstract class SwrvePushSupport {
         editor.putString(PROPERTY_MATERIAL_ICON_ID, materialIconId);
         editor.putString(PROPERTY_LARGE_ICON_ID, largeIconId);
         editor.putString(PROPERTY_ACCENT_COLOR_HEX, accentColorHex);
-    }
-
-    private static class UnitySwrveNotificationBuilder extends SwrveNotificationBuilder {
-
-        UnitySwrveNotificationBuilder(Context context, SwrveNotificationConfig config) {
-            super(context, config);
-        }
-
-        @Override
-        public Intent createButtonIntent(Context context, Bundle msg) {
-            // Mark this push so that Unity does not send engagement nor process the deeplink in the C# layer
-            msg.putBoolean("SWRVE_UNITY_DO_NOT_PROCESS", true);
-            // Send this intent to the flavour Unity engage receiver which will properly notify the C# layer
-            Intent intent = super.createButtonIntent(context, msg);
-            intent.setComponent(new ComponentName(context, SwrveUnityNotificationEngageReceiver.class));
-            return intent;
-        }
-    }
-
-    static void saveCampaignInfluence(Bundle msg, Context context, String pushId) {
-        // Attempt to save influence data for push
-        SwrveCampaignInfluence campaignInfluence = new SwrveCampaignInfluence();
-        campaignInfluence.saveInfluencedCampaign(context, pushId, msg, new Date());
     }
 
     public static void removeInfluenceCampaign(Context context, String pushId) {

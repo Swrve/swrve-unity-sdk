@@ -104,7 +104,7 @@ public partial class SwrveSDK
 
     // Messaging related
     protected static readonly int CampaignEndpointVersion = 9;
-    protected static readonly int InAppMessageCampaignVersion = 4;
+    protected static readonly int InAppMessageCampaignVersion = 5;
     protected static readonly int EmbeddedCampaignVersion = 1;
     private static readonly int CampaignResponseVersion = 2;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely

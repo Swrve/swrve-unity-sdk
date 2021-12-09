@@ -78,7 +78,14 @@ public class SwrveInAppMessageView
             SwrveWidgetView renderer;
             if (image.Text != null) {
                 string resolvedTextTemplate = templatingResolver.TextResolution[image];
-                renderer = new SwrveMessagePersonalizedWidgetView(image, resolvedTextTemplate, inAppConfig);
+                SwrveTextViewStyle style = new SwrveTextViewStyle();
+                style.FontSize = image.FontSize;
+                style.HorizontalAlignment = image.HorizontalAlignment;
+                style.TextBackgroundColor = inAppConfig.PersonalizedTextBackgroundColor;
+                style.TextForegroundColor = inAppConfig.PersonalizedTextForegroundColor;
+                style.TextFont = inAppConfig.PersonalizedTextFont;
+
+                renderer = new SwrveTextWidgetView(image, resolvedTextTemplate, inAppConfig, style, format.Calibration);
             } else if (image.DynamicImageUrl != null && templatingResolver.DynamicImageResolution.ContainsKey(image)) {
                 string sha1DynamicImageAsset = ResolvePersonalization(image, templatingResolver, (image.File != null));
                 renderer = new SwrveImageView(image, sha1DynamicImageAsset);
@@ -93,7 +100,14 @@ public class SwrveInAppMessageView
             SwrveWidgetView renderer;
             if (button.Text != null) {
                 string resolvedTextTemplate = templatingResolver.TextResolution[button];
-                renderer = new SwrveMessagePersonalizedWidgetView(button, resolvedTextTemplate, inAppConfig);
+                
+                SwrveTextViewStyle style = new SwrveTextViewStyle();
+                style.FontSize = button.FontSize;
+                style.TextBackgroundColor = inAppConfig.PersonalizedTextBackgroundColor;
+                style.TextForegroundColor = inAppConfig.PersonalizedTextForegroundColor;
+                style.TextFont = inAppConfig.PersonalizedTextFont;
+
+                renderer = new SwrveTextWidgetView(button, resolvedTextTemplate, inAppConfig, style, format.Calibration);
             } else if (button.DynamicImageUrl != null) {
                 string sha1DynamicImageAsset = ResolvePersonalization(button, templatingResolver, (button.Image != null));
                 renderer = new SwrveButtonView(button, inAppConfig.ButtonClickTintColor, sha1DynamicImageAsset);

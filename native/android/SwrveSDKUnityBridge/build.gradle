@@ -2,7 +2,6 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
-    buildToolsVersion project.ANDROID_BUILD_TOOLS_VERSION
 
     defaultConfig {
         minSdkVersion Integer.parseInt(project.ANDROID_BUILD_MIN_SDK_VERSION)
@@ -38,7 +37,7 @@ dependencies {
 
     // Roboelectric tests
     testImplementation 'junit:junit:4.13'
-    testImplementation('org.robolectric:robolectric:4.4') {
+    testImplementation('org.robolectric:robolectric:' + project.TEST_ROBOLECTRIC_VERSION) {
         exclude group: 'commons-logging', module: 'commons-logging'
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'
     }

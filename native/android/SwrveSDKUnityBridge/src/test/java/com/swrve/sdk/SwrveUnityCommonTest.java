@@ -137,13 +137,13 @@ public class SwrveUnityCommonTest extends SwrveBaseTest {
     private String getDummyDetails(boolean isTrackingStateStopped, String aUserId) {
 // @formatter:off
         String details = "{" +
-                "\"sdkVersion\":\"8.0.0\"," +
+                "\"sdkVersion\":\"8.2.0\"," +
                 "\"apiKey\":\"fake_key\"," +
                 "\"appId\":1234," +
                 "\"userId\":\"" + aUserId + "\"," +
                 "\"isTrackingStateStopped\":" + isTrackingStateStopped + "," +
                 "\"deviceId\":\"dkbsdvbsdkjvnsdfkjnvskj\"," +
-                "\"appVersion\":\"8.1.1-APP_BUILD_INFO\"," +
+                "\"appVersion\":\"8.2.0-APP_BUILD_INFO\"," +
                 "\"uniqueKey\":\"xfvdfvdfbdbdsfgbdsbsdb\"," +
                 "\"deviceInfo\":{" +
                     "\"swrve.device_name\":\"Google Pixel 5\"," +

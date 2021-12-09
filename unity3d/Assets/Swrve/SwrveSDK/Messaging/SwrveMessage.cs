@@ -216,15 +216,20 @@ public class SwrveMessage : SwrveBaseMessage
 
     private bool IsAssetDownloaded(string baseAsset, SwrveWidget widget, Dictionary<string, string> personalizationProperties)
     {
-        bool hasBaseImage = IsAssetDownloaded(baseAsset);
-        if (!hasBaseImage && !string.IsNullOrEmpty(widget.DynamicImageUrl)) {
-            return IsDynamicAssetDownloaded(widget.DynamicImageUrl, personalizationProperties);
-        }
+            if (!widget.IsMultiLine)
+            {
+                bool hasBaseImage = IsAssetDownloaded(baseAsset);
+                if (!hasBaseImage && !string.IsNullOrEmpty(widget.DynamicImageUrl))
+                {
+                    return IsDynamicAssetDownloaded(widget.DynamicImageUrl, personalizationProperties);
+                }
 
-        if (!hasBaseImage) {
-            SwrveLog.LogInfo("Asset not yet downloaded: " + baseAsset);
-            return false;
-        }
+                if (!hasBaseImage)
+                {
+                    SwrveLog.LogInfo("Asset not yet downloaded: " + baseAsset);
+                    return false;
+                }
+            }
 
         return true;
     }

@@ -4,7 +4,11 @@
 
     <application>
         <receiver
-            android:name="com.swrve.unity.SwrveUnityNotificationEngageReceiver"
+            android:name="com.swrve.sdk.SwrveUnityNotificationEngageReceiver"
             android:exported="false" />
+        <activity
+            android:name="com.swrve.sdk.SwrveUnityNotificationEngageActivity"
+            android:theme="@android:style/Theme.Light"
+            android:exported="true"/>
     </application>
 </manifest>

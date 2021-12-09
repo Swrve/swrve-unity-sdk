@@ -289,5 +289,24 @@ public static partial class SwrveHelper
 
         return combinedDictionary;
     }
-}
+
+    public static int CalibrateRelativeFontSizeToPlatform(Messaging.SwrveMessageFormatCalibration calibration, float fontSize)
+    {
+        GUIStyle sampleStyle = new GUIStyle();
+        sampleStyle.alignment = TextAnchor.MiddleCenter;
+        int relativeFontSize = GetTextSizeToFitImage(sampleStyle, calibration.Text, calibration.Width, calibration.Height);
+        return (int)((fontSize / calibration.BaseFontSize) * relativeFontSize);
+    }
+
+    public static int GetTextSizeToFitImage(GUIStyle style, string text, int width, int height)
+    {
+        int testTextSize = 200;
+        style.fontSize = testTextSize;
+        GUIContent testContent = new GUIContent(text);
+        Vector2 size = style.CalcSize(testContent);
+        float scalex = testTextSize / size.x;
+        float scaley = testTextSize / size.y;
+        return (int)Math.Min(width * scalex, height * scaley);
+    }
+    }
 }

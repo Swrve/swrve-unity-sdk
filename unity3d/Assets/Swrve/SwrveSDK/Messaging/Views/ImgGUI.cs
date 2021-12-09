@@ -72,5 +72,53 @@ public class ImgGUI
             GUI.Box(position, text);
         }
     }
+
+
+    public static Vector2 ClickEventScrollView(Rect position, Vector2 currentScrollPosition, Rect viewRect, bool alwaysShowHorizontal, bool alwaysShowVertical)
+    {
+            if (enabled)
+            {
+                float heightDiff = viewRect.height - position.height;
+                if (Event.current.type == EventType.MouseDrag)
+                {
+                    if (position.Contains(Event.current.mousePosition))
+                    {
+                        if (currentScrollPosition.y <= heightDiff && currentScrollPosition.y >= 0)
+                        {
+                            currentScrollPosition.y += Event.current.delta.y;
+                        }
+
+                        if (currentScrollPosition.y > heightDiff)
+                        {
+                            currentScrollPosition.y = heightDiff;
+                        }
+
+                        if (currentScrollPosition.y < 0)
+                        {
+                            currentScrollPosition.y = 0;
+                        }
+                    }
+                }
+                return BeginScrollView(position, currentScrollPosition, viewRect, alwaysShowHorizontal, alwaysShowVertical);
+            }
+
+            return Vector2.zero;
+    }
+
+
+    public static Vector2 BeginScrollView(Rect position, Vector2 scrollPosition, Rect viewRect, bool alwaysShowHorizontal, bool alwaysShowVertical)
+    {
+        if (enabled) {
+            return GUI.BeginScrollView(position, scrollPosition, viewRect, alwaysShowHorizontal, alwaysShowVertical);
+        }
+            return Vector2.zero;
+    }
+
+    public static void EndScrollView()
+    {
+        if (enabled) {
+            GUI.EndScrollView();
+        }
+    }
 }
 }

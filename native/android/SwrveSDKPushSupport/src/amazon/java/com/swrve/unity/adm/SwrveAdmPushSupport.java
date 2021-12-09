@@ -114,7 +114,7 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
                     SwrveUnityNotification notificationUnity = SwrveUnityNotification.Builder.build(msg);
                     // Remove influenced data before letting Unity know
                     SwrvePushSupport.removeInfluenceCampaign(context, notificationUnity.getId());
-                    SwrveAdmPushSupport.newOpenedNotification(SwrvePushServiceManagerCommon.getGameObject(UnityPlayer.currentActivity), notificationUnity);
+                    SwrveAdmPushSupport.newOpenedNotification(UnityPlayer.currentActivity, intent);
                 }
             }
         } catch(Exception ex) {

@@ -32,6 +32,26 @@ public abstract class SwrveWidget
     /// </summary>
     public SwrveMessage Message;
 
+    /// <summary>
+    /// if true, text value will have the below items applied to it
+    /// </summary>
+    public bool IsMultiLine;
+
+    /// <summary>
+    /// Font Size (used primarily for multi-line)
+    /// </summary>
+    public float FontSize;
+
+    /// <summary>
+    /// If it's text, is it scrollable? (used primarily for multi-line)
+    /// </summary>
+    public bool IsScrollable;
+
+    /// <summary>
+    /// What is the h alignment of the text?
+    /// </summary>
+    public TextAlignment HorizontalAlignment;
+
     public SwrveWidget()
     {
         Position = new Point(0, 0);
