@@ -52,6 +52,53 @@ public abstract class SwrveWidget
     /// </summary>
     public TextAlignment HorizontalAlignment;
 
+    /// <summary>
+    /// The name of the Post Script Font
+    /// </summary>
+    public string FontPostScriptName;
+
+    /// <summary>
+    /// Family of the font, probably only used by UI
+    /// </summary>
+    public string FontFamily;
+
+    /// <summary>
+    /// Style of the fond, probably only used by UI
+    /// </summary>
+    public string FontStyle;
+
+    /// <summary>
+    /// Used to store fonts / has a value of “_system_font_” when system-font is the selected font
+    /// </summary>
+    public string FontFile;
+
+    /// <summary>
+    /// Defines the amount of space above and below inline elements
+    /// </summary>
+    public int LineHeight;
+
+    /// <summary>
+    /// Font Digest
+    /// </summary>
+    public string FontDigest;
+
+    /// <summary>
+    /// Used to create space around an element's content
+    /// </summary>
+    public SwrvePadding Padding;
+    
+    /// <summary>
+    /// The color of the font
+    /// </summary>
+    public string FontColor;
+
+    /// <summary>
+    /// The color of the background
+    /// </summary>
+    public string BackgroundColor;    
+
+
+    
     public SwrveWidget()
     {
         Position = new Point(0, 0);
@@ -71,6 +118,14 @@ public abstract class SwrveWidget
         int x = (int)(center.X + Position.X * FormatScale);
         int y = (int)(center.Y + Position.Y * FormatScale);
         return new Point(x, y);
+    }
+
+    public struct SwrvePadding
+    {
+        public int top;
+        public int bottom;
+        public int left;
+        public int right;
     }
 }
 }

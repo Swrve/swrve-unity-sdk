@@ -263,6 +263,64 @@ public class SwrveMessageFormat
                 image.HorizontalAlignment = TextAlignmentFromAttribute(multiLineData, "h_align");
             }
 
+            if (multiLineData.ContainsKey("font_postscript_name"))
+            {
+                image.FontPostScriptName = MiniJsonHelper.GetString(multiLineData, "font_postscript_name");
+            }
+
+            if (multiLineData.ContainsKey("font_family"))
+            {
+                image.FontFamily = MiniJsonHelper.GetString(multiLineData, "font_family");
+            }
+
+            if (multiLineData.ContainsKey("font_native_style"))
+            {
+                image.FontStyle = MiniJsonHelper.GetString(multiLineData, "font_native_style");
+            }
+
+            if (multiLineData.ContainsKey("font_file"))
+            {
+                image.FontFile = MiniJsonHelper.GetString(multiLineData, "font_file");
+            }
+
+            if (multiLineData.ContainsKey("line_height"))
+            {
+                image.LineHeight = MiniJsonHelper.GetInt(multiLineData, "line_height");
+            }
+
+            if (multiLineData.ContainsKey("font_digest"))
+            {
+                image.FontDigest = MiniJsonHelper.GetString(multiLineData, "font_digest");
+            }
+            
+            if (multiLineData.ContainsKey("padding"))
+            {
+                Dictionary<string, object> paddingData = (Dictionary<string, object>)multiLineData["padding"];
+
+                if(paddingData.ContainsKey("top"))
+                    image.Padding.top = MiniJsonHelper.GetInt(paddingData, "top");
+                if(paddingData.ContainsKey("left"))
+                    image.Padding.left = MiniJsonHelper.GetInt(paddingData, "left");
+                if(paddingData.ContainsKey("bottom"))
+                    image.Padding.bottom = MiniJsonHelper.GetInt(paddingData, "bottom");
+                if(paddingData.ContainsKey("right"))
+                    image.Padding.right = MiniJsonHelper.GetInt(paddingData, "right");                                      
+            }
+
+            if (multiLineData.ContainsKey("font_file"))
+            {
+                image.FontFile = MiniJsonHelper.GetString(multiLineData, "font_file");
+            }
+
+            if (multiLineData.ContainsKey("font_color"))
+            {
+                image.FontColor = MiniJsonHelper.GetString(multiLineData, "font_color");
+            }
+
+            if (multiLineData.ContainsKey("bg_color"))
+            {
+                image.BackgroundColor = MiniJsonHelper.GetString(multiLineData, "bg_color");
+            }                     
         }
 
         image.Message = message;

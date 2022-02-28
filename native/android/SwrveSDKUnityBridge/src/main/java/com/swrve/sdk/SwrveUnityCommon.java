@@ -706,4 +706,9 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public void saveEvent(String event) {
         // Added for push event delivery feature, but not implemented on unity.
     }
+
+    @Override
+    public SwrveSSLSocketFactoryConfig getSSLSocketFactoryConfig() {
+        return null;
+    }
 }

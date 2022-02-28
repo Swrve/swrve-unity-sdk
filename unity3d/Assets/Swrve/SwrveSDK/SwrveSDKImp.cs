@@ -104,7 +104,7 @@ public partial class SwrveSDK
 
     // Messaging related
     protected static readonly int CampaignEndpointVersion = 9;
-    protected static readonly int InAppMessageCampaignVersion = 5;
+    protected static readonly int InAppMessageCampaignVersion = 6;
     protected static readonly int EmbeddedCampaignVersion = 1;
     private static readonly int CampaignResponseVersion = 2;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
@@ -2041,35 +2041,47 @@ public partial class SwrveSDK
 
     public void CheckInfluenceData(Dictionary<string, object> influenceData)
     {
-        if (influenceData != null) {
-            object trackingIdRaw = influenceData["trackingId"];
-            object maxInfluencedMillisRaw = influenceData["maxInfluencedMillis"];
-            object silentObj = influenceData["silent"];
-            long maxInfluencedMillis = 0;
-            if (maxInfluencedMillisRaw != null) {
-                if (maxInfluencedMillisRaw is long || maxInfluencedMillisRaw is Int32 || maxInfluencedMillisRaw is Int64) {
-                    maxInfluencedMillis = (long)maxInfluencedMillisRaw;
+        if (influenceData != null)
+        {
+            if (influenceData.ContainsKey("trackingId") && influenceData.ContainsKey("maxInfluencedMillis") && influenceData.ContainsKey("silent"))
+            {
+                object trackingIdRaw = influenceData["trackingId"];
+                object maxInfluencedMillisRaw = influenceData["maxInfluencedMillis"];
+                object silentObj = influenceData["silent"];
+                long maxInfluencedMillis = 0;
+                if (maxInfluencedMillisRaw != null) {
+                    if (maxInfluencedMillisRaw is long || maxInfluencedMillisRaw is Int32 || maxInfluencedMillisRaw is Int64) {
+                        maxInfluencedMillis = (long)maxInfluencedMillisRaw;
+                    }
                 }
-            }
 
-            if (trackingIdRaw != null && trackingIdRaw is string && maxInfluencedMillis > 0) {
-                string trackingId = (string)trackingIdRaw;
-                // Check if the user was influenced
-                long now = SwrveHelper.GetMilliseconds();
-                if (now <= maxInfluencedMillis) {
-                    Dictionary<string, object> json = new Dictionary<string, object>();
-                    json.Add("id", trackingId);
-                    json.Add("campaignType", "push");
-                    json.Add("actionType", "influenced");
-                    Dictionary<string, string> payload = new Dictionary<string, string>();
-                    payload.Add("delta", ((maxInfluencedMillis - now) / (100 * 60)).ToString());
-                    payload.Add("silent", silentObj.ToString().ToLower());
-                    json.Add("payload", payload);
-                    AppendEventToBuffer("generic_campaign_event", json, false);
-                    SwrveLog.Log("User was influenced by push " + trackingId);
-                    Container.StartCoroutine(WaitASecondAndSendEvents_Coroutine());
+                if (trackingIdRaw != null && trackingIdRaw is string && maxInfluencedMillis > 0) {
+                    string trackingId = (string)trackingIdRaw;
+                    // Check if the user was influenced
+                    long now = SwrveHelper.GetMilliseconds();
+                    if (now <= maxInfluencedMillis) {
+                        Dictionary<string, object> json = new Dictionary<string, object>();
+                        json.Add("id", trackingId);
+                        json.Add("campaignType", "push");
+                        json.Add("actionType", "influenced");
+                        Dictionary<string, string> payload = new Dictionary<string, string>();
+                        payload.Add("delta", ((maxInfluencedMillis - now) / (100 * 60)).ToString());
+                        payload.Add("silent", silentObj.ToString().ToLower());
+                        json.Add("payload", payload);
+                        AppendEventToBuffer("generic_campaign_event", json, false);
+                        SwrveLog.Log("User was influenced by push " + trackingId);
+                        Container.StartCoroutine(WaitASecondAndSendEvents_Coroutine());
+                    }
                 }
             }
+            else
+            {
+                SwrveLog.Log("Couldn't find the influence data keys");
+            }
+        }
+        else
+        {
+            SwrveLog.Log("Influence data is null");
         }
     }
 

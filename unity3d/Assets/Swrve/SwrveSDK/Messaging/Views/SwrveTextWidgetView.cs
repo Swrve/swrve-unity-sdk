@@ -40,6 +40,7 @@ namespace SwrveUnity.Messaging
             style.alignment = TextAnchor.MiddleCenter;
             style.normal.textColor = textViewStyle.TextForegroundColor;
             style.font = textViewStyle.TextFont;
+            backgroundColor = textViewStyle.TextBackgroundColor;
 
             if (widget.IsMultiLine)
             {
@@ -47,13 +48,20 @@ namespace SwrveUnity.Messaging
                 SetTextAlignment();
                 int relativeFontSize = SwrveHelper.CalibrateRelativeFontSizeToPlatform(calibration, textViewStyle.FontSize);
                 style.fontSize = relativeFontSize;
+                
+                if((Font)Resources.Load(widget.FontPostScriptName) != null)
+                style.font =(Font)Resources.Load(widget.FontPostScriptName);
 
                 if (!widget.IsScrollable)
                 {
-                    FitMultiLineSizeToImage(widget.Size.X, widget.Size.Y, relativeFontSize);
+                    FitMultiLineSizeToImage(widget.Size.X-(widget.Padding.top+ widget.Padding.bottom), widget.Size.Y-(widget.Padding.right+ widget.Padding.left), relativeFontSize);
                 }
+
+                Color color;
+                if (ColorUtility.TryParseHtmlString(widget.BackgroundColor, out color))    
+                    backgroundColor = new Color(color.g,color.b,color.a,color.r);
             }
-            backgroundColor = textViewStyle.TextBackgroundColor;
+            
             clickTintColor = inAppConfig.ButtonClickTintColor;
 
             isButton = (widget is SwrveButton);
@@ -213,14 +221,37 @@ namespace SwrveUnity.Messaging
                 // we need to know the size of the text we're passing through so calculate the offset of the text for scrolling with the same style in mind
                 float offset = style.CalcHeight(new GUIContent("I"), Rect.width);
 
+                RectOffset rectOffset = new RectOffset(widget.Padding.top, widget.Padding.bottom, widget.Padding.left, widget.Padding.right);
+                style.padding = rectOffset;
+
+                //setting up the fontstyle
+                string toLowerFontStyle;
+
+                if(widget.FontFile == "_system_font_")
+                {
+                    toLowerFontStyle = widget.FontStyle.ToLower();
+                    if(toLowerFontStyle == "BOLD".ToLower())               
+                        style.fontStyle = FontStyle.Bold;
+                    else if(toLowerFontStyle == "ITALIC".ToLower())
+                        style.fontStyle = FontStyle.Italic;
+                    else if(toLowerFontStyle == "BOLDITALIC".ToLower())
+                        style.fontStyle = FontStyle.BoldAndItalic;
+                    else
+                        style.fontStyle = FontStyle.Normal;
+                }
+                
+
+                //Setting up the text color, unity reads it as ARGB but we do it as RGBA.
+                Color color;
+                if (ColorUtility.TryParseHtmlString(widget.FontColor, out color))    
+                    style.normal.textColor = new Color(color.g,color.b,color.a,color.r);
+
                 if (widget.IsScrollable && textHeight > Rect.height)
                 {
-                    // Add padding to account for the scrollbar size
-                    RectOffset rectOffset = new RectOffset(0, 30, 0, 0);
-                    style.padding = rectOffset;
+                    style.padding = rectOffset;                   
 
                     scrollPosition = ImgGUI.ClickEventScrollView(Rect, scrollPosition, new Rect(Rect.x, Rect.y, Rect.width - offset, textHeight + offset), false, false);
-                    ImgGUI.Label(Rect, content, style);
+                    ImgGUI.Label(Rect, content, style);                  
                     ImgGUI.EndScrollView();
                 }
                 else
