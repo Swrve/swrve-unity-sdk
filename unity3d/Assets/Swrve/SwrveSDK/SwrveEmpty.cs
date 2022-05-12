@@ -148,6 +148,7 @@ public class SwrveEmpty : SwrveSDK
     {
     }
 
+    [Obsolete("Use embedded campaigns instead.")]
     protected override void ButtonWasPressedByUser(SwrveButton button)
     {
     }

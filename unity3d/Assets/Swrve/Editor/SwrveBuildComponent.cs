@@ -29,7 +29,8 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
 
     public static object GetPostProcessBit(string key)
     {
-        if(postprocessJson == null) {
+        if (postprocessJson == null)
+        {
             postprocessJson = (Dictionary<string, object>)Json.Deserialize(File.ReadAllText(POSTPROCESS_JSON));
         }
         object retval;
@@ -41,96 +42,102 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
     {
         object o = GetPostProcessBit(key);
         string retval = null;
-        if(o is string) {
+        if (o is string)
+        {
             string s = (string)o;
-            if(s != TEMPLATE_CONTENT) {
+            if (s != TEMPLATE_CONTENT)
+            {
                 retval = s;
             }
         }
         return retval;
     }
 
-    [MenuItem ("Swrve/Export Amazon Pacakge")]
-    public static void ExportUnityPackageAmazon ()
+    [MenuItem("Swrve/Export Amazon Pacakge")]
+    public static void ExportUnityPackageAmazon()
     {
-        AssetDatabase.ExportPackage (assets, "../../buildtemp/SwrveAmazon.unityPackage", ExportPackageOptions.Recurse);
+        AssetDatabase.ExportPackage(assets, "../../buildtemp/SwrveAmazon.unityPackage", ExportPackageOptions.Recurse);
     }
 
-    [MenuItem ("Swrve/Export Firebase Pacakge")]
-    public static void ExportUnityPackageFirebase ()
+    [MenuItem("Swrve/Export Firebase Pacakge")]
+    public static void ExportUnityPackageFirebase()
     {
-        AssetDatabase.ExportPackage (assets, "../../buildtemp/Swrve.unityPackage", ExportPackageOptions.Recurse);
+        AssetDatabase.ExportPackage(assets, "../../buildtemp/Swrve.unityPackage", ExportPackageOptions.Recurse);
     }
 
-    [MenuItem ("Swrve/iOS/Build Demo (Xcode project)")]
-    public static void BuildDemoiOS ()
+    [MenuItem("Swrve/iOS/Build Demo (Xcode project)")]
+    public static void BuildDemoiOS()
     {
-        BuildIOS ("../../SwrveDemo", opt, mainScenes, IOSDemoBundleIdentifier);
+        BuildIOS("../../SwrveDemo", opt, mainScenes, IOSDemoBundleIdentifier);
     }
 
-    [MenuItem ("Swrve/iOS/Build and Install Demo")]
-    public static void BuildAndInstallDemoiOS ()
+    [MenuItem("Swrve/iOS/Build and Install Demo")]
+    public static void BuildAndInstallDemoiOS()
     {
         // Build
         bool buildAgain = true;
-        if (System.IO.File.Exists (GetProjectPath () + "/../../buildtemp/SwrveDemo")) {
-            buildAgain = EditorUtility.DisplayDialog ("Swrve Demo", "The XCode project already exists. Do you want to build again?", "Yes", "Hell no");
+        if (System.IO.File.Exists(GetProjectPath() + "/../../buildtemp/SwrveDemo"))
+        {
+            buildAgain = EditorUtility.DisplayDialog("Swrve Demo", "The XCode project already exists. Do you want to build again?", "Yes", "Hell no");
         }
 
-        if (buildAgain) {
-            BuildDemoiOS ();
+        if (buildAgain)
+        {
+            BuildDemoiOS();
         }
 
         // Install
-        RunSh (GetProjectPath() + "/../../", "scripts/archive_and_install_demo.sh");
+        RunSh(GetProjectPath() + "/../../", "scripts/archive_and_install_demo.sh");
         UnityEngine.Debug.Log("Demo installed on device");
     }
 
-    [MenuItem ("Swrve/Android/Build Demo (.apk)")]
-    public static void BuildDemoAndroid ()
+    [MenuItem("Swrve/Android/Build Demo (.apk)")]
+    public static void BuildDemoAndroid()
     {
-        BuildAndroid ("../buildtemp/SwrveDemo.apk", opt, mainScenes, AndroidPackageName);
+        BuildAndroid("../buildtemp/SwrveDemo.apk", opt, mainScenes, AndroidPackageName);
     }
 
-    [MenuItem ("Swrve/Android/Build and Install Demo")]
-    public static void BuildAndInstallDemoAndroid ()
+    [MenuItem("Swrve/Android/Build and Install Demo")]
+    public static void BuildAndInstallDemoAndroid()
     {
         // Build
         bool buildAgain = true;
-        if (System.IO.File.Exists (GetProjectPath () + "/../../buildtemp/SwrveDemo.apk")) {
-            buildAgain = EditorUtility.DisplayDialog ("Swrve Demo", "The APK build already exists. Do you want to build again?", "Yes", "Hell no");
+        if (System.IO.File.Exists(GetProjectPath() + "/../../buildtemp/SwrveDemo.apk"))
+        {
+            buildAgain = EditorUtility.DisplayDialog("Swrve Demo", "The APK build already exists. Do you want to build again?", "Yes", "Hell no");
         }
 
-        if (buildAgain) {
-            BuildDemoAndroid ();
+        if (buildAgain)
+        {
+            BuildDemoAndroid();
         }
 
         // Install
-        InstallAndroidBuild (GetProjectPath (), "../../buildtemp/SwrveDemo.apk", "Demo");
+        InstallAndroidBuild(GetProjectPath(), "../../buildtemp/SwrveDemo.apk", "Demo");
     }
 
     // Tests
-    [MenuItem ("Swrve/iOS/Test build with all stripping levels")]
-    public static void TestBuildiOS ()
+    [MenuItem("Swrve/iOS/Test build with all stripping levels")]
+    public static void TestBuildiOS()
     {
         string outputPath = "../../buildtemp/tmp_iOS";
 
 #if UNITY_2018_3_OR_NEWER
         // Build iOS
         PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.iOS, ManagedStrippingLevel.Disabled);
-        BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
+        BuildIOS(outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
 
         // Build with mscorlib
         PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.iOS, ManagedStrippingLevel.Low);
-        BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
+        BuildIOS(outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
 
         // Build with strip bytecode
         PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.iOS, ManagedStrippingLevel.Medium);
-        BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
+        BuildIOS(outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
 
         // Build with strip assemblies
         PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.iOS, ManagedStrippingLevel.High);
-        BuildIOS (outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
+        BuildIOS(outputPath, opt, mainScenes, IOSDemoBundleIdentifier);
 #else
         // Build iOS
         PlayerSettings.strippingLevel = StrippingLevel.Disabled;
@@ -150,27 +157,27 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
 #endif
     }
 
-    [MenuItem ("Swrve/Android/Test build with all stripping levels")]
-    public static void TestBuildAndroid ()
+    [MenuItem("Swrve/Android/Test build with all stripping levels")]
+    public static void TestBuildAndroid()
     {
         string outputPath = "../../buildtemp/tmp_Android.apk";
 
 #if UNITY_2018_3_OR_NEWER
         // Build Android
         PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.Disabled);
-        BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
+        BuildAndroid(outputPath, opt, mainScenes, AndroidPackageName);
 
         // Build with mscorlib
         PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.Low);
-        BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
+        BuildAndroid(outputPath, opt, mainScenes, AndroidPackageName);
 
         // Build with strip bytecode
         PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.Medium);
-        BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
+        BuildAndroid(outputPath, opt, mainScenes, AndroidPackageName);
 
         // Build with strip assemblies
         PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.High);
-        BuildAndroid (outputPath, opt, mainScenes, AndroidPackageName);
+        BuildAndroid(outputPath, opt, mainScenes, AndroidPackageName);
 #else
         // Build Android
         PlayerSettings.strippingLevel = StrippingLevel.Disabled;
@@ -190,7 +197,7 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
 #endif
     }
 
-    [MenuItem ("Swrve/Android Prebuild")]
+    [MenuItem("Swrve/Android Prebuild")]
     public static void AndroidPreBuild()
     {
         AndroidCheckAndAddManifest();
@@ -202,11 +209,13 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         string androidDir = Path.Combine(Directory.GetCurrentDirectory(), "Assets/Plugins/Android");
         string amFile = Path.Combine(androidDir, "AndroidManifest.xml");
 
-        if (!File.Exists(amFile)) {
+        if (!File.Exists(amFile))
+        {
             // Prompt to confirm with the User to generate a new Android Manifest
             bool generateManifest = EditorUtility.DisplayDialog("Swrve Android Prebuild", "No AndroidManifest.xml file was been found in Assets/Plugins/Android. Generate a basic one?", "Yes", "No");
 
-            if (generateManifest) {
+            if (generateManifest)
+            {
                 StringBuilder manifestSB = new StringBuilder();
                 manifestSB.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
                 manifestSB.AppendLine("<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">");
@@ -218,29 +227,35 @@ public class SwrveBuildComponent : SwrveCommonBuildComponent
         }
     }
 
-    public static void SetAppGroupConfigKey(string platform, string writePath=null)
+    public static void SetAppGroupConfigKey(string platform, string writePath = null)
     {
         platform = platform.ToLower();
 
         string readPath = null;
-        if("ios" == platform) {
+        if ("ios" == platform)
+        {
             readPath = "Assets/Plugins/iOS/SwrvePushExtension";
-        } else {
+        }
+        else
+        {
             SwrveLog.Log(string.Format("{0} is an unknown platform, returning", platform));
             return;
         }
-        if(!Directory.Exists(readPath)) {
+        if (!Directory.Exists(readPath))
+        {
             return;
         }
         readPath = Path.Combine(readPath, "appgroupconfig.json");
 
         string appGroupIdItem = SwrveBuildComponent.GetPostProcessString(SwrveBuildComponent.APP_GROUP_ID_KEY);
-        if(string.IsNullOrEmpty(appGroupIdItem)) {
+        if (string.IsNullOrEmpty(appGroupIdItem))
+        {
             SwrveLog.Log(string.Format("No App Group Id Key was set in postprocess file, not adding appgroupconfig.json for {0}", platform));
             return;
         }
 
-        if(string.IsNullOrEmpty(writePath)) {
+        if (string.IsNullOrEmpty(writePath))
+        {
             writePath = readPath;
         }
 

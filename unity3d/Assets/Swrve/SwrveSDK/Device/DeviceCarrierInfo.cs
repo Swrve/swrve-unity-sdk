@@ -4,9 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace SwrveUnity.Device
 {
-public class DeviceCarrierInfo : ICarrierInfo
-{
-#if UNITY_IPHONE && !UNITY_EDITOR
+    public class DeviceCarrierInfo : ICarrierInfo
+    {
+#if UNITY_IOS && !UNITY_EDITOR
     [DllImport ("__Internal")]
     private static extern string _swrveiOSCarrierName();
 
@@ -50,9 +50,9 @@ public class DeviceCarrierInfo : ICarrierInfo
     }
 #endif
 
-    public string GetName()
-    {
-#if UNITY_IPHONE && !UNITY_EDITOR
+        public string GetName()
+        {
+#if UNITY_IOS && !UNITY_EDITOR
         try {
             return _swrveiOSCarrierName();
         } catch(Exception exp) {
@@ -62,13 +62,13 @@ public class DeviceCarrierInfo : ICarrierInfo
 #elif UNITY_ANDROID && !UNITY_EDITOR
         return AndroidGetTelephonyManagerAttribute("getSimOperatorName");
 #else
-        return null;
+            return null;
 #endif
-    }
+        }
 
-    public string GetIsoCountryCode()
-    {
-#if UNITY_IPHONE && !UNITY_EDITOR
+        public string GetIsoCountryCode()
+        {
+#if UNITY_IOS && !UNITY_EDITOR
         try {
             return _swrveiOSCarrierIsoCountryCode();
         } catch(Exception exp) {
@@ -78,13 +78,13 @@ public class DeviceCarrierInfo : ICarrierInfo
 #elif UNITY_ANDROID && !UNITY_EDITOR
         return AndroidGetTelephonyManagerAttribute("getSimCountryIso");
 #else
-        return null;
+            return null;
 #endif
-    }
+        }
 
-    public string GetCarrierCode()
-    {
-#if UNITY_IPHONE && !UNITY_EDITOR
+        public string GetCarrierCode()
+        {
+#if UNITY_IOS && !UNITY_EDITOR
         try {
             return _swrveiOSCarrierCode();
         } catch(Exception exp) {
@@ -94,8 +94,8 @@ public class DeviceCarrierInfo : ICarrierInfo
 #elif UNITY_ANDROID && !UNITY_EDITOR
         return AndroidGetTelephonyManagerAttribute("getSimOperator");
 #else
-        return null;
+            return null;
 #endif
+        }
     }
-}
 }

@@ -40,8 +40,9 @@ public class DemoMessageCenter : MonoBehaviour
     private void CheckAndAddCampaigns()
     {
         List<SwrveBaseCampaign> campaigns = SwrveComponent.Instance.SDK.GetMessageCenterCampaigns(SwrveOrientation.Both);
-        IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator ();
-        while(itCampaign.MoveNext()) {
+        IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator();
+        while (itCampaign.MoveNext())
+        {
             //Get the current campaign from iterator.
             SwrveBaseCampaign campaign = itCampaign.Current;
 
@@ -49,19 +50,23 @@ public class DemoMessageCenter : MonoBehaviour
             Transform campaignTransform = this.transform.Find(campaign.Subject + "-" + campaign.Id.ToString());
 
             //Just remove it from scene, if it CurStatus is "Deleted".
-            if(campaign.State.CurStatus == SwrveCampaignState.Status.Deleted && campaignTransform != null) {
+            if (campaign.State.CurStatus == SwrveCampaignState.Status.Deleted && campaignTransform != null)
+            {
                 GameObject.Destroy(transform.parent);
             }
 
             //Look if this campaign already was added on scene / If not create a new button for it.
             GameObject go;
-            if(campaignTransform == null) {
+            if (campaignTransform == null)
+            {
                 go = (GameObject)Instantiate(templateButtonGameObject);
                 go.transform.SetParent(templateButtonGameObject.transform.parent);
                 go.name = campaign.Subject + "-" + campaign.Id.ToString();
                 go.transform.localScale = Vector3.one;
                 go.SetActive(true);
-            } else {
+            }
+            else
+            {
                 go = campaignTransform.gameObject;
             }
             //Update the CampaignButton with campaign infos.

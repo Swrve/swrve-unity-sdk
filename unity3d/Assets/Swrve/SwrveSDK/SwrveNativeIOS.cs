@@ -1,4 +1,4 @@
-﻿#if UNITY_IPHONE
+﻿#if UNITY_IOS
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,39 +13,39 @@ using UnityEngine.iOS;
 public partial class SwrveSDK
 {
 
-private const string PushNotificationStatusKey = "Swrve.permission.ios.push_notifications";
-private const string SilentPushNotificationStatusKey = "Swrve.permission.ios.push_bg_refresh";
+    private const string PushNotificationStatusKey = "Swrve.permission.ios.push_notifications";
+    private const string SilentPushNotificationStatusKey = "Swrve.permission.ios.push_bg_refresh";
 
-private string pushNotificationStatus;
-private string silentPushNotificationStatus;
-/// <summary>
-/// Buffer the event of a purchase using real currency, where a single item
-/// (that isn't an in-app currency) was purchased.
-/// The receipt provided will be validated against the iTunes Store.
-/// </summary>
-/// <remarks>
-/// See the REST API documentation for the "iap" event.
-/// Note that this method is currently only supported for the Apple App Store,
-/// and a valid receipt needs to be provided for verification.
-/// </remarks>
-/// <param name="quantity">
-/// Quantity purchased.
-/// </param>
-/// <param name="productId">
-/// Unique product identifier for the item bought. This should match the Swrve resource name.
-/// </param>
-/// <param name="productPrice">
-/// Price of the product purchased in real money. Note that this is the price
-/// per product, not the total price of the transaction (when quantity > 1).
-/// </param>
-/// <param name="currency">
-/// Real world currency used for this transaction. This must be an ISO currency code.
-/// </param>
-/// <param name="receipt">
-/// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
-/// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
-/// </param>
-public void IapApple(int quantity, string productId, double productPrice, string currency, IapReceipt receipt)
+    private string pushNotificationStatus;
+    private string silentPushNotificationStatus;
+    /// <summary>
+    /// Buffer the event of a purchase using real currency, where a single item
+    /// (that isn't an in-app currency) was purchased.
+    /// The receipt provided will be validated against the iTunes Store.
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "iap" event.
+    /// Note that this method is currently only supported for the Apple App Store,
+    /// and a valid receipt needs to be provided for verification.
+    /// </remarks>
+    /// <param name="quantity">
+    /// Quantity purchased.
+    /// </param>
+    /// <param name="productId">
+    /// Unique product identifier for the item bought. This should match the Swrve resource name.
+    /// </param>
+    /// <param name="productPrice">
+    /// Price of the product purchased in real money. Note that this is the price
+    /// per product, not the total price of the transaction (when quantity > 1).
+    /// </param>
+    /// <param name="currency">
+    /// Real world currency used for this transaction. This must be an ISO currency code.
+    /// </param>
+    /// <param name="receipt">
+    /// The receipt sent back from the iTunes Store upon successful purchase - this receipt will be verified by Swrve.
+    /// Use either Base64EncodedReceipt or RawReceipt depending on what is offered by your plugin.
+    /// </param>
+    public void IapApple(int quantity, string productId, double productPrice, string currency, IapReceipt receipt)
     {
         IapApple(quantity, productId, productPrice, currency, receipt, string.Empty);
     }
@@ -160,14 +160,19 @@ public void IapApple(int quantity, string productId, double productPrice, string
     /// </param>
     public void IapApple(int quantity, string productId, double productPrice, string currency, IapRewards rewards, IapReceipt receipt, string transactionId)
     {
-        if (config.AppStore != "apple") {
+        if (config.AppStore != "apple")
+        {
             throw new Exception("This function can only be called to validate IAP events from Apple");
-        } else {
+        }
+        else
+        {
             string encodedReceipt = null;
-            if (receipt != null) {
+            if (receipt != null)
+            {
                 encodedReceipt = receipt.GetBase64EncodedReceipt();
             }
-            if (String.IsNullOrEmpty(encodedReceipt)) {
+            if (String.IsNullOrEmpty(encodedReceipt))
+            {
                 SwrveLog.LogError("IAP event not sent: receipt cannot be empty for Apple Store verification");
                 return;
             }
@@ -183,19 +188,23 @@ public void IapApple(int quantity, string productId, double productPrice, string
     /// </returns>
     public bool ObtainIOSDeviceToken()
     {
-        if (config.PushNotificationEnabled) {
+        if (config.PushNotificationEnabled)
+        {
             byte[] token = NotificationServices.deviceToken;
 
-            if (token != null) {
+            if (token != null)
+            {
                 // Send token as user update and to Babble if QA user
                 string hexToken = SwrveHelper.FilterNonAlphanumeric(System.BitConverter.ToString(token));
                 bool sendDeviceInfo = (iOSdeviceToken != hexToken);
-                if (sendDeviceInfo) {
+                if (sendDeviceInfo)
+                {
                     iOSdeviceToken = hexToken;
                     // Save device token for future launches
                     storage.Save(iOSdeviceTokenSave, iOSdeviceToken);
 
-                    if(IsSDKReady()) {
+                    if (IsSDKReady())
+                    {
                         SendDeviceInfo();
                     }
                     SendDeviceInfo();
@@ -213,13 +222,16 @@ public void IapApple(int quantity, string productId, double productPrice, string
     /// </summary>
     public void ProcessRemoteNotifications()
     {
-        if (config.PushNotificationEnabled) {
+        if (config.PushNotificationEnabled)
+        {
             // Process push notifications
             int notificationCount = NotificationServices.remoteNotificationCount;
-            if (notificationCount > 0) {
+            if (notificationCount > 0)
+            {
                 SwrveLog.Log("Got " + notificationCount + " remote notifications");
 
-                for (int i = 0; i < notificationCount; i++) {
+                for (int i = 0; i < notificationCount; i++)
+                {
                     ProcessRemoteNotification(NotificationServices.remoteNotifications[i]);
                 }
                 NotificationServices.ClearRemoteNotifications();
@@ -232,7 +244,8 @@ public void IapApple(int quantity, string productId, double productPrice, string
     /// </summary>
     public void RefreshPushPermissions()
     {
-        if (config.PushNotificationEnabled) {
+        if (config.PushNotificationEnabled)
+        {
 #if !UNITY_EDITOR
             this.pushNotificationStatus = _swrvePushNotificationStatus (this.prefabName);
             this.silentPushNotificationStatus = _swrveBackgroundRefreshStatus ();
@@ -243,10 +256,12 @@ public void IapApple(int quantity, string productId, double productPrice, string
     public void SetPushNotificationsPermissionStatus(string pushStatus)
     {
         // Called asynchronously by the iOS native code with the UNUserNotification status
-        if (!string.IsNullOrEmpty(pushStatus)) {
+        if (!string.IsNullOrEmpty(pushStatus))
+        {
             bool sendEvents = (this.pushNotificationStatus != pushStatus);
             this.pushNotificationStatus = pushStatus;
-            if (sendEvents) {
+            if (sendEvents)
+            {
                 QueueDeviceInfo();
             }
         }
@@ -339,7 +354,8 @@ public void IapApple(int quantity, string productId, double productPrice, string
     protected string GetSavediOSDeviceToken()
     {
         string savedValue = storage.Load(iOSdeviceTokenSave);
-        if (!string.IsNullOrEmpty(savedValue)) {
+        if (!string.IsNullOrEmpty(savedValue))
+        {
             return savedValue;
         }
 
@@ -357,11 +373,14 @@ public void IapApple(int quantity, string productId, double productPrice, string
 
     protected void ProcessRemoteNotification(RemoteNotification notification)
     {
-        if (config.PushNotificationEnabled) {
+        if (config.PushNotificationEnabled)
+        {
             ProcessRemoteNotificationUserInfo(notification.userInfo);
             // Do not call listener for silent pushes
-            if (notification.userInfo == null || !notification.userInfo.Contains(SilentPushTrackingKey)) {
-                if (config.PushNotificationListener != null) {
+            if (notification.userInfo == null || !notification.userInfo.Contains(SilentPushTrackingKey))
+            {
+                if (config.PushNotificationListener != null)
+                {
                     config.PushNotificationListener.OnRemoteNotification(notification);
                 }
             }
@@ -408,15 +427,19 @@ public void IapApple(int quantity, string productId, double productPrice, string
     {
         // First check if it is processed natively or empty
         bool processedNatively = (userInfo != null && userInfo.Contains(PushUnityDoNotProcessKey));
-        if (!processedNatively) {
-            if (userInfo != null && userInfo.Contains(PushTrackingKey)) {
+        if (!processedNatively)
+        {
+            if (userInfo != null && userInfo.Contains(PushTrackingKey))
+            {
                 // It is a Swrve push, we need to check if it was sent while the app was in the background
                 bool whileInBackground = !userInfo.Contains("_swrveForeground");
-                if (whileInBackground) {
+                if (whileInBackground)
+                {
                     object rawId = userInfo[PushTrackingKey];
                     string pushId = rawId.ToString();
                     // SWRVE-5613 Hack
-                    if (rawId is Int64) {
+                    if (rawId is Int64)
+                    {
                         pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
                     }
 
@@ -424,27 +447,39 @@ public void IapApple(int quantity, string productId, double productPrice, string
 
                     // Evaluate and process any default push actions available
                     object deeplinkUrl = userInfo[PushDeeplinkKey];
-                    if (deeplinkUrl != null) {
+                    if (deeplinkUrl != null)
+                    {
                         OpenURL(deeplinkUrl.ToString());
                     }
 
                     ProcessNotificationForCampaign(userInfo);
 
-                } else {
+                }
+                else
+                {
                     SwrveLog.Log("Swrve remote notification received while in the foreground");
                 }
-            } else {
-                if (userInfo != null && userInfo.Contains(SilentPushTrackingKey)) {
+            }
+            else
+            {
+                if (userInfo != null && userInfo.Contains(SilentPushTrackingKey))
+                {
                     SwrveLog.Log("Swrve silent push received");
-                } else {
+                }
+                else
+                {
                     SwrveLog.Log("Got unidentified notification");
                 }
             }
-        } else {
+        }
+        else
+        {
             // On the native layer, we modify the userInfo if there is an action required on the unity layer.
-            if (userInfo != null && userInfo.Contains(PushButtonToCampaignIdKey)) {
+            if (userInfo != null && userInfo.Contains(PushButtonToCampaignIdKey))
+            {
                 object campaignId = userInfo[PushButtonToCampaignIdKey];
-                if (campaignId != null) {
+                if (campaignId != null)
+                {
                     HandleCampaignFromNotification(campaignId.ToString());
                 }
             }
@@ -453,13 +488,17 @@ public void IapApple(int quantity, string productId, double productPrice, string
 
     private void ProcessNotificationForCampaign(IDictionary userInfo)
     {
-        if (userInfo.Contains(PushContentKey)) {
+        if (userInfo.Contains(PushContentKey))
+        {
             IDictionary content = userInfo[PushContentKey] as IDictionary;
-            if (content != null && HasCorrectVersion(content)) {
+            if (content != null && HasCorrectVersion(content))
+            {
                 IDictionary campaign = content["campaign"] as IDictionary;
-                if (campaign != null) {
+                if (campaign != null)
+                {
                     object campaignId = campaign["id"];
-                    if (campaignId != null) {
+                    if (campaignId != null)
+                    {
                         HandleCampaignFromNotification(campaignId.ToString());
                     }
                 }
@@ -471,7 +510,8 @@ public void IapApple(int quantity, string productId, double productPrice, string
     {
         /** Check the push version number **/
         object version = content["version"];
-        if (version != null) {
+        if (version != null)
+        {
             int contentVersion = Int32.Parse(version.ToString());
             return (contentVersion >= PushContentVersion);
         }
@@ -492,7 +532,8 @@ public void IapApple(int quantity, string productId, double productPrice, string
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)
     {
-        if (!string.IsNullOrEmpty(iOSdeviceToken)) {
+        if (!string.IsNullOrEmpty(iOSdeviceToken))
+        {
             deviceInfo["swrve.ios_token"] = iOSdeviceToken;
         }
 
@@ -504,7 +545,11 @@ public void IapApple(int quantity, string productId, double productPrice, string
         }
 
         try {
-            deviceInfo ["swrve.device_region"] = _swrveiOSLocaleCountry();
+            string deviceRegion = _swrveiOSLocaleCountry();
+            if (!string.IsNullOrEmpty(deviceRegion))
+            {
+                deviceInfo["swrve.device_region"] = deviceRegion;
+            }
         } catch (Exception e) {
             SwrveLog.LogWarning("Couldn't get device region on iOS, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
         }
@@ -653,16 +698,16 @@ public void IapApple(int quantity, string productId, double productPrice, string
 // Added interface for our NativeiOS layer for our Helper Class.
 namespace SwrveUnity.Helpers
 {
-public static partial class SwrveHelper
-{
+    public static partial class SwrveHelper
+    {
 #if !UNITY_EDITOR
     [DllImport ("__Internal")]
     private static extern string _swrveiOSUUID();
 #endif
 
-    public static string getNativeRandomUUID()
-    {
-        string uuid = null;
+        public static string getNativeRandomUUID()
+        {
+            string uuid = null;
 #if !UNITY_EDITOR
         try {
             uuid = _swrveiOSUUID();
@@ -670,10 +715,10 @@ public static partial class SwrveHelper
             SwrveLog.LogWarning ("Couldn't get random UUID: " + exp.ToString ());
         }
 #endif
-        return uuid;
+            return uuid;
+        }
     }
-}
 
 }
 
-#endif //#endif for "#if UNITY_IPHONE" - Begining of this File.
+#endif //#endif for "#if UNITY_IOS" - Begining of this File.

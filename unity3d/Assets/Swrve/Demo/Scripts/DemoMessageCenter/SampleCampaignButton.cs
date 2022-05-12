@@ -18,9 +18,12 @@ public class SampleCampaignButton : MonoBehaviour
 
     private void updateButtonLayout()
     {
-        if (this.campaign.State.CurStatus == SwrveCampaignState.Status.Seen) {
+        if (this.campaign.State.CurStatus == SwrveCampaignState.Status.Seen)
+        {
             buttonComponent.image.color = Color.green;
-        } else if (this.campaign.State.CurStatus == SwrveCampaignState.Status.Unseen) {
+        }
+        else if (this.campaign.State.CurStatus == SwrveCampaignState.Status.Unseen)
+        {
             buttonComponent.image.color = Color.gray;
         }
     }

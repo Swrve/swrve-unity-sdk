@@ -8,79 +8,79 @@ using SwrveUnity;
 
 public partial class SwrveSDK
 {
-private const string SwrveAndroidFirebasePushPluginPackageName = "com.swrve.unity.firebase.SwrveFirebasePushSupport";
-private const string SwrveAndroidADMPushPluginPackageName = "com.swrve.unity.adm.SwrveAdmPushSupport";
-private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
-private const string SwrvePushSupport = "com.swrve.unity.SwrvePushSupport";
+    private const string SwrveAndroidFirebasePushPluginPackageName = "com.swrve.unity.firebase.SwrveFirebasePushSupport";
+    private const string SwrveAndroidADMPushPluginPackageName = "com.swrve.unity.adm.SwrveAdmPushSupport";
+    private const string SwrveAndroidUnityCommonName = "com.swrve.sdk.SwrveUnityCommon";
+    private const string SwrvePushSupport = "com.swrve.unity.SwrvePushSupport";
 
-private const string IsInitialisedName = "isInitialised";
-private const string GetConversationVersionName = "getConversationVersion";
-private const string ShowConversationName = "showConversation";
-private const string SetDefaultNotificationChannelName = "setDefaultNotificationChannel";
-private const string SwrveIsOSSupportedVersionName = "sdkAvailable";
-private const string SwrveGetOSDeviceTypeName = "getOSDeviceType";
-private const string SwrveGetPlatformOSName = "getPlatformOS";
-private const string GetInfluencedDataJsonName = "getInfluenceDataJson";
-private const string QaUserUpdateName = "updateQaUser";
-private const string SetUserIdName = "setUserId";
-private const string SetTrackingStateStoppedName = "setTrackingStateStopped";
-private const string ClearAllUserAuthenticatedNotificationsName = "clearAllAuthenticatedNotifications";
-private const string CopyToClipboardName = "copyToClipboard";
+    private const string IsInitialisedName = "isInitialised";
+    private const string GetConversationVersionName = "getConversationVersion";
+    private const string ShowConversationName = "showConversation";
+    private const string SetDefaultNotificationChannelName = "setDefaultNotificationChannel";
+    private const string SwrveIsOSSupportedVersionName = "sdkAvailable";
+    private const string SwrveGetOSDeviceTypeName = "getOSDeviceType";
+    private const string SwrveGetPlatformOSName = "getPlatformOS";
+    private const string GetInfluencedDataJsonName = "getInfluenceDataJson";
+    private const string QaUserUpdateName = "updateQaUser";
+    private const string SetUserIdName = "setUserId";
+    private const string SetTrackingStateStoppedName = "setTrackingStateStopped";
+    private const string ClearAllUserAuthenticatedNotificationsName = "clearAllAuthenticatedNotifications";
+    private const string CopyToClipboardName = "copyToClipboard";
 
-private const string GetAreNotificationsEnabledName = "getAreNotificationsEnabled";
+    private const string GetAreNotificationsEnabledName = "getAreNotificationsEnabled";
 
-private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
-private const string UnityCurrentActivityName = "currentActivity";
+    private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
+    private const string UnityCurrentActivityName = "currentActivity";
 
-private string firebaseDeviceToken;
-private static AndroidJavaObject androidPlugin;
-private static bool androidPushPluginInitialized = false;
-private static bool androidPushPluginInitializedSuccessfully = false;
-private string admDeviceToken;
-private static AndroidJavaObject androidADMPlugin;
-private static bool androidADMPluginInitialized = false;
-private static bool androidADMPluginInitializedSuccessfully = false;
-private string googlePlayAdvertisingId;
+    private string firebaseDeviceToken;
+    private static AndroidJavaObject androidPlugin;
+    private static bool androidPushPluginInitialized = false;
+    private static bool androidPushPluginInitializedSuccessfully = false;
+    private string admDeviceToken;
+    private static AndroidJavaObject androidADMPlugin;
+    private static bool androidADMPluginInitialized = false;
+    private static bool androidADMPluginInitializedSuccessfully = false;
+    private string googlePlayAdvertisingId;
 
-private const int GooglePlayPushPluginVersion = 4;
-private const int AdmPushPluginVersion = 1;
-private const string InitialiseAdmName = "initialiseAdm";
+    private const int GooglePlayPushPluginVersion = 4;
+    private const int AdmPushPluginVersion = 1;
+    private const string InitialiseAdmName = "initialiseAdm";
 
-private const string GetVersionName = "getVersion";
-private const string RegisterDeviceName = "registerDevice";
-private const string RequestAdvertisingIdName = "requestAdvertisingId";
+    private const string GetVersionName = "getVersion";
+    private const string RegisterDeviceName = "registerDevice";
+    private const string RequestAdvertisingIdName = "requestAdvertisingId";
 
-private const string GCMIdentKey = "google.message_id";
-private const string ADMIdentKey = "adm_message_md5";
-private static string LastOpenedNotification;
+    private const string GCMIdentKey = "google.message_id";
+    private const string ADMIdentKey = "adm_message_md5";
+    private static string LastOpenedNotification;
 
-/// <summary>
-/// Buffer the event of a purchase using real currency, where a single item
-/// (that isn't an in-app currency) was purchased.
-/// The receipt provided will be validated against the Google Play Store.
-/// </summary>
-/// <remarks>
-/// See the REST API documentation for the "iap" event.
-/// Note that this method is currently only supported for the Google Play Store,
-/// and a valid receipt and signature need to be provided for verification.
-/// </remarks>
-/// <param name="productId">
-/// Unique product identifier for the item bought. This should match the Swrve resource name.
-/// </param>
-/// <param name="productPrice">
-/// Price of the product purchased in real money. Note that this is the price
-/// per product, not the total price of the transaction (when quantity > 1).
-/// </param>
-/// <param name="currency">
-/// Real world currency used for this transaction. This must be an ISO currency code.
-/// </param>
-/// <param name="purchaseData">
-/// The receipt sent back from the Google Play Store upon successful purchase - this receipt will be verified by Swrve
-/// </param>
-/// <param name="dataSignature">
-/// The receipt signature sent back from the Google Play Store upon successful purchase
-/// </param>
-public void IapGooglePlay(string productId, double productPrice, string currency, string purchaseData, string dataSignature)
+    /// <summary>
+    /// Buffer the event of a purchase using real currency, where a single item
+    /// (that isn't an in-app currency) was purchased.
+    /// The receipt provided will be validated against the Google Play Store.
+    /// </summary>
+    /// <remarks>
+    /// See the REST API documentation for the "iap" event.
+    /// Note that this method is currently only supported for the Google Play Store,
+    /// and a valid receipt and signature need to be provided for verification.
+    /// </remarks>
+    /// <param name="productId">
+    /// Unique product identifier for the item bought. This should match the Swrve resource name.
+    /// </param>
+    /// <param name="productPrice">
+    /// Price of the product purchased in real money. Note that this is the price
+    /// per product, not the total price of the transaction (when quantity > 1).
+    /// </param>
+    /// <param name="currency">
+    /// Real world currency used for this transaction. This must be an ISO currency code.
+    /// </param>
+    /// <param name="purchaseData">
+    /// The receipt sent back from the Google Play Store upon successful purchase - this receipt will be verified by Swrve
+    /// </param>
+    /// <param name="dataSignature">
+    /// The receipt signature sent back from the Google Play Store upon successful purchase
+    /// </param>
+    public void IapGooglePlay(string productId, double productPrice, string currency, string purchaseData, string dataSignature)
     {
         IapRewards no_rewards = new IapRewards();
         IapGooglePlay(productId, productPrice, currency, no_rewards, purchaseData, dataSignature);
@@ -119,14 +119,19 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     /// </param>
     public void IapGooglePlay(string productId, double productPrice, string currency, IapRewards rewards, string purchaseData, string dataSignature)
     {
-        if (config.AppStore != "google") {
+        if (config.AppStore != "google")
+        {
             throw new Exception("This function can only be called to validate IAP events from Google");
-        } else {
-            if (String.IsNullOrEmpty(purchaseData)) {
+        }
+        else
+        {
+            if (String.IsNullOrEmpty(purchaseData))
+            {
                 SwrveLog.LogError("IAP event not sent: purchase data cannot be empty for Google Play Store verification");
                 return;
             }
-            if (String.IsNullOrEmpty(dataSignature)) {
+            if (String.IsNullOrEmpty(dataSignature))
+            {
                 SwrveLog.LogError("IAP event not sent: data signature cannot be empty for Google Play Store verification");
                 return;
             }
@@ -137,36 +142,46 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void setNativeInfo(Dictionary<string, string> deviceInfo)
     {
-        if (!string.IsNullOrEmpty(firebaseDeviceToken)) {
+        if (!string.IsNullOrEmpty(firebaseDeviceToken))
+        {
             deviceInfo["swrve.gcm_token"] = firebaseDeviceToken;
         }
 
-        if (!string.IsNullOrEmpty(admDeviceToken)) {
+        if (!string.IsNullOrEmpty(admDeviceToken))
+        {
             deviceInfo["swrve.adm_token"] = admDeviceToken;
         }
         // Authenticated Push
         deviceInfo["swrve.can_receive_authenticated_push"] = Boolean.TrueString.ToLower();
 
         string timezone = AndroidGetTimezone();
-        if (!string.IsNullOrEmpty(timezone)) {
+        if (!string.IsNullOrEmpty(timezone))
+        {
             deviceInfo["swrve.timezone_name"] = timezone;
         }
 
         string deviceRegion = AndroidGetRegion();
-        if (!string.IsNullOrEmpty(deviceRegion)) {
+        if (!string.IsNullOrEmpty(deviceRegion))
+        {
             deviceInfo["swrve.device_region"] = deviceRegion;
         }
 
-        if (config.LogAndroidId) {
-            try {
+        if (config.LogAndroidId)
+        {
+            try
+            {
                 deviceInfo["swrve.android_id"] = AndroidGetAndroidId();
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 SwrveLog.LogWarning("Couldn't get device IDFA, make sure you have the plugin inside your project and you are running on a device: " + e.ToString());
             }
         }
 
-        if (config.LogGoogleAdvertisingId) {
-            if (!string.IsNullOrEmpty(googlePlayAdvertisingId)) {
+        if (config.LogGoogleAdvertisingId)
+        {
+            if (!string.IsNullOrEmpty(googlePlayAdvertisingId))
+            {
                 deviceInfo["swrve.GAID"] = googlePlayAdvertisingId;
             }
         }
@@ -177,21 +192,28 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     private string getNativeLanguage()
     {
         string language = null;
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale"))
+                {
                     AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
                     language = defaultLocale.Call<string>("getLanguage");
                     string country = defaultLocale.Call<string>("getCountry");
-                    if (!string.IsNullOrEmpty(country)) {
+                    if (!string.IsNullOrEmpty(country))
+                    {
                         language += "-" + country;
                     }
                     string variant = defaultLocale.Call<string>("getVariant");
-                    if (!string.IsNullOrEmpty(variant)) {
+                    if (!string.IsNullOrEmpty(variant))
+                    {
                         language += "-" + variant;
                     }
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't get the device language, make sure you are running on an Android device: " + exp.ToString());
             }
         }
@@ -205,10 +227,13 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void SetDefaultNotificationChannel()
     {
-        try {
+        try
+        {
             AndroidChannel defaultChannel = (config.DefaultAndroidChannel != null) ? config.DefaultAndroidChannel : FallbackDefaultChannel();
             AndroidGetBridge().Call(SetDefaultNotificationChannelName, defaultChannel.Id, defaultChannel.Name, defaultChannel.Importance.ToString());
-        } catch (Exception exp) {
+        }
+        catch (Exception exp)
+        {
             SwrveLog.LogWarning("Couldn't set default notification channel in Android: " + exp.ToString());
         }
     }
@@ -226,20 +251,27 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void RequestGooglePlayAdvertisingId(MonoBehaviour container, string pluginClass)
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
                 this.googlePlayAdvertisingId = storage.Load(GoogleAdvertisingIdSave);
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName))
+                {
                     string jniPluginClassName = pluginClass.Replace(".", "/");
 
-                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
+                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0)
+                    {
                         androidPlugin = new AndroidJavaClass(pluginClass);
-                        if (androidPlugin != null) {
+                        if (androidPlugin != null)
+                        {
                             androidPlugin.CallStatic<bool>(RequestAdvertisingIdName, container.name);
                         }
                     }
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
             }
         }
@@ -247,18 +279,21 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void InitialisePushADM(MonoBehaviour container)
     {
-        try {
+        try
+        {
             bool registered = false;
             this.admDeviceToken = storage.Load(AdmDeviceTokenSave);
 
             //Only execute this once
-            if (!androidADMPluginInitialized) {
+            if (!androidADMPluginInitialized)
+            {
                 androidADMPluginInitialized = true;
 
                 string pluginPackageName = SwrveAndroidADMPushPluginPackageName;
 
                 string jniPluginClassName = pluginPackageName.Replace(".", "/");
-                if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0) {
+                if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() == 0)
+                {
                     SwrveLog.LogError("Could not find class: " + jniPluginClassName +
                                       " Are you using the correct SwrveSDKPushSupport plugin given the swrve config.AndroidPushProvider setting?");
 
@@ -269,62 +304,78 @@ public void IapGooglePlay(string productId, double productPrice, string currency
                 }
 
                 androidADMPlugin = new AndroidJavaClass(pluginPackageName);
-                if (androidADMPlugin == null) {
+                if (androidADMPlugin == null)
+                {
                     SwrveLog.LogError("Found class, but unable to construct AndroidJavaClass: " + jniPluginClassName);
                     return;
                 }
 
                 // Check that the plugin version is correct
                 int pluginVersion = androidADMPlugin.CallStatic<int>(GetVersionName);
-                if (pluginVersion != AdmPushPluginVersion) {
+                if (pluginVersion != AdmPushPluginVersion)
+                {
                     // Plugin with changes to the public API not supported
                     androidADMPlugin = null;
                     throw new Exception("The version of the Swrve Android Push plugin" + pluginPackageName + "is different. This Swrve SDK needs version " + pluginVersion);
-                } else {
+                }
+                else
+                {
                     androidADMPluginInitializedSuccessfully = true;
                     SwrveLog.LogInfo("Android Push Plugin initialised successfully: " + jniPluginClassName);
                 }
             }
 
-            if (androidADMPluginInitializedSuccessfully) {
+            if (androidADMPluginInitializedSuccessfully)
+            {
                 registered = androidADMPlugin.CallStatic<bool>(
                                  InitialiseAdmName, container.name, config.AndroidPushNotificationIconId, config.AndroidPushNotificationMaterialIconId,
                                  config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColorHex);
             }
 
-            if (!registered) {
+            if (!registered)
+            {
                 SwrveLog.LogError("Could not communicate with the Swrve Android ADM Push plugin.");
             }
 
-        } catch (Exception exp) {
+        }
+        catch (Exception exp)
+        {
             SwrveLog.LogError("Could not initalise push: " + exp.ToString());
         }
     }
 
     private void FirebaseRegisterForPushNotification(MonoBehaviour container)
     {
-        try {
+        try
+        {
             bool registered = false;
             this.firebaseDeviceToken = storage.Load(FirebaseDeviceTokenSave);
 
-            if (!androidPushPluginInitialized) {
+            if (!androidPushPluginInitialized)
+            {
                 androidPushPluginInitialized = true;
 
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName))
+                {
                     string jniPluginClassName = SwrveAndroidFirebasePushPluginPackageName.Replace(".", "/");
 
-                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0) {
+                    if (AndroidJNI.FindClass(jniPluginClassName).ToInt32() != 0)
+                    {
                         androidPlugin = new AndroidJavaClass(SwrveAndroidFirebasePushPluginPackageName);
 
-                        if (androidPlugin != null) {
+                        if (androidPlugin != null)
+                        {
                             // Check that the version is the same
                             int pluginVersion = androidPlugin.CallStatic<int>(GetVersionName);
 
-                            if (pluginVersion != GooglePlayPushPluginVersion) {
+                            if (pluginVersion != GooglePlayPushPluginVersion)
+                            {
                                 // Plugin with changes to the public API not supported
                                 androidPlugin = null;
                                 throw new Exception("The version of the Swrve Android Push plugin is different. This Swrve SDK needs version " + GooglePlayPushPluginVersion);
-                            } else {
+                            }
+                            else
+                            {
                                 androidPushPluginInitializedSuccessfully = true;
                             }
                         }
@@ -332,26 +383,34 @@ public void IapGooglePlay(string productId, double productPrice, string currency
                 }
             }
 
-            if (androidPushPluginInitializedSuccessfully) {
+            if (androidPushPluginInitializedSuccessfully)
+            {
                 registered = androidPlugin.CallStatic<bool>(RegisterDeviceName, container.name, config.AndroidPushNotificationIconId, config.AndroidPushNotificationMaterialIconId,
                              config.AndroidPushNotificationLargeIconId, config.AndroidPushNotificationAccentColorHex, firebaseDeviceToken);
             }
 
-            if (!registered) {
+            if (!registered)
+            {
                 SwrveLog.LogError("Could not communicate with the Swrve Android Push plugin. Have you copied all the jars to the directory?");
             }
-        } catch (Exception exp) {
+        }
+        catch (Exception exp)
+        {
             SwrveLog.LogError("Could not retrieve the device Registration Id: " + exp.ToString());
         }
     }
 
     private string AndroidGetTimezone()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
                 AndroidJavaObject cal = new AndroidJavaObject("java.util.GregorianCalendar");
                 return cal.Call<AndroidJavaObject>("getTimeZone").Call<string>("getID");
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't get the device timezone, make sure you are running on an Android device: " + exp.ToString());
             }
         }
@@ -361,13 +420,18 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private string AndroidGetRegion()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale")) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass localeJavaClass = new AndroidJavaClass("java.util.Locale"))
+                {
                     AndroidJavaObject defaultLocale = localeJavaClass.CallStatic<AndroidJavaObject>("getDefault");
                     return defaultLocale.Call<string>("getCountry");
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't get the device region, make sure you are running on an Android device: " + exp.ToString());
             }
         }
@@ -377,16 +441,21 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private string AndroidGetAppVersion()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName))
+                {
                     AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
                     string packageName = context.Call<string>("getPackageName");
                     string versionName = context.Call<AndroidJavaObject>("getPackageManager")
                                          .Call<AndroidJavaObject>("getPackageInfo", packageName, 0).Get<string>("versionName");
                     return versionName;
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't get the device app version, make sure you are running on an Android device: " + exp.ToString());
             }
         }
@@ -397,15 +466,20 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     private string _androidId;
     private string AndroidGetAndroidId()
     {
-        if (SwrveHelper.IsOnDevice() && (_androidId == null)) {
-            try {
-                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName)) {
+        if (SwrveHelper.IsOnDevice() && (_androidId == null))
+        {
+            try
+            {
+                using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass(UnityPlayerName))
+                {
                     AndroidJavaObject context = unityPlayerClass.GetStatic<AndroidJavaObject>(UnityCurrentActivityName);
                     AndroidJavaObject contentResolver = context.Call<AndroidJavaObject>("getContentResolver");
                     AndroidJavaClass settingsSecure = new AndroidJavaClass("android.provider.Settings$Secure");
                     _androidId = settingsSecure.CallStatic<string>("getString", contentResolver, "android_id");
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't get the \"android_id\" resource, make sure you are running on an Android device: " + exp.ToString());
             }
         }
@@ -421,10 +495,12 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     /// </param>
     public void RegistrationIdReceived(string registrationId)
     {
-        if (!string.IsNullOrEmpty(registrationId)) {
+        if (!string.IsNullOrEmpty(registrationId))
+        {
             bool sendDeviceInfo = (this.firebaseDeviceToken != registrationId);
 
-            if (sendDeviceInfo) {
+            if (sendDeviceInfo)
+            {
                 this.firebaseDeviceToken = registrationId;
                 storage.Save(FirebaseDeviceTokenSave, firebaseDeviceToken);
                 SendDeviceInfo();
@@ -441,9 +517,11 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     /// </param>
     public void RegistrationIdReceivedADM(string registrationId)
     {
-        if (!string.IsNullOrEmpty(registrationId)) {
+        if (!string.IsNullOrEmpty(registrationId))
+        {
             bool sendDeviceInfo = (this.admDeviceToken != registrationId);
-            if (sendDeviceInfo) {
+            if (sendDeviceInfo)
+            {
                 this.admDeviceToken = registrationId;
                 storage.Save(AdmDeviceTokenSave, this.admDeviceToken);
                 SendDeviceInfo();
@@ -461,10 +539,14 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     public void NotificationReceived(string notificationJson)
     {
         Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize(notificationJson);
-        if (config.PushNotificationListener != null) {
-            try {
+        if (config.PushNotificationListener != null)
+        {
+            try
+            {
                 config.PushNotificationListener.OnNotificationReceived(parsePayload(notification));
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogError("Error processing the push notification: " + exp.Message);
             }
         }
@@ -478,9 +560,12 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     /// </param>
     private string GetPushId(Dictionary<string, object> notification)
     {
-        if (notification != null && notification.ContainsKey(PushTrackingKey)) {
+        if (notification != null && notification.ContainsKey(PushTrackingKey))
+        {
             return notification[PushTrackingKey].ToString();
-        } else {
+        }
+        else
+        {
             SwrveLog.Log("Got unidentified notification");
         }
 
@@ -497,17 +582,21 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     public void OpenedFromPushNotification(string notificationJson)
     {
         Dictionary<string, object> notification = (Dictionary<string, object>)Json.Deserialize(notificationJson);
-        if (notification != null && notification.ContainsKey(GCMIdentKey)) {
+        if (notification != null && notification.ContainsKey(GCMIdentKey))
+        {
             string gcmIdent = (string)notification[GCMIdentKey];
-            if (!string.IsNullOrEmpty(gcmIdent) && (gcmIdent == LastOpenedNotification)) {
+            if (!string.IsNullOrEmpty(gcmIdent) && (gcmIdent == LastOpenedNotification))
+            {
                 return;
             }
             LastOpenedNotification = gcmIdent;
         }
 
-        if (notification != null && notification.ContainsKey(ADMIdentKey)) {
+        if (notification != null && notification.ContainsKey(ADMIdentKey))
+        {
             string admIdent = (string)notification[ADMIdentKey];
-            if (!string.IsNullOrEmpty(admIdent) && (admIdent == LastOpenedNotification)) {
+            if (!string.IsNullOrEmpty(admIdent) && (admIdent == LastOpenedNotification))
+            {
                 return;
             }
             LastOpenedNotification = admIdent;
@@ -517,32 +606,43 @@ public void IapGooglePlay(string productId, double productPrice, string currency
         // Detect if the notification was opened from a rich push button
         // If so, the two engagement have already been sent by the native SwrveEngageEventSender
         bool processedNatively = (notification != null && notification.ContainsKey(PushUnityDoNotProcessKey));
-        if (!processedNatively) {
+        if (!processedNatively)
+        {
             SendPushEngagedEvent(pushId);
             // Process notification deeplink
-            if (notification != null && notification.ContainsKey(PushDeeplinkKey)) {
+            if (notification != null && notification.ContainsKey(PushDeeplinkKey))
+            {
                 object deeplinkUrl = notification[PushDeeplinkKey];
-                if (deeplinkUrl != null) {
+                if (deeplinkUrl != null)
+                {
                     OpenURL(deeplinkUrl.ToString());
                 }
             }
             // Process if the notification has campaign instead of deeplink
             ProcessNotificationForCampaign(notification);
 
-        } else {
+        }
+        else
+        {
             // if a button was pressed, we still have to render the campaign:
-            if (notification != null && notification.ContainsKey(PushButtonToCampaignIdKey)) {
+            if (notification != null && notification.ContainsKey(PushButtonToCampaignIdKey))
+            {
                 object campaignId = notification[PushButtonToCampaignIdKey];
-                if (campaignId != null) {
+                if (campaignId != null)
+                {
                     HandleCampaignFromNotification(campaignId.ToString());
                 }
             }
         }
 
-        if (config.PushNotificationListener != null) {
-            try {
+        if (config.PushNotificationListener != null)
+        {
+            try
+            {
                 config.PushNotificationListener.OnOpenedFromPushNotification(parsePayload(notification));
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogError("Error processing the push notification: " + exp.Message);
             }
         }
@@ -550,13 +650,17 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void ProcessNotificationForCampaign(Dictionary<string, object> notification)
     {
-        if (notification.ContainsKey(PushContentKey)) {
+        if (notification.ContainsKey(PushContentKey))
+        {
             Dictionary<string, object> content = (Dictionary<string, object>)Json.Deserialize((string)notification[PushContentKey]);
-            if (content != null && content.ContainsKey("campaign") && HasCorrectVersion(content)) {
+            if (content != null && content.ContainsKey("campaign") && HasCorrectVersion(content))
+            {
                 Dictionary<string, object> campaign = (Dictionary<string, object>)content["campaign"];
-                if (campaign != null) {
+                if (campaign != null)
+                {
                     object campaignId = campaign["id"];
-                    if (campaignId != null) {
+                    if (campaignId != null)
+                    {
                         HandleCampaignFromNotification(campaignId.ToString());
                     }
                 }
@@ -568,7 +672,8 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     {
         /** Check the push version number **/
         object version = content["version"];
-        if (version != null) {
+        if (version != null)
+        {
             int contentVersion = Int32.Parse(version.ToString());
             return (contentVersion >= PushContentVersion);
         }
@@ -579,17 +684,22 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     {
         Dictionary<string, object> payload = notification;
         // Parse nested JSON
-        if (notification.ContainsKey(PushNestedJsonKey)) {
+        if (notification.ContainsKey(PushNestedJsonKey))
+        {
             string pushNestedRaw = notification[PushNestedJsonKey].ToString();
             Dictionary<string, object> nestedJson = (Dictionary<string, object>)Json.Deserialize(pushNestedRaw);
-            if (nestedJson != null) {
+            if (nestedJson != null)
+            {
                 // Merge values from 'notification'
                 var notificationEnumerator = notification.GetEnumerator();
-                while (notificationEnumerator.MoveNext()) {
+                while (notificationEnumerator.MoveNext())
+                {
                     nestedJson[notificationEnumerator.Current.Key] = notificationEnumerator.Current.Value;
                 }
                 payload = nestedJson;
-            } else {
+            }
+            else
+            {
                 SwrveLog.LogError("Error processing nested JSON");
             }
         }
@@ -598,9 +708,12 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void initNative()
     {
-        try {
+        try
+        {
             AndroidGetBridge();
-        } catch (Exception exp) {
+        }
+        catch (Exception exp)
+        {
             SwrveLog.LogWarning("Couldn't init common from Android: " + exp.ToString());
         }
     }
@@ -608,9 +721,12 @@ public void IapGooglePlay(string productId, double productPrice, string currency
     private AndroidJavaObject _androidBridge;
     private AndroidJavaObject AndroidGetBridge()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName)) {
-                if (null == _androidBridge || !swrveAndroidCommonClass.CallStatic<bool>(IsInitialisedName)) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+            {
+                if (null == _androidBridge || !swrveAndroidCommonClass.CallStatic<bool>(IsInitialisedName))
+                {
                     _androidBridge = new AndroidJavaObject(SwrveAndroidUnityCommonName, GetNativeDetails());
                     _androidBridge.CallStatic("ready");
                 }
@@ -626,18 +742,24 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void showNativeConversation(string conversation)
     {
-        try {
+        try
+        {
             AndroidGetBridge().Call(ShowConversationName, conversation, config.Orientation.ToString());
-        } catch (Exception exp) {
+        }
+        catch (Exception exp)
+        {
             SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
         }
     }
 
     private void setNativeConversationVersion()
     {
-        try {
+        try
+        {
             SetConversationVersion(AndroidGetBridge().Call<int>(GetConversationVersionName));
-        } catch (Exception exp) {
+        }
+        catch (Exception exp)
+        {
             SwrveLog.LogWarning("Couldn't get conversations version from Android: " + exp.ToString());
         }
     }
@@ -654,12 +776,17 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     public static bool IsSupportedAndroidVersion()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName)) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
                     return swrveAndroidCommonClass.CallStatic<bool>(SwrveIsOSSupportedVersionName);
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't get supported OS version from Android: " + exp.ToString());
             }
         }
@@ -668,12 +795,17 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     public static string GetAndroidPlatformOS()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName)) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
                     return swrveAndroidCommonClass.CallStatic<string>(SwrveGetPlatformOSName);
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't get Platform OS from Android: " + exp.ToString());
             }
         }
@@ -682,12 +814,17 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     public static string GetAndroidDeviceType()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName)) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
                     return swrveAndroidCommonClass.CallStatic<string>(SwrveGetOSDeviceTypeName);
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't get OS device type from Android: " + exp.ToString());
             }
         }
@@ -696,12 +833,17 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     public string GetInfluencedDataJson()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass pushSupportClass = new AndroidJavaClass(SwrvePushSupport)) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass pushSupportClass = new AndroidJavaClass(SwrvePushSupport))
+                {
                     return pushSupportClass.CallStatic<string>(GetInfluencedDataJsonName);
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't get influence data from Android: " + exp.ToString());
             }
         }
@@ -710,12 +852,17 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     public static void updateQAUser()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName)) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
                     swrveAndroidCommonClass.CallStatic(QaUserUpdateName);
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't update qauser from Android: " + exp.ToString());
             }
         }
@@ -723,10 +870,14 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void UpdateNativeUserId()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
                 AndroidGetBridge().Call(SetUserIdName, this.profileManager.userId);
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't set userId from Android: " + exp.ToString());
             }
         }
@@ -734,10 +885,14 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void UpdateTrackingStateStopped(bool isTrackingStateStopped)
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
                 AndroidGetBridge().Call(SetTrackingStateStoppedName, isTrackingStateStopped);
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't set trackingstate stopped flag from Android: " + exp.ToString());
             }
         }
@@ -745,12 +900,17 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void ClearAllAuthenticatedNotifications()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName)) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
                     swrveAndroidCommonClass.CallStatic(ClearAllUserAuthenticatedNotificationsName);
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't clear all authenticated notifications from Android: " + exp.ToString());
             }
         }
@@ -758,12 +918,17 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     private void CopyToClipboard(string content)
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName)) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
                     swrveAndroidCommonClass.CallStatic(CopyToClipboardName, content);
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't copy text to clipboard: " + exp.ToString());
             }
         }
@@ -771,12 +936,17 @@ public void IapGooglePlay(string productId, double productPrice, string currency
 
     public static bool GetAreNotificationsEnabled()
     {
-        if (SwrveHelper.IsOnDevice()) {
-            try {
-                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName)) {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
                     return swrveAndroidCommonClass.CallStatic<bool>(GetAreNotificationsEnabledName);
                 }
-            } catch (Exception exp) {
+            }
+            catch (Exception exp)
+            {
                 SwrveLog.LogWarning("Couldn't get areNotificationsEnabled boolean from Android: " + exp.ToString());
             }
         }

@@ -28,14 +28,19 @@ public class SwrveComponent : MonoBehaviour
     /// </summary>
     public static SwrveComponent Instance
     {
-        get {
-            if (!instance) {
+        get
+        {
+            if (!instance)
+            {
                 // Obtain the first instance of the SwrveComponent in the scene
-                SwrveComponent[] instances = Object.FindObjectsOfType (typeof(SwrveComponent)) as SwrveComponent[];
-                if (instances != null && instances.Length > 0) {
-                    instance = instances [0];
-                } else {
-                    SwrveLog.LogError ("There needs to be one active SwrveComponent script on a GameObject in your scene.");
+                SwrveComponent[] instances = Object.FindObjectsOfType(typeof(SwrveComponent)) as SwrveComponent[];
+                if (instances != null && instances.Length > 0)
+                {
+                    instance = instances[0];
+                }
+                else
+                {
+                    SwrveLog.LogError("There needs to be one active SwrveComponent script on a GameObject in your scene.");
                 }
             }
 
@@ -47,7 +52,7 @@ public class SwrveComponent : MonoBehaviour
     /// Default constructor. Will be called by Unity when
     /// placing this script in your scene.
     /// </summary>
-    public SwrveComponent ()
+    public SwrveComponent()
     {
         SDK = new SwrveEmpty();
     }
@@ -64,13 +69,14 @@ public class SwrveComponent : MonoBehaviour
     /// <param name="config">
     /// Extra configuration for the SDK.
     /// </param>
-    public void Init (int appId, string apiKey, SwrveConfig config = null)
+    public void Init(int appId, string apiKey, SwrveConfig config = null)
     {
-        if (SDK == null || SDK is SwrveEmpty) {
+        if (SDK == null || SDK is SwrveEmpty)
+        {
             bool supportedOSAndVersion = true;
 #if !UNITY_EDITOR
 
-#if UNITY_IPHONE
+#if UNITY_IOS
             supportedOSAndVersion = SwrveSDK.IsSupportediOSVersion();
 #elif UNITY_ANDROID
             supportedOSAndVersion = SwrveSDK.IsSupportedAndroidVersion();
@@ -79,26 +85,30 @@ public class SwrveComponent : MonoBehaviour
             supportedOSAndVersion = false;
 #endif
 
-#elif !UNITY_IPHONE && !UNITY_ANDROID
+#elif !UNITY_IOS && !UNITY_ANDROID
 #warning "We do not officially support this plaform. tracking is disabled."
             supportedOSAndVersion = false;
 #endif
-            if (supportedOSAndVersion) {
-                SDK = new SwrveSDK ();
-            } else {
-                SDK = new SwrveEmpty ();
+            if (supportedOSAndVersion)
+            {
+                SDK = new SwrveSDK();
+            }
+            else
+            {
+                SDK = new SwrveEmpty();
             }
         }
-        if (config == null) {
-            config = new SwrveConfig ();
+        if (config == null)
+        {
+            config = new SwrveConfig();
         }
-        SDK.Init (this, appId, apiKey, config);
+        SDK.Init(this, appId, apiKey, config);
     }
 
     /// <summary>
     /// Initialize the SDK on start.
     /// </summary>
-    public void Start ()
+    public void Start()
     {
         useGUILayout = false;
     }
@@ -106,28 +116,30 @@ public class SwrveComponent : MonoBehaviour
     /// <summary>
     /// Render in-app messages.
     /// </summary>
-    public void OnGUI ()
+    public void OnGUI()
     {
-        SDK.OnGUI ();
+        SDK.OnGUI();
     }
 
 
-#if UNITY_IPHONE
+#if UNITY_IOS
     protected bool deviceTokenSent = false;
 
     // Used by the native internals
     public void SetPushNotificationsPermissionStatus(string pushStatus)
     {
-        SDK.SetPushNotificationsPermissionStatus (pushStatus);
+        SDK.SetPushNotificationsPermissionStatus(pushStatus);
     }
 #endif
 
-    public void Update ()
+    public void Update()
     {
-        if (SDK != null && SDK.Initialised) {
-            SDK.Update ();
-#if UNITY_IPHONE
-            if (!deviceTokenSent) {
+        if (SDK != null && SDK.Initialised)
+        {
+            SDK.Update();
+#if UNITY_IOS
+            if (!deviceTokenSent)
+            {
                 deviceTokenSent = SDK.ObtainIOSDeviceToken();
             }
             SDK.ProcessRemoteNotifications();
@@ -140,7 +152,8 @@ public class SwrveComponent : MonoBehaviour
     /// of a device registration id.
     public virtual void OnDeviceRegistered(string registrationId)
     {
-        if (SDK != null) {
+        if (SDK != null)
+        {
             SDK.RegistrationIdReceived(registrationId);
         }
     }
@@ -149,7 +162,8 @@ public class SwrveComponent : MonoBehaviour
     /// of a received push notification.
     public virtual void OnNotificationReceived(string notificationJson)
     {
-        if (SDK != null) {
+        if (SDK != null)
+        {
             SDK.NotificationReceived(notificationJson);
         }
     }
@@ -158,7 +172,8 @@ public class SwrveComponent : MonoBehaviour
     /// of the push notification that opened the app.
     public virtual void OnOpenedFromPushNotification(string notificationJson)
     {
-        if (SDK != null) {
+        if (SDK != null)
+        {
             SDK.OpenedFromPushNotification(notificationJson);
         }
     }
@@ -167,7 +182,8 @@ public class SwrveComponent : MonoBehaviour
     /// of a device registration id.
     public virtual void OnDeviceRegisteredADM(string registrationId)
     {
-        if (SDK != null) {
+        if (SDK != null)
+        {
             SDK.RegistrationIdReceivedADM(registrationId);
         }
     }
@@ -176,7 +192,8 @@ public class SwrveComponent : MonoBehaviour
     /// of the Advertising Id.
     public virtual void OnNewAdvertisingId(string advertisingId)
     {
-        if (SDK != null) {
+        if (SDK != null)
+        {
             SDK.SetGooglePlayAdvertisingId(advertisingId);
         }
     }
@@ -185,39 +202,46 @@ public class SwrveComponent : MonoBehaviour
     /// <summary>
     /// Stop all the work of the SDK.
     /// </summary>
-    public void OnDestroy ()
+    public void OnDestroy()
     {
-        if (SDK.Initialised) {
-            SDK.OnSwrveDestroy ();
+        if (SDK.Initialised)
+        {
+            SDK.OnSwrveDestroy();
         }
-        StopAllCoroutines ();
+        StopAllCoroutines();
     }
 
     /// <summary>
     /// Automatically called by Unity3D when the application quits.
     /// </summary>
-    public void OnApplicationQuit ()
+    public void OnApplicationQuit()
     {
-        if (SDK.Initialised && FlushEventsOnApplicationQuit) {
-            SDK.OnSwrveDestroy ();
+        if (SDK.Initialised && FlushEventsOnApplicationQuit)
+        {
+            SDK.OnSwrveDestroy();
         }
     }
 
     /// <summary>
     /// Automatically called by Unity3D when the app is paused or resumed.
     /// </summary>
-    public void OnApplicationPause (bool pauseStatus)
+    public void OnApplicationPause(bool pauseStatus)
     {
-        if (SDK != null && SDK.Initialised) {
-            if (pauseStatus) {
-                SDK.OnSwrvePause ();
-            } else {
-                SDK.OnSwrveResume ();
+        if (SDK != null && SDK.Initialised)
+        {
+            if (pauseStatus)
+            {
+                SDK.OnSwrvePause();
+            }
+            else
+            {
+                SDK.OnSwrveResume();
             }
         }
 
-#if UNITY_IPHONE
-        if (!pauseStatus) {
+#if UNITY_IOS
+        if (!pauseStatus)
+        {
             // Refresh token after application resume
             deviceTokenSent = false;
         }
@@ -227,27 +251,34 @@ public class SwrveComponent : MonoBehaviour
     // Used by the native internals. Please use the SDK object directly.
     public void UserUpdate(string userUpdate)
     {
-        try {
-            Dictionary<string, object> o = (Dictionary<string, object>)Json.Deserialize (userUpdate);
+        try
+        {
+            Dictionary<string, object> o = (Dictionary<string, object>)Json.Deserialize(userUpdate);
             Dictionary<string, string> _o = new Dictionary<string, string>();
             Dictionary<string, object>.Enumerator it = o.GetEnumerator();
 
-            while(it.MoveNext()) {
+            while (it.MoveNext())
+            {
                 _o[it.Current.Key] = string.Format("{0}", it.Current.Value);
             }
 
             SDK.UserUpdate(_o);
-        } catch (System.Exception e) {
-            SwrveLog.LogError (e.ToString(), "userUpdate");
+        }
+        catch (System.Exception e)
+        {
+            SwrveLog.LogError(e.ToString(), "userUpdate");
         }
     }
 
     public void NativeConversationClosed(string msg)
     {
-        try {
+        try
+        {
             SDK.ConversationClosed();
-        } catch (System.Exception e) {
-            SwrveLog.LogError (e.ToString(), "nativeConversationClosed");
+        }
+        catch (System.Exception e)
+        {
+            SwrveLog.LogError(e.ToString(), "nativeConversationClosed");
         }
     }
 

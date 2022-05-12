@@ -8,11 +8,11 @@ import com.google.firebase.messaging.RemoteMessage;
  */
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
     @Override
-	public void onNewToken(String token) {
-		super.onNewToken(token);
-		com.swrve.unity.firebase.SwrveFirebasePushServiceDefault.onNewToken(getApplicationContext(), token);
+    public void onNewToken(String token) {
+        super.onNewToken(token);
+        com.swrve.unity.firebase.SwrveFirebasePushServiceDefault.onNewToken(getApplicationContext(), token);
     }
-    
+
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);

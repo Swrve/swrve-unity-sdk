@@ -1,22 +1,22 @@
 ﻿namespace SwrveUnity.IAP
 {
-public class Base64EncodedReceipt : IapReceipt
-{
-    private string base64encodedreceipt;
-
-    private Base64EncodedReceipt(string r)
+    public class Base64EncodedReceipt : IapReceipt
     {
-        this.base64encodedreceipt = r;
-    }
+        private string base64encodedreceipt;
 
-    public static IapReceipt FromString(string r)
-    {
-        return new Base64EncodedReceipt(r);
-    }
+        private Base64EncodedReceipt(string r)
+        {
+            this.base64encodedreceipt = r;
+        }
 
-    public string GetBase64EncodedReceipt ()
-    {
-        return base64encodedreceipt;
+        public static IapReceipt FromString(string r)
+        {
+            return new Base64EncodedReceipt(r);
+        }
+
+        public string GetBase64EncodedReceipt()
+        {
+            return base64encodedreceipt;
+        }
     }
-}
 }

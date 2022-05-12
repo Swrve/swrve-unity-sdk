@@ -3,79 +3,92 @@ using UnityEngine;
 
 namespace SwrveUnity.Messaging
 {
-/// <summary>
-/// Used internally to redirect calls to GUI class and make it testable.
-/// </summary>
-public class ImgGUI
-{
-    // Visible for tests (in cmdline)
-    public static bool enabled = true;
-
-    public static Color color
+    /// <summary>
+    /// Used internally to redirect calls to GUI class and make it testable.
+    /// </summary>
+    public class ImgGUI
     {
-        set {
-            if (enabled) {
-                GUI.color = value;
-            }
-        }
-    }
+        // Visible for tests (in cmdline)
+        public static bool enabled = true;
 
-    public static int depth
-    {
-        set {
-            if (enabled) {
-                GUI.depth = value;
+        public static Color color
+        {
+            set
+            {
+                if (enabled)
+                {
+                    GUI.color = value;
+                }
             }
         }
 
-        get {
-            if (enabled) {
-                return GUI.depth;
+        public static int depth
+        {
+            set
+            {
+                if (enabled)
+                {
+                    GUI.depth = value;
+                }
             }
-            return 0;
-        }
-    }
 
-    public static Matrix4x4 matrix
-    {
-        set {
-            if (enabled) {
-                GUI.matrix = value;
+            get
+            {
+                if (enabled)
+                {
+                    return GUI.depth;
+                }
+                return 0;
             }
         }
 
-        get {
-            if (enabled) {
-                return GUI.matrix;
+        public static Matrix4x4 matrix
+        {
+            set
+            {
+                if (enabled)
+                {
+                    GUI.matrix = value;
+                }
             }
-            return Matrix4x4.identity;
+
+            get
+            {
+                if (enabled)
+                {
+                    return GUI.matrix;
+                }
+                return Matrix4x4.identity;
+            }
         }
-    }
 
-    public static void DrawTexture(Rect position, Texture image, ScaleMode scaleMode, bool alphaBlend, float imageAspect)
-    {
-        if (enabled) {
-            GUI.DrawTexture(position, image, scaleMode, alphaBlend, imageAspect);
+        public static void DrawTexture(Rect position, Texture image, ScaleMode scaleMode, bool alphaBlend, float imageAspect)
+        {
+            if (enabled)
+            {
+                GUI.DrawTexture(position, image, scaleMode, alphaBlend, imageAspect);
+            }
         }
-    }
 
-    public static void Label(Rect position, GUIContent text, GUIStyle style)
-    {
-        if (enabled) {
-            GUI.Label(position, text, style);
+        public static void Label(Rect position, GUIContent text, GUIStyle style)
+        {
+            if (enabled)
+            {
+                GUI.Label(position, text, style);
+            }
         }
-    }
 
-    public static void Box(Rect position, string text)
-    {
-        if (enabled) {
-            GUI.Box(position, text);
+        public static void Box(Rect position, string text)
+        {
+            if (enabled)
+            {
+                GUI.Box(position, text);
+            }
         }
-    }
 
 
-    public static Vector2 ClickEventScrollView(Rect position, Vector2 currentScrollPosition, Rect viewRect, bool alwaysShowHorizontal, bool alwaysShowVertical)
-    {
+        public static Vector2 ClickEventScrollView(Rect position, Vector2 currentScrollPosition, Rect viewRect, bool alwaysShowHorizontal, bool alwaysShowVertical)
+        {
             if (enabled)
             {
                 float heightDiff = viewRect.height - position.height;
@@ -103,22 +116,24 @@ public class ImgGUI
             }
 
             return Vector2.zero;
-    }
-
-
-    public static Vector2 BeginScrollView(Rect position, Vector2 scrollPosition, Rect viewRect, bool alwaysShowHorizontal, bool alwaysShowVertical)
-    {
-        if (enabled) {
-            return GUI.BeginScrollView(position, scrollPosition, viewRect, alwaysShowHorizontal, alwaysShowVertical);
         }
+
+
+        public static Vector2 BeginScrollView(Rect position, Vector2 scrollPosition, Rect viewRect, bool alwaysShowHorizontal, bool alwaysShowVertical)
+        {
+            if (enabled)
+            {
+                return GUI.BeginScrollView(position, scrollPosition, viewRect, alwaysShowHorizontal, alwaysShowVertical);
+            }
             return Vector2.zero;
-    }
+        }
 
-    public static void EndScrollView()
-    {
-        if (enabled) {
-            GUI.EndScrollView();
+        public static void EndScrollView()
+        {
+            if (enabled)
+            {
+                GUI.EndScrollView();
+            }
         }
     }
-}
 }

@@ -3,23 +3,23 @@ using System.Text;
 
 namespace SwrveUnity.IAP
 {
-public class RawReceipt : IapReceipt
-{
-    private string base64encodedreceipt;
-
-    private RawReceipt(string r)
+    public class RawReceipt : IapReceipt
     {
-        this.base64encodedreceipt = Convert.ToBase64String (Encoding.UTF8.GetBytes (r));
-    }
+        private string base64encodedreceipt;
 
-    public static IapReceipt FromString(string r)
-    {
-        return new RawReceipt(r);
-    }
+        private RawReceipt(string r)
+        {
+            this.base64encodedreceipt = Convert.ToBase64String(Encoding.UTF8.GetBytes(r));
+        }
 
-    public string GetBase64EncodedReceipt ()
-    {
-        return base64encodedreceipt;
+        public static IapReceipt FromString(string r)
+        {
+            return new RawReceipt(r);
+        }
+
+        public string GetBase64EncodedReceipt()
+        {
+            return base64encodedreceipt;
+        }
     }
-}
 }

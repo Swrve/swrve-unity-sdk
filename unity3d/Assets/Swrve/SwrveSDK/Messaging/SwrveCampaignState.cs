@@ -4,76 +4,84 @@ using SwrveUnity.Helpers;
 
 namespace SwrveUnity.Messaging
 {
-public class SwrveCampaignState
-{
-    const string SEEN_KEY = "seen";
-    const string DELETED_KEY = "deleted";
-
-    /**
-     * The status of the campaign
-     */
-    public enum Status {
-        Unseen,
-        Seen,
-        Deleted
-    }
-
-    public int Impressions;
-
-    public DateTime ShowMessagesAfterDelay;
-
-    /// <summary>
-    // MessageCenter status of the campaign
-    /// </summary>
-    public SwrveCampaignState.Status CurStatus;
-
-    public SwrveCampaignState ()
+    public class SwrveCampaignState
     {
-        ShowMessagesAfterDelay = SwrveHelper.GetNow ();
-    }
+        const string SEEN_KEY = "seen";
+        const string DELETED_KEY = "deleted";
 
-    public SwrveCampaignState (int campaignId, Dictionary<string, object> savedStatesJson)
-    {
-        string curKey;
-
-        // Load impressions
-        curKey = "Impressions" + campaignId;
-        if (savedStatesJson.ContainsKey (curKey)) {
-            Impressions = MiniJsonHelper.GetInt (savedStatesJson, curKey);
+        /**
+         * The status of the campaign
+         */
+        public enum Status
+        {
+            Unseen,
+            Seen,
+            Deleted
         }
 
-        // Load cur status
-        curKey = "Status" + campaignId;
-        if (savedStatesJson.ContainsKey (curKey)) {
-            CurStatus = ParseStatus (MiniJsonHelper.GetString (savedStatesJson, curKey));
-        } else {
-            CurStatus = Status.Unseen;
-        }
-    }
+        public int Impressions;
 
-    /**
-    * Convert from String to SwrveCampaignStatus.
-    *
-    * @param status String campaign status.
-    * @return SwrveCampaignStatus
-    */
-    public static Status ParseStatus(string status)
-    {
-        if (status.ToLower().Equals(SEEN_KEY)) {
-            return Status.Seen;
-        } else if (status.ToLower().Equals(DELETED_KEY)) {
-            return Status.Deleted;
+        public DateTime ShowMessagesAfterDelay;
+
+        /// <summary>
+        // MessageCenter status of the campaign
+        /// </summary>
+        public SwrveCampaignState.Status CurStatus;
+
+        public SwrveCampaignState()
+        {
+            ShowMessagesAfterDelay = SwrveHelper.GetNow();
         }
 
-        return Status.Unseen;
-    }
+        public SwrveCampaignState(int campaignId, Dictionary<string, object> savedStatesJson)
+        {
+            string curKey;
 
-    public override string ToString()
-    {
-        return string.Format (
-                   "[SwrveCampaignState] Impressions: {0}, ShowMessagesAfterDelay: {1}, CurStatus: {2}",
-                   Impressions, ShowMessagesAfterDelay, CurStatus
-               );
+            // Load impressions
+            curKey = "Impressions" + campaignId;
+            if (savedStatesJson.ContainsKey(curKey))
+            {
+                Impressions = MiniJsonHelper.GetInt(savedStatesJson, curKey);
+            }
+
+            // Load cur status
+            curKey = "Status" + campaignId;
+            if (savedStatesJson.ContainsKey(curKey))
+            {
+                CurStatus = ParseStatus(MiniJsonHelper.GetString(savedStatesJson, curKey));
+            }
+            else
+            {
+                CurStatus = Status.Unseen;
+            }
+        }
+
+        /**
+        * Convert from String to SwrveCampaignStatus.
+        *
+        * @param status String campaign status.
+        * @return SwrveCampaignStatus
+        */
+        public static Status ParseStatus(string status)
+        {
+            if (status.ToLower().Equals(SEEN_KEY))
+            {
+                return Status.Seen;
+            }
+            else if (status.ToLower().Equals(DELETED_KEY))
+            {
+                return Status.Deleted;
+            }
+
+            return Status.Unseen;
+        }
+
+        public override string ToString()
+        {
+            return string.Format(
+                       "[SwrveCampaignState] Impressions: {0}, ShowMessagesAfterDelay: {1}, CurStatus: {2}",
+                       Impressions, ShowMessagesAfterDelay, CurStatus
+                   );
+        }
     }
-}
 }

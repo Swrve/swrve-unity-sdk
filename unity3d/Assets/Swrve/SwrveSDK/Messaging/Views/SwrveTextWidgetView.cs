@@ -48,20 +48,20 @@ namespace SwrveUnity.Messaging
                 SetTextAlignment();
                 int relativeFontSize = SwrveHelper.CalibrateRelativeFontSizeToPlatform(calibration, textViewStyle.FontSize);
                 style.fontSize = relativeFontSize;
-                
-                if((Font)Resources.Load(widget.FontPostScriptName) != null)
-                style.font =(Font)Resources.Load(widget.FontPostScriptName);
+
+                if ((Font)Resources.Load(widget.FontPostScriptName) != null)
+                    style.font = (Font)Resources.Load(widget.FontPostScriptName);
 
                 if (!widget.IsScrollable)
                 {
-                    FitMultiLineSizeToImage(widget.Size.X-(widget.Padding.top+ widget.Padding.bottom), widget.Size.Y-(widget.Padding.right+ widget.Padding.left), relativeFontSize);
+                    FitMultiLineSizeToImage(widget.Size.X - (widget.Padding.top + widget.Padding.bottom), widget.Size.Y - (widget.Padding.right + widget.Padding.left), relativeFontSize);
                 }
 
                 Color color;
-                if (ColorUtility.TryParseHtmlString(widget.BackgroundColor, out color))    
-                    backgroundColor = new Color(color.g,color.b,color.a,color.r);
+                if (ColorUtility.TryParseHtmlString(widget.BackgroundColor, out color))
+                    backgroundColor = new Color(color.g, color.b, color.a, color.r);
             }
-            
+
             clickTintColor = inAppConfig.ButtonClickTintColor;
 
             isButton = (widget is SwrveButton);
@@ -211,7 +211,7 @@ namespace SwrveUnity.Messaging
                 Rect.width = textureWidth * computedSize;
                 Rect.height = textureHeight * computedSize;
 
-                
+
                 ImgGUI.color = (Pressed) ? backgroundColor * clickTintColor : backgroundColor;
                 ImgGUI.DrawTexture(Rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0.0f);
                 ImgGUI.color = (Pressed) ? Color.white * clickTintColor : Color.white;
@@ -227,31 +227,31 @@ namespace SwrveUnity.Messaging
                 //setting up the fontstyle
                 string toLowerFontStyle;
 
-                if(widget.FontFile == "_system_font_")
+                if (widget.FontFile == "_system_font_")
                 {
                     toLowerFontStyle = widget.FontStyle.ToLower();
-                    if(toLowerFontStyle == "BOLD".ToLower())               
+                    if (toLowerFontStyle == "BOLD".ToLower())
                         style.fontStyle = FontStyle.Bold;
-                    else if(toLowerFontStyle == "ITALIC".ToLower())
+                    else if (toLowerFontStyle == "ITALIC".ToLower())
                         style.fontStyle = FontStyle.Italic;
-                    else if(toLowerFontStyle == "BOLDITALIC".ToLower())
+                    else if (toLowerFontStyle == "BOLDITALIC".ToLower())
                         style.fontStyle = FontStyle.BoldAndItalic;
                     else
                         style.fontStyle = FontStyle.Normal;
                 }
-                
+
 
                 //Setting up the text color, unity reads it as ARGB but we do it as RGBA.
                 Color color;
-                if (ColorUtility.TryParseHtmlString(widget.FontColor, out color))    
-                    style.normal.textColor = new Color(color.g,color.b,color.a,color.r);
+                if (ColorUtility.TryParseHtmlString(widget.FontColor, out color))
+                    style.normal.textColor = new Color(color.g, color.b, color.a, color.r);
 
                 if (widget.IsScrollable && textHeight > Rect.height)
                 {
-                    style.padding = rectOffset;                   
+                    style.padding = rectOffset;
 
                     scrollPosition = ImgGUI.ClickEventScrollView(Rect, scrollPosition, new Rect(Rect.x, Rect.y, Rect.width - offset, textHeight + offset), false, false);
-                    ImgGUI.Label(Rect, content, style);                  
+                    ImgGUI.Label(Rect, content, style);
                     ImgGUI.EndScrollView();
                 }
                 else

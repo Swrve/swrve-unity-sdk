@@ -2,12 +2,12 @@
 
 namespace SwrveUnity
 {
-/// <summary>
-/// Used internally by SwrveQaUser to queue/send Qauser logs.
-/// </summary>
-public interface ISwrveQaUserQueue
-{
-    void Queue(Dictionary<string, object> qaLogEvent);
-    void FlushEvents();
-}
+    /// <summary>
+    /// Used internally by SwrveQaUser to queue/send Qauser logs.
+    /// </summary>
+    public interface ISwrveQaUserQueue
+    {
+        void Queue(Dictionary<string, object> qaLogEvent);
+        void FlushEvents();
+    }
 }

@@ -11,85 +11,93 @@ using System.Linq;
 public class SwrveCommonBuildComponent
 {
 
-    protected static string GetProjectPath ()
+    protected static string GetProjectPath()
     {
         string path = Application.dataPath;
-        DirectoryInfo parentDir = Directory.GetParent (path.EndsWith ("\\") ? path : string.Concat (path, "\\"));
+        DirectoryInfo parentDir = Directory.GetParent(path.EndsWith("\\") ? path : string.Concat(path, "\\"));
         return parentDir.FullName;
     }
 
-    protected static void BuildIOS (string fileName, BuildOptions opt, string[] mainScenes, string applicationIdentifier)
+    protected static void BuildIOS(string fileName, BuildOptions opt, string[] mainScenes, string applicationIdentifier)
     {
-        fileName = Path.GetFullPath (fileName);
-        UnityEngine.Debug.Log ("[####] Building " + fileName);
-        UnityEngine.Debug.Log ("With: " + PlayerSettings.iOS.sdkVersion + ", opt: " + opt + ", scenes: " + mainScenes + ", id: " + applicationIdentifier);
+        fileName = Path.GetFullPath(fileName);
+        UnityEngine.Debug.Log("[####] Building " + fileName);
+        UnityEngine.Debug.Log("With: " + PlayerSettings.iOS.sdkVersion + ", opt: " + opt + ", scenes: " + mainScenes + ", id: " + applicationIdentifier);
 
-        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTargetGroup.iOS, BuildTarget.iOS);
+        EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.iOS, BuildTarget.iOS);
         PlayerSettings.applicationIdentifier = applicationIdentifier;
 
-        var summary = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.iOS, opt).summary;
-        if (summary.result == UnityEditor.Build.Reporting.BuildResult.Failed) {
-            throw new Exception ("Build had " + summary.totalErrors + " errors");
+        var summary = BuildPipeline.BuildPlayer(mainScenes, fileName, BuildTarget.iOS, opt).summary;
+        if (summary.result == UnityEditor.Build.Reporting.BuildResult.Failed)
+        {
+            throw new Exception("Build had " + summary.totalErrors + " errors");
         }
-        UnityEngine.Debug.Log ("Built " + fileName);
+        UnityEngine.Debug.Log("Built " + fileName);
     }
 
-    protected static void BuildAndroid (string fileName, BuildOptions opt, string[] mainScenes, string applicationIdentifier)
+    protected static void BuildAndroid(string fileName, BuildOptions opt, string[] mainScenes, string applicationIdentifier)
     {
-        UnityEngine.Debug.Log ("[####] Building " + fileName);
-        EditorUserBuildSettings.SwitchActiveBuildTarget (BuildTargetGroup.Android, BuildTarget.Android);
+        UnityEngine.Debug.Log("[####] Building " + fileName);
+        EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
         PlayerSettings.applicationIdentifier = applicationIdentifier;
-        SwrveBuildComponent.AndroidPreBuild ();
+        SwrveBuildComponent.AndroidPreBuild();
 
-        var summary = BuildPipeline.BuildPlayer (mainScenes, fileName, BuildTarget.Android, opt).summary;
-        if (summary.result == UnityEditor.Build.Reporting.BuildResult.Failed) {
-            throw new Exception ("Build had " + summary.totalErrors + " errors");
+        var summary = BuildPipeline.BuildPlayer(mainScenes, fileName, BuildTarget.Android, opt).summary;
+        if (summary.result == UnityEditor.Build.Reporting.BuildResult.Failed)
+        {
+            throw new Exception("Build had " + summary.totalErrors + " errors");
         }
-        UnityEngine.Debug.Log ("Built " + fileName);
+        UnityEngine.Debug.Log("Built " + fileName);
     }
 
-    protected static void InstallIOSBuild (string workingDirectory, string filePath)
+    protected static void InstallIOSBuild(string workingDirectory, string filePath)
     {
-        ProcessStartInfo info = new ProcessStartInfo ();
+        ProcessStartInfo info = new ProcessStartInfo();
         info.RedirectStandardError = true;
         info.UseShellExecute = false;
         info.WorkingDirectory = workingDirectory;
         info.FileName = "ruby";
         info.Arguments = "scripts/transporter_chief.rb " + filePath;
-        System.Diagnostics.Process proc = System.Diagnostics.Process.Start (info);
+        System.Diagnostics.Process proc = System.Diagnostics.Process.Start(info);
 
         string errorOutput = string.Empty;
-        while (!proc.HasExited) {
-            errorOutput += proc.StandardError.ReadToEnd ();
+        while (!proc.HasExited)
+        {
+            errorOutput += proc.StandardError.ReadToEnd();
         }
 
-        if (proc.ExitCode != 0) {
-            EditorUtility.DisplayDialog ("Demo Install", "Could not install the Demo on the device. Error code: " + proc.ExitCode, "Accept");
-            throw new Exception (errorOutput);
+        if (proc.ExitCode != 0)
+        {
+            EditorUtility.DisplayDialog("Demo Install", "Could not install the Demo on the device. Error code: " + proc.ExitCode, "Accept");
+            throw new Exception(errorOutput);
         }
     }
 
-    protected static void InstallAndroidBuild (string workingDirectory, string filePath, string projectName)
+    protected static void InstallAndroidBuild(string workingDirectory, string filePath, string projectName)
     {
-        string androidSDKLocation = EditorPrefs.GetString ("AndroidSdkRoot");
-        ProcessStartInfo info = new ProcessStartInfo ();
+        string androidSDKLocation = EditorPrefs.GetString("AndroidSdkRoot");
+        ProcessStartInfo info = new ProcessStartInfo();
         info.RedirectStandardError = true;
         info.UseShellExecute = false;
         info.WorkingDirectory = workingDirectory;
         info.FileName = androidSDKLocation + "/platform-tools/adb";
         info.Arguments = string.Format("install -r {0}", filePath);
-        System.Diagnostics.Process proc = System.Diagnostics.Process.Start (info);
+        System.Diagnostics.Process proc = System.Diagnostics.Process.Start(info);
 
         string errorOutput = string.Empty;
-        while (!proc.HasExited) {
-            errorOutput += proc.StandardError.ReadToEnd ();
+        while (!proc.HasExited)
+        {
+            errorOutput += proc.StandardError.ReadToEnd();
         }
 
-        if (proc.ExitCode != 0) {
-            EditorUtility.DisplayDialog (projectName + " Install", "Could not install the " + projectName + " on the device. Error code: " + proc.ExitCode, "Accept");
-            throw new Exception (errorOutput);
-        } else {
-            info = new ProcessStartInfo ();
+        if (proc.ExitCode != 0)
+        {
+            EditorUtility.DisplayDialog(projectName + " Install", "Could not install the " + projectName + " on the device. Error code: " + proc.ExitCode, "Accept");
+            throw new Exception(errorOutput);
+        }
+        else
+        {
+            info = new ProcessStartInfo();
             info.RedirectStandardError = true;
             info.UseShellExecute = false;
             info.WorkingDirectory = workingDirectory;
@@ -98,16 +106,17 @@ public class SwrveCommonBuildComponent
             applicationIdentifier = PlayerSettings.applicationIdentifier;
 
             info.Arguments = string.Format("shell monkey -p {0} -c android.intent.category.LAUNCHER 1", applicationIdentifier);
-            proc = System.Diagnostics.Process.Start (info);
-            while (!proc.HasExited) {
-                errorOutput += proc.StandardError.ReadToEnd ();
+            proc = System.Diagnostics.Process.Start(info);
+            while (!proc.HasExited)
+            {
+                errorOutput += proc.StandardError.ReadToEnd();
             }
 
-            UnityEngine.Debug.Log ("Android build installed successfully");
+            UnityEngine.Debug.Log("Android build installed successfully");
         }
     }
 
-    public static void SetDependenciesForProjectJSON(string projRoot, Dictionary<string, string> dependencies, string filename="project.json")
+    public static void SetDependenciesForProjectJSON(string projRoot, Dictionary<string, string> dependencies, string filename = "project.json")
     {
         string filePath = Path.Combine(projRoot, filename);
         string projectJson = File.ReadAllText(filePath);
@@ -115,39 +124,46 @@ public class SwrveCommonBuildComponent
         Dictionary<string, object> _dependencies = (Dictionary<string, object>)json["dependencies"];
 
         Dictionary<string, string>.Enumerator it = dependencies.GetEnumerator();
-        while (it.MoveNext ()) {
-            _dependencies [it.Current.Key] = it.Current.Value;
+        while (it.MoveNext())
+        {
+            _dependencies[it.Current.Key] = it.Current.Value;
         }
         File.WriteAllText(filePath, Json.Serialize(json));
     }
 
     public static void AddCompilerFlagToCSProj(string projRoot, string proj, string flag)
     {
-        string csprojPath = Path.Combine (projRoot, Path.Combine (proj, string.Format ("{0}.csproj", proj)));
+        string csprojPath = Path.Combine(projRoot, Path.Combine(proj, string.Format("{0}.csproj", proj)));
 
         XmlDocument doc = new XmlDocument();
         doc.Load(csprojPath);
         XmlNode root = doc.DocumentElement;
         bool save = false;
 
-        for (int i = 0; i < root.ChildNodes.Count; i++) {
-            XmlNode parent = root.ChildNodes [i];
-            if (parent.Name == "PropertyGroup") {
-                for (int j = 0; j < parent.ChildNodes.Count; j++) {
-                    XmlNode child = parent.ChildNodes [j];
-                    if (child.Name == "DefineConstants") {
+        for (int i = 0; i < root.ChildNodes.Count; i++)
+        {
+            XmlNode parent = root.ChildNodes[i];
+            if (parent.Name == "PropertyGroup")
+            {
+                for (int j = 0; j < parent.ChildNodes.Count; j++)
+                {
+                    XmlNode child = parent.ChildNodes[j];
+                    if (child.Name == "DefineConstants")
+                    {
                         string text = child.InnerText;
-                        if (!text.Contains (flag)) {
+                        if (!text.Contains(flag))
+                        {
                             save = true;
-                            child.InnerText = text + string.Format("{0}{1};", (text.EndsWith (";") ? "" : ";"), flag);
+                            child.InnerText = text + string.Format("{0}{1};", (text.EndsWith(";") ? "" : ";"), flag);
                         }
                     }
                 }
             }
         }
 
-        if (save) {
-            doc.Save (csprojPath);
+        if (save)
+        {
+            doc.Save(csprojPath);
         }
     }
 
@@ -162,96 +178,113 @@ public class SwrveCommonBuildComponent
         string foundLine = null;
         string toAdd = "SwrveUnityWindows.SwrveUnityBridge.OnActivated(args);";
         string needle = "InitializeUnity(appArgs);";
-        string filePath = Path.Combine (path, "App.xaml.cs");
-        string[] lines = File.ReadAllLines (filePath);
-        List<string> newLines = new List<string> ();
+        string filePath = Path.Combine(path, "App.xaml.cs");
+        string[] lines = File.ReadAllLines(filePath);
+        List<string> newLines = new List<string>();
 
-        for (int i = 0; i < lines.Count(); i++) {
+        for (int i = 0; i < lines.Count(); i++)
+        {
             string line = lines[i];
-            if (curState == STATE_BEGIN && line.Contains ("void OnActivated(IActivatedEventArgs")) {
+            if (curState == STATE_BEGIN && line.Contains("void OnActivated(IActivatedEventArgs"))
+            {
                 curState = STATE_IN_FUNC;
-            } else if (curState == STATE_IN_FUNC && line.Contains (needle)) {
+            }
+            else if (curState == STATE_IN_FUNC && line.Contains(needle))
+            {
                 curState = STATE_FOUND_LINE;
                 foundLine = line;
-            } else if (curState == STATE_FOUND_LINE) {
-                if (line.Contains(toAdd)) {
+            }
+            else if (curState == STATE_FOUND_LINE)
+            {
+                if (line.Contains(toAdd))
+                {
                     curState = STATE_FINISHED;
-                } else if(line.Trim() == "}") {
+                }
+                else if (line.Trim() == "}")
+                {
                     curState = STATE_FINISHED;
                     newLines.Add(foundLine.Replace(needle, toAdd));
                 }
             }
 
-            newLines.Add (line);
+            newLines.Add(line);
         }
-        File.WriteAllLines (filePath, newLines.ToArray());
+        File.WriteAllLines(filePath, newLines.ToArray());
     }
 
-    protected static void CopyFile(string src, string dst, bool dstIsPath=false)
+    protected static void CopyFile(string src, string dst, bool dstIsPath = false)
     {
-        if (dstIsPath) {
-            dst = Path.Combine (dst, Path.GetFileName (src));
+        if (dstIsPath)
+        {
+            dst = Path.Combine(dst, Path.GetFileName(src));
         }
-        if (!File.Exists(src)) {
+        if (!File.Exists(src))
+        {
             throw new Exception("File " + src + " does not exist");
         }
         File.Copy(src, dst, true);
     }
 
-    protected static void DirectoryCopy (string sourceDirName, string destDirName, bool copySubDirs, bool overrideFiles)
+    protected static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs, bool overrideFiles)
     {
         // Get the subdirectories for the specified directory.
-        DirectoryInfo dir = new DirectoryInfo (sourceDirName);
-        DirectoryInfo[] dirs = dir.GetDirectories ();
+        DirectoryInfo dir = new DirectoryInfo(sourceDirName);
+        DirectoryInfo[] dirs = dir.GetDirectories();
 
-        if (!dir.Exists) {
-            throw new DirectoryNotFoundException (
+        if (!dir.Exists)
+        {
+            throw new DirectoryNotFoundException(
                 "Source directory does not exist or could not be found: "
                 + sourceDirName);
         }
 
         // If the destination directory doesn't exist, create it.
-        if (!Directory.Exists (destDirName)) {
-            Directory.CreateDirectory (destDirName);
+        if (!Directory.Exists(destDirName))
+        {
+            Directory.CreateDirectory(destDirName);
         }
 
         int i;
 
         // Get the files in the directory and copy them to the new location.
-        FileInfo[] files = dir.GetFiles ();
-        for(i = 0; i < files.Length; i++) {
-            FileInfo file = files [i];
-            string temppath = Path.Combine (destDirName, file.Name);
-            file.CopyTo (temppath, overrideFiles);
+        FileInfo[] files = dir.GetFiles();
+        for (i = 0; i < files.Length; i++)
+        {
+            FileInfo file = files[i];
+            string temppath = Path.Combine(destDirName, file.Name);
+            file.CopyTo(temppath, overrideFiles);
         }
 
         // If copying subdirectories, copy them and their contents to new location.
-        if (copySubDirs) {
-            for(i = 0; i < dirs.Length; i++) {
-                DirectoryInfo subdir = dirs [i];
-                string temppath = Path.Combine (destDirName, subdir.Name);
-                DirectoryCopy (subdir.FullName, temppath, copySubDirs, overrideFiles);
+        if (copySubDirs)
+        {
+            for (i = 0; i < dirs.Length; i++)
+            {
+                DirectoryInfo subdir = dirs[i];
+                string temppath = Path.Combine(destDirName, subdir.Name);
+                DirectoryCopy(subdir.FullName, temppath, copySubDirs, overrideFiles);
             }
         }
     }
 
-    protected static void RunSh (string workingDirectory, string arguments)
+    protected static void RunSh(string workingDirectory, string arguments)
     {
-        ExecuteCommand (workingDirectory, "/bin/bash", arguments);
+        ExecuteCommand(workingDirectory, "/bin/bash", arguments);
     }
 
-    protected static string ExecuteCommand (string workingDirectory, string filename, string arguments)
+    protected static string ExecuteCommand(string workingDirectory, string filename, string arguments)
     {
         string resp = "";
-        if ("." == workingDirectory) {
-            workingDirectory = new DirectoryInfo (".").FullName;
+        if ("." == workingDirectory)
+        {
+            workingDirectory = new DirectoryInfo(".").FullName;
         }
 
-        Process proc = new Process ();
+        Process proc = new Process();
         proc.StartInfo.WorkingDirectory = workingDirectory;
         proc.StartInfo.FileName = filename;
         proc.StartInfo.Arguments = arguments;
-        SwrveLog.Log (string.Format ("Executing {0} command: {1} (in: {2} )\n(cd {2}; {0} {1})",
+        SwrveLog.Log(string.Format("Executing {0} command: {1} (in: {2} )\n(cd {2}; {0} {1})",
                                      filename, arguments, workingDirectory
                                     ));
 
@@ -261,24 +294,30 @@ public class SwrveCommonBuildComponent
         proc.StartInfo.RedirectStandardError = true;
         proc.StartInfo.RedirectStandardOutput = true;
 
-        try {
-            proc.Start ();
-            proc.StandardError.ReadToEnd ();
-            resp = proc.StandardOutput.ReadToEnd ();
-            string errorOutput = proc.StandardError.ReadToEnd ();
+        try
+        {
+            proc.Start();
+            proc.StandardError.ReadToEnd();
+            resp = proc.StandardOutput.ReadToEnd();
+            string errorOutput = proc.StandardError.ReadToEnd();
 
-            if ("" != resp) {
-                SwrveLog.Log (resp);
+            if ("" != resp)
+            {
+                SwrveLog.Log(resp);
             }
-            if ("" != errorOutput) {
-                SwrveLog.LogError (errorOutput);
+            if ("" != errorOutput)
+            {
+                SwrveLog.LogError(errorOutput);
             }
 
-            if (proc.ExitCode == 0) {
-                UnityEngine.Debug.Log (filename + " " + arguments + " successfull");
+            if (proc.ExitCode == 0)
+            {
+                UnityEngine.Debug.Log(filename + " " + arguments + " successfull");
             }
-        } catch (Exception e) {
-            throw new Exception (string.Format ("Encountered unexpected error while running {0}", filename), e);
+        }
+        catch (Exception e)
+        {
+            throw new Exception(string.Format("Encountered unexpected error while running {0}", filename), e);
         }
 
         return resp;
