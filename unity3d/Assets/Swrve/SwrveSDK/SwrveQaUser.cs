@@ -347,36 +347,37 @@ namespace SwrveUnity
             {
                 // build dictionary of logDetails.
                 Dictionary<string, object> logDetails = new Dictionary<string, object>();
+                Dictionary<string, object> qaEventQueued = new Dictionary<string, object>(eventQueued);
 
-                if (eventQueued.ContainsKey("type"))
+                if (qaEventQueued.ContainsKey("type"))
                 {
-                    logDetails.Add("type", eventQueued["type"]);
-                    eventQueued.Remove("type");
+                    logDetails.Add("type", qaEventQueued["type"]);
+                    qaEventQueued.Remove("type");
                 }
-                if (eventQueued.ContainsKey("seqnum"))
+                if (qaEventQueued.ContainsKey("seqnum"))
                 {
-                    logDetails.Add("seqnum", eventQueued["seqnum"]);
-                    eventQueued.Remove("seqnum");
+                    logDetails.Add("seqnum", qaEventQueued["seqnum"]);
+                    qaEventQueued.Remove("seqnum");
                 }
-                if (eventQueued.ContainsKey("time"))
+                if (qaEventQueued.ContainsKey("time"))
                 {
-                    logDetails.Add("client_time", eventQueued["time"]);
-                    eventQueued.Remove("time");
+                    logDetails.Add("client_time", qaEventQueued["time"]);
+                    qaEventQueued.Remove("time");
                 }
                 string payloadString = "{}"; // babble currently only accepting payload jsonobject as a string, and not a proper jsonobject
-                if (eventQueued.ContainsKey("payload"))
+                if (qaEventQueued.ContainsKey("payload"))
                 {
-                    if (eventQueued["payload"] is Dictionary<string, string>)
+                    if (qaEventQueued["payload"] is Dictionary<string, string>)
                     {
-                        Dictionary<string, string> payloadDictionary = (Dictionary<string, string>)eventQueued["payload"];
+                        Dictionary<string, string> payloadDictionary = (Dictionary<string, string>)qaEventQueued["payload"];
                         payloadString = Json.Serialize(payloadDictionary);
                     }
-                    eventQueued.Remove("payload");
+                    qaEventQueued.Remove("payload");
                 }
                 logDetails.Add("payload", payloadString);
 
                 // add remaining details as parameters
-                logDetails.Add("parameters", eventQueued); // parameters required even if empty
+                logDetails.Add("parameters", qaEventQueued); // parameters required even if empty
 
                 SwrveQaUser qaUser = SwrveQaUser.Instance;
                 qaUser.QueueQaLogEvent("event", logDetails);
