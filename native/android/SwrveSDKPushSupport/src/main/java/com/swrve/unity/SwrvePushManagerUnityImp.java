@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.core.app.NotificationCompat;
@@ -107,6 +108,9 @@ public class SwrvePushManagerUnityImp extends SwrvePushManagerImpBase implements
     private PendingIntent createPendingIntent(Bundle msg, String activityClassName) {
         Intent intent = SwrvePushSupport.createIntent(context, msg, activityClassName);
         int id = (int) (new Date().getTime() % Integer.MAX_VALUE);
+        if(Build.VERSION.SDK_INT>=31){
+            PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_IMMUTABLE);
+        }
         return PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
