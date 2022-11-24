@@ -52,12 +52,9 @@ public class SwrvePushManagerUnityImp extends SwrvePushManagerImpBase implements
 
         saveCampaignInfluence(msg, pushId);
 
-        final SharedPreferences prefs = SwrvePushServiceManagerCommon.getPreferences(context);
-        String activityClassName = SwrvePushSupport.getActivityClassName(context, prefs);
         // Put the message into a notification and post it.
         final NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        final PendingIntent contentIntent = createPendingIntent(msg, activityClassName);
-        final Notification notification = createNotification(msg, contentIntent);
+        final Notification notification = createNotification(msg);
         if (notification != null) {
             // Check if is an authenticated push so we save it to remove from NotificationManager later. (when switch user.)
             if (isAuthenticatedNotification(msg)) {
@@ -82,12 +79,13 @@ public class SwrvePushManagerUnityImp extends SwrvePushManagerImpBase implements
         return notificationId;
     }
 
-    private Notification createNotification(Bundle msg, PendingIntent contentIntent) {
+    private Notification createNotification(Bundle msg) {
         Notification notification = null;
         String msgText = msg.getString(SwrveNotificationConstants.TEXT_KEY);
         if (SwrveHelper.isNotNullOrEmpty(msgText)) {
             createSwrveNotificationBuilder();
             NotificationCompat.Builder mBuilder = notificationBuilder.build(msgText, msg, getGenericEventCampaignTypePush(), null);
+            final PendingIntent contentIntent = notificationBuilder.createPendingIntent(msg, getGenericEventCampaignTypePush(), null);
             mBuilder.setContentIntent(contentIntent);
 
             int notificationId = notificationBuilder.getNotificationId();
@@ -102,12 +100,6 @@ public class SwrvePushManagerUnityImp extends SwrvePushManagerImpBase implements
     @Override
     public SwrveNotificationFilter getNotificationFilter() {
         return SwrveUnitySDK.getNotificationFilter();
-    }
-
-    private PendingIntent createPendingIntent(Bundle msg, String activityClassName) {
-        Intent intent = SwrvePushSupport.createIntent(context, msg, activityClassName);
-        int id = (int) (new Date().getTime() % Integer.MAX_VALUE);
-        return PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     private SwrveNotificationBuilder createSwrveNotificationBuilder() {

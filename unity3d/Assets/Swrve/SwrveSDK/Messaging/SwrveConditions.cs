@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -10,11 +10,14 @@ namespace SwrveUnity.Messaging
         {
             AND,
             EQUALS,
+            CONTAINS,
             OR
         }
 
         const string OP_KEY = "op";
         const string OP_EQ_KEY = "eq";
+
+        const string OP_CONTAINS_KEY = "contains";
         const string OP_AND_KEY = "and";
         const string OP_OR_KEY = "or";
 
@@ -76,6 +79,13 @@ namespace SwrveUnity.Messaging
                    string.Equals(payload[this.key], this.value, StringComparison.OrdinalIgnoreCase);
         }
 
+        private bool matchesContains(IDictionary<string, string> payload)
+        {
+            return (this.op == TriggerOperatorType.CONTAINS) &&
+                   payload.ContainsKey(this.key) &&
+                   payload[this.key].ToLower().Contains(this.value.ToLower());
+        }
+
         private bool matchesAll(IDictionary<string, string> payload)
         {
             return this.args.All(cond => cond.Matches(payload));
@@ -99,6 +109,10 @@ namespace SwrveUnity.Messaging
             else if (this.op == TriggerOperatorType.EQUALS)
             {
                 return isEmpty() || ((payload != null) && (matchesEquals(payload)));
+            }
+            else if (this.op == TriggerOperatorType.CONTAINS)
+            {
+                return isEmpty() || ((payload != null) && (matchesContains(payload)));
             }
             else
                 return isEmpty();
@@ -127,6 +141,17 @@ namespace SwrveUnity.Messaging
                 }
 
                 return new SwrveConditions(TriggerOperatorType.EQUALS, key, value);
+            }
+            else if (op == OP_CONTAINS_KEY)
+            {
+                string key = (string)json[KEY_KEY];
+                string value = (string)json[VALUE_KEY];
+                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
+                {
+                    return null;
+                }
+
+                return new SwrveConditions(TriggerOperatorType.CONTAINS, key, value);
             }
             else if (isRoot && (op == OP_AND_KEY))
             {

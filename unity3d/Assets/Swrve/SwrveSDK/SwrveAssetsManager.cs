@@ -108,7 +108,8 @@ namespace SwrveUnity
             while (enumerator.MoveNext())
             {
                 SwrveAssetsQueueItem item = enumerator.Current;
-                if (!CheckAsset(item.Name))
+                string downloadedAssetName = CheckAsset(item.Name);
+                if (downloadedAssetName == null)
                 {
                     if (item.IsExternalSource)
                     {
@@ -121,7 +122,7 @@ namespace SwrveUnity
                 }
                 else
                 {
-                    AssetsOnDisk.Add(item.Name); // Already downloaded
+                    AssetsOnDisk.Add(downloadedAssetName); // Already downloaded
                 }
             }
 
@@ -133,75 +134,96 @@ namespace SwrveUnity
             string cdn = item.IsImage ? CdnImages : CdnFonts;
             string url = cdn + item.Name;
             SwrveLog.Log("Downloading asset: " + url);
-            UnityWebRequest www = (item.IsImage) ? UnityWebRequestTexture.GetTexture(url) : new UnityWebRequest(url);
-            if (!item.IsImage)
+            using (UnityWebRequest unityWebRequest = (item.IsImage) ? UnityWebRequestTexture.GetTexture(url) : new UnityWebRequest(url))
             {
-                DownloadHandlerBuffer dH = new DownloadHandlerBuffer();
-                www.downloadHandler = dH;
-            }
-            yield return www.SendWebRequest();
+                if (!item.IsImage)
+                {
+                    DownloadHandlerBuffer dH = new DownloadHandlerBuffer();
+                    unityWebRequest.downloadHandler = dH;
+                }
+
+                yield return unityWebRequest.SendWebRequest();
 
 #if UNITY_2020_1_OR_NEWER
-            if (www.result == UnityWebRequest.Result.Success)
-            {
+                if (unityWebRequest.result == UnityWebRequest.Result.Success)
 #else
-            if (!www.isNetworkError && !www.isHttpError)
-            {
+                if (!unityWebRequest.isNetworkError && !unityWebRequest.isHttpError)
 #endif
-                if (item.IsImage)
                 {
-                    SaveImageAsset(item, www);
+                    if (item.IsImage)
+                    {
+                        SaveImageAsset(item, unityWebRequest);
+                    }
+                    else
+                    {
+                        SaveBinaryAsset(item, unityWebRequest);
+                    }
                 }
                 else
                 {
-                    SaveBinaryAsset(item, www);
+                    MissingAssetsQueue.Add(item);
                 }
+                TaskFinished("SwrveAssetsManager.DownloadAsset");
             }
-            else
-            {
-                MissingAssetsQueue.Add(item);
-            }
-            TaskFinished("SwrveAssetsManager.DownloadAsset");
         }
 
         protected virtual IEnumerator DownloadExternalAsset(SwrveAssetsQueueItem item)
         {
             string url = item.Digest;
             SwrveLog.Log("Downloading external asset: " + url);
-            UnityWebRequest www = UnityWebRequestTexture.GetTexture(url);
-            yield return www.SendWebRequest();
+            using (UnityWebRequest unityWebRequest = UnityWebRequestTexture.GetTexture(url))
+            {
+                yield return unityWebRequest.SendWebRequest();
 
-#if UNITY_2020_OR_HIGHER
-        if (www.result == UnityWebRequest.Result.Success) {
-#else
-            if (!www.isNetworkError && !www.isHttpError)
-            {
-#endif
-                if (item.IsImage)
+                string mimeType = unityWebRequest.GetResponseHeader("content-type");
+                if (mimeType != null && string.Equals(mimeType, "image/gif"))
                 {
-                    SaveImageAsset(item, www);
+                    WriteDummyGifFileToCache(item.Name); // The unity SwrveSDK does not support gif images so create a dummy file so it is not downloaded again. 
                 }
+#if UNITY_2020_1_OR_NEWER
+                else if (unityWebRequest.result == UnityWebRequest.Result.Success)
+#else
+                else if (!unityWebRequest.isNetworkError && !unityWebRequest.isHttpError)
+#endif
+                {
+                    if (item.IsImage)
+                    {
+                        SaveImageAsset(item, unityWebRequest);
+                    }
+                }
+                else
+                {
+                    SwrveLog.Log("Asset could not be downloaded: " + url);
+                    SwrveQaUser.AssetFailedToDownload(item.Name, item.Digest, "Asset could not be downloaded");
+                }
+                TaskFinished("SwrveAssetsManager.DownloadExternalAsset");
             }
-            else
-            {
-                SwrveLog.Log("Asset could not be downloaded: " + url);
-                SwrveQaUser.AssetFailedToDownload(item.Name, item.Digest, "Asset could not be downloaded");
-            }
-            TaskFinished("SwrveAssetsManager.DownloadExternalAsset");
         }
 
-        private bool CheckAsset(string fileName)
+        // Check if asset is already downloaded. Some assets will have additional file extension type appended to the asset name
+        private string CheckAsset(string fileName)
         {
             if (CrossPlatformFile.Exists(GetTemporaryPathFileName(fileName)))
             {
-                return true;
+                return fileName;
             }
-            return false;
+            if (CrossPlatformFile.Exists(GetTemporaryPathFileName(fileName + ".gif")))
+            {
+                return fileName + ".gif";
+            }
+
+            return null;
         }
 
         private string GetTemporaryPathFileName(string fileName)
         {
             return Path.Combine(SwrveTemporaryPath, fileName);
+        }
+
+        private void WriteDummyGifFileToCache(string fileName)
+        {
+            string filePath = GetTemporaryPathFileName(fileName + ".gif");
+            File.WriteAllText(filePath, "dummy gif file");
         }
 
         protected virtual void SaveImageAsset(SwrveAssetsQueueItem item, UnityWebRequest www)
@@ -220,7 +242,7 @@ namespace SwrveUnity
                 {
                     byte[] bytes = loadedTexture.EncodeToPNG();
                     string filePath = GetTemporaryPathFileName(item.Name);
-                    SwrveLog.Log("Saving to " + filePath);
+                    SwrveLog.Log("Saving asset to " + filePath);
                     CrossPlatformFile.SaveBytes(filePath, bytes);
                     bytes = null;
                     Texture2D.Destroy(loadedTexture);
@@ -247,7 +269,7 @@ namespace SwrveUnity
             if (sha1 == item.Digest || item.IsExternalSource)
             {
                 string filePath = GetTemporaryPathFileName(item.Name);
-                SwrveLog.Log("Saving to " + filePath);
+                SwrveLog.Log("Saving binary asset to " + filePath);
                 CrossPlatformFile.SaveBytes(filePath, bytes);
                 bytes = null;
                 AssetsOnDisk.Add(item.Name);

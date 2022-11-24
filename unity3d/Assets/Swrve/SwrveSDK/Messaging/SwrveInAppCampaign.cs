@@ -109,6 +109,8 @@ namespace SwrveUnity.Messaging
 
             Dictionary<string, object> messageData = (Dictionary<string, object>)_message;
             SwrveMessage message = SwrveMessage.LoadFromJSON(swrveAssetsManager, campaign, messageData, defaultBackgroundColor);
+            campaign.Priority = message.Priority;
+            campaign.Name = message.Name;
             if (message.Formats.Count > 0)
             {
                 campaign.Message = message;

@@ -1,5 +1,8 @@
 package com.swrve.sdk;
 
+import static android.Manifest.permission.POST_NOTIFICATIONS;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+
 import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -10,7 +13,9 @@ import android.content.SharedPreferences;
 import android.os.Build;
 
 import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -69,6 +74,9 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public final static String SHARED_PREFERENCE_FILENAME = "swrve_unity_json_data";
     public final static String PREF_NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY = "notifications_id_cache_list";
     private final static String PREF_UNITY_SWRVE_COMMON = "UnitySwrveCommon";
+    private final static String PREF_PERMISSION_NOTIFICATION_ANSWERED_TIMES = "permission_notification_answered_times";
+    private final static String PREF_PERMISSION_NOTIFICATION_RATIONALE_WAS_TRUE = "permission_notification_rationale_was_true";
+    private final static String PREF_PERMISSION_NOTIFICATION_CURRENT = "permission_notification_current";
 
     public final static String UNITY_USER_UPDATE = "UserUpdate";
 
@@ -519,6 +527,108 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
         final Context context = UnityPlayer.currentActivity;
         NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(context);
         return notificationManagerCompat.areNotificationsEnabled();
+    }
+
+    @CalledByUnity
+    public static int getTargetOS() {
+        int targetOS = 0;
+        if (UnityPlayer.currentActivity != null) {
+            targetOS = SwrveHelper.getTargetSdkVersion(UnityPlayer.currentActivity);
+        }
+        return targetOS;
+    }
+
+    @CalledByUnity
+    public static String getNotificationPermission() {
+        String notificationPermission = "";
+        if (Build.VERSION.SDK_INT >= 33 && UnityPlayer.currentActivity != null) {
+            notificationPermission = SwrveHelper.getPermissionString(ContextCompat.checkSelfPermission(UnityPlayer.currentActivity, POST_NOTIFICATIONS));
+        }
+        return notificationPermission;
+    }
+
+    @CalledByUnity
+    public static boolean getNotificationShowRationale() {
+        boolean showRationale = false;
+        if (Build.VERSION.SDK_INT >= 33 && UnityPlayer.currentActivity != null) {
+            showRationale = ActivityCompat.shouldShowRequestPermissionRationale(UnityPlayer.currentActivity, POST_NOTIFICATIONS);
+        }
+        return showRationale;
+    }
+
+    // Note, the logic of method resolveNotificationPermissionAnsweredTime should mirror native SwrveBase.resolveNotificationPermissionAnsweredTime
+    @CalledByUnity
+    public static int resolveNotificationPermissionAnsweredTime() {
+        Activity activity = UnityPlayer.currentActivity;
+        if (activity == null || Build.VERSION.SDK_INT < 33) {
+            return 0;
+        }
+
+        SharedPreferences sharedPreferences = activity.getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+        int notificationPermissionAnsweredTimes = sharedPreferences.getInt(PREF_PERMISSION_NOTIFICATION_ANSWERED_TIMES, 0);
+        if (notificationPermissionAnsweredTimes >= 2) {
+            return notificationPermissionAnsweredTimes; // return cached
+        }
+
+        boolean notificationRationaleWasTrue = sharedPreferences.getBoolean(PREF_PERMISSION_NOTIFICATION_RATIONALE_WAS_TRUE, false);
+        boolean shouldShowRequestPermissionRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity, POST_NOTIFICATIONS);;
+        if (shouldShowRequestPermissionRationale) {
+            if (notificationPermissionAnsweredTimes != 1) {
+                sharedPreferences.edit().putInt(PREF_PERMISSION_NOTIFICATION_ANSWERED_TIMES, 1).commit();
+            }
+            // if shouldShowRequestPermissionRationale is true, then notificationPermissionAnsweredTimes is always 1, regardless of whats in cache.
+            notificationPermissionAnsweredTimes = 1;
+        } else if (notificationRationaleWasTrue) {
+            // if an entry for notificationRationaleWasTrue was ever recorded and shouldShowRequestPermissionRationale is currently false, then its likely notificationPermissionAnsweredTimes is 2+
+            notificationPermissionAnsweredTimes = 2;
+            sharedPreferences.edit().putInt(PREF_PERMISSION_NOTIFICATION_ANSWERED_TIMES, 2).commit();
+        }
+
+        if (shouldShowRequestPermissionRationale && !notificationRationaleWasTrue) {
+            // record that shouldShowRequestPermissionRationale was true once
+            sharedPreferences.edit().putBoolean(PREF_PERMISSION_NOTIFICATION_RATIONALE_WAS_TRUE, true).commit();
+        }
+
+        return notificationPermissionAnsweredTimes;
+    }
+
+    @CalledByUnity
+    public static void incrementNotificationPermissionAnsweredTime() {
+        Activity activity = UnityPlayer.currentActivity;
+        if (activity == null) {
+            return;
+        }
+
+        SharedPreferences sharedPreferences = activity.getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+        int notificationPermissionAnsweredTimes = sharedPreferences.getInt(PREF_PERMISSION_NOTIFICATION_ANSWERED_TIMES, 0);
+        sharedPreferences.edit().putInt(PREF_PERMISSION_NOTIFICATION_ANSWERED_TIMES, ++notificationPermissionAnsweredTimes).commit();
+    }
+
+    // Note, the logic of method checkNotificationPermissionChange should mirror native SwrveBase.checkNotificationPermissionChange
+    // Returns a string to indicate the event name which should be sent because of permission change.
+    // Returns null if no event to send
+    @CalledByUnity
+    public static String checkNotificationPermissionChange() {
+        String permissionChangedEventName = null;
+        Activity activity = UnityPlayer.currentActivity;
+        if (activity == null || Build.VERSION.SDK_INT < 33) {
+            return permissionChangedEventName;
+        }
+
+        SharedPreferences sharedPreferences = activity.getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+        int currentNotificationPermission = ContextCompat.checkSelfPermission(activity, POST_NOTIFICATIONS);
+        int cachedNotificationPermission = sharedPreferences.getInt(PREF_PERMISSION_NOTIFICATION_CURRENT, -1000);
+        if (cachedNotificationPermission == -1000) {
+            sharedPreferences.edit().putInt(PREF_PERMISSION_NOTIFICATION_CURRENT, currentNotificationPermission).commit();
+        } else if (currentNotificationPermission != cachedNotificationPermission) {
+            if (currentNotificationPermission == PERMISSION_GRANTED) {
+                permissionChangedEventName = EVENT_NOTIFICATION_CHANGE_GRANTED;
+            } else {
+                permissionChangedEventName = EVENT_NOTIFICATION_CHANGE_DENIED;
+            }
+            sharedPreferences.edit().putInt(PREF_PERMISSION_NOTIFICATION_CURRENT, currentNotificationPermission).commit();
+        }
+        return permissionChangedEventName;
     }
 
     @Override

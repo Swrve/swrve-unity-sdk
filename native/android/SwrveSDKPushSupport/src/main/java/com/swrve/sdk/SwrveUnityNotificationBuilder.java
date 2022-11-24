@@ -29,8 +29,7 @@ public class SwrveUnityNotificationBuilder extends SwrveNotificationBuilder {
     public Class getIntentClass(int sdkVersion, boolean isDismissAction) {
         Class clazz;
         // A dismiss action should dismiss the notification without opening the app
-//            if (sdkVersion >= Build.VERSION_CODES.S && !isDismissAction) {
-        if (sdkVersion >= 31 && !isDismissAction) { // Unity compile level is 30 has does not contain Build.VERSION_CODES.S constant
+        if (sdkVersion >= Build.VERSION_CODES.S && !isDismissAction) {
             clazz = SwrveUnityNotificationEngageActivity.class;
         } else {
             clazz = SwrveUnityNotificationEngageReceiver.class;

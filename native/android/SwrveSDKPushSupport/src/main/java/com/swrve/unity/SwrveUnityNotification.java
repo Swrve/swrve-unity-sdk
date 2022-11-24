@@ -3,8 +3,8 @@ package com.swrve.unity;
 import android.os.Bundle;
 
 import com.swrve.sdk.SwrveHelper;
+import com.swrve.sdk.SwrveLogger;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 public class SwrveUnityNotification {
@@ -36,8 +36,8 @@ public class SwrveUnityNotification {
 				json.put(key, msg.get(key).toString());
 			}
 			this.jsonPayload = json.toString();
-		} catch (JSONException e) {
-			e.printStackTrace();
+		} catch (Exception ex) {
+			SwrveLogger.e("SwrveSDK: Error creating SwrveUnityNotification from json.", ex);
 		}
 	}
 	

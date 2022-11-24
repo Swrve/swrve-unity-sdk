@@ -95,8 +95,19 @@ namespace SwrveUnity.REST
                 {
 #endif
                     // - made it there and it was ok
-                    string responseBody = null;
-                    bool success = ResponseBodyTester.TestUTF8(www.downloadHandler.data, out responseBody);
+                    string responseBody = "";
+                    bool success = false;
+                    byte[] downloadHandlerData = www.downloadHandler.data;
+                    if (downloadHandlerData != null)
+                    {
+                        success = ResponseBodyTester.TestUTF8(downloadHandlerData, out responseBody);
+                    }
+#if UNITY_2020_1_OR_NEWER
+                    else if (www.result == UnityWebRequest.Result.Success)
+                    {
+                        success = true;
+                    }
+#endif
                     Dictionary<string, string> headers = new Dictionary<string, string>();
 
                     if (www.GetResponseHeaders() != null)

@@ -14,6 +14,7 @@ import android.os.Bundle;
 
 import com.swrve.sdk.SwrveCampaignInfluence;
 import com.swrve.sdk.SwrveHelper;
+import com.swrve.sdk.SwrveLogger;
 import com.swrve.sdk.SwrveNotificationBuilder;
 import com.swrve.sdk.SwrveNotificationConfig;
 import com.swrve.sdk.SwrveNotificationConstants;
@@ -29,7 +30,6 @@ import org.json.JSONObject;
 import java.util.List;
 
 public abstract class SwrvePushSupport {
-    private static final String PROPERTY_ACTIVITY_NAME = "activity_name";
     static final String PROPERTY_GAME_OBJECT_NAME = "game_object_name";
 
     private static final String PROPERTY_ICON_ID = "icon_id";
@@ -104,8 +104,8 @@ public abstract class SwrvePushSupport {
         ApplicationInfo app = null;
         try {
             app = packageManager.getApplicationInfo(packageName, 0);
-        } catch (Exception exp) {
-            exp.printStackTrace();
+        } catch (Exception ex) {
+            SwrveLogger.e("SwrveSDK: Error calling packageManager.getApplicationInfo", ex);
         }
 
         int iconId = -1;
@@ -140,27 +140,14 @@ public abstract class SwrvePushSupport {
         return new SwrveUnityNotificationBuilder(context, builder.build());
     }
 
-    static String getActivityClassName(Context ctx, SharedPreferences prefs) {
-        String activityClassName = prefs.getString(PROPERTY_ACTIVITY_NAME, null);
-        if (SwrveHelper.isNullOrEmpty(activityClassName)) {
-            activityClassName = "com.unity3d.player.UnityPlayerNativeActivity";
-        }
-
-        // Process activity name (could be local or a class with a package name)
-        if(!activityClassName.contains(".")) {
-            activityClassName = ctx.getPackageName() + "." + activityClassName;
-        }
-        return activityClassName;
-    }
-
     static Intent createIntent(Context ctx, Bundle msg, String activityClassName) {
         try {
             Intent intent = new Intent(ctx, Class.forName(activityClassName));
             intent.putExtra(NOTIFICATION_PAYLOAD_KEY, msg);
             intent.setAction("openActivity");
             return intent;
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        } catch (ClassNotFoundException ex) {
+            SwrveLogger.e("SwrveSDK: Error calling packageManager.getApplicationInfo", ex);
         }
         return null;
     }
@@ -188,10 +175,9 @@ public abstract class SwrvePushSupport {
         return influenceArray.toString();
     }
 
-    public static void saveConfig(SharedPreferences.Editor editor, String gameObject, Activity activity,
+    public static void saveConfig(SharedPreferences.Editor editor, String gameObject,
                                   String iconId, String materialIconId,
                                   String largeIconId, String accentColorHex) {
-        editor.putString(PROPERTY_ACTIVITY_NAME, activity.getLocalClassName());
         editor.putString(PROPERTY_GAME_OBJECT_NAME, gameObject);
         editor.putString(PROPERTY_ICON_ID, iconId);
         editor.putString(PROPERTY_MATERIAL_ICON_ID, materialIconId);

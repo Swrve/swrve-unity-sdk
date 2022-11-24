@@ -18,7 +18,10 @@ namespace SwrveUnity
         /// <param name="notification">
         /// Push notification information including custom payloads.
         /// </param>
-        void OnRemoteNotification(UnityEngine.iOS.RemoteNotification notification);
+
+#if (UNITY_2019_4_OR_NEWER)
+        void OnRemoteNotification(Unity.Notifications.iOS.iOSNotification notification);
+#endif
 #endif
 
 #if UNITY_ANDROID

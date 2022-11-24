@@ -158,11 +158,10 @@ namespace SwrveUnity
         public HashSet<String> ProvisionalPushNotificationEvents = null;
 
         /// <summary>
-        /// Events that will trigger a push notification permission dialog in iOS.
+        /// Events that will trigger a push notification permission dialog in iOS and in android 13+.
+        /// The default empty set will not request permission. See Swrve online documentation for best practices.
         /// </summary>
-        public HashSet<String> PushNotificationEvents = new HashSet<string>()
-    { "Swrve.session.start"
-    };
+        public HashSet<String> PushNotificationPermissionEvents = new HashSet<string>();
 
         /// <summary>
         /// The resource identifier for the icon that will be displayed on your Android notifications.

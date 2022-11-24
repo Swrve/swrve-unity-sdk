@@ -1,5 +1,6 @@
 package com.swrve.unity;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -54,6 +55,7 @@ public class SwrveUnityPushManagerTest extends SwrveBaseTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
+        shadowApplication.grantPermissions(Manifest.permission.POST_NOTIFICATIONS);
         mActivity = Robolectric.buildActivity(UnityPlayerActivity.class).create().visible().get();
         new SwrveUnityCommon(ApplicationProvider.getApplicationContext());
     }

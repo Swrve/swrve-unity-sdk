@@ -8,7 +8,6 @@ using SwrveUnity.IAP;
 using SwrveUnity.Helpers;
 using SwrveUnityMiniJSON;
 using SwrveUnity.SwrveUsers;
-using UnityEngine.iOS;
 
 public partial class SwrveSDK
 {
@@ -16,6 +15,7 @@ public partial class SwrveSDK
     private const string PushNotificationStatusKey = "Swrve.permission.ios.push_notifications";
     private const string SilentPushNotificationStatusKey = "Swrve.permission.ios.push_bg_refresh";
 
+    private string lastRespondedNotificationIdentifier;
     private string pushNotificationStatus;
     private string silentPushNotificationStatus;
     /// <summary>
@@ -180,64 +180,28 @@ public partial class SwrveSDK
         }
     }
 
+
+#if UNITY_2019_4_OR_NEWER
     /// <summary>
-    /// Obtains the device token if available.
-    /// </summary>
-    /// <returns>
-    /// If the token was correctly obtained.
-    /// </returns>
-    public bool ObtainIOSDeviceToken()
-    {
-        if (config.PushNotificationEnabled)
-        {
-            byte[] token = NotificationServices.deviceToken;
-
-            if (token != null)
-            {
-                // Send token as user update and to Babble if QA user
-                string hexToken = SwrveHelper.FilterNonAlphanumeric(System.BitConverter.ToString(token));
-                bool sendDeviceInfo = (iOSdeviceToken != hexToken);
-                if (sendDeviceInfo)
-                {
-                    iOSdeviceToken = hexToken;
-                    // Save device token for future launches
-                    storage.Save(iOSdeviceTokenSave, iOSdeviceToken);
-
-                    if (IsSDKReady())
-                    {
-                        SendDeviceInfo();
-                    }
-                    SendDeviceInfo();
-                }
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Processe remote notifications and clear them.
+    /// Process remote notifications and clear them.
     /// </summary>
     public void ProcessRemoteNotifications()
     {
         if (config.PushNotificationEnabled)
         {
-            // Process push notifications
-            int notificationCount = NotificationServices.remoteNotificationCount;
-            if (notificationCount > 0)
+            //Note GetLastRespondedNotification is only cleared when the app is closed so we need to keep track of it's Identifier
+            //so as to not process the push multiple times.
+            var notification = Unity.Notifications.iOS.iOSNotificationCenter.GetLastRespondedNotification();
+            if (notification != null && !string.IsNullOrEmpty(notification.Identifier) && lastRespondedNotificationIdentifier != notification.Identifier)
             {
-                SwrveLog.Log("Got " + notificationCount + " remote notifications");
-
-                for (int i = 0; i < notificationCount; i++)
-                {
-                    ProcessRemoteNotification(NotificationServices.remoteNotifications[i]);
-                }
-                NotificationServices.ClearRemoteNotifications();
+                SwrveLog.Log("Found Notification: " + notification.Identifier);
+                this.lastRespondedNotificationIdentifier = notification.Identifier;
+                ProcessRemoteNotification(notification);
+                Unity.Notifications.iOS.iOSNotificationCenter.RemoveDeliveredNotification(notification.Identifier);
             }
         }
     }
+#endif
 
     /// <summary>
     /// Obtain from the native layer the status of the push permissions
@@ -276,9 +240,6 @@ public partial class SwrveSDK
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSAppVersion();
-
-    [DllImport ("__Internal")]
-    private static extern void _swrveiOSRegisterForPushNotifications(string unJsonCategory, bool isProvisional);
 
     [DllImport ("__Internal")]
     private static extern string _swrveiOSLocaleCountry();
@@ -341,14 +302,14 @@ public partial class SwrveSDK
     protected void RegisterForPushNotificationsIOS(bool isProvisional)
     {
 #if !UNITY_EDITOR
-        try {
-            _swrveiOSRegisterForPushNotifications (Json.Serialize (config.NotificationCategories.Select(a => a.toDict ()).ToList ()), isProvisional);
-            _saveConfigForPushDelivery();
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't invoke native code to register for push notifications, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-            NotificationServices.RegisterForNotifications(NotificationType.Alert | NotificationType.Badge | NotificationType.Sound);
+#if (UNITY_2019_4_OR_NEWER)
+        if (isProvisional){
+            Container.StartCoroutine(RegisterForPushNotificationsUsingAuthorizationRequest(Unity.Notifications.iOS.AuthorizationOption.Provisional));
+        } else {
+            Container.StartCoroutine(RegisterForPushNotificationsUsingAuthorizationRequest(Unity.Notifications.iOS.AuthorizationOption.Alert | Unity.Notifications.iOS.AuthorizationOption.Badge | Unity.Notifications.iOS.AuthorizationOption.Sound));
         }
 #endif
+#endif // !UNITY_EDITOR
     }
 
     protected string GetSavediOSDeviceToken()
@@ -371,13 +332,24 @@ public partial class SwrveSDK
 #endif
     }
 
-    protected void ProcessRemoteNotification(RemoteNotification notification)
+#if (UNITY_2019_4_OR_NEWER)
+
+    protected void ProcessRemoteNotification(Unity.Notifications.iOS.iOSNotification notification)
     {
         if (config.PushNotificationEnabled)
         {
-            ProcessRemoteNotificationUserInfo(notification.userInfo);
+            string actionIdentifier = Unity.Notifications.iOS.iOSNotificationCenter.GetLastRespondedNotificationAction();
+            if (!string.IsNullOrEmpty(actionIdentifier)) 
+            {
+                ProcessRemoteNotificationUserInfo(notification.UserInfo, actionIdentifier);
+            }
+            else 
+            {
+                SwrveLog.LogWarning("Push action identifier is null, not processing push");
+            }
+         
             // Do not call listener for silent pushes
-            if (notification.userInfo == null || !notification.userInfo.Contains(SilentPushTrackingKey))
+            if (notification.UserInfo == null || !notification.UserInfo.ContainsKey(SilentPushTrackingKey))
             {
                 if (config.PushNotificationListener != null)
                 {
@@ -386,6 +358,32 @@ public partial class SwrveSDK
             }
         }
     }
+
+    public IEnumerator RegisterForPushNotificationsUsingAuthorizationRequest(Unity.Notifications.iOS.AuthorizationOption authorizationOption)
+    {
+        // Register and obtain the token
+        using (var req = new Unity.Notifications.iOS.AuthorizationRequest(authorizationOption, true))
+        {
+            while (!req.IsFinished)
+            {
+                yield return null;
+            }
+
+            if (string.IsNullOrEmpty(req.Error))
+            {
+                if (!string.IsNullOrEmpty(req.DeviceToken))
+                {
+                    SetDeviceToken(req.DeviceToken);
+                }
+            }
+            else
+            {
+                SwrveLog.LogError("Could not register push through Mobile Notifications package: '" + req.Error + "'");
+            }
+        }
+    }
+
+#endif // (UNITY_2019_4_OR_NEWER)
 
     public static bool IsSupportediOSVersion()
     {
@@ -421,101 +419,6 @@ public partial class SwrveSDK
         }
 #endif
         return "ios"; // if there is no native response, we default to "ios"
-    }
-
-    protected void ProcessRemoteNotificationUserInfo(IDictionary userInfo)
-    {
-        // First check if it is processed natively or empty
-        bool processedNatively = (userInfo != null && userInfo.Contains(PushUnityDoNotProcessKey));
-        if (!processedNatively)
-        {
-            if (userInfo != null && userInfo.Contains(PushTrackingKey))
-            {
-                // It is a Swrve push, we need to check if it was sent while the app was in the background
-                bool whileInBackground = !userInfo.Contains("_swrveForeground");
-                if (whileInBackground)
-                {
-                    object rawId = userInfo[PushTrackingKey];
-                    string pushId = rawId.ToString();
-                    // SWRVE-5613 Hack
-                    if (rawId is Int64)
-                    {
-                        pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
-                    }
-
-                    SendPushEngagedEvent(pushId);
-
-                    // Evaluate and process any default push actions available
-                    object deeplinkUrl = userInfo[PushDeeplinkKey];
-                    if (deeplinkUrl != null)
-                    {
-                        OpenURL(deeplinkUrl.ToString());
-                    }
-
-                    ProcessNotificationForCampaign(userInfo);
-
-                }
-                else
-                {
-                    SwrveLog.Log("Swrve remote notification received while in the foreground");
-                }
-            }
-            else
-            {
-                if (userInfo != null && userInfo.Contains(SilentPushTrackingKey))
-                {
-                    SwrveLog.Log("Swrve silent push received");
-                }
-                else
-                {
-                    SwrveLog.Log("Got unidentified notification");
-                }
-            }
-        }
-        else
-        {
-            // On the native layer, we modify the userInfo if there is an action required on the unity layer.
-            if (userInfo != null && userInfo.Contains(PushButtonToCampaignIdKey))
-            {
-                object campaignId = userInfo[PushButtonToCampaignIdKey];
-                if (campaignId != null)
-                {
-                    HandleCampaignFromNotification(campaignId.ToString());
-                }
-            }
-        }
-    }
-
-    private void ProcessNotificationForCampaign(IDictionary userInfo)
-    {
-        if (userInfo.Contains(PushContentKey))
-        {
-            IDictionary content = userInfo[PushContentKey] as IDictionary;
-            if (content != null && HasCorrectVersion(content))
-            {
-                IDictionary campaign = content["campaign"] as IDictionary;
-                if (campaign != null)
-                {
-                    object campaignId = campaign["id"];
-                    if (campaignId != null)
-                    {
-                        HandleCampaignFromNotification(campaignId.ToString());
-                    }
-                }
-            }
-        }
-    }
-
-    private bool HasCorrectVersion(IDictionary content)
-    {
-        /** Check the push version number **/
-        object version = content["version"];
-        if (version != null)
-        {
-            int contentVersion = Int32.Parse(version.ToString());
-            return (contentVersion >= PushContentVersion);
-        }
-        return false;
     }
 
     private void initNative()
@@ -693,6 +596,152 @@ public partial class SwrveSDK
         _swrveCopyToClipboard(content);
 #endif
     }
+
+    private void SetDeviceToken(string token)
+    {
+        string hexToken = SwrveHelper.FilterNonAlphanumeric(token);
+        bool sendDeviceInfo = (iOSdeviceToken != hexToken);
+        if (sendDeviceInfo)
+        {
+            iOSdeviceToken = hexToken;
+            // Save device token for future launches
+            storage.Save(iOSdeviceTokenSave, iOSdeviceToken);
+
+            if (IsSDKReady())
+            {
+                SendDeviceInfo();
+            }
+        }
+    }
+
+    private void OpenDeeplink(IDictionary userInfo)
+    {
+        if (userInfo.Contains(PushDeeplinkKey))
+        {
+            object deeplinkUrl = userInfo[PushDeeplinkKey];
+            if (deeplinkUrl != null)
+            {
+                OpenURL(deeplinkUrl.ToString());
+            }
+        }
+    }
+
+    private string GetPushId(IDictionary userInfo)
+    {
+        object rawId = userInfo[PushTrackingKey];
+        string pushId = rawId.ToString();
+        // SWRVE-5613 Hack
+        if (rawId is Int64)
+        {
+            pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();
+        }
+        return pushId;
+    }
+
+    private void SendButtonClickEvent(Dictionary<string, object> selectedButton, string pushId, string actionIdentifier)
+    {
+        if (selectedButton == null)
+        {
+            SwrveLog.Log("Selected button is null");
+            return;
+        }
+        Dictionary<string, object> eventData = new Dictionary<string, object>();
+        eventData.Add("id", pushId);
+        eventData.Add("campaignType", "push");
+        eventData.Add("actionType", "button_click");
+        eventData.Add("contextId", actionIdentifier);
+
+        if (selectedButton.ContainsKey("title"))
+        {
+            string actionText = (string)selectedButton["title"];
+            Dictionary<string, string> payloadData = new Dictionary<string, string>();
+            payloadData.Add("buttonText", actionText);
+            eventData.Add("payload", payloadData);
+        }
+
+        QueueGenericCampaignEvent(eventData);
+    }
+
+    private Dictionary<string, object> GetSelectedButtonDictionary(Dictionary<string, object> swrvePayload, string actionIdentifier)
+    {
+        if (swrvePayload != null && swrvePayload.ContainsKey("buttons"))
+        {
+            int position = Convert.ToInt16(actionIdentifier);
+            List<object> buttons = (List<object>)swrvePayload["buttons"];
+            Dictionary<string, object> selectedButton = (Dictionary<string, object>)buttons[position];
+            return selectedButton;
+        }
+        return null;
+    }
+
+    private void ProcessButtonAction(Dictionary<string, object> selectedButton, string actionIdentifier)
+    {
+        if (selectedButton == null)
+        {
+            SwrveLog.Log("Selected button is null");
+            return;
+        }
+
+        string actionType = (string)selectedButton["action_type"];
+        if (actionType == "open_url")
+        {
+            string url = (string)selectedButton["action"];
+            SwrveLog.Log("Opening url: " + url);
+            OpenURL(url);
+        }
+        else if (actionType == "open_campaign")
+        {
+            string campaignId = (string)selectedButton["action"];
+            HandleCampaignFromNotification(campaignId);
+        }
+    }
+
+    private void ProcessNotificationForCampaign(IDictionary swrvePayload)
+    {
+        if (swrvePayload != null && swrvePayload.Contains("campaign"))
+        {
+            Dictionary<string, object> campaign = (Dictionary<string, object>)swrvePayload["campaign"];
+            if (campaign != null)
+            {
+                object campaignId = campaign["id"];
+                if (campaignId != null)
+                {
+                    HandleCampaignFromNotification(campaignId.ToString());
+                }
+            }
+        }
+    }
+
+    protected void ProcessRemoteNotificationUserInfo(IDictionary userInfo, string actionIdentifier)
+    {
+        if (userInfo != null && userInfo.Contains(PushTrackingKey))
+        {
+            //Note Influence data is cleared on the native side in userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:
+
+            string pushId = GetPushId(userInfo);
+            Dictionary<string, object> swrvePayload = (Dictionary<string, object>)Json.Deserialize((string)userInfo[PushContentKey]);
+            if (actionIdentifier == @"com.apple.UNNotificationDefaultActionIdentifier")
+            {
+                // direct click on push
+                SendPushEngagedEvent(pushId);
+                OpenDeeplink(userInfo);
+                ProcessNotificationForCampaign(swrvePayload);
+            }
+            else
+            {
+                // button click on push, actionIdentifer will be button position clicked: 0, 1, 2 etc.
+                Dictionary<string, object> selectedButton = GetSelectedButtonDictionary(swrvePayload, actionIdentifier);
+                SendButtonClickEvent(selectedButton, pushId, actionIdentifier);
+                SendPushEngagedEvent(pushId);
+                ProcessButtonAction(selectedButton, actionIdentifier);
+            }
+        }
+        else
+        {
+            // silent push should be processed through SilentPushListener
+        }
+    }
+
 }
 
 // Added interface for our NativeiOS layer for our Helper Class.

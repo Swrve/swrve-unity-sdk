@@ -20,6 +20,8 @@ namespace SwrveUnity.Messaging
         {
             SwrveEmbeddedCampaign campaign = new SwrveEmbeddedCampaign(initialisedTime);
             campaign.Message = SwrveEmbeddedMessage.LoadFromJSON(campaign, (Dictionary<string, object>)campaignData["embedded_message"]);
+            campaign.Priority = campaign.Message.Priority;
+            campaign.Name = campaign.Message.Name;
             return campaign;
         }
 

@@ -84,7 +84,7 @@ public class SwrveAdmPushSupport extends SwrvePushSupport {
 
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(PROPERTY_PUSH_CONFIG_VERSION, PROPERTY_PUSH_CONFIG_VERSION_VAL);
-        SwrvePushSupport.saveConfig(editor, gameObject, activity, iconId, materialIconId, largeIconId, accentColorHex);
+        SwrvePushSupport.saveConfig(editor, gameObject, iconId, materialIconId, largeIconId, accentColorHex);
         editor.apply();
     }
 

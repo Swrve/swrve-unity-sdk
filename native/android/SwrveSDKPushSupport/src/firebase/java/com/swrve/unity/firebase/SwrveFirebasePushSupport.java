@@ -14,8 +14,6 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.swrve.sdk.SwrveHelper;
 import com.swrve.sdk.SwrveLogger;
@@ -89,7 +87,7 @@ public class SwrveFirebasePushSupport extends SwrvePushSupport {
 		final SharedPreferences prefs = SwrvePushServiceManagerCommon.getPreferences(context);
 
 		SharedPreferences.Editor editor = prefs.edit();
-		SwrvePushSupport.saveConfig(editor, gameObject, activity, iconId, materialIconId, largeIconId, accentColorHex);
+		SwrvePushSupport.saveConfig(editor, gameObject, iconId, materialIconId, largeIconId, accentColorHex);
 		editor.apply();
 	}
 

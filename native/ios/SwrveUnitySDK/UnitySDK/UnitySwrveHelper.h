@@ -15,7 +15,6 @@
 +(char*) carrierCode;
 +(char*) localeCountry;
 +(char*) IDFV;
-+(void) registerForPushNotifications:(NSString*)jsonCategorySet andProvisional:(BOOL)provisional;
 +(bool) isSupportediOSVersion;
 +(char*) deviceType;
 +(char*) platformOS;

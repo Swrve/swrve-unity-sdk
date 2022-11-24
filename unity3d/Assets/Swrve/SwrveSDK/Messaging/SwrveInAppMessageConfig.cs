@@ -54,11 +54,5 @@ namespace SwrveUnity
         /// </summary>
         public ISwrveMessageListener MessageListener = null;
 
-        /// <summary>
-        /// Disable default In-app renderer and manage messages manually.
-        /// </summary>
-        [Obsolete("Use embedded campaigns instead.")]
-        public ISwrveTriggeredMessageListener TriggeredMessageListener = null;
-
     }
 }

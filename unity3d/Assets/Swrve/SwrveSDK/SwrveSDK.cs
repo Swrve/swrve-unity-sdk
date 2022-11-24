@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 /// </summary>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "8.4.2";
+    public const string SdkVersion = "9.0.0";
 
     protected int appId;
     /// <summary>
@@ -926,7 +926,7 @@ public partial class SwrveSDK
             {
                 return;
             }
-#if UNITY_IOS
+#if UNITY_IOS || UNITY_ANDROID
             RefreshPushPermissions();
 #endif
             LoadFromDisk();
@@ -980,18 +980,7 @@ public partial class SwrveSDK
 #endif
     }
 
-    [Obsolete("Use embedded campaigns instead.")]
-    protected virtual void ButtonWasPressedByUser(SwrveButton button)
-    {
-#if SWRVE_SUPPORTED_PLATFORM
-        if (button.ActionType != SwrveActionType.Dismiss)
-        {
-            QueueMessageClickEvent(button);
-        }
-#endif
-    }
-
-    private void QueueMessageClickEvent(SwrveButton button)
+    protected void QueueMessageClickEvent(SwrveButton button)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         if (button == null)
@@ -1526,18 +1515,76 @@ public partial class SwrveSDK
             if (IsValidMessageCenter(campaign, orientation.Value, personalizationProperties))
             {
                 bool add = true;
+                SwrveMessageTextTemplatingResolver resolver = new SwrveMessageTextTemplatingResolver();
                 if (properties != null && (campaign is SwrveInAppCampaign))
                 {
-                    SwrveMessageTextTemplatingResolver resolver = new SwrveMessageTextTemplatingResolver();
                     add = resolver.ResolveTemplating((SwrveInAppCampaign)campaign, personalizationProperties);
                 }
                 if (add)
                 {
+                    if (campaign is SwrveInAppCampaign)
+                    {
+                        SwrveInAppCampaign swrveInAppCampaign = (SwrveInAppCampaign)campaign;
+                        campaign.MessageCenterDetails = resolver.ResolveMessageCenterDetails(swrveInAppCampaign.Message.MessageCenterDetails, personalizationProperties);
+                        if (campaign.MessageCenterDetails != null)
+                        {
+                            LoadMessageCenterAssetsFromCache(campaign.MessageCenterDetails);
+                        }
+                    }
+
                     result.Add(campaign);
                 }
             }
         }
         return result;
+    }
+
+    private void LoadMessageCenterAssetsFromCache(SwrveMessageCenterDetails messageCenterDetails)
+    {
+        if (messageCenterDetails == null)
+        {
+            return;
+        }
+        string imageUrl = messageCenterDetails.ImageUrl;
+        string imageSha = messageCenterDetails.ImageSha;
+        if (imageUrl != null)
+        {
+            //create sha afer personalizeText
+            byte[] externalAssetBytes = System.Text.Encoding.UTF8.GetBytes(imageUrl);
+            string externalAssetSha1 = SwrveHelper.sha1(externalAssetBytes);
+
+            string filePath = Path.Combine(swrveTemporaryPath, externalAssetSha1);
+            if (CrossPlatformFile.Exists(filePath))
+            {
+                messageCenterDetails.Image = LoadMessageCenterTextureFromPath(filePath);
+            }
+        }
+
+        if (messageCenterDetails.Image == null && imageSha != null)
+        {
+            // try load the cdn image asset, this is also used as a fallback, when the imageUrl above failed to download and wasn't in cache.
+            string filePath = Path.Combine(swrveTemporaryPath, imageSha);
+            if (CrossPlatformFile.Exists(filePath))
+            {
+                byte[] byteArray = CrossPlatformFile.ReadAllBytes(filePath);
+                messageCenterDetails.Image = LoadMessageCenterTextureFromPath(filePath);
+            }
+        }
+    }
+
+    private Texture2D LoadMessageCenterTextureFromPath(String filePath)
+    {
+        byte[] byteArray = CrossPlatformFile.ReadAllBytes(filePath);
+        Texture2D texture = new Texture2D(2, 2);
+        if (texture.LoadImage(byteArray))
+        {
+            return texture;
+        }
+        else
+        {
+            SwrveLog.LogWarning("Could not load message center asset from cache: " + filePath);
+            return null;
+        }
     }
 
     /// <summary>
@@ -1588,19 +1635,9 @@ public partial class SwrveSDK
             Dictionary<string, string> properties = GetPersonalizationProperties(payload);
             if (message is SwrveMessage)
             {
-                var triggeredMessageListener = config.InAppMessageConfig.TriggeredMessageListener;
-                if (triggeredMessageListener != null)
+                if (currentMessageView == null)
                 {
-                    // Using a custom listener
-                    triggeredMessageListener.OnMessageTriggered((SwrveMessage)message);
-                }
-                else
-                {
-                    if (currentMessageView == null)
-                    {
-
-                        yield return Container.StartCoroutine(LaunchMessage(message, properties));
-                    }
+                    yield return Container.StartCoroutine(LaunchMessage(message, properties));
                 }
             }
             else if (message is SwrveEmbeddedMessage)
@@ -1644,25 +1681,17 @@ public partial class SwrveSDK
             return;
         }
 
-        var triggeredMessageListener = config.InAppMessageConfig.TriggeredMessageListener;
-        if (triggeredMessageListener != null)
+        try
         {
-            triggeredMessageListener.DismissCurrentMessage();
+            if (currentMessageView != null)
+            {
+                SetMessageMinDelayThrottle();
+                currentMessageView.Dismiss();
+            }
         }
-        else
+        catch (Exception e)
         {
-            try
-            {
-                if (currentMessageView != null)
-                {
-                    SetMessageMinDelayThrottle();
-                    currentMessageView.Dismiss();
-                }
-            }
-            catch (Exception e)
-            {
-                SwrveLog.LogError("Error while dismissing a message " + e);
-            }
+            SwrveLog.LogError("Error while dismissing a message " + e);
         }
 #endif
     }

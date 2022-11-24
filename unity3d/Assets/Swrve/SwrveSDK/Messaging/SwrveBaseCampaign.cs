@@ -40,6 +40,16 @@ namespace SwrveUnity.Messaging
         protected const int DefaultMinDelay = 60;
 
         /// <summary>
+        /// Name of the campaign.
+        /// </summary>
+        public string Name;
+
+        /// <summary>
+        /// Priority of the campaign.
+        /// </summary>
+        public int Priority = 9999;
+
+        /// <summary>
         /// Identifies the campaign.
         /// </summary>
         public int Id;
@@ -52,6 +62,11 @@ namespace SwrveUnity.Messaging
             get;
             protected set;
         }
+
+        /// <summary>
+        // Message center details
+        /// </summary>
+        public SwrveMessageCenterDetails MessageCenterDetails;
 
         /// <summary>
         // MessageCenter subject of the campaign
@@ -90,6 +105,15 @@ namespace SwrveUnity.Messaging
         }
 
         /// <summary>
+        /// Download time of this campaign.
+        /// </summary>
+        public DateTime DownloadDate
+        {
+            get { return new DateTime(State.DownloadDate); }
+            set { State.DownloadDate = value.Ticks; }
+        }
+
+        /// <summary>
         /// Get the status of the campaign.
         /// </summary>
         /// <returns>
@@ -108,8 +132,9 @@ namespace SwrveUnity.Messaging
         }
 
         /**
-         * @return the subject name of the campaign.
-         */
+        * @return the subject name of the campaign.
+        */
+        [Obsolete("Use SwrveMessageCenterDetails subject instead")]
         public string Subject
         {
             get

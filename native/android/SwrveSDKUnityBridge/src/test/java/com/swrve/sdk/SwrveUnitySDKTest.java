@@ -1,24 +1,42 @@
 package com.swrve.sdk;
 
+import static android.content.pm.PackageManager.PERMISSION_DENIED;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static com.swrve.sdk.ISwrveCommon.SWRVE_DEVICE_REGION;
+import static com.swrve.sdk.ISwrveCommon.SWRVE_LANGUAGE;
+import static com.swrve.sdk.ISwrveCommon.SWRVE_OS;
+import static com.swrve.sdk.ISwrveCommon.SWRVE_OS_VERSION;
+import static com.swrve.sdk.SwrveUnityCommon.SHARED_PREFERENCE_FILENAME;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+
+import android.Manifest;
 import android.app.Activity;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.util.Log;
+import android.content.SharedPreferences;
+import android.os.Build;
 
 import androidx.test.core.app.ApplicationProvider;
 
 import com.google.gson.Gson;
-import com.swrve.sdk.test.MainActivity;
 import com.unity3d.player.UnityPlayer;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.robolectric.Robolectric;
-import org.robolectric.shadows.ShadowLog;
+import org.robolectric.util.ReflectionHelpers;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,33 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.swrve.sdk.ISwrveCommon.SWRVE_DEVICE_REGION;
-import static com.swrve.sdk.ISwrveCommon.SWRVE_LANGUAGE;
-import static com.swrve.sdk.ISwrveCommon.SWRVE_OS;
-import static com.swrve.sdk.ISwrveCommon.SWRVE_OS_VERSION;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-
 public class SwrveUnitySDKTest extends SwrveBaseTest {
-
-    private Activity mActivity;
-
-    @Before
-    public void setUp() {
-        SwrveLogger.setLogLevel(Log.VERBOSE);
-        ShadowLog.stream = System.out;
-        mActivity = Robolectric.buildActivity(MainActivity.class).create().visible().get();
-
-        UnityPlayer.currentActivity = mActivity;
-    }
 
     SwrveUnityCommon getUnitySwrve() {
         return (SwrveUnityCommon) SwrveCommon.getInstance();
@@ -164,6 +156,10 @@ public class SwrveUnitySDKTest extends SwrveBaseTest {
         SwrveUnityCommon.copyToClipboard("Lorem ipsum");
         ClipboardManager clipboard = (ClipboardManager) ApplicationProvider.getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
         assertEquals("Lorem ipsum", clipboard.getPrimaryClip().getItemAt(0).coerceToText(ApplicationProvider.getApplicationContext()));
+
+        assertEquals(33, SwrveUnityCommon.getTargetOS());
+        assertEquals("denied", SwrveUnityCommon.getNotificationPermission());
+        assertFalse(SwrveUnityCommon.getNotificationShowRationale());
     }
 
     @Test
@@ -210,6 +206,79 @@ public class SwrveUnitySDKTest extends SwrveBaseTest {
         map.put("event", "call");
         map.put("conversation", "82");
         Mockito.verify(swrveUnityCommonSpy).queueConversationEvent("Swrve.Conversations.Conversation-82.call", "call", "fromPageTag", 82, map);
+    }
+
+    @Test
+    public void testResolveNotificationPermissionAnsweredTime() {
+        Activity activitySpy = spy(UnityPlayer.currentActivity);
+        UnityPlayer.currentActivity = activitySpy;
+        SharedPreferences sharedPreferences = activitySpy.getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+
+        // default
+        assertEquals(0, SwrveUnityCommon.resolveNotificationPermissionAnsweredTime());
+        assertNull(sharedPreferences.getString("permission_notification_rationale_was_true", null)); // this should always stay true if it is ever set.
+        assertNull(sharedPreferences.getString("permission_notification_answered_times", null));
+
+        // simulate a permission request where shouldShowRequestPermissionRationale returns true, thus resolveNotificationPermissionAnsweredTime will always be 1
+        doReturn(true).when(activitySpy).shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS);
+        assertEquals(1, SwrveUnityCommon.resolveNotificationPermissionAnsweredTime());
+        assertEquals(true, sharedPreferences.getBoolean("permission_notification_rationale_was_true", false));
+        assertEquals(1, sharedPreferences.getInt("permission_notification_answered_times", -1));
+
+        // simulate a subsequent request by forcing shouldShowRequestPermissionRationale to be false
+        doReturn(false).when(activitySpy).shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS);
+        assertEquals(2, SwrveUnityCommon.resolveNotificationPermissionAnsweredTime());
+        assertEquals(true, sharedPreferences.getBoolean("permission_notification_rationale_was_true", false)); // this should always stay true if it is ever set.
+        assertEquals(2, sharedPreferences.getInt("permission_notification_answered_times", -1));
+    }
+
+    @Test
+    public void testResolveNotificationPermissionAnsweredTimeWithRequestsOutsideOfSwrveSDK() {
+        Activity activitySpy = spy(UnityPlayer.currentActivity);
+        UnityPlayer.currentActivity = activitySpy;
+        SharedPreferences sharedPreferences = activitySpy.getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+
+        // simulate a permission request happened already outside of swrvesdk. This might have happened through another sdk or customer own code.
+        // shouldShowRequestPermissionRationale returns false, and permission_notification_rationale_was_true is true
+        doReturn(false).when(activitySpy).shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS);
+        sharedPreferences.edit().putBoolean("permission_notification_rationale_was_true", true).commit();
+        assertEquals(2, SwrveUnityCommon.resolveNotificationPermissionAnsweredTime());
+        assertEquals(true, sharedPreferences.getBoolean("permission_notification_rationale_was_true", false));
+        assertEquals(2, sharedPreferences.getInt("permission_notification_answered_times", -1));
+    }
+
+    @Test
+    public void testIncrementNotificationPermissionAnsweredTime() {
+        SharedPreferences sharedPreferences = UnityPlayer.currentActivity.getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+
+        SwrveUnityCommon.incrementNotificationPermissionAnsweredTime();
+        assertEquals(1, sharedPreferences.getInt("permission_notification_answered_times", 0));
+
+        SwrveUnityCommon.incrementNotificationPermissionAnsweredTime();
+        assertEquals(2, sharedPreferences.getInt("permission_notification_answered_times", 0));
+
+        SwrveUnityCommon.incrementNotificationPermissionAnsweredTime();
+        assertEquals(3, sharedPreferences.getInt("permission_notification_answered_times", 0));
+    }
+
+    @Test
+    public void testCheckNotificationPermissionChange() {
+        Activity activitySpy = spy(UnityPlayer.currentActivity);
+        UnityPlayer.currentActivity = activitySpy;
+        SharedPreferences sharedPreferences = activitySpy.getSharedPreferences(SHARED_PREFERENCE_FILENAME, Context.MODE_PRIVATE);
+
+        assertNull(sharedPreferences.getString("permission_notification_current", null));
+
+        assertNull(SwrveUnityCommon.checkNotificationPermissionChange());
+        assertEquals(-1, sharedPreferences.getInt("permission_notification_current", -1000));
+
+        shadowApplication.grantPermissions(Manifest.permission.POST_NOTIFICATIONS);
+        assertEquals("Swrve.permission.android.notification.granted", SwrveUnityCommon.checkNotificationPermissionChange());
+        assertEquals(PERMISSION_GRANTED, sharedPreferences.getInt("permission_notification_current", -1000));
+
+        shadowApplication.denyPermissions(Manifest.permission.POST_NOTIFICATIONS);
+        assertEquals("Swrve.permission.android.notification.denied", SwrveUnityCommon.checkNotificationPermissionChange());
+        assertEquals(PERMISSION_DENIED, sharedPreferences.getInt("permission_notification_current", -1000));
     }
 
 

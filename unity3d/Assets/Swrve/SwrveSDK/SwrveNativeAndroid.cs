@@ -5,6 +5,7 @@ using UnityEngine;
 using SwrveUnity.Helpers;
 using SwrveUnityMiniJSON;
 using SwrveUnity;
+using UnityEngine.Android;
 
 public partial class SwrveSDK
 {
@@ -28,6 +29,12 @@ public partial class SwrveSDK
     private const string CopyToClipboardName = "copyToClipboard";
 
     private const string GetAreNotificationsEnabledName = "getAreNotificationsEnabled";
+    private const string GetTargetOSName = "getTargetOS";
+    private const string GetNotificationsPermissionName = "getNotificationPermission";
+    private const string GetNotificationShowRationaleName = "getNotificationShowRationale";
+    private const string ResolveNotificationPermissionAnsweredTimeName = "resolveNotificationPermissionAnsweredTime";
+    private const string IncrementNotificationPermissionAnsweredTimeName = "incrementNotificationPermissionAnsweredTime";
+    private const string CheckNotificationPermissionChangeName = "checkNotificationPermissionChange";
 
     private const string UnityPlayerName = "com.unity3d.player.UnityPlayer";
     private const string UnityCurrentActivityName = "currentActivity";
@@ -187,6 +194,16 @@ public partial class SwrveSDK
         }
 
         deviceInfo["swrve.permission.notifications_enabled"] = GetAreNotificationsEnabled().ToString();
+
+        int osVersion = GetNativeOSVersion();
+        deviceInfo["swrve.os_int_version"] = osVersion.ToString();
+        deviceInfo["swrve.app_target_version"] = GetTargetOS().ToString();
+        if (osVersion >= 33)
+        {
+            deviceInfo["swrve.permission.android.notification"] = GetNotificationPermission();
+            deviceInfo["swrve.permission.android.notification_show_rationale"] = GetNotificationShowRationale().ToString();
+            deviceInfo["swrve.permission.android.notification_answered_times"] = ResolveNotificationPermissionAnsweredTime().ToString();
+        }
     }
 
     private string getNativeLanguage()
@@ -653,7 +670,7 @@ public partial class SwrveSDK
         if (notification.ContainsKey(PushContentKey))
         {
             Dictionary<string, object> content = (Dictionary<string, object>)Json.Deserialize((string)notification[PushContentKey]);
-            if (content != null && content.ContainsKey("campaign") && HasCorrectVersion(content))
+            if (content != null && content.ContainsKey("campaign"))
             {
                 Dictionary<string, object> campaign = (Dictionary<string, object>)content["campaign"];
                 if (campaign != null)
@@ -666,18 +683,6 @@ public partial class SwrveSDK
                 }
             }
         }
-    }
-
-    private bool HasCorrectVersion(Dictionary<string, object> content)
-    {
-        /** Check the push version number **/
-        object version = content["version"];
-        if (version != null)
-        {
-            int contentVersion = Int32.Parse(version.ToString());
-            return (contentVersion >= PushContentVersion);
-        }
-        return false;
     }
 
     private Dictionary<string, object> parsePayload(Dictionary<string, object> notification)
@@ -952,6 +957,193 @@ public partial class SwrveSDK
         }
         return false;
     }
+
+    private static int GetNativeOSVersion()
+    {
+        int osVersion = 0;
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass versionJavaClass = new AndroidJavaClass("android.os.Build$VERSION"))
+                {
+                    osVersion = versionJavaClass.GetStatic<int>("SDK_INT");
+                }
+            }
+            catch (Exception exp)
+            {
+                SwrveLog.LogError("Couldn't get the native OS version, make sure you are running on an Android device: " + exp.ToString());
+            }
+        }
+
+        return osVersion;
+    }
+
+    private static int GetTargetOS()
+    {
+        int targetOS = 0;
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
+                    targetOS = swrveAndroidCommonClass.CallStatic<int>(GetTargetOSName);
+                }
+            }
+            catch (Exception exp)
+            {
+                SwrveLog.LogError("Couldn't get GetTargetOS from Android: " + exp);
+            }
+        }
+        return targetOS;
+    }
+
+    private static string GetNotificationPermission()
+    {
+        string notificationPermission = "";
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
+                    notificationPermission = swrveAndroidCommonClass.CallStatic<string>(GetNotificationsPermissionName);
+                }
+            }
+            catch (Exception exp)
+            {
+                SwrveLog.LogError("Couldn't get notification permission from Android: " + exp);
+            }
+        }
+
+        return notificationPermission;
+    }
+
+    private static bool GetNotificationShowRationale()
+    {
+        bool notificationShowRationale = false;
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
+                    notificationShowRationale = swrveAndroidCommonClass.CallStatic<bool>(GetNotificationShowRationaleName);
+                }
+            }
+            catch (Exception exp)
+            {
+                SwrveLog.LogError("Couldn't get notification show rationale boolean from Android: " + exp);
+            }
+        }
+
+        return notificationShowRationale;
+    }
+
+    private static int ResolveNotificationPermissionAnsweredTime()
+    {
+        int targetOS = 0;
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
+                    targetOS = swrveAndroidCommonClass.CallStatic<int>(ResolveNotificationPermissionAnsweredTimeName);
+                }
+            }
+            catch (Exception exp)
+            {
+                SwrveLog.LogError("Couldn't get resolveNotificationPermissionAnsweredTime from Android: " + exp);
+            }
+        }
+        return targetOS;
+    }
+
+    public void RefreshPushPermissions()
+    {
+        if (config.PushNotificationEnabled && SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
+                    string notificationPermissionChangeEvent = swrveAndroidCommonClass.CallStatic<string>(CheckNotificationPermissionChangeName);
+                    if (!string.IsNullOrEmpty(notificationPermissionChangeEvent))
+                    {
+                        NamedEventInternal(notificationPermissionChangeEvent, null, false);
+                    }
+                }
+            }
+            catch (Exception exp)
+            {
+                SwrveLog.LogError("Couldn't call checkNotificationPermissionChange from Android: " + exp);
+            }
+        }
+    }
+
+    internal void PermissionCallbacks_PermissionDeniedAndDontAskAgain(string permissionName)
+    {
+        SwrveLog.Log($"{permissionName} PermissionDeniedAndDontAskAgain");
+    }
+
+    internal void PermissionCallbacks_PermissionGranted(string permissionName)
+    {
+        SwrveLog.Log($"{permissionName} PermissionCallbacks_PermissionGranted");
+        IncrementNotificationPermissionAnsweredTime();
+    }
+
+    internal void PermissionCallbacks_PermissionDenied(string permissionName)
+    {
+        SwrveLog.Log($"{permissionName} PermissionCallbacks_PermissionDenied");
+        IncrementNotificationPermissionAnsweredTime();
+    }
+
+    private void RequestNotificationPermission()
+    {
+        bool hasUserAuthorizedPermission = Permission.HasUserAuthorizedPermission("android.permission.POST_NOTIFICATIONS");
+        if (hasUserAuthorizedPermission)
+        {
+            SwrveLog.Log("RequestNotificationPermission. POST_NOTIFICATIONS is already granted. Not requesting.");
+        }
+        else if (GetTargetOS() < 33)
+        {
+            SwrveLog.Log("RequestNotificationPermission. Android Target API version needs to be 33 or greater. Not requesting.");
+        }
+        else
+        {
+            SwrveLog.Log("RequestNotificationPermission. Attempting to showing system permission prompt.");
+#if UNITY_2020_2_OR_NEWER
+            var callbacks = new PermissionCallbacks();
+            callbacks.PermissionDenied += PermissionCallbacks_PermissionDenied;
+            callbacks.PermissionGranted += PermissionCallbacks_PermissionGranted;
+            callbacks.PermissionDeniedAndDontAskAgain += PermissionCallbacks_PermissionDeniedAndDontAskAgain;
+            Permission.RequestUserPermission("android.permission.POST_NOTIFICATIONS", callbacks);
+#elif UNITY_2018_3_OR_NEWER
+            Permission.RequestUserPermission("android.permission.POST_NOTIFICATIONS");
+#endif
+        }
+    }
+
+    private static void IncrementNotificationPermissionAnsweredTime()
+    {
+        if (SwrveHelper.IsOnDevice())
+        {
+            try
+            {
+                using (AndroidJavaClass swrveAndroidCommonClass = new AndroidJavaClass(SwrveAndroidUnityCommonName))
+                {
+                    swrveAndroidCommonClass.CallStatic(IncrementNotificationPermissionAnsweredTimeName);
+                }
+            }
+            catch (Exception exp)
+            {
+                SwrveLog.LogError("Couldn't IncrementNotificationPermissionAnsweredTime from Android: " + exp);
+            }
+        }
+    }
+
 }
 
 #endif

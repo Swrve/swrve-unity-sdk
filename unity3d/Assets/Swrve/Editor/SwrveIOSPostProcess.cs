@@ -191,8 +191,8 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
             List<string> allMMFiles = GetAllFiles(path, "*.mm");
             bool appliedChanges = false;
 
-            // Inject before existing "UnitySendRemoteNotification(userInfo);"
-            string searchText = "UnitySendRemoteNotification(userInfo);";
+            // Inject before existing "AppController_SendNotificationWithArg(kUnityDidReceiveRemoteNotification, userInfo);"
+            string searchText = "AppController_SendNotificationWithArg(kUnityDidReceiveRemoteNotification, userInfo);";
             for (int i = 0; i < allMMFiles.Count; i++)
             {
                 string filePath = allMMFiles[i];
@@ -313,7 +313,11 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
             {
                 string fileName = System.IO.Path.GetFileName(filePath);
                 string newFilePath = Path.Combine(fullDestPath, fileName);
-                System.IO.File.Copy(filePath, newFilePath);
+
+                if (!new System.IO.FileInfo(newFilePath).Exists)
+                {   
+                    System.IO.File.Copy(filePath, newFilePath);
+                }
 
                 // Add to the XCode project
                 string relativeProjectPath = Path.Combine(destPath, fileName);
@@ -361,7 +365,12 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         {
             string filePath = files[i];
             string fileName = System.IO.Path.GetFileName(filePath);
-            System.IO.File.Copy(filePath, Path.Combine(dest, fileName));
+
+            string newPath = Path.Combine(dest, fileName);
+            if (!new System.IO.FileInfo(newPath).Exists)
+            {   
+                System.IO.File.Copy(filePath, newPath);
+            }
         }
         string[] folders = System.IO.Directory.GetDirectories(orig);
         for (int i = 0; i < folders.Length; i++)

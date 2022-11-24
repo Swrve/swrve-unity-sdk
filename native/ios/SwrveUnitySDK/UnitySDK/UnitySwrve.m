@@ -8,6 +8,7 @@
 #if !defined(SWRVE_NO_PUSH)
 
 #import "SwrvePush.h"
+#import "UnityNotificationManager.h"
 
 // Added public interface for our didReceiveRemoteNotification withLocalUserId into our internal SwrvePush class.
 #if !TARGET_OS_TV
@@ -524,14 +525,6 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
             [UnitySwrveHelper NSStringCopy:msg]);
 }
 
-
-- (void)sendPushResponse:(NSDictionary *)notification {
-#if !defined(SWRVE_NO_PUSH)
-    UnitySendRemoteNotification(notification);
-#endif //SWRVE_NO_PUSH
-}
-
-
 - (NSSet *)pushCategories {
     return nil;
 }
@@ -596,10 +589,14 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler {
 #pragma unused(center, notification)
-    if (completionHandler) {
-        completionHandler(UNNotificationPresentationOptionNone);
+    if ([[UnityNotificationManager sharedInstance] respondsToSelector:@selector(userNotificationCenter:willPresentNotification:withCompletionHandler:)]) {
+        // let UnityNotificationManager call the completionHandler
+        [[UnityNotificationManager sharedInstance] userNotificationCenter:center willPresentNotification:notification withCompletionHandler:completionHandler];
+    } else {
+        if (completionHandler) {
+            completionHandler(UNNotificationPresentationOptionNone);
+        }
     }
-
 }
 
 #ifdef __IPHONE_11_0
@@ -610,121 +607,15 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 #endif
 #pragma unused(center)
 
-    [self pushNotificationResponseReceived:response.actionIdentifier withUserInfo:response.notification.request.content.userInfo];
-
-    if (completionHandler) {
-        completionHandler();
-    }
-}
-
-- (void)pushNotificationResponseReceived:(NSString *)identifier withUserInfo:(NSDictionary *)userInfo {
-    id pushIdentifier = [userInfo objectForKey:SwrveNotificationIdentifierKey];
-    if (pushIdentifier && ![pushIdentifier isKindOfClass:[NSNull class]]) {
-        NSString *pushId = @"-1";
-        if ([pushIdentifier isKindOfClass:[NSString class]]) {
-            pushId = (NSString *) pushIdentifier;
-        } else if ([pushIdentifier isKindOfClass:[NSNumber class]]) {
-            pushId = [((NSNumber *) pushIdentifier) stringValue];
-        } else {
-            [SwrveLogger error:@"Unknown Swrve notification ID class for _p attribute", nil];
-            return;
-        }
-
-        // Only process this push if we haven't seen it before or its a QA push
-        if (lastProcessedPushId == nil || [pushId isEqualToString:@"0"] || ![pushId isEqualToString:lastProcessedPushId]) {
-            lastProcessedPushId = pushId;
-
-            // Engagement replaces Influence Data
-            NSString *appGroupId = [self appGroupIdentifier];
-            [SwrveCampaignInfluence removeInfluenceDataForId:pushId fromAppGroupId:appGroupId];
-
-            if ([identifier isEqualToString:SwrveNotificationResponseDefaultActionKey]) {
-                // if the user presses the push directly
-                id pushDeeplinkRaw = [userInfo objectForKey:SwrveNotificationDeeplinkKey];
-                if (pushDeeplinkRaw == nil || ![pushDeeplinkRaw isKindOfClass:[NSString class]]) {
-                    // Retrieve old push deeplink for backwards compatibility
-                    pushDeeplinkRaw = [userInfo objectForKey:SwrveNotificationDeprecatedDeeplinkKey];
-                }
-                if ([pushDeeplinkRaw isKindOfClass:[NSString class]]) {
-                    NSString *pushDeeplink = (NSString *) pushDeeplinkRaw;
-                    [self handlePushDeeplinkString:pushDeeplink];
-                }
-
-                // Unity will send the engagement event when the app opens
-                [self sendPushResponse:userInfo];
-                [SwrveLogger debug:@"Performed a Direct Press on Swrve notification with ID %@", pushId];
-            } else {
-                if (self.configDict == nil) {
-                    self.configDict = [UnitySwrve savedConfig];
-                }
-
-                NSDictionary *swrveValues = [userInfo objectForKey:SwrveNotificationContentIdentifierKey];
-                NSArray *swrvebuttons = [swrveValues objectForKey:SwrveNotificationButtonListKey];
-
-                if (swrvebuttons != nil && [swrvebuttons count] > 0) {
-                    int position = [identifier intValue];
-
-                    NSDictionary *selectedButton = [swrvebuttons objectAtIndex:(NSUInteger) position];
-                    NSString *action = [selectedButton objectForKey:SwrveNotificationButtonActionKey];
-                    NSString *actionType = [selectedButton objectForKey:SwrveNotificationButtonActionTypeKey];
-                    NSString *actionText = [selectedButton objectForKey:SwrveNotificationButtonTitleKey];
-
-                    // Send button click event
-                    [SwrveLogger debug:@"Selected Button:'%@' on Swrve notification with ID %@", identifier, pushId];
-                    NSMutableDictionary *actionEvent = [[NSMutableDictionary alloc] init];
-                    [actionEvent setValue:pushId forKey:@"id"];
-                    [actionEvent setValue:@"push" forKey:@"campaignType"];
-                    [actionEvent setValue:@"button_click" forKey:@"actionType"];
-                    [actionEvent setValue:identifier forKey:@"contextId"];
-                    NSMutableDictionary *eventPayload = [[NSMutableDictionary alloc] init];
-                    [eventPayload setValue:actionText forKey:@"buttonText"];
-                    [actionEvent setValue:eventPayload forKey:@"payload"];
-
-                    // Create generic campaign for button click
-                    (void) [self queueEvent:@"generic_campaign_event" data:actionEvent triggerCallback:NO];
-
-                    [self sendPushNotificationEngagedEvent:pushId];
-                    [self sendQueuedEvents];
-                    // Now that we've processed the events, we need to fulfill the action on the Unity later
-
-                    // Create a mutable copy and let unity know that the events are already processed
-                    NSMutableDictionary *mutableUserInfo = [userInfo mutableCopy];
-                    [mutableUserInfo setValue:@"YES" forKey:SwrvePushUnityDoNotProcessKey];
-
-                    // If the action is open app we let Unity know about the push payload
-                    if ([actionType isEqualToString:SwrveNotificationCustomButtonUrlIdentiferKey]) {
-                        [self handlePushDeeplinkString:action];
-                    } else if ([actionType isEqualToString:SwrvePushCustomButtonOpenAppIdentiferKey]) {
-                        // This open app action will be ignored as everything has already been done.
-                    } else if ([actionType isEqualToString:SwrvePushCustomButtonCampaignIdentifierKey]) {
-                        // Unity will process the new campaign id Key added to the userInfo and the engagement event
-                        [mutableUserInfo setValue:action forKey:SwrvePushButtonToCampaignIdKey];
-                    }
-
-                    userInfo = mutableUserInfo;
-                    // Then send it onto the Unity layer
-                    [self sendPushResponse:userInfo];
-                } else {
-                    [SwrveLogger debug:@"Receieved a push with an unrecognised identifier %@", identifier];
-                }
-            }
-        } else {
-            [SwrveLogger debug:@"Got Swrve notification with ID %@, ignoring as we already processed it", pushId];
-        }
+    // We need to clear influence early before its processed in the unity init flow. See: ProcessInfluenceData()
+    [self clearInfluence:response.actionIdentifier withUserInfo:response.notification.request.content.userInfo];
+       
+    if ([[UnityNotificationManager sharedInstance] respondsToSelector:@selector(userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:)]) {
+        [[UnityNotificationManager sharedInstance] userNotificationCenter:center didReceiveNotificationResponse:response withCompletionHandler:completionHandler];
     } else {
-        [SwrveLogger debug:@"Got unidentified notification", nil];
-        return;
-    }
-}
-
-- (void)handlePushDeeplinkString:(NSString *)pushDeeplink {
-    NSURL *url = [NSURL URLWithString:pushDeeplink];
-    BOOL canOpen = [[SwrveCommon sharedUIApplication] canOpenURL:url];
-    if (url != nil && canOpen) {
-        [SwrveLogger debug:@"Action - %@ - handled.  Sending to application as URL", pushDeeplink];
-        [self deeplinkReceived:url];
-    } else {
-        [SwrveLogger error:@"Could not process push deeplink - %@", pushDeeplink];
+        if (completionHandler) {
+            completionHandler();
+        }
     }
 }
 
@@ -761,6 +652,34 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 - (void)setSwrveSessionDelegate:(id <SwrveSessionDelegate>)sessionDelegate {
     // added for geo, not supported in unity yet
 #pragma unused (sessionDelegate)
+}
+    
+- (id<NSURLSessionDelegate>)urlSessionDelegate {
+    return nil;
+}
+
+- (void)clearInfluence:(NSString *)identifier withUserInfo:(NSDictionary *)userInfo {
+    id pushIdentifier = [userInfo objectForKey:SwrveNotificationIdentifierKey];
+    if (pushIdentifier && ![pushIdentifier isKindOfClass:[NSNull class]]) {
+        NSString *pushId = @"-1";
+        if ([pushIdentifier isKindOfClass:[NSString class]]) {
+            pushId = (NSString *) pushIdentifier;
+        } else if ([pushIdentifier isKindOfClass:[NSNumber class]]) {
+            pushId = [((NSNumber *) pushIdentifier) stringValue];
+        } else {
+            [SwrveLogger error:@"Unknown Swrve notification ID class for _p attribute", nil];
+            return;
+        }
+        
+        // Only process this push if we haven't seen it before or its a QA push
+        if (lastProcessedPushId == nil || [pushId isEqualToString:@"0"] || ![pushId isEqualToString:lastProcessedPushId]) {
+            lastProcessedPushId = pushId;
+            
+            // Engagement replaces Influence Data
+            NSString *appGroupId = [self appGroupIdentifier];
+            [SwrveCampaignInfluence removeInfluenceDataForId:pushId fromAppGroupId:appGroupId];
+        }
+    }
 }
 
 @end

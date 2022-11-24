@@ -23,10 +23,12 @@ namespace SwrveUnity.Messaging
 
         public DateTime ShowMessagesAfterDelay;
 
+        public long DownloadDate = SwrveHelper.GetNow().Ticks;
+
         /// <summary>
         // MessageCenter status of the campaign
         /// </summary>
-        public SwrveCampaignState.Status CurStatus;
+        public Status CurStatus;
 
         public SwrveCampaignState()
         {
@@ -54,6 +56,13 @@ namespace SwrveUnity.Messaging
             {
                 CurStatus = Status.Unseen;
             }
+
+            // Load downloadDate
+            curKey = "DownloadDate" + campaignId;
+            if (savedStatesJson.ContainsKey(curKey))
+            {
+                DownloadDate = MiniJsonHelper.GetLong(savedStatesJson, curKey);
+            }
         }
 
         /**
@@ -79,9 +88,9 @@ namespace SwrveUnity.Messaging
         public override string ToString()
         {
             return string.Format(
-                       "[SwrveCampaignState] Impressions: {0}, ShowMessagesAfterDelay: {1}, CurStatus: {2}",
-                       Impressions, ShowMessagesAfterDelay, CurStatus
-                   );
+                "[SwrveCampaignState] Impressions: {0}, ShowMessagesAfterDelay: {1}, CurStatus: {2}, DownloadDate: {3}",
+                Impressions, ShowMessagesAfterDelay, CurStatus, DownloadDate
+            );
         }
     }
 }

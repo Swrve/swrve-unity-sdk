@@ -5,7 +5,6 @@
 #endif
 
 void UnitySendMessage(const char *, const char *, const char *);
-void UnitySendRemoteNotification(NSDictionary* notification);
 
 #if !defined(SWRVE_NO_PUSH)
 #import <UserNotifications/UserNotifications.h>

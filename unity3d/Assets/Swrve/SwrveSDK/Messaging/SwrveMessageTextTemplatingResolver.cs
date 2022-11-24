@@ -101,6 +101,32 @@ namespace SwrveUnity.Messaging
         {
             try
             {
+                if (message.MessageCenterDetails != null)
+                {
+                    List<string> messageCenterDetails = new List<string>();
+                    messageCenterDetails.Add(message.MessageCenterDetails.Subject);
+                    messageCenterDetails.Add(message.MessageCenterDetails.Description);
+                    messageCenterDetails.Add(message.MessageCenterDetails.ImageAccessibilityText);
+                    messageCenterDetails.Add(message.MessageCenterDetails.ImageUrl);
+                    foreach (string textToPersonlise in messageCenterDetails)
+                    {
+                        if (!string.IsNullOrEmpty(textToPersonlise))
+                        {
+                            string personalizedText = SwrveTextTemplating.Apply(textToPersonlise, properties);
+                            if (string.IsNullOrEmpty(personalizedText))
+                            {
+                                SwrveLog.LogInfo("Text template could not be resolved: " + textToPersonlise + " in given properties.");
+                                return false;
+                            }
+                            else if (SwrveTextTemplating.HasPatternMatch(personalizedText))
+                            {
+                                SwrveLog.LogInfo("Not showing campaign with personalization outside of Message Center / without personalization info provided.");
+                                return false;
+                            }
+                        }
+                    }
+                }
+
                 for (int fi = 0; fi < message.Formats.Count; fi++)
                 {
                     SwrveMessageFormat format = message.Formats[fi];
@@ -185,6 +211,52 @@ namespace SwrveUnity.Messaging
                 SwrveLog.LogInfo("Not showing campaign, error with personalization" + exp.Message);
                 return false;
             }
+        }
+
+        public SwrveMessageCenterDetails ResolveMessageCenterDetails(SwrveMessageCenterDetails messageCenterDetails, Dictionary<string, string> personalization)
+        {
+            if (messageCenterDetails == null)
+            {
+                return null;
+            }
+
+            SwrveMessageCenterDetails personalizeMessageCenterDetails = new SwrveMessageCenterDetails();
+
+            try
+            {
+                string messageSubject = messageCenterDetails.Subject;
+                if (messageSubject != null)
+                {
+                    personalizeMessageCenterDetails.Subject = SwrveTextTemplating.Apply(messageSubject, personalization);
+                }
+
+                string messageDescription = messageCenterDetails.Description;
+                if (messageDescription != null)
+                {
+                    personalizeMessageCenterDetails.Description = SwrveTextTemplating.Apply(messageDescription, personalization);
+                }
+
+                string imageAccessibilityText = messageCenterDetails.ImageAccessibilityText;
+                if (imageAccessibilityText != null)
+                {
+                    personalizeMessageCenterDetails.ImageAccessibilityText = SwrveTextTemplating.Apply(imageAccessibilityText, personalization);
+                }
+
+                string imageUrl = messageCenterDetails.ImageUrl;
+                if (imageUrl != null)
+                {
+                    personalizeMessageCenterDetails.ImageUrl = SwrveTextTemplating.Apply(imageUrl, personalization);
+                }
+
+                personalizeMessageCenterDetails.ImageSha = messageCenterDetails.ImageSha; // not personalized
+            }
+            catch (SwrveSDKTextTemplatingException exp)
+            {
+                SwrveLog.LogInfo("Not loading message center campaign, error with personalization" + exp.Message);
+                return null;
+            }
+
+            return personalizeMessageCenterDetails;
         }
     }
 }

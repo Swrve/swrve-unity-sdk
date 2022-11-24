@@ -46,6 +46,12 @@ namespace SwrveUnity.Messaging
         {
             SwrveEmbeddedMessage message = new SwrveEmbeddedMessage();
             message.Campaign = campaign;
+
+            if (messageData.ContainsKey("name"))
+            {
+                message.Name = (string)messageData["name"];
+            }
+
             if (messageData.ContainsKey("priority"))
             {
                 message.Priority = MiniJsonHelper.GetInt(messageData, "priority");

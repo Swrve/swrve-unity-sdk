@@ -10,11 +10,6 @@ namespace SwrveUnity.Messaging
     public class SwrveMessage : SwrveBaseMessage
     {
         /// <summary>
-        /// Name of the message.
-        /// </summary>
-        public string Name;
-
-        /// <summary>
         /// List of formats available for the device.
         /// </summary>
         public List<SwrveMessageFormat> Formats;
@@ -82,6 +77,12 @@ namespace SwrveUnity.Messaging
                 Dictionary<string, object> messageFormatData = (Dictionary<string, object>)jsonFormats[i];
                 SwrveMessageFormat messageFormat = SwrveMessageFormat.LoadFromJSON(message, messageFormatData, defaultBackgroundColor);
                 message.Formats.Add(messageFormat);
+            }
+
+            if (messageData.ContainsKey("message_center_details"))
+            {
+                Dictionary<string, object> messageCenterDetails = (Dictionary<string, object>)messageData["message_center_details"];
+                message.MessageCenterDetails = SwrveMessageCenterDetails.LoadFromJSON(messageCenterDetails);
             }
 
             return message;
@@ -152,6 +153,25 @@ namespace SwrveUnity.Messaging
                 }
             }
 
+            if (this.MessageCenterDetails != null && !string.IsNullOrEmpty(this.MessageCenterDetails.ImageUrl))
+            {
+                try
+                {
+                    string resolvedUrl = SwrveTextTemplating.Apply(this.MessageCenterDetails.ImageUrl, personalizationProperties);
+                    byte[] dynamicAssetBytes = System.Text.Encoding.UTF8.GetBytes(resolvedUrl);
+                    messageAssets.Add(new SwrveAssetsQueueItem(SwrveHelper.sha1(dynamicAssetBytes), resolvedUrl, true, true));
+                }
+                catch (SwrveSDKTextTemplatingException exception)
+                {
+                    SwrveLog.LogWarning("Could not resolve message center personalization for: " + this.MessageCenterDetails.ImageUrl + " " + exception.ToString());
+                }
+            }
+
+            if (this.MessageCenterDetails != null && !string.IsNullOrEmpty(this.MessageCenterDetails.ImageSha))
+            {
+                messageAssets.Add(new SwrveAssetsQueueItem(this.MessageCenterDetails.ImageSha, this.MessageCenterDetails.ImageSha, true, false));
+            }
+
             return messageAssets;
         }
 
@@ -168,7 +188,17 @@ namespace SwrveUnity.Messaging
                 return false;
             }
 
-            return this.SwrveAssetsManager.AssetsOnDisk.Contains(assetName);
+            if (SwrveAssetsManager.AssetsOnDisk.Contains(assetName))
+            {
+                return true;
+            }
+
+            if (SwrveAssetsManager.AssetsOnDisk.Contains(assetName + ".gif"))
+            {
+                return false; // Gif campaigns are not compatible with unity so filter these out.
+            }
+
+            return false;
         }
 
         /// <summary>

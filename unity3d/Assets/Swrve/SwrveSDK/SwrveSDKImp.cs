@@ -34,7 +34,6 @@ public partial class SwrveSDK
     protected const string iOSdeviceTokenSave = "Swrve_iOSDeviceToken";
     protected const string FirebaseDeviceTokenSave = "Swrve_gcmDeviceToken";
     protected const string AdmDeviceTokenSave = "Swrve_admDeviceToken";
-    protected const string WindowsDeviceTokenSave = "Swrve_windowsDeviceToken";
     protected const string GoogleAdvertisingIdSave = "Swrve_googleAdvertisingId";
     protected const string AbTestUserResourcesSave = "srcngt2"; // Saved securely
     protected const string AbTestUserResourcesDiffSave = "rsdfngt2"; // Saved securely
@@ -46,7 +45,6 @@ public partial class SwrveSDK
     protected const string ResourcesCampaignFlushFrequencySave = "swrve_cr_flush_frequency";
     protected const string ResourcesCampaignFlushDelaySave = "swrve_cr_flush_delay";
 
-    private const string EmptyJSONObject = "{}";
     private const float DefaultCampaignResourcesFlushFrenquency = 60;
     private const float DefaultCampaignResourcesFlushRefreshDelay = 5;
     public const string DefaultAutoShowMessagesTrigger = "Swrve.Messages.showAtSessionStart";
@@ -104,8 +102,8 @@ public partial class SwrveSDK
 
     // Messaging related
     protected static readonly int CampaignEndpointVersion = 9;
-    protected static readonly int InAppMessageCampaignVersion = 7;
-    protected static readonly int EmbeddedCampaignVersion = 1;
+    protected static readonly int InAppMessageCampaignVersion = 9;
+    protected static readonly int EmbeddedCampaignVersion = 2;
     private static readonly int CampaignResponseVersion = 2;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
     /** Last campaign to come from /ad_journey_campaign endpoint */
@@ -117,12 +115,14 @@ public partial class SwrveSDK
     protected string swrveTemporaryPath;
     protected bool campaignsConnecting;
     protected bool autoShowMessagesEnabled;
-    protected Dictionary<int, SwrveCampaignState> campaignsState = new Dictionary<int, SwrveCampaignState>();
     protected List<SwrveBaseCampaign> campaigns = new List<SwrveBaseCampaign>();
+    // campaignRunningState is the current running state which importantly contains ShowMessagesAfterDelay which is not persisted.
+    protected Dictionary<int, SwrveCampaignState> campaignRunningState = new Dictionary<int, SwrveCampaignState>();
+    // campaignSettings is individual state values of impressions/status/etc with campaignId appended as key, which is serialized as json and persisted
+    // eg: "Impressions123"="1", "Status123"="Seen", "Impressions456"="0", "Status456"="UnSeen" 
     protected Dictionary<string, object> campaignSettings = new Dictionary<string, object>();
     protected Dictionary<string, string> appStoreLinks = new Dictionary<string, string>();
     protected SwrveInAppMessageView currentMessageView = null;
-    protected SwrveOrientation currentOrientation;
     protected IInputManager inputManager = NativeInputManager.Instance;
     protected string prefabName;
     protected bool sdkStarted;
@@ -522,8 +522,11 @@ public partial class SwrveSDK
             NamedEventInternal("Swrve.first_session", null, false);
         }
 
-#if UNITY_IOS
+#if UNITY_IOS || UNITY_ANDROID
         RefreshPushPermissions();
+#endif
+
+#if UNITY_IOS
         SaveConfigForPushDelivery();
 #endif
         this.QueueDeviceInfo();
@@ -1020,7 +1023,7 @@ public partial class SwrveSDK
             if (config.PushNotificationEnabled)
             {
                 // Ask for push notification permission dialog
-                if (config.PushNotificationEvents != null && config.PushNotificationEvents.Contains(eventName))
+                if (config.PushNotificationPermissionEvents != null && config.PushNotificationPermissionEvents.Contains(eventName))
                 {
                     RegisterForPushNotificationsIOS(false);
                 }
@@ -1028,6 +1031,13 @@ public partial class SwrveSDK
                 {
                     RegisterForPushNotificationsIOS(true);
                 }
+            }
+#endif
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (config.PushNotificationEnabled && config.PushNotificationPermissionEvents != null && config.PushNotificationPermissionEvents.Contains(eventName))
+            {
+                RequestNotificationPermission();
             }
 #endif
         }
@@ -1502,27 +1512,14 @@ public partial class SwrveSDK
                     {
                         if (message is SwrveMessage)
                         {
-                            // Handle the respective message type "SwrveMessage"
-                            if (config.InAppMessageConfig.TriggeredMessageListener != null)
+                            if (currentMessageView == null)
                             {
-                                // They are using a custom listener
-                                if (message != null && message is SwrveMessage)
-                                {
-                                    autoShowMessagesEnabled = false;
-                                    config.InAppMessageConfig.TriggeredMessageListener.OnMessageTriggered((SwrveMessage)message);
-                                    baseMessage = message;
-                                }
+                                autoShowMessagesEnabled = false;
+                                Dictionary<string, string> properties = GetPersonalizationProperties(null);
+                                Container.StartCoroutine(LaunchMessage(message, properties));
+                                baseMessage = message;
                             }
-                            else
-                            {
-                                if (currentMessageView == null)
-                                {
-                                    autoShowMessagesEnabled = false;
-                                    Dictionary<string, string> properties = GetPersonalizationProperties(null);
-                                    Container.StartCoroutine(LaunchMessage(message, properties));
-                                    baseMessage = message;
-                                }
-                            }
+
                             break;
                         }
                         else if (message is SwrveEmbeddedMessage)
@@ -1797,11 +1794,13 @@ public partial class SwrveSDK
 
                         if (loadingPreviousCampaignState)
                         {
-                            SwrveCampaignState campaignState = null;
-                            campaignsState.TryGetValue(campaign.Id, out campaignState);
-                            if (campaignState != null)
+                            // Try getting state from campaignRunningState (instead of settings) because it contains ShowMessagesAfterDelay which isn't persisted.
+                            // The ShowMessagesAfterDelay must still be adhered to even after a refresh of campaigns within the same session.
+                            SwrveCampaignState state = null;
+                            campaignRunningState.TryGetValue(campaign.Id, out state);
+                            if (state != null)
                             {
-                                campaign.State = campaignState;
+                                campaign.State = state;
                             }
                             else
                             {
@@ -1811,7 +1810,15 @@ public partial class SwrveSDK
                                 }
                             }
                         }
-                        campaignsState[campaign.Id] = campaign.State;
+                        campaignRunningState[campaign.Id] = campaign.State;
+
+                        string impressionsKey = "Impressions" + campaign.Id; // use the impressions key as an indicator to determine if the state for this campaign was ever saved.
+                        if (!campaignSettings.ContainsKey(impressionsKey))
+                        {
+                            // A campaign with no state saved in campaignSettings means it hasn't ever been triggered and is potentially new. Save the campaign state to record the download time.
+                            SaveCampaignData(campaign);
+                        }
+
                         newCampaigns.Add(campaign);
                     }
 
@@ -2151,6 +2158,7 @@ public partial class SwrveSDK
             // Move from SwrveCampaignState to the dictionary
             campaignSettings["Impressions" + campaign.Id] = campaign.Impressions;
             campaignSettings["Status" + campaign.Id] = campaign.Status.ToString();
+            campaignSettings["DownloadDate" + campaign.Id] = campaign.DownloadDate.Ticks;
 
             string serializedCampaignSettings = Json.Serialize(campaignSettings);
             storage.Save(CampaignsSettingsSave, serializedCampaignSettings, this.UserId);

@@ -8,6 +8,10 @@ namespace SwrveUnity.Messaging
     /// </summary>
     public abstract class SwrveBaseMessage
     {
+        /// <summary>
+        /// Name of the message.
+        /// </summary>
+        public string Name;
 
         /// <summary>
         /// Identifies the base message in a campaign.
@@ -31,5 +35,10 @@ namespace SwrveUnity.Messaging
         /// True if there is any format that supports the given orientation.
         /// </returns>
         public abstract bool SupportsOrientation(SwrveOrientation orientation);
+
+        /// <summary>
+        /// SwrveMessageCenterDetails.
+        /// </summary>
+        public SwrveMessageCenterDetails MessageCenterDetails;
     }
 }

@@ -78,13 +78,6 @@ extern "C"
         return [UnitySwrveHelper IDFV];
     }
 
-    void _swrveiOSRegisterForPushNotifications(char* jsonUNCategorySet, bool provisional)
-    {
-        #if !defined(SWRVE_NO_PUSH)
-        return [UnitySwrveHelper registerForPushNotifications:[UnitySwrveHelper CStringToNSString:jsonUNCategorySet] andProvisional:provisional];
-        #endif
-    }
-
     void _swrveiOSInitNative(char* jsonConfig)
     {
         [UnitySwrve init:jsonConfig];
@@ -191,8 +184,10 @@ extern "C"
 #endif
         }];
         return [UnitySwrveHelper NSStringCopy:pushAuthorizationFromSettings];
-#endif
+#else
+#pragma unused(componentName)
         return [UnitySwrveHelper NSStringCopy:swrve_permission_status_unsupported];
+#endif
     }
 
     void _saveConfigForPushDelivery() {
