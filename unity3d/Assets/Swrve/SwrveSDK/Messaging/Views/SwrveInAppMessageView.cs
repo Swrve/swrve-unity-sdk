@@ -294,11 +294,11 @@ namespace SwrveUnity.Messaging
 
         private static void UnloadAssets(SwrveWidgetView[] _widgetViews)
         {
-            for (int ii = 0; ii < _widgetViews.Length; ii++)
-            {
-                SwrveWidgetView widget = _widgetViews[ii];
-                widget.Unload();
-            }
+            // for (int ii = 0; ii < _widgetViews.Length; ii++)
+            // {
+            //     SwrveWidgetView widget = _widgetViews[ii];
+            //     widget.Unload();
+            // }
         }
 
         public IEnumerator PreloadAndDisplay(CoroutineReference<bool> wereAllLoaded)

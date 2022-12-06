@@ -33,13 +33,18 @@ namespace SwrveUnity.Messaging
 
         public abstract void Render(float scale, int centerx, int centery, bool rotatedFormat);
 
-        public void Unload()
+        private void Unload()
         {
             if (Texture != null)
             {
                 Texture2D.Destroy(Texture);
                 Texture = null;
             }
+        }
+
+        ~SwrveWidgetView()
+        {
+            Unload();
         }
     }
 }
