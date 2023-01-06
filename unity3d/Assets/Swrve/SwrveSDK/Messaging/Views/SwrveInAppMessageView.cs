@@ -378,38 +378,40 @@ namespace SwrveUnity.Messaging
         private IEnumerator LoadAsset(string fileName, CoroutineReference<Texture2D> texture)
         {
             string filePath = GetTemporaryPathFileName(fileName);
-            UnityWebRequest www = UnityWebRequestTexture.GetTexture("file://" + filePath);
-            yield return www.SendWebRequest();
+            using (UnityWebRequest www = UnityWebRequestTexture.GetTexture("file://" + filePath))
+            {
+                yield return www.SendWebRequest();
 #if UNITY_2020_1_OR_NEWER
-            if (www.result == UnityWebRequest.Result.Success)
-            {
-#else
-            if (!www.isNetworkError && !www.isHttpError)
-            {
-#endif
-                Texture2D loadedTexture = ((DownloadHandlerTexture)www.downloadHandler).texture;
-                texture.Value(loadedTexture);
-            }
-            else
-            {
-                SwrveLog.LogError("Could not load asset with WWW " + filePath + ": " + www.error);
-                // Try to load from file system
-                if (CrossPlatformFile.Exists(filePath))
+                if (www.result == UnityWebRequest.Result.Success)
                 {
-                    byte[] byteArray = CrossPlatformFile.ReadAllBytes(filePath);
-                    Texture2D loadedTexture = new Texture2D(4, 4);
-                    if (loadedTexture.LoadImage(byteArray))
-                    {
-                        texture.Value(loadedTexture);
-                    }
-                    else
-                    {
-                        SwrveLog.LogWarning("Could not load asset from I/O" + filePath);
-                    }
+#else
+                if (!www.isNetworkError && !www.isHttpError)
+                {
+#endif
+                    Texture2D loadedTexture = ((DownloadHandlerTexture)www.downloadHandler).texture;
+                    texture.Value(loadedTexture);
                 }
                 else
                 {
-                    SwrveLog.LogError("The file " + filePath + " does not exist.");
+                    SwrveLog.LogError("Could not load asset with WWW " + filePath + ": " + www.error);
+                    // Try to load from file system
+                    if (CrossPlatformFile.Exists(filePath))
+                    {
+                        byte[] byteArray = CrossPlatformFile.ReadAllBytes(filePath);
+                        Texture2D loadedTexture = new Texture2D(4, 4);
+                        if (loadedTexture.LoadImage(byteArray))
+                        {
+                            texture.Value(loadedTexture);
+                        }
+                        else
+                        {
+                            SwrveLog.LogWarning("Could not load asset from I/O" + filePath);
+                        }
+                    }
+                    else
+                    {
+                        SwrveLog.LogError("The file " + filePath + " does not exist.");
+                    }
                 }
             }
         }

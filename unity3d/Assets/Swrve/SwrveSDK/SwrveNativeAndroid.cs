@@ -1102,28 +1102,36 @@ public partial class SwrveSDK
 
     private void RequestNotificationPermission()
     {
+        if (GetNativeOSVersion() < 33)
+        {
+            SwrveLog.Log("RequestNotificationPermission. Notification permission request not required because device below api level 33.");
+            return;
+        }
+
         bool hasUserAuthorizedPermission = Permission.HasUserAuthorizedPermission("android.permission.POST_NOTIFICATIONS");
         if (hasUserAuthorizedPermission)
         {
             SwrveLog.Log("RequestNotificationPermission. POST_NOTIFICATIONS is already granted. Not requesting.");
+            return;
         }
-        else if (GetTargetOS() < 33)
+
+        if (GetTargetOS() < 33)
         {
+            // Must check the Target API version also otherwise permission request is automatically handled by android
             SwrveLog.Log("RequestNotificationPermission. Android Target API version needs to be 33 or greater. Not requesting.");
+            return;
         }
-        else
-        {
-            SwrveLog.Log("RequestNotificationPermission. Attempting to showing system permission prompt.");
+
+        SwrveLog.Log("RequestNotificationPermission. Attempting to showing system permission prompt.");
 #if UNITY_2020_2_OR_NEWER
-            var callbacks = new PermissionCallbacks();
-            callbacks.PermissionDenied += PermissionCallbacks_PermissionDenied;
-            callbacks.PermissionGranted += PermissionCallbacks_PermissionGranted;
-            callbacks.PermissionDeniedAndDontAskAgain += PermissionCallbacks_PermissionDeniedAndDontAskAgain;
-            Permission.RequestUserPermission("android.permission.POST_NOTIFICATIONS", callbacks);
+        var callbacks = new PermissionCallbacks();
+        callbacks.PermissionDenied += PermissionCallbacks_PermissionDenied;
+        callbacks.PermissionGranted += PermissionCallbacks_PermissionGranted;
+        callbacks.PermissionDeniedAndDontAskAgain += PermissionCallbacks_PermissionDeniedAndDontAskAgain;
+        Permission.RequestUserPermission("android.permission.POST_NOTIFICATIONS", callbacks);
 #elif UNITY_2018_3_OR_NEWER
-            Permission.RequestUserPermission("android.permission.POST_NOTIFICATIONS");
+        Permission.RequestUserPermission("android.permission.POST_NOTIFICATIONS");
 #endif
-        }
     }
 
     private static void IncrementNotificationPermissionAnsweredTime()
