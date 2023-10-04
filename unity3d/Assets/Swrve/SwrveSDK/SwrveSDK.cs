@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 /// </summary>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "9.0.1";
+    public const string SdkVersion = "9.1.0";
 
     protected int appId;
     /// <summary>
@@ -1170,13 +1170,8 @@ public partial class SwrveSDK
                 campaign.MessageWasShownToUser(messageFormat);
                 SaveCampaignData(campaign);
             }
-            // Add a custom payload that define that isn't an embedded Message.
-            Dictionary<string, string> payload = new Dictionary<string, string>();
-            payload.Add("embedded", "false");
-            // Send Impression event
-            String viewEvent = "Swrve.Messages.Message-" + messageFormat.Message.Id + ".impression";
-            SwrveLog.Log("Sending view event: " + viewEvent);
-            NamedEventInternal(viewEvent, payload, false);
+
+            SendImpressionEvent(messageFormat.Message.Id, false);
         }
         catch (Exception e)
         {
@@ -1617,12 +1612,12 @@ public partial class SwrveSDK
         }
     }
 
-    protected virtual IEnumerator ShowMessageForEvent(string eventName, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
+    protected virtual IEnumerator ShowMessageForEvent(string eventName, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null, ISwrveEmbeddedListener embeddedListener = null)
     {
-        return ShowMessageForEvent(eventName, null, message, customButtonListener, messageListener, clipboardButtonListener, embeddedMessageListener);
+        return ShowMessageForEvent(eventName, null, message, customButtonListener, messageListener, clipboardButtonListener, embeddedMessageListener, embeddedListener);
     }
 
-    protected virtual IEnumerator ShowMessageForEvent(string eventName, IDictionary<string, string> payload, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
+    protected virtual IEnumerator ShowMessageForEvent(string eventName, IDictionary<string, string> payload, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null, ISwrveEmbeddedListener embeddedListener = null)
     {
 #if SWRVE_SUPPORTED_PLATFORM
         if (!IsSDKReady())
@@ -1637,14 +1632,32 @@ public partial class SwrveSDK
             {
                 if (currentMessageView == null)
                 {
-                    yield return Container.StartCoroutine(LaunchMessage(message, properties));
+                    if (message.Control)
+                    {
+                        SendImpressionEvent(message.Id, false);
+                    }
+                    else
+                    {
+                        yield return Container.StartCoroutine(LaunchMessage(message, properties));
+                    }
                 }
             }
             else if (message is SwrveEmbeddedMessage)
             {
-                if (embeddedMessageListener != null)
+                if (embeddedListener != null)
                 {
-                    embeddedMessageListener.OnMessage((SwrveEmbeddedMessage)message, properties);
+                    embeddedListener.OnMessage((SwrveEmbeddedMessage)message, properties, message.Control);
+                }
+                else
+                {
+                    if (message.Control)
+                    {
+                        SendImpressionEvent(message.Id, true);
+                    }
+                    else if (embeddedMessageListener != null)
+                    {
+                        embeddedMessageListener.OnMessage((SwrveEmbeddedMessage)message, properties);
+                    }
                 }
             }
         }
@@ -1861,6 +1874,26 @@ public partial class SwrveSDK
     }
 
     /// <summary>
+    /// Send impression event for an embedded control campaign
+    /// </summary>
+    /// <param name="message">
+    /// Embedded message that has been processed.
+    /// </param>
+    public virtual void EmbeddedControlMessageImpressionEvent(SwrveEmbeddedMessage message)
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        try
+        {
+            SendImpressionEvent(message.Id, true);
+        }
+        catch (Exception e)
+        {
+            SwrveLog.LogError("Error while processing embedded message impression " + e);
+        }
+#endif
+    }
+
+    /// <summary>
     /// Inform that am embedded message has been served and processed. This function should be called
     /// by your implementation to update the campaign information and send the appropriate data to
     /// Swrve.
@@ -1885,13 +1918,8 @@ public partial class SwrveSDK
                 campaign.WasShownToUser();
                 SaveCampaignData(campaign);
             }
-            // Add a custom payload that define that isn't an embedded Message.
-            Dictionary<string, string> payload = new Dictionary<string, string>();
-            payload.Add("embedded", "true");
-            // Send Impression event
-            String viewEvent = "Swrve.Messages.Message-" + message.Id + ".impression";
-            SwrveLog.Log("Sending view event: " + viewEvent);
-            NamedEventInternal(viewEvent, payload, false);
+
+            SendImpressionEvent(message.Id, true);
         }
         catch (Exception e)
         {

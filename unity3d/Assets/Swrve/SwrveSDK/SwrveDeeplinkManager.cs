@@ -122,6 +122,13 @@ namespace SwrveUnity
                                 this.sdk.UpdateCdnPaths(additionalInfo);
                                 int version = MiniJsonHelper.GetInt(additionalInfo, "version");
 
+                                if (root.ContainsKey("real_time_user_properties"))
+                                {
+                                    // Process realtime user properties
+                                    Dictionary<string, object> realtimeUserProperties = (Dictionary<string, object>)root["real_time_user_properties"];
+                                    this.sdk.SaveRealTimeUserPropertiesInCache(realtimeUserProperties);
+                                }
+
                                 if (this.sdk.config.MessagingEnabled && version == EXTERNAL_CAMPAIGN_RESPONSE_VERSION)
                                 {
                                     this.sdk.SaveExternalCampaignCache(response.Body);
@@ -157,18 +164,30 @@ namespace SwrveUnity
                         throw new Exception("Campaign was not in a format that could be parsed");
                     }
 
-                    // For embedded Camapign we just trigger the callback, there is not assets do download.
+                    // For embedded Camapign we just trigger the callback, there is no assets to download.
                     if (campaign is SwrveEmbeddedCampaign)
                     {
-                        if (sdk.config.EmbeddedMessageConfig.EmbeddedMessageListener != null)
+                        SwrveEmbeddedMessage embeddedMessage = ((SwrveEmbeddedCampaign)campaign).Message;
+                        if (sdk.config.EmbeddedMessageConfig.EmbeddedListener != null)
                         {
-                            SwrveEmbeddedMessage embeddedMessage = ((SwrveEmbeddedCampaign)campaign).Message;
-                            Dictionary<string, string> personalizationProperties = this.sdk.GetPersonalizationProperties(null);
-                            sdk.config.EmbeddedMessageConfig.EmbeddedMessageListener.OnMessage(embeddedMessage, personalizationProperties);
+                            Dictionary<string, string> properties = this.sdk.GetPersonalizationProperties(null);
+                            sdk.config.EmbeddedMessageConfig.EmbeddedListener.OnMessage(embeddedMessage, properties, embeddedMessage.Control);
                         }
                         else
                         {
-                            SwrveLog.LogError("Could not find a valid EmbeddedMessageListener defined as part of the EmbeddedMessageConfig, be sure that you did set it as parf of the SDK initialisation");
+                            if (embeddedMessage.Control)
+                            {
+                                this.sdk.SendImpressionEvent(embeddedMessage.Id, true);
+                            }
+                            else if (sdk.config.EmbeddedMessageConfig.EmbeddedMessageListener != null)
+                            {
+                                Dictionary<string, string> properties = this.sdk.GetPersonalizationProperties(null);
+                                sdk.config.EmbeddedMessageConfig.EmbeddedMessageListener.OnMessage(embeddedMessage, properties);
+                            }
+                            else
+                            {
+                                SwrveLog.LogError("Could not find a valid EmbeddedMessageListener defined as part of the EmbeddedMessageConfig, be sure that you did set it as part of the SDK initialisation");
+                            }
                         }
                     }
                     else

@@ -135,7 +135,8 @@ namespace SwrveUnity.Messaging
                 }
 
                 // remove one as we set it as it went over the loop
-                style.fontSize = currentFontSize - 1;
+                // and another one (to avoid an edge case quirk where wordwrap triggers only when rendering)
+                style.fontSize = currentFontSize - (currentFontSize >= 2 ? 2 : 0);
             }
         }
 

@@ -22,6 +22,9 @@
            ADM (android:required="true") or can work without ADM (android:required="false").
            If you specify android:required="false", your app must degrade gracefully if ADM
            is unavailable. -->
+        <!-- 
+        "amazon:enable-feature" is causing build error in unity 2023 See https://emailabove.jira.com/browse/MOBILE-33433
+        -->
         <amazon:enable-feature
             android:name="com.amazon.device.messaging" android:required="true"/>
 

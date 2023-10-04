@@ -189,6 +189,18 @@ namespace SwrveUnity.Messaging
             {
                 actionType = SwrveActionType.PageLink;
             }
+            else if (actionTypeStr.ToLower().Equals("open_notification_settings"))
+            {
+                actionType = SwrveActionType.OpenNotificationSettings;
+            }
+            else if (actionTypeStr.ToLower().Equals("open_app_settings"))
+            {
+                actionType = SwrveActionType.OpenAppSettings;
+            }
+            else if (actionTypeStr.ToLower().Equals("start_geo"))
+            {
+                actionType = SwrveActionType.StartGeo;
+            }
 
             button.ActionType = actionType;
             button.Action = StringValueFromAttribute(buttonData, "action");
@@ -199,6 +211,16 @@ namespace SwrveUnity.Messaging
                 {
                     button.AppId = int.Parse(appId);
                 }
+            }
+
+            if (buttonData.ContainsKey("events"))
+            {
+                button.events = (List<object>)buttonData["events"];
+            }
+
+            if (buttonData.ContainsKey("user_updates"))
+            {
+                button.userUpdates = (List<object>)buttonData["user_updates"];
             }
 
             return button;

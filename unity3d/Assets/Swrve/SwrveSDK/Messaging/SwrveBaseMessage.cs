@@ -9,6 +9,11 @@ namespace SwrveUnity.Messaging
     public abstract class SwrveBaseMessage
     {
         /// <summary>
+        /// Is the message a control or treatment.
+        /// </summary>
+        public bool Control;
+
+        /// <summary>
         /// Name of the message.
         /// </summary>
         public string Name;

@@ -32,7 +32,11 @@ namespace SwrveUnity.Messaging
         /// </summary>
         public void setType(string typeString)
         {
-            if (typeString.Equals(Enum.GetName(typeof(SwrveEmbeddedCampaignType), SwrveEmbeddedCampaignType.JSON), StringComparison.InvariantCultureIgnoreCase))
+            if (typeString == null)
+            {
+                this.type = SwrveEmbeddedCampaignType.JSON;
+            }
+            else if (typeString.Equals(Enum.GetName(typeof(SwrveEmbeddedCampaignType), SwrveEmbeddedCampaignType.JSON), StringComparison.InvariantCultureIgnoreCase))
             {
                 this.type = SwrveEmbeddedCampaignType.JSON;
             }
@@ -46,6 +50,8 @@ namespace SwrveUnity.Messaging
         {
             SwrveEmbeddedMessage message = new SwrveEmbeddedMessage();
             message.Campaign = campaign;
+
+            message.Control = messageData.ContainsKey("control") && (bool)messageData["control"];
 
             if (messageData.ContainsKey("name"))
             {

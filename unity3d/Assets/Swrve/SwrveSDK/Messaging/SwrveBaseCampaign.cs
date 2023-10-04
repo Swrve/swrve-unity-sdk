@@ -459,7 +459,20 @@ namespace SwrveUnity.Messaging
         /// </returns>
         public bool CanTrigger(string eventName, IDictionary<string, string> payload = null)
         {
-            return GetTriggers().Any(trig => trig.CanTrigger(eventName, payload));
+            List<SwrveTrigger> triggers = GetTriggers();
+            for (int t = 0; t < triggers.Count; t++)
+            {
+                SwrveTrigger trigger = triggers[t];
+                if (trigger == null)
+                {
+                    SwrveLog.LogWarning("Trigger is null for " + Name + " : Campaign id " + Id);
+                }
+                else if (trigger.CanTrigger(eventName, payload))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         #region Abstract Methods of SwrveBaseCampaign

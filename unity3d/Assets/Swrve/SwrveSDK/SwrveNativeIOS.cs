@@ -339,15 +339,15 @@ public partial class SwrveSDK
         if (config.PushNotificationEnabled)
         {
             string actionIdentifier = Unity.Notifications.iOS.iOSNotificationCenter.GetLastRespondedNotificationAction();
-            if (!string.IsNullOrEmpty(actionIdentifier)) 
+            if (!string.IsNullOrEmpty(actionIdentifier))
             {
                 ProcessRemoteNotificationUserInfo(notification.UserInfo, actionIdentifier);
             }
-            else 
+            else
             {
                 SwrveLog.LogWarning("Push action identifier is null, not processing push");
             }
-         
+
             // Do not call listener for silent pushes
             if (notification.UserInfo == null || !notification.UserInfo.ContainsKey(SilentPushTrackingKey))
             {
@@ -630,7 +630,7 @@ public partial class SwrveSDK
     {
         object rawId = userInfo[PushTrackingKey];
         string pushId = rawId.ToString();
-        // SWRVE-5613 Hack
+        // MOBILE-5613 Hack
         if (rawId is Int64)
         {
             pushId = ConvertInt64ToInt32Hack((Int64)rawId).ToString();

@@ -6,12 +6,16 @@ using SwrveUnityMiniJSON;
 
 namespace SwrveUnity.Helpers
 {
+
     public enum WwwDeducedError
     {
         NoError,
         NetworkError,
         ApplicationErrorHeader,
-        ApplicationErrorBody
+        ApplicationErrorBody,
+        UserError,
+        ServerError,
+        ConnectionError
     }
 
     /// <summary>
@@ -19,6 +23,8 @@ namespace SwrveUnity.Helpers
     /// </summary>
     public class UnityWwwHelper
     {
+        public static int HTTP_TOO_MANY_REQUESTS = 429;
+
         /// <summary>
         /// Attempts to deduce the WWW error
         /// </summary>
@@ -42,8 +48,8 @@ namespace SwrveUnity.Helpers
             if (request.isNetworkError)
             {
 #endif
-                SwrveLog.LogError("Request network error: " + request.error + " in " + request.url);
-                return WwwDeducedError.NetworkError;
+                SwrveLog.LogError("Request connection error: " + request.error + " in " + request.url);
+                return WwwDeducedError.ConnectionError;
             }
 
             // Check response headers for X-Swrve-Error
@@ -81,6 +87,23 @@ namespace SwrveUnity.Helpers
                 }
             }
 
+            //Get range Http response code is in.
+            if (isSuccessResponseCode(request.responseCode))
+            {
+                return WwwDeducedError.NoError;
+            }
+            else if (isUserErrorResponseCode(request.responseCode))
+            {
+                SwrveLog.LogWarning("Request user error: " + request.error + " in " + request.url);
+                return WwwDeducedError.UserError;
+            }
+            else if (isServerErrorResponseCode(request.responseCode))
+            {
+                SwrveLog.LogWarning("Request server error: " + request.error + " in " + request.url);
+                return WwwDeducedError.ServerError;
+            }
+
+            //Fallback to legacy, generic error if no responseCode availble (or in other range)
             if (!string.IsNullOrEmpty(request.error))
             {
                 SwrveLog.LogError("Request network error: " + request.error + " in " + request.url);
@@ -90,26 +113,21 @@ namespace SwrveUnity.Helpers
             return WwwDeducedError.NoError;
         }
 
-        public static int parseResponseCode(string statusLine)
+        protected static bool isUserErrorResponseCode(long responseCode)
         {
-            int ret = 0;
-
-            string[] components = statusLine.Split(' ');
-            if (components.Length < 3)
-            {
-                Debug.LogError("invalid response status: " + statusLine);
-            }
-            else
-            {
-                if (!int.TryParse(components[1], out ret))
-                {
-                    Debug.LogError("invalid response code: " + components[1]);
-                }
-            }
-
-            return ret;
+            return (responseCode >= 400 && responseCode < 500);
         }
 
+        protected static bool isSuccessResponseCode(long responseCode)
+        {
+            return (responseCode >= 200 && responseCode < 300);
+        }
+
+        protected static bool isServerErrorResponseCode(long responseCode)
+        {
+            return (responseCode >= 500);
+        }
 
     }
+
 }

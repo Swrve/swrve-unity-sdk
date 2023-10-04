@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace SwrveUnity.Messaging
 {
@@ -36,5 +37,15 @@ namespace SwrveUnity.Messaging
         /// Button Id of the button¬
         /// </summary>
         public long ButtonId;
+
+        /// <summary>
+        /// Button events
+        /// </summary>
+        public IList<object> events;
+
+        /// <summary>
+        /// Button user updates
+        /// </summary>
+        public IList<object> userUpdates;
     }
 }

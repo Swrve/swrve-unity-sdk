@@ -14,11 +14,11 @@ namespace SwrveUnity.Messaging
         /// </summary>
         public List<SwrveMessageFormat> Formats;
 
-        private ISwrveAssetsManager SwrveAssetsManager;
+        private ISwrveAssetsManager AssetsManager;
 
         private SwrveMessage(ISwrveAssetsManager swrveAssetsManager, SwrveInAppCampaign campaign)
         {
-            this.SwrveAssetsManager = swrveAssetsManager;
+            this.AssetsManager = swrveAssetsManager;
             this.Campaign = campaign;
             this.Formats = new List<SwrveMessageFormat>();
         }
@@ -63,6 +63,7 @@ namespace SwrveUnity.Messaging
             SwrveMessage message = new SwrveMessage(swrveAssetsManager, campaign);
             message.Id = MiniJsonHelper.GetInt(messageData, "id");
             message.Name = (string)messageData["name"];
+            message.Control = messageData.ContainsKey("control") && (bool)messageData["control"];
 
             if (messageData.ContainsKey("priority"))
             {
@@ -188,14 +189,14 @@ namespace SwrveUnity.Messaging
                 return false;
             }
 
-            if (SwrveAssetsManager.AssetsOnDisk.Contains(assetName))
+            if (AssetsManager.AssetsOnDisk.Contains(assetName))
             {
                 return true;
             }
 
-            if (SwrveAssetsManager.AssetsOnDisk.Contains(assetName + ".gif"))
+            if (AssetsManager.AssetsOnDisk.Contains(assetName + SwrveAssetsManager.ASSET_NOT_SUPPORTED_EXT))
             {
-                return false; // Gif campaigns are not compatible with unity so filter these out.
+                return false; // Some assets, such as Gif campaigns, are not supported so filter these out.
             }
 
             return false;
@@ -244,7 +245,10 @@ namespace SwrveUnity.Messaging
                         for (int bi = 0; bi < page.Buttons.Count; bi++)
                         {
                             SwrveButton button = page.Buttons[bi];
-                            if (button.ActionType == SwrveActionType.Capability)
+                            if (button.ActionType == SwrveActionType.Capability
+                                || button.ActionType == SwrveActionType.OpenAppSettings
+                                || button.ActionType == SwrveActionType.OpenNotificationSettings
+                                || button.ActionType == SwrveActionType.StartGeo)
                             {
                                 return false;
                             }

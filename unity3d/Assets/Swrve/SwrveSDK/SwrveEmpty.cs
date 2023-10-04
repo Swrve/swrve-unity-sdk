@@ -62,12 +62,12 @@ public class SwrveEmpty : SwrveSDK
         return false;
     }
 
-    protected override IEnumerator ShowMessageForEvent(string eventName, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
+    protected override IEnumerator ShowMessageForEvent(string eventName, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null, ISwrveEmbeddedListener embeddedListener = null)
     {
         yield return null;
     }
 
-    protected override IEnumerator ShowMessageForEvent(string eventName, IDictionary<string, string> payload, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null)
+    protected override IEnumerator ShowMessageForEvent(string eventName, IDictionary<string, string> payload, SwrveBaseMessage message, ISwrveCustomButtonListener customButtonListener = null, ISwrveMessageListener messageListener = null, ISwrveClipboardButtonListener clipboardButtonListener = null, ISwrveEmbeddedMessageListener embeddedMessageListener = null, ISwrveEmbeddedListener embeddedListener = null)
     {
         yield return null;
     }
@@ -149,6 +149,10 @@ public class SwrveEmpty : SwrveSDK
     }
 
     protected override void MessageWasShownToUser(SwrveMessageFormat messageFormat)
+    {
+    }
+
+    public override void EmbeddedControlMessageImpressionEvent(SwrveEmbeddedMessage message)
     {
     }
 

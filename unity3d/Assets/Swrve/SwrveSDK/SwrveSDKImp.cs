@@ -102,8 +102,8 @@ public partial class SwrveSDK
 
     // Messaging related
     protected static readonly int CampaignEndpointVersion = 9;
-    protected static readonly int InAppMessageCampaignVersion = 9;
-    protected static readonly int EmbeddedCampaignVersion = 2;
+    protected static readonly int InAppMessageCampaignVersion = 11;
+    protected static readonly int EmbeddedCampaignVersion = 3;
     private static readonly int CampaignResponseVersion = 2;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
     /** Last campaign to come from /ad_journey_campaign endpoint */
@@ -920,11 +920,13 @@ public partial class SwrveSDK
     {
         yield return Container.StartCoroutine(restClient.Post(eventsUrl, eventsPostEncodedData, requestHeaders, delegate (RESTResponse response)
         {
-            if (response.Error != WwwDeducedError.NetworkError)
+            //Clear the events queue and don't send again on any condition except for:
+            //Network Connection Failure, Http Server (5xx) Error, or Request Limit throttling
+            //(in which cases the events remain in the buffer for re-send attempts later)
+            if (!(response.Error == WwwDeducedError.ServerError
+                    || response.Error == WwwDeducedError.ConnectionError
+                    || response.ResponseCode == UnityWwwHelper.HTTP_TOO_MANY_REQUESTS))
             {
-                // - made it there and it was ok
-                // - made it there and it was rejected
-                // either way don't send again
                 ClearEventBuffer();
                 eventsPostEncodedData = null;
             }
@@ -1082,7 +1084,7 @@ public partial class SwrveSDK
             else
             {
                 //Handle SwrveEmbeddedCampaign and SwrveInAppCampaign
-                StartTask("ShowMessageForEvent", ShowMessageForEvent(eventName, payload, baseMessage, config.InAppMessageConfig.CustomButtonListener, config.InAppMessageConfig.MessageListener, config.InAppMessageConfig.ClipboardButtonListener, config.EmbeddedMessageConfig.EmbeddedMessageListener));
+                StartTask("ShowMessageForEvent", ShowMessageForEvent(eventName, payload, baseMessage, config.InAppMessageConfig.CustomButtonListener, config.InAppMessageConfig.MessageListener, config.InAppMessageConfig.ClipboardButtonListener, config.EmbeddedMessageConfig.EmbeddedMessageListener, config.EmbeddedMessageConfig.EmbeddedListener));
             }
         }
     }
@@ -1294,11 +1296,89 @@ public partial class SwrveSDK
                 {
                     DismissMessage();
                 }
+
+                Dictionary<string, string> properties = GetPersonalizationProperties(null);
+                queueButtonEvents(button.events, properties);
+                queueButtonUserUpdates(button.userUpdates, properties);
             }
             catch (Exception exp)
             {
                 SwrveLog.LogError("Error processing the clicked button: " + exp.Message);
                 DismissMessage();
+            }
+        }
+    }
+
+    private void addPayload(Dictionary<string, string> newPayload, IDictionary payload, Dictionary<string, string> personlisation)
+    {
+        string key = (string)payload["key"];
+        string value = (string)payload["value"];
+        string personalizedText;
+        try
+        {
+            personalizedText = SwrveTextTemplating.Apply(value, personlisation);
+            if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(personalizedText))
+            {
+                newPayload.Add(key, personalizedText);
+            }
+        }
+        catch (SwrveSDKTextTemplatingException e)
+        {
+            SwrveLog.LogError("Failed to resolve personalization for key:" + key + " value: " + value + "error " + e.Message);
+        }
+    }
+    private void queueButtonEvents(IList<object> events, Dictionary<string, string> personlisation)
+    {
+        if (events != null)
+        {
+            try
+            {
+                for (int i = 0; i < events.Count; i++)
+                {
+                    IDictionary eventjson = events[i] as IDictionary;
+                    string name = (string)eventjson["name"];
+                    IList<object> payloadArray = eventjson["payload"] as IList<object>;
+
+                    Dictionary<string, string> eventPayload = new Dictionary<string, string>();
+                    if (payloadArray != null)
+                    {
+                        for (int y = 0; y < payloadArray.Count; y++)
+                        {
+                            IDictionary keyValueMap = payloadArray[y] as IDictionary;
+                            addPayload(eventPayload, keyValueMap, personlisation);
+                        }
+                    }
+
+                    NamedEvent(name, eventPayload);
+                }
+            }
+            catch (Exception e)
+            {
+                SwrveLog.LogError("Could not queue custom events associated with this button " + e.Message);
+            }
+        }
+    }
+
+    private void queueButtonUserUpdates(IList<object> userUpdates, Dictionary<string, string> personlisation)
+    {
+        if (userUpdates != null)
+        {
+            try
+            {
+                Dictionary<string, string> userPayload = new Dictionary<string, string>();
+                for (int i = 0; i < userUpdates.Count; i++)
+                {
+                    IDictionary keyValueMap = userUpdates[i] as IDictionary;
+                    addPayload(userPayload, keyValueMap, personlisation);
+                }
+                if (userPayload.Count() > 0)
+                {
+                    UserUpdate(userPayload);
+                }
+            }
+            catch (Exception e)
+            {
+                SwrveLog.LogError("Could not queue custom user updates associated with this button " + e.Message);
             }
         }
     }
@@ -1430,13 +1510,24 @@ public partial class SwrveSDK
             else if (campaign is SwrveEmbeddedCampaign)
             {
                 SwrveEmbeddedMessage embeddedMessage = ((SwrveEmbeddedCampaign)campaign).Message;
-                if (config.EmbeddedMessageConfig.EmbeddedMessageListener != null)
+                if (config.EmbeddedMessageConfig.EmbeddedListener != null)
                 {
-                    config.EmbeddedMessageConfig.EmbeddedMessageListener.OnMessage(embeddedMessage, properties);
+                    config.EmbeddedMessageConfig.EmbeddedListener.OnMessage(embeddedMessage, properties, embeddedMessage.Control);
                 }
                 else
                 {
-                    SwrveLog.LogError("Could not find a valid EmbeddedMessageListener defined as part of the EmbeddedMessageConfig, be sure that you did set it as parf of the SDK initialisation");
+                    if (embeddedMessage.Control)
+                    {
+                        SendImpressionEvent(embeddedMessage.Id, true);
+                    }
+                    else if (config.EmbeddedMessageConfig.EmbeddedMessageListener != null)
+                    {
+                        config.EmbeddedMessageConfig.EmbeddedMessageListener.OnMessage(embeddedMessage, properties);
+                    }
+                    else
+                    {
+                        SwrveLog.LogError("Could not find a valid EmbeddedMessageListener defined as part of the EmbeddedMessageConfig, be sure that you did set it as part of the SDK initialisation");
+                    }
                 }
             }
         }
@@ -1444,6 +1535,20 @@ public partial class SwrveSDK
         {
             this.campaignDisplayQueue.Add(campaign);
         }
+    }
+
+    internal void SendImpressionEvent(int messageId, bool isEmbedded)
+    {
+#if SWRVE_SUPPORTED_PLATFORM
+        // Add a custom payload that define that isn't an embedded Message.
+        Dictionary<string, string> payload = new Dictionary<string, string>();
+        string isEmbeddedString = isEmbedded ? "true" : "false";
+        payload.Add("embedded", isEmbeddedString);
+
+        String viewEvent = "Swrve.Messages.Message-" + messageId + ".impression";
+        SwrveLog.Log("Sending view event: " + viewEvent);
+        NamedEventInternal(viewEvent, payload, false);
+#endif
     }
 
     private void HandleNextCampaign()
@@ -1514,10 +1619,20 @@ public partial class SwrveSDK
                         {
                             if (currentMessageView == null)
                             {
-                                autoShowMessagesEnabled = false;
-                                Dictionary<string, string> properties = GetPersonalizationProperties(null);
-                                Container.StartCoroutine(LaunchMessage(message, properties));
-                                baseMessage = message;
+                                if (message.Control)
+                                {
+                                    autoShowMessagesEnabled = false;
+                                    SendImpressionEvent(message.Id, false);
+                                    baseMessage = message;
+                                }
+                                else
+                                {
+                                    autoShowMessagesEnabled = false;
+                                    Dictionary<string, string> properties = GetPersonalizationProperties(null);
+                                    Container.StartCoroutine(LaunchMessage(message, properties));
+                                    baseMessage = message;
+                                }
+
                             }
 
                             break;
@@ -1527,12 +1642,28 @@ public partial class SwrveSDK
                             // Handle the respective message type "SwrveEmbeddedMessage"
                             if (currentMessageView == null)
                             {
-                                if (config.EmbeddedMessageConfig.EmbeddedMessageListener != null)
+                                if (config.EmbeddedMessageConfig.EmbeddedListener != null)
                                 {
                                     autoShowMessagesEnabled = false;
                                     Dictionary<string, string> properties = GetPersonalizationProperties(null);
-                                    config.EmbeddedMessageConfig.EmbeddedMessageListener.OnMessage((SwrveEmbeddedMessage)message, properties);
+                                    config.EmbeddedMessageConfig.EmbeddedListener.OnMessage((SwrveEmbeddedMessage)message, properties, message.Control);
                                     baseMessage = message;
+                                }
+                                else
+                                {
+                                    if (message.Control)
+                                    {
+                                        autoShowMessagesEnabled = false;
+                                        SendImpressionEvent(message.Id, true);
+                                        baseMessage = message;
+                                    }
+                                    else if (config.EmbeddedMessageConfig.EmbeddedMessageListener != null)
+                                    {
+                                        autoShowMessagesEnabled = false;
+                                        Dictionary<string, string> properties = GetPersonalizationProperties(null);
+                                        config.EmbeddedMessageConfig.EmbeddedMessageListener.OnMessage((SwrveEmbeddedMessage)message, properties);
+                                        baseMessage = message;
+                                    }
                                 }
                             }
                             break;
@@ -1752,7 +1883,12 @@ public partial class SwrveSDK
 
                         for (int t = 0; t < triggers.Count; t++)
                         {
-                            if (string.Equals(triggers[t].GetEventName(), DefaultAutoShowMessagesTrigger))
+                            SwrveTrigger trigger = triggers[t];
+                            if (trigger == null)
+                            {
+                                SwrveLog.LogWarning("Trigger is null for " + campaign.Name + " : Campaign id " + campaign.Id);
+                            }
+                            else if (string.Equals(trigger.GetEventName(), DefaultAutoShowMessagesTrigger))
                             {
                                 isAnAutoShowCampaign = true;
                                 break;
@@ -2053,10 +2189,7 @@ public partial class SwrveSDK
                         {
                             // Process realtime user properties
                             Dictionary<string, object> realtimeUserPropsDate = (Dictionary<string, object>)root["real_time_user_properties"];
-                            string realtimeUserPropsJson = SwrveUnityMiniJSON.Json.Serialize(realtimeUserPropsDate);
-                            storage.SaveSecure(RealtimeUserPropertiesSave, realtimeUserPropsJson, this.UserId);
-                            realtimeUserProperties = NormalizeJson(realtimeUserPropsDate);
-                            realtimeUserPropertiesRaw = realtimeUserPropsJson;
+                            SaveRealTimeUserPropertiesInCache(realtimeUserPropsDate);
                         }
 
                         if (root.ContainsKey("user_resources"))
@@ -2117,6 +2250,21 @@ public partial class SwrveSDK
             campaignsConnecting = false;
             TaskFinished("GetCampaignsAndResources_Coroutine");
         }));
+    }
+
+    internal void SaveRealTimeUserPropertiesInCache(Dictionary<string, object> realtimeUserPropsUpdate)
+    {
+        try
+        {
+            string realtimeUserPropsJson = SwrveUnityMiniJSON.Json.Serialize(realtimeUserPropsUpdate);
+            storage.SaveSecure(RealtimeUserPropertiesSave, realtimeUserPropsJson, this.UserId);
+            realtimeUserProperties = NormalizeJson(realtimeUserPropsUpdate);
+            realtimeUserPropertiesRaw = realtimeUserPropsJson;
+        }
+        catch (Exception e)
+        {
+            SwrveLog.LogError("Error while saving realtime user properties to the cache " + e);
+        }
     }
 
     private void SaveCampaignsCache(string cacheContent)
@@ -2301,7 +2449,7 @@ public partial class SwrveSDK
 
     protected int ConvertInt64ToInt32Hack(Int64 val)
     {
-        // SWRVE-5613
+        // MOBILE-5613
         // Hack to solve Unity issue where the id is an int64
         // with a random high part and the int32 value we
         // need in the lower part.

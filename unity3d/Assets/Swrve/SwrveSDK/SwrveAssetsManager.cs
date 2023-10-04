@@ -11,6 +11,15 @@ namespace SwrveUnity
 {
     public class SwrveAssetsManager : ISwrveAssetsManager
     {
+        public static readonly string ASSET_NOT_SUPPORTED_EXT = ".not_supported";
+
+        public static readonly HashSet<string> SUPPORTED_MIMETYPES = new HashSet<string>
+        {
+            "image/jpeg",
+            "image/png",
+            "image/bmp"
+        };
+
         private MonoBehaviour Container;
         private string SwrveTemporaryPath;
 
@@ -175,10 +184,9 @@ namespace SwrveUnity
             {
                 yield return unityWebRequest.SendWebRequest();
 
-                string mimeType = unityWebRequest.GetResponseHeader("content-type");
-                if (mimeType != null && string.Equals(mimeType, "image/gif"))
+                if (!IsSupportedContentType(unityWebRequest))
                 {
-                    WriteDummyGifFileToCache(item.Name); // The unity SwrveSDK does not support gif images so create a dummy file so it is not downloaded again. 
+                    WriteDummyNotSupportedFileToCache(item.Name); // The SwrveSDK does not support this mimetype so create a dummy file so it is not downloaded again.
                 }
 #if UNITY_2020_1_OR_NEWER
                 else if (unityWebRequest.result == UnityWebRequest.Result.Success)
@@ -200,16 +208,28 @@ namespace SwrveUnity
             }
         }
 
-        // Check if asset is already downloaded. Some assets will have additional file extension type appended to the asset name
+        private bool IsSupportedContentType(UnityWebRequest unityWebRequest)
+        {
+            bool isSupportedContentType = true;
+            string mimeType = unityWebRequest.GetResponseHeader("Content-Type");
+            if (String.IsNullOrEmpty(mimeType) || !SUPPORTED_MIMETYPES.Contains(mimeType))
+            {
+                isSupportedContentType = false;
+            }
+
+            return isSupportedContentType;
+        }
+
+        // Check if asset is already downloaded. Some assets may have ASSET_NOT_SUPPORTED_EXT file extension appended to the asset name
         private string CheckAsset(string fileName)
         {
             if (CrossPlatformFile.Exists(GetTemporaryPathFileName(fileName)))
             {
                 return fileName;
             }
-            if (CrossPlatformFile.Exists(GetTemporaryPathFileName(fileName + ".gif")))
+            if (CrossPlatformFile.Exists(GetTemporaryPathFileName(fileName + ASSET_NOT_SUPPORTED_EXT)))
             {
-                return fileName + ".gif";
+                return fileName + ASSET_NOT_SUPPORTED_EXT;
             }
 
             return null;
@@ -220,10 +240,10 @@ namespace SwrveUnity
             return Path.Combine(SwrveTemporaryPath, fileName);
         }
 
-        private void WriteDummyGifFileToCache(string fileName)
+        private void WriteDummyNotSupportedFileToCache(string fileName)
         {
-            string filePath = GetTemporaryPathFileName(fileName + ".gif");
-            File.WriteAllText(filePath, "dummy gif file");
+            string filePath = GetTemporaryPathFileName(fileName + ASSET_NOT_SUPPORTED_EXT);
+            File.WriteAllText(filePath, "dummy not supported file");
         }
 
         protected virtual void SaveImageAsset(SwrveAssetsQueueItem item, UnityWebRequest www)

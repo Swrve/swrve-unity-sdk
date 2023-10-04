@@ -821,4 +821,9 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public SwrveSSLSocketFactoryConfig getSSLSocketFactoryConfig() {
         return null;
     }
+
+    @Override
+    public SwrveDeeplinkListener getSwrveDeeplinkListener() {
+        return null;
+    }
 }

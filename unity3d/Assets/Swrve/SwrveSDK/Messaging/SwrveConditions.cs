@@ -11,6 +11,11 @@ namespace SwrveUnity.Messaging
             AND,
             EQUALS,
             CONTAINS,
+            NUMBER_EQUALS,
+            NUMBER_GT,
+            NUMBER_LT,
+            NUMBER_BETWEEN,
+            NUMBER_NOT_BETWEEN,
             OR
         }
 
@@ -20,6 +25,11 @@ namespace SwrveUnity.Messaging
         const string OP_CONTAINS_KEY = "contains";
         const string OP_AND_KEY = "and";
         const string OP_OR_KEY = "or";
+        const string OP_NUMBER_EQUALS_KEY = "number_eq";
+        const string OP_NUMBER_GT_KEY = "number_gt";
+        const string OP_NUMBER_LT_KEY = "number_lt";
+        const string OP_NUMBER_BETWEEN_KEY = "number_between";
+        const string OP_NUMBER_NOT_BETWEEN_KEY = "number_not_between";
 
         const string KEY_KEY = "key";
         const string VALUE_KEY = "value";
@@ -27,7 +37,7 @@ namespace SwrveUnity.Messaging
 
         private string key;
         private TriggerOperatorType? op;
-        private string value;
+        private object value;
 
         private List<SwrveConditions> args;
 
@@ -41,7 +51,7 @@ namespace SwrveUnity.Messaging
             return this.op;
         }
 
-        public string GetValue()
+        public object GetValue()
         {
             return this.value;
         }
@@ -56,7 +66,7 @@ namespace SwrveUnity.Messaging
             this.op = op;
         }
 
-        private SwrveConditions(TriggerOperatorType? op, string key, string value) : this(op)
+        private SwrveConditions(TriggerOperatorType? op, string key, object value) : this(op)
         {
             this.key = key;
             this.value = value;
@@ -76,14 +86,77 @@ namespace SwrveUnity.Messaging
         {
             return (this.op == TriggerOperatorType.EQUALS) &&
                    payload.ContainsKey(this.key) &&
-                   string.Equals(payload[this.key], this.value, StringComparison.OrdinalIgnoreCase);
+                   string.Equals(payload[this.key], this.value.ToString(), StringComparison.OrdinalIgnoreCase);
         }
 
         private bool matchesContains(IDictionary<string, string> payload)
         {
             return (this.op == TriggerOperatorType.CONTAINS) &&
                    payload.ContainsKey(this.key) &&
-                   payload[this.key].ToLower().Contains(this.value.ToLower());
+                   payload[this.key].ToLower().Contains(this.value.ToString().ToLower());
+        }
+
+        private bool matchesNumeric(IDictionary<string, string> payload)
+        {
+            if (!payload.ContainsKey(this.key))
+                return false;
+
+            // paylaod values are string, incase there are multiple campaigns with the same trigger event and keys with a mix of
+            // string and numeric operators, we use int.TryParse to check if the value is a number or not for some
+            // of the numeric operators, to prevent an exception be thrown, which could potentially block other campaigns from being displayed
+
+            if (this.op == TriggerOperatorType.NUMBER_GT)
+            {
+                int payloadValue;
+                bool payloadValueIsInt = int.TryParse(payload[this.key], out payloadValue);
+
+                return payloadValueIsInt && payloadValue > Convert.ToInt32(this.value);
+            }
+            else if (this.op == TriggerOperatorType.NUMBER_LT)
+            {
+                int payloadValue;
+                bool payloadValueIsInt = int.TryParse(payload[this.key], out payloadValue);
+
+                return payloadValueIsInt && payloadValue < Convert.ToInt32(this.value);
+            }
+            else if (this.op == TriggerOperatorType.NUMBER_EQUALS)
+            {
+                int payloadValue;
+                bool payloadValueIsInt = int.TryParse(payload[this.key], out payloadValue);
+
+                return payloadValueIsInt && payloadValue == Convert.ToInt32(this.value);
+            }
+            else if (this.op == TriggerOperatorType.NUMBER_BETWEEN)
+            {
+                Dictionary<string, object> values = new Dictionary<string, object>();
+                values = this.value as Dictionary<string, object>;
+
+                int lower = 0;
+                int upper = 0;
+                if (values.ContainsKey("lower"))
+                    lower = Convert.ToInt32(values["lower"]);
+
+                if (values.ContainsKey("upper"))
+                    upper = Convert.ToInt32(values["upper"]);
+
+                return (values.ContainsKey("lower") && values.ContainsKey("upper") && int.Parse(payload[this.key]) > lower && int.Parse(payload[this.key]) < upper);
+            }
+            else if (this.op == TriggerOperatorType.NUMBER_NOT_BETWEEN)
+            {
+                Dictionary<string, object> values = new Dictionary<string, object>();
+                values = this.value as Dictionary<string, object>;
+
+                int lower = 0;
+                int upper = 0;
+                if (values.ContainsKey("lower"))
+                    lower = Convert.ToInt32(values["lower"]);
+
+                if (values.ContainsKey("upper"))
+                    upper = Convert.ToInt32(values["upper"]);
+
+                return (values.ContainsKey("lower") && values.ContainsKey("upper") && (int.Parse(payload[this.key]) < lower || int.Parse(payload[this.key]) > upper));
+            }
+            else return false;
         }
 
         private bool matchesAll(IDictionary<string, string> payload)
@@ -113,6 +186,14 @@ namespace SwrveUnity.Messaging
             else if (this.op == TriggerOperatorType.CONTAINS)
             {
                 return isEmpty() || ((payload != null) && (matchesContains(payload)));
+            }
+            else if (this.op == TriggerOperatorType.NUMBER_GT
+                        || this.op == TriggerOperatorType.NUMBER_LT
+                        || this.op == TriggerOperatorType.NUMBER_EQUALS
+                        || this.op == TriggerOperatorType.NUMBER_BETWEEN
+                        || this.op == TriggerOperatorType.NUMBER_NOT_BETWEEN)
+            {
+                return isEmpty() || ((payload != null) && (matchesNumeric(payload)));
             }
             else
                 return isEmpty();
@@ -152,6 +233,61 @@ namespace SwrveUnity.Messaging
                 }
 
                 return new SwrveConditions(TriggerOperatorType.CONTAINS, key, value);
+            }
+            else if (op == OP_NUMBER_EQUALS_KEY)
+            {
+                string key = (string)json[KEY_KEY];
+                object value = json[VALUE_KEY];
+                if (string.IsNullOrEmpty(key) || value == null)
+                {
+                    return null;
+                }
+
+                return new SwrveConditions(TriggerOperatorType.NUMBER_EQUALS, key, value);
+            }
+            else if (op == OP_NUMBER_GT_KEY)
+            {
+                string key = (string)json[KEY_KEY];
+                object value = (object)json[VALUE_KEY];
+                if (string.IsNullOrEmpty(key) || value == null)
+                {
+                    return null;
+                }
+
+                return new SwrveConditions(TriggerOperatorType.NUMBER_GT, key, value);
+            }
+            else if (op == OP_NUMBER_LT_KEY)
+            {
+                string key = (string)json[KEY_KEY];
+                object value = (object)json[VALUE_KEY];
+                if (string.IsNullOrEmpty(key) || value == null)
+                {
+                    return null;
+                }
+
+                return new SwrveConditions(TriggerOperatorType.NUMBER_LT, key, value);
+            }
+            else if (op == OP_NUMBER_BETWEEN_KEY)
+            {
+                string key = (string)json[KEY_KEY];
+                object value = (object)json[VALUE_KEY];
+                if (string.IsNullOrEmpty(key) || value == null)
+                {
+                    return null;
+                }
+
+                return new SwrveConditions(TriggerOperatorType.NUMBER_BETWEEN, key, value);
+            }
+            else if (op == OP_NUMBER_NOT_BETWEEN_KEY)
+            {
+                string key = (string)json[KEY_KEY];
+                object value = (object)json[VALUE_KEY];
+                if (string.IsNullOrEmpty(key) || value == null)
+                {
+                    return null;
+                }
+
+                return new SwrveConditions(TriggerOperatorType.NUMBER_NOT_BETWEEN, key, value);
             }
             else if (isRoot && (op == OP_AND_KEY))
             {

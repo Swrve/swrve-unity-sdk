@@ -21,10 +21,10 @@
 #endif
 @end
 
-#import "SwrveNotificationConstants.h"
 
 #endif
 
+#import "SwrveNotificationConstants.h"
 #import "SwrveQA.h"
 #import "SwrveCampaignInfluence.h"
 #import "UnitySwrveCommonMessageController.h"
@@ -407,7 +407,7 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 }
 
 - (void)sendHttpRequest:(NSMutableURLRequest *)request completionHandler:(void (^)(NSURLResponse *, NSData *, NSError *))handler {
-    // Add http request performance metrics for any previous requests into the header of this request (see JIRA SWRVE-5067 for more details)
+    // Add http request performance metrics for any previous requests into the header of this request (see JIRA MOBILE-5067 for more details)
     NSArray *allMetricsToSend;
 
     if (allMetricsToSend != nil && [allMetricsToSend count] > 0) {
