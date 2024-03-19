@@ -10,9 +10,6 @@
 +(char*) timeZone;
 +(char*) appVersion;
 +(char*) UUID;
-+(char*) carrierName;
-+(char*) carrierIsoCountryCode;
-+(char*) carrierCode;
 +(char*) localeCountry;
 +(char*) IDFV;
 +(bool) isSupportediOSVersion;

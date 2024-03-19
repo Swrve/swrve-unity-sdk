@@ -3,9 +3,6 @@
 #import "SwrveUtils.h"
 #import "SwrvePermissions.h"
 
-#if TARGET_OS_IOS /* exclude tvOS */
-#endif //TARGET_OS_IOS
-
 #if !defined(SWRVE_NO_PUSH)
 
 #import "SwrveNotificationOptions.h"
@@ -61,54 +58,6 @@
 + (char *)UUID {
     NSString *swrveUUID = [[NSUUID UUID] UUIDString];
     return [UnitySwrveHelper NSStringCopy:swrveUUID];
-}
-
-+ (char *)carrierName {
-#if TARGET_OS_IOS /** Telephony is only available in iOS **/
-    Class telephonyClass = NSClassFromString(@"CTTelephonyNetworkInfo");
-    if (telephonyClass) {
-        id netinfo = [[telephonyClass alloc] init]; // CTTelephonyNetworkInfo
-        id carrierInfo = [netinfo subscriberCellularProvider]; // CTCarrier
-        if (carrierInfo != nil) {
-            return [UnitySwrveHelper NSStringCopy:[carrierInfo carrierName]];
-        }
-    }
-#endif
-    return NULL;
-}
-
-+ (char *)carrierIsoCountryCode {
-#if TARGET_OS_IOS /** Telephony is only available in iOS **/
-    Class telephonyClass = NSClassFromString(@"CTTelephonyNetworkInfo");
-    if (telephonyClass) {
-        id netinfo = [[telephonyClass alloc] init]; // CTTelephonyNetworkInfo
-        id carrierInfo = [netinfo subscriberCellularProvider]; // CTCarrier
-        if (carrierInfo != nil) {
-            return [UnitySwrveHelper NSStringCopy:[carrierInfo isoCountryCode]];
-        }
-    }
-#endif
-    return NULL;
-}
-
-+ (char *)carrierCode {
-#if TARGET_OS_IOS /** Telephony is only available in iOS **/
-    Class telephonyClass = NSClassFromString(@"CTTelephonyNetworkInfo");
-    if (telephonyClass) {
-        id netinfo = [[telephonyClass alloc] init]; // CTTelephonyNetworkInfo
-        id carrierInfo = [netinfo subscriberCellularProvider]; // CTCarrier
-        if (carrierInfo != nil) {
-            NSString *mobileCountryCode = [carrierInfo mobileCountryCode];
-            NSString *mobileNetworkCode = [carrierInfo mobileNetworkCode];
-            if (mobileCountryCode != nil && mobileNetworkCode != nil) {
-                NSMutableString *carrierCode = [[NSMutableString alloc] initWithString:mobileCountryCode];
-                [carrierCode appendString:mobileNetworkCode];
-                return [UnitySwrveHelper NSStringCopy:carrierCode];
-            }
-        }
-    }
-#endif
-    return NULL;
 }
 
 + (char *)localeCountry {

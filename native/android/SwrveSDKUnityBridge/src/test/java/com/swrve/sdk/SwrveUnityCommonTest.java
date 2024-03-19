@@ -137,7 +137,7 @@ public class SwrveUnityCommonTest extends SwrveBaseTest {
     private String getDummyDetails(boolean isTrackingStateStopped, String aUserId) {
 // @formatter:off
         String details = "{" +
-                "\"sdkVersion\":\"9.1.0\"," +
+                "\"sdkVersion\":\"9.2.0\"," +
                 "\"apiKey\":\"fake_key\"," +
                 "\"appId\":1234," +
                 "\"userId\":\"" + aUserId + "\"," +

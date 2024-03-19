@@ -6,18 +6,6 @@ namespace SwrveUnity.Device
 {
     public class DeviceCarrierInfo : ICarrierInfo
     {
-#if UNITY_IOS && !UNITY_EDITOR
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSCarrierName();
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSCarrierIsoCountryCode();
-
-    [DllImport ("__Internal")]
-    private static extern string _swrveiOSCarrierCode();
-
-    private static readonly string PluginError = "Couldn't invoke native code to get carrier information, make sure you have the iOS plugin inside your project and you are running on a iOS device: ";
-#endif
 
 #if UNITY_ANDROID && !UNITY_EDITOR
     private AndroidJavaObject androidTelephonyManager;
@@ -52,14 +40,7 @@ namespace SwrveUnity.Device
 
         public string GetName()
         {
-#if UNITY_IOS && !UNITY_EDITOR
-        try {
-            return _swrveiOSCarrierName();
-        } catch(Exception exp) {
-            SwrveLog.LogWarning(PluginError + exp.ToString());
-            return null;
-        }
-#elif UNITY_ANDROID && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
         return AndroidGetTelephonyManagerAttribute("getSimOperatorName");
 #else
             return null;
@@ -68,14 +49,7 @@ namespace SwrveUnity.Device
 
         public string GetIsoCountryCode()
         {
-#if UNITY_IOS && !UNITY_EDITOR
-        try {
-            return _swrveiOSCarrierIsoCountryCode();
-        } catch(Exception exp) {
-            SwrveLog.LogWarning(PluginError + exp.ToString());
-            return null;
-        }
-#elif UNITY_ANDROID && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
         return AndroidGetTelephonyManagerAttribute("getSimCountryIso");
 #else
             return null;
@@ -84,14 +58,7 @@ namespace SwrveUnity.Device
 
         public string GetCarrierCode()
         {
-#if UNITY_IOS && !UNITY_EDITOR
-        try {
-            return _swrveiOSCarrierCode();
-        } catch(Exception exp) {
-            SwrveLog.LogWarning(PluginError + exp.ToString());
-            return null;
-        }
-#elif UNITY_ANDROID && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
         return AndroidGetTelephonyManagerAttribute("getSimOperator");
 #else
             return null;

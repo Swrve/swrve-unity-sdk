@@ -53,21 +53,6 @@ extern "C"
         return [UnitySwrveHelper UUID];
     }
 
-    char* _swrveiOSCarrierName()
-    {
-        return [UnitySwrveHelper carrierName];
-    }
-
-    char* _swrveiOSCarrierIsoCountryCode()
-    {
-        return [UnitySwrveHelper carrierIsoCountryCode];
-    }
-
-    char* _swrveiOSCarrierCode()
-    {
-        return [UnitySwrveHelper carrierCode];
-    }
-
     char* _swrveiOSLocaleCountry()
     {
         return [UnitySwrveHelper localeCountry];

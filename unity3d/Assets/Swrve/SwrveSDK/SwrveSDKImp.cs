@@ -632,7 +632,10 @@ public partial class SwrveSDK
         InitUserResources();
         InitRealtimeUserProperties();
         // Get device info
+        // iOS carrier info. is deprecated
+#if UNITY_ANDROID && !UNITY_EDITOR
         deviceCarrierInfo = new DeviceCarrierInfo();
+#endif
         GetDeviceScreenInfo();
 
         // In-app messaging features

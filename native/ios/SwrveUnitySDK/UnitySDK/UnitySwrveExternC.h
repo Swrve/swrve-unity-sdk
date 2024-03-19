@@ -8,9 +8,6 @@ extern "C"
     char* _swrveiOSTimeZone(void);
     char* _swrveiOSAppVersion(void);
     char* _swrveiOSUUID(void);
-    char* _swrveiOSCarrierName(void);
-    char* _swrveiOSCarrierIsoCountryCode(void);
-    char* _swrveiOSCarrierCode(void);
     char* _swrveiOSLocaleCountry(void);
     char* _swrveiOSIDFV(void);
     void _swrveiOSInitNative(char* jsonConfig);
