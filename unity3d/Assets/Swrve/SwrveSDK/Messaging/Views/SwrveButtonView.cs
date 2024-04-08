@@ -14,13 +14,12 @@ namespace SwrveUnity.Messaging
         // Visible for tests
         public bool Pressed = false;
 
-        public Rect PointerRect;
-
         public SwrveButtonView(SwrveButton button, Color clickTintColor, string dynamicImageSha1Asset)
         {
             this.button = button;
             this.clickTintColor = clickTintColor;
             DynamicImageSha1Asset = dynamicImageSha1Asset;
+            this.IsButton = true;
         }
 
         public override string GetTexturePath()

@@ -19,11 +19,20 @@ namespace SwrveUnity.Messaging
         /// </summary>
         protected string DynamicImageSha1Asset;
 
-
         /// <summary>
         /// Redering bounds.
         /// </summary>
         public Rect Rect;
+
+        /// <summary>
+        /// Pointer bounds.
+        /// </summary>
+        public Rect PointerRect;
+
+        /// <summary>
+        /// Is this a button?
+        /// </summary>
+        public bool IsButton = false;
 
         // Set texture while pre-loading the format.
         public abstract string GetTexturePath();

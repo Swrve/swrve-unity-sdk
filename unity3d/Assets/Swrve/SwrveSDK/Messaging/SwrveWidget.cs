@@ -97,7 +97,15 @@ namespace SwrveUnity.Messaging
         /// </summary>
         public string BackgroundColor;
 
+        /// <summary>
+        /// Pointer bounds.
+        /// </summary>
+        public Rect PointerRect;
 
+        /// <summary>
+        /// Z index of the widget.
+        /// </summary>
+        public long IamZIndex;
 
         public SwrveWidget()
         {

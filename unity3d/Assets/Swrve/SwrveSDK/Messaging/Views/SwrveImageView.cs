@@ -13,6 +13,7 @@ namespace SwrveUnity.Messaging
         {
             this.image = image;
             DynamicImageSha1Asset = dynamicImageSha1Asset;
+            this.IsButton = false;
         }
 
         public override string GetTexturePath()
@@ -57,6 +58,21 @@ namespace SwrveUnity.Messaging
                 Rect.y = centerPoint.Y;
                 Rect.width = textureWidth * computedSize;
                 Rect.height = textureHeight * computedSize;
+
+                if (rotatedFormat)
+                {
+                    // Rotate 90 degrees the hit area
+                    Point widgetCenter = image.GetCenter(textureWidth, textureHeight, computedSize);
+                    PointerRect.x = centerx - (image.Position.Y * scale) + widgetCenter.Y;
+                    PointerRect.y = centery + (image.Position.X * scale) + widgetCenter.X;
+                    PointerRect.width = textureHeight;
+                    PointerRect.height = textureWidth;
+                }
+                else
+                {
+                    PointerRect = Rect;
+                }
+
                 ImgGUI.DrawTexture(Rect, Texture, scaleMode, true, 0.0f);
             }
             else

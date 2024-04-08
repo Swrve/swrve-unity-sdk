@@ -638,7 +638,7 @@ public partial class SwrveSDK
         return pushId;
     }
 
-    private void SendButtonClickEvent(Dictionary<string, object> selectedButton, string pushId, string actionIdentifier)
+    private void SendButtonClickEvent(Dictionary<string, object> selectedButton, string pushId, string actionIdentifier, Dictionary<string, string> pushTrackingPayload)
     {
         if (selectedButton == null)
         {
@@ -651,12 +651,17 @@ public partial class SwrveSDK
         eventData.Add("actionType", "button_click");
         eventData.Add("contextId", actionIdentifier);
 
+        Dictionary<string, string> payload = pushTrackingPayload;
+
         if (selectedButton.ContainsKey("title"))
         {
             string actionText = (string)selectedButton["title"];
-            Dictionary<string, string> payloadData = new Dictionary<string, string>();
-            payloadData.Add("buttonText", actionText);
-            eventData.Add("payload", payloadData);
+            payload.Add("buttonText", actionText);
+        }
+
+        if (payload.Count > 0)
+        {
+            eventData.Add("payload", payload);
         }
 
         QueueGenericCampaignEvent(eventData);
@@ -720,10 +725,32 @@ public partial class SwrveSDK
 
             string pushId = GetPushId(userInfo);
             Dictionary<string, object> swrvePayload = (Dictionary<string, object>)Json.Deserialize((string)userInfo[PushContentKey]);
+
+            //userInfo from iOS Unity Mobile notification is defined as <string, string> dictionary
+            //userInfo from Android gets defined as <string, object> dictionary
+            Dictionary<string, string> pushTrackingPayload = new Dictionary<string, string>();
+            if (userInfo.Contains(SwrveSDK.PushTrackingDataKey))
+            {
+                string trackingData = (string)userInfo[SwrveSDK.PushTrackingDataKey];
+                if (!string.IsNullOrEmpty(trackingData))
+                {
+                    pushTrackingPayload["trackingData"] = trackingData;
+                }
+            }
+
+            if (userInfo.Contains(SwrveSDK.PushPlatformKey))
+            {
+                string platformData = (string)userInfo[SwrveSDK.PushPlatformKey];
+                if (!string.IsNullOrEmpty(platformData))
+                {
+                    pushTrackingPayload["platform"] = platformData;
+                }
+            }
+
             if (actionIdentifier == @"com.apple.UNNotificationDefaultActionIdentifier")
             {
                 // direct click on push
-                SendPushEngagedEvent(pushId);
+                SendPushEngagedEvent(pushId, pushTrackingPayload);
                 OpenDeeplink(userInfo);
                 ProcessNotificationForCampaign(swrvePayload);
             }
@@ -731,8 +758,8 @@ public partial class SwrveSDK
             {
                 // button click on push, actionIdentifer will be button position clicked: 0, 1, 2 etc.
                 Dictionary<string, object> selectedButton = GetSelectedButtonDictionary(swrvePayload, actionIdentifier);
-                SendButtonClickEvent(selectedButton, pushId, actionIdentifier);
-                SendPushEngagedEvent(pushId);
+                SendButtonClickEvent(selectedButton, pushId, actionIdentifier, pushTrackingPayload);
+                SendPushEngagedEvent(pushId, pushTrackingPayload);
                 ProcessButtonAction(selectedButton, actionIdentifier);
             }
         }

@@ -210,6 +210,10 @@ public class SwrveComponent : MonoBehaviour
     /// <summary>
     /// Automatically called by Unity3D when the application quits.
     /// </summary>
+    /// <remarks>
+    /// Note: On mobile platform Unity3D players, this event is not guaranteed to be triggered 
+    /// and so the SDK.OnSwrveDestroy functionality may not automatically happen on app termination.
+    /// </remarks> 
     public void OnApplicationQuit()
     {
         if (SDK.Initialised && FlushEventsOnApplicationQuit)

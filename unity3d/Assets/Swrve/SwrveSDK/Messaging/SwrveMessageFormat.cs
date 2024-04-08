@@ -59,6 +59,11 @@ namespace SwrveUnity.Messaging
         /// </summary>
         public long FirstPageId;
 
+        /// <summary>
+        /// False if campaign uses a feature not yet supported.
+        /// </summary>
+        public bool IsSupportedBySDK = true;
+
         private SwrveMessageFormat(SwrveMessage message)
         {
             this.Message = message;
@@ -79,6 +84,12 @@ namespace SwrveUnity.Messaging
         public static SwrveMessageFormat LoadFromJSON(SwrveMessage message, Dictionary<string, object> messageFormatData, Color? defaultBackgroundColor)
         {
             SwrveMessageFormat messageFormat = new SwrveMessageFormat(message);
+
+            if (messageFormatData.ContainsKey("story_settings"))
+            {
+                messageFormat.IsSupportedBySDK = false; // Unity sdk does not support story messages
+                return messageFormat; // exit early
+            }
 
             messageFormat.Name = (string)messageFormatData["name"];
             messageFormat.Language = (string)messageFormatData["language"];
@@ -135,6 +146,11 @@ namespace SwrveUnity.Messaging
                 {
                     Dictionary<string, object> pageData = (Dictionary<string, object>)jsonPages[i];
                     SwrveMessagePage page = SwrveMessagePage.LoadFromJSON(message, pageData);
+                    if (!page.IsSupportedBySDK)
+                    {
+                        messageFormat.IsSupportedBySDK = false;
+                        return messageFormat; // exit early
+                    }
                     messageFormat.Pages.Add(page.PageId, page);
                     if (i == 0)
                     {
@@ -146,6 +162,11 @@ namespace SwrveUnity.Messaging
             {
                 // for backward compatibility, convert old IAM's into a single page Dictionary
                 SwrveMessagePage page = SwrveMessagePage.LoadFromJSON(message, messageFormatData);
+                if (!page.IsSupportedBySDK)
+                {
+                    messageFormat.IsSupportedBySDK = false;
+                    return messageFormat; // exit early
+                }
                 messageFormat.Pages.Add(0, page);
                 messageFormat.FirstPageId = 0;
             }

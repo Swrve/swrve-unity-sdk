@@ -16,6 +16,11 @@ namespace SwrveUnity.Messaging
 
         private ISwrveAssetsManager AssetsManager;
 
+        /// <summary>
+        /// False if campaign uses a feature not yet supported.
+        /// </summary>
+        public bool IsSupportedBySDK = true;
+
         private SwrveMessage(ISwrveAssetsManager swrveAssetsManager, SwrveInAppCampaign campaign)
         {
             this.AssetsManager = swrveAssetsManager;
@@ -77,6 +82,11 @@ namespace SwrveUnity.Messaging
             {
                 Dictionary<string, object> messageFormatData = (Dictionary<string, object>)jsonFormats[i];
                 SwrveMessageFormat messageFormat = SwrveMessageFormat.LoadFromJSON(message, messageFormatData, defaultBackgroundColor);
+                if (!messageFormat.IsSupportedBySDK)
+                {
+                    message.IsSupportedBySDK = false;
+                    return message; // exit early
+                }
                 message.Formats.Add(messageFormat);
             }
 
@@ -218,41 +228,6 @@ namespace SwrveUnity.Messaging
                     if (!IsButtonAssetDownloaded(format, personalizationProperties) || !IsImageAssetDownloaded(format, personalizationProperties))
                     {
                         return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Check if there are any features that aren't currently supported by the SDK in a campaign
-        /// </summary>
-        /// <returns>
-        /// True if there are no features that aren't supported by the SDK
-        /// </returns>
-        public bool IsSupportedBySDK()
-        {
-            if (Formats != null)
-            {
-                for (int fi = 0; fi < Formats.Count; fi++)
-                {
-                    SwrveMessageFormat format = Formats[fi];
-                    var pagesKeys = format.Pages.Keys;
-                    foreach (long key in pagesKeys)
-                    {
-                        SwrveMessagePage page = format.Pages[key];
-                        for (int bi = 0; bi < page.Buttons.Count; bi++)
-                        {
-                            SwrveButton button = page.Buttons[bi];
-                            if (button.ActionType == SwrveActionType.Capability
-                                || button.ActionType == SwrveActionType.OpenAppSettings
-                                || button.ActionType == SwrveActionType.OpenNotificationSettings
-                                || button.ActionType == SwrveActionType.StartGeo)
-                            {
-                                return false;
-                            }
-                        }
                     }
                 }
             }

@@ -45,6 +45,11 @@ namespace SwrveUnity.Messaging
         /// </summary>
         public long SwipeBackward;
 
+        /// <summary>
+        /// False if campaign uses a feature not yet supported.
+        /// </summary>
+        public bool IsSupportedBySDK = true;
+
         private SwrveMessagePage(SwrveMessage message)
         {
             this.Message = message;
@@ -72,6 +77,11 @@ namespace SwrveUnity.Messaging
             for (int i = 0, j = jsonButtons.Count; i < j; i++)
             {
                 SwrveButton button = LoadButtonFromJSON(message, (Dictionary<string, object>)jsonButtons[i]);
+                if (!button.IsSupportedBySDK)
+                {
+                    page.IsSupportedBySDK = false;
+                    return page;
+                }
                 page.Buttons.Add(button);
             }
 
@@ -134,6 +144,12 @@ namespace SwrveUnity.Messaging
         protected static SwrveButton LoadButtonFromJSON(SwrveMessage message, Dictionary<string, object> buttonData)
         {
             SwrveButton button = new SwrveButton();
+            if (buttonData.ContainsKey("theme"))
+            {
+                button.IsSupportedBySDK = false; // Unity sdk does not support button theme
+                return button;
+            }
+
             button.Position.X = IntValueFromAttribute(buttonData, "x");
             button.Position.Y = IntValueFromAttribute(buttonData, "y");
 
@@ -201,8 +217,16 @@ namespace SwrveUnity.Messaging
             {
                 actionType = SwrveActionType.StartGeo;
             }
-
             button.ActionType = actionType;
+            if (button.ActionType == SwrveActionType.Capability
+                || button.ActionType == SwrveActionType.OpenAppSettings
+                || button.ActionType == SwrveActionType.OpenNotificationSettings
+                || button.ActionType == SwrveActionType.StartGeo)
+            {
+                button.IsSupportedBySDK = false;
+                return button; // exit early
+            }
+
             button.Action = StringValueFromAttribute(buttonData, "action");
             if (button.ActionType == SwrveActionType.Install)
             {
@@ -221,6 +245,11 @@ namespace SwrveUnity.Messaging
             if (buttonData.ContainsKey("user_updates"))
             {
                 button.userUpdates = (List<object>)buttonData["user_updates"];
+            }
+
+            if (buttonData.ContainsKey("iam_z_index"))
+            {
+                button.IamZIndex = (long)buttonData["iam_z_index"];
             }
 
             return button;
@@ -337,6 +366,11 @@ namespace SwrveUnity.Messaging
             }
 
             image.Message = message;
+
+            if (imageData.ContainsKey("iam_z_index"))
+            {
+                image.IamZIndex = (long)imageData["iam_z_index"];
+            }
 
             return image;
         }

@@ -1,7 +1,8 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
+    namespace 'com.swrve.sdk.unitybridge'
+    compileSdk Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
 
     defaultConfig {
         minSdkVersion Integer.parseInt(project.ANDROID_BUILD_MIN_SDK_VERSION)
@@ -30,6 +31,9 @@ dependencies {
     // HACK: androidx.room:room-runtime:2.2.5 is a dependency of androidx.work:work-runtime which is not getting properly downloaded/jetified by our rake script in circleci. Adding the line below forces it here. May not require this in future.
     implementation 'androidx.room:room-runtime:2.2.5'
     implementation 'androidx.work:work-runtime:' + project.ANDROIDX_WORK_RUNTIME_VERSION
+    
+    // Dependency to match version required by Firebase Messaging
+    implementation 'androidx.annotation:annotation:1.5.0'
 
     // Unit tests
     testImplementation 'org.mockito:mockito-core:3.6.28'

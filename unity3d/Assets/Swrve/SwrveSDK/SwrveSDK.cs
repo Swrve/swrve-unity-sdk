@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 /// </summary>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "9.2.0";
+    public const string SdkVersion = "9.3.0";
 
     protected int appId;
     /// <summary>
@@ -185,6 +185,11 @@ public partial class SwrveSDK
         if (string.IsNullOrEmpty(apiKey))
         {
             throw new Exception("The api key has not been specified.");
+        }
+
+        if (apiKey.ToLower().StartsWith("secret-"))
+        {
+            throw new Exception("API Key is invalid. It should not start with `Secret-`");
         }
 
         // Language

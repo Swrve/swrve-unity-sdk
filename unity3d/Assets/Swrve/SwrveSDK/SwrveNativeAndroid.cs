@@ -620,12 +620,16 @@ public partial class SwrveSDK
         }
 
         string pushId = GetPushId(notification);
+        var pushTrackingPayload = SwrveHelper.GetPushTrackingPayload(notification);
+
         // Detect if the notification was opened from a rich push button
-        // If so, the two engagement have already been sent by the native SwrveEngageEventSender
+        // If so, the two engagement (engage and button click) event have already been sent by the native SDK by executing 
+        // sendEngagedEvent and sendButtonEngagedEvent function defined inside SwrveNotificationEngage.java.
+
         bool processedNatively = (notification != null && notification.ContainsKey(PushUnityDoNotProcessKey));
         if (!processedNatively)
         {
-            SendPushEngagedEvent(pushId);
+            SendPushEngagedEvent(pushId, pushTrackingPayload);
             // Process notification deeplink
             if (notification != null && notification.ContainsKey(PushDeeplinkKey))
             {
@@ -642,6 +646,7 @@ public partial class SwrveSDK
         else
         {
             // if a button was pressed, we still have to render the campaign:
+
             if (notification != null && notification.ContainsKey(PushButtonToCampaignIdKey))
             {
                 object campaignId = notification[PushButtonToCampaignIdKey];

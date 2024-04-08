@@ -83,7 +83,7 @@ public class SwrvePushManagerUnityImp extends SwrvePushManagerImpBase implements
         Notification notification = null;
         String msgText = msg.getString(SwrveNotificationConstants.TEXT_KEY);
         if (SwrveHelper.isNotNullOrEmpty(msgText)) {
-            createSwrveNotificationBuilder();
+            getSwrveNotificationBuilder();
             NotificationCompat.Builder mBuilder = notificationBuilder.build(msgText, msg, getGenericEventCampaignTypePush(), null);
             final PendingIntent contentIntent = notificationBuilder.createPendingIntent(msg, getGenericEventCampaignTypePush(), null);
             mBuilder.setContentIntent(contentIntent);
@@ -102,7 +102,8 @@ public class SwrvePushManagerUnityImp extends SwrvePushManagerImpBase implements
         return SwrveUnitySDK.getNotificationFilter();
     }
 
-    private SwrveNotificationBuilder createSwrveNotificationBuilder() {
+    @Override
+    protected SwrveNotificationBuilder getSwrveNotificationBuilder() {
         final SharedPreferences prefs = SwrvePushServiceManagerCommon.getPreferences(context);
         notificationBuilder = SwrvePushSupport.createSwrveNotificationBuilder(context, prefs);
         return notificationBuilder;

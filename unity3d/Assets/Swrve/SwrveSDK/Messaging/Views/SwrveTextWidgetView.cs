@@ -15,17 +15,11 @@ namespace SwrveUnity.Messaging
 
         private bool Pressed = false;
 
-        /// <summary>
-        /// Pointer bounds.
-        /// </summary>
-        public Rect PointerRect;
-
         // Visible for tests
 
         public GUIContent content;
         public GUIStyle style;
         public SwrveButton button;
-        public bool isButton;
         public Vector2 scrollPosition = Vector2.zero;
         public Color backgroundColor;
         protected Color clickTintColor;
@@ -64,8 +58,8 @@ namespace SwrveUnity.Messaging
 
             clickTintColor = inAppConfig.ButtonClickTintColor;
 
-            isButton = (widget is SwrveButton);
-            if (isButton)
+            this.IsButton = (widget is SwrveButton);
+            if (this.IsButton)
             {
                 button = (SwrveButton)widget;
             }
@@ -73,7 +67,7 @@ namespace SwrveUnity.Messaging
 
         public override string GetTexturePath()
         {
-            if (isButton)
+            if (this.IsButton)
             {
                 return this.button.Image;
             }
@@ -95,7 +89,7 @@ namespace SwrveUnity.Messaging
 
         public void ProcessButtonDown(Vector3 mousePosition)
         {
-            if (isButton && PointerRect.Contains(mousePosition))
+            if (this.IsButton && PointerRect.Contains(mousePosition))
             {
                 Pressed = true;
             }
@@ -104,7 +98,7 @@ namespace SwrveUnity.Messaging
         public SwrveButtonClickResult ProcessButtonUp(Vector3 mousePosition, SwrveMessageTextTemplatingResolver templatingResolver)
         {
             SwrveButtonClickResult clickResult = null;
-            if (isButton && PointerRect.Contains(mousePosition) && Pressed)
+            if (this.IsButton && PointerRect.Contains(mousePosition) && Pressed)
             {
                 string resolvedAction = templatingResolver.ActionResolution[button];
                 clickResult = new SwrveButtonClickResult(button, resolvedAction);
@@ -161,11 +155,20 @@ namespace SwrveUnity.Messaging
 
         public override void Render(float scale, int centerx, int centery, bool rotatedFormat)
         {
+            int textureWidth = 0;
+            int textureHeight = 0;
             if (Texture != null)
             {
-                int textureWidth = Texture.width;
-                int textureHeight = Texture.height;
-
+                textureWidth = Texture.width;
+                textureHeight = Texture.height;
+            }
+            else if (widget.IsMultiLine)
+            {
+                textureWidth = widget.Size.X;
+                textureHeight = widget.Size.Y;
+            }
+            if (textureHeight > 0 && textureWidth > 0)
+            {
                 float computedSize = scale;
                 Point centerPoint = widget.GetCenteredPosition(textureWidth, textureHeight, computedSize, scale);
                 centerPoint.X += centerx;
@@ -175,44 +178,31 @@ namespace SwrveUnity.Messaging
                 Rect.width = textureWidth * computedSize;
                 Rect.height = textureHeight * computedSize;
 
-                if (isButton)
+                if (rotatedFormat)
                 {
-                    if (rotatedFormat)
-                    {
-                        // Rotate 90 degrees the hit area
-                        Point widgetCenter = button.GetCenter(textureWidth, textureHeight, computedSize);
-                        PointerRect.x = centerx - (widget.Position.Y * scale) + widgetCenter.Y;
-                        PointerRect.y = centery + (widget.Position.X * scale) + widgetCenter.X;
-                        PointerRect.width = Rect.height;
-                        PointerRect.height = Rect.width;
-                    }
-                    else
-                    {
-                        PointerRect = Rect;
-                    }
+                    // Rotate 90 degrees the hit area
+                    Point widgetCenter = button.GetCenter(textureWidth, textureHeight, computedSize);
+                    PointerRect.x = centerx - (widget.Position.Y * scale) + widgetCenter.Y;
+                    PointerRect.y = centery + (widget.Position.X * scale) + widgetCenter.X;
+                    PointerRect.width = Rect.height;
+                    PointerRect.height = Rect.width;
                 }
+                else
+                {
+                    PointerRect = Rect;
+                }
+            }
+
+            if (Texture != null)
+            {
                 ImgGUI.color = (Pressed) ? backgroundColor * clickTintColor : backgroundColor;
                 ImgGUI.DrawTexture(Rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0.0f);
 
                 ImgGUI.color = (Pressed) ? Color.white * clickTintColor : Color.white;
                 ImgGUI.Label(Rect, content, style);
-
             }
             else if (widget.IsMultiLine)
             {
-                int textureWidth = widget.Size.X;
-                int textureHeight = widget.Size.Y;
-
-                float computedSize = scale;
-                Point centerPoint = widget.GetCenteredPosition(textureWidth, textureHeight, computedSize, scale);
-                centerPoint.X += centerx;
-                centerPoint.Y += centery;
-                Rect.x = centerPoint.X;
-                Rect.y = centerPoint.Y;
-                Rect.width = textureWidth * computedSize;
-                Rect.height = textureHeight * computedSize;
-
-
                 ImgGUI.color = (Pressed) ? backgroundColor * clickTintColor : backgroundColor;
                 ImgGUI.DrawTexture(Rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0.0f);
                 ImgGUI.color = (Pressed) ? Color.white * clickTintColor : Color.white;
@@ -241,7 +231,6 @@ namespace SwrveUnity.Messaging
                         style.fontStyle = FontStyle.Normal;
                 }
 
-
                 //Setting up the text color, unity reads it as ARGB but we do it as RGBA.
                 Color color;
                 if (ColorUtility.TryParseHtmlString(widget.FontColor, out color))
@@ -259,7 +248,6 @@ namespace SwrveUnity.Messaging
                 {
                     ImgGUI.Label(Rect, content, style);
                 }
-
             }
         }
 

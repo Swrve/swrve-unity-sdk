@@ -19,6 +19,8 @@ public class SwrveAdmPushBase {
     private final static String AMAZON_RECENT_PUSH_IDS = "recent_push_ids";
     private final static String AMAZON_PREFERENCES = "swrve_amazon_unity_pref";
     private final int DEFAULT_PUSH_ID_CACHE_SIZE = 16;
+    private final static String EXTRA_PRIORITY = "adm_message_priority";
+    private final static String GENERIC_EVENT_PAYLOAD_PRIORITY = "provider.priority";
 
     protected void onMessage(final Context context, final Intent intent) {
         if (intent == null) {
@@ -63,6 +65,12 @@ public class SwrveAdmPushBase {
 
                 // No duplicate found. Update the cache.
                 updateRecentNotificationIdCache(context, recentIds, curId, pushIdCacheSize);
+
+                //Get message priority for inclusion in push delivered event additional info.
+                final String priority = pushBundle.getString(EXTRA_PRIORITY);
+                if (!SwrveHelper.isNullOrEmpty(priority)) {
+                    pushBundle.putString(GENERIC_EVENT_PAYLOAD_PRIORITY, priority);
+                }
 
                 new SwrvePushManagerUnityImp(context).processMessage(pushBundle);
             }

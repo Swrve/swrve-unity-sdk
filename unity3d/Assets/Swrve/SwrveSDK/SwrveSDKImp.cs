@@ -53,6 +53,9 @@ public partial class SwrveSDK
     private const string SilentPushTrackingKey = "_sp";
     private const string PushDeeplinkKey = "_sd";
     private const string PushContentKey = "_sw";
+    public const string PushTrackingDataKey = "_td";
+    public const string PushPlatformKey = "_smp";
+
     private const int PushContentVersion = 1;
     private const string PushNestedJsonKey = "_s.JsonPayload";
     private const string PushButtonToCampaignIdKey = "PUSH_BUTTON_TO_CAMPAIGN_ID";
@@ -102,7 +105,7 @@ public partial class SwrveSDK
 
     // Messaging related
     protected static readonly int CampaignEndpointVersion = 9;
-    protected static readonly int InAppMessageCampaignVersion = 11;
+    protected static readonly int InAppMessageCampaignVersion = 15;
     protected static readonly int EmbeddedCampaignVersion = 3;
     private static readonly int CampaignResponseVersion = 2;
     protected static readonly string CampaignsSave = "cmcc2"; // Saved securely
@@ -2433,13 +2436,13 @@ public partial class SwrveSDK
         return campaignData;
     }
 
-    public void SendPushEngagedEvent(string pushId)
+    public void SendPushEngagedEvent(string pushId, Dictionary<string, string> payload)
     {
         if (("0" == pushId) || (pushId != lastPushEngagedId))
         {
             lastPushEngagedId = pushId;
-            NamedEventInternal("Swrve.Messages.Push-" + pushId + ".engaged", null, false);
-            SwrveLog.Log("Got Swrve notification with ID " + pushId);
+            NamedEventInternal("Swrve.Messages.Push-" + pushId + ".engaged", payload, false);
+            SwrveLog.Log("Got Swrve notification with ID - " + pushId);
             SendQueuedEvents();
         }
     }
@@ -2616,6 +2619,10 @@ public partial class SwrveSDK
                         Dictionary<string, string> payload = new Dictionary<string, string>();
                         payload.Add("delta", ((maxInfluencedMillis - now) / (100 * 60)).ToString());
                         payload.Add("silent", silentObj.ToString().ToLower());
+
+                        var pushTrackingPayload = SwrveHelper.GetPushTrackingPayload(influenceData);
+                        payload = payload.Union(pushTrackingPayload).ToDictionary(e => e.Key, e => e.Value);
+
                         json.Add("payload", payload);
                         AppendEventToBuffer("generic_campaign_event", json, false);
                         SwrveLog.Log("User was influenced by push " + trackingId);

@@ -335,5 +335,30 @@ namespace SwrveUnity.Helpers
             float scaley = testTextSize / size.y;
             return (int)Math.Min(width * scalex, height * scaley);
         }
+
+        public static Dictionary<string, string> GetPushTrackingPayload(IDictionary<string, object> userInfo)
+        {
+            Dictionary<string, string> payload = new Dictionary<string, string>();
+
+            if (userInfo.ContainsKey(SwrveSDK.PushTrackingDataKey))
+            {
+                string trackingData = (string)userInfo[SwrveSDK.PushTrackingDataKey];
+                if (!string.IsNullOrEmpty(trackingData))
+                {
+                    payload["trackingData"] = trackingData;
+                }
+            }
+
+            if (userInfo.ContainsKey(SwrveSDK.PushPlatformKey))
+            {
+                string platformData = (string)userInfo[SwrveSDK.PushPlatformKey];
+                if (!string.IsNullOrEmpty(platformData))
+                {
+                    payload["platform"] = platformData;
+                }
+            }
+            return payload;
+        }
+
     }
 }

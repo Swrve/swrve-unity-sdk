@@ -2,6 +2,7 @@
 #import "UnitySwrve.h"
 #import "UnitySwrveHelper.h"
 #import "SwrveBaseConversation.h"
+#import "SwrveUtils.h"
 
 #if !defined(SWRVE_NO_PUSH)
 #import <UserNotifications/UserNotifications.h>
@@ -12,6 +13,7 @@
 #import "SwrveCampaignInfluence.h"
 #import "SwrveQA.h"
 #import "SwrveSEConfig.h"
+#import "SwrveNotificationConstants.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -124,11 +126,20 @@ extern "C"
                     long long maxInfluenceWindowSecondsLong = [maxInfluenceWindowSeconds longLongValue];
                     NSNumber *maxInfluenceWindowMillis = [NSNumber numberWithLongLong:(maxInfluenceWindowSecondsLong*1000)];
 
-                    NSDictionary *influenceJson = [NSDictionary dictionaryWithObjectsAndKeys:
+                    NSMutableDictionary *influenceJson = [NSMutableDictionary dictionaryWithObjectsAndKeys:
                                                    trackingId, @"trackingId",
                                                    [NSNumber numberWithBool: isSilentPush], @"silent",
                                                    maxInfluenceWindowMillis, @"maxInfluencedMillis",
                                                    nil];
+
+                    // add tracking payload info
+                    if ([influencedData objectForKey:SwrveNotificationTrackingDataKey]) {
+                        [influenceJson setValue:[influencedData objectForKey:SwrveNotificationTrackingDataKey] forKey:SwrveNotificationTrackingDataKey];
+                    }
+                    if ([influencedData objectForKey:SwrveNotificationPlatformKey]) {
+                        [influenceJson setValue:[influencedData objectForKey:SwrveNotificationPlatformKey] forKey:SwrveNotificationPlatformKey];
+                    }
+
                     [influenceArrayJson addObject:influenceJson];
                 }
             }

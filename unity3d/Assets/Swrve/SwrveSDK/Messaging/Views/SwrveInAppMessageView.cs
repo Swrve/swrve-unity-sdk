@@ -56,68 +56,89 @@ namespace SwrveUnity.Messaging
         private static SwrveWidgetView[] BuildWidgets(SwrveMessageFormat format, long pageId, SwrveMessageTextTemplatingResolver templatingResolver, SwrveInAppMessageConfig inAppConfig)
         {
             SwrveMessagePage page = format.Pages[pageId];
-            // Create widgets to render and use the cached personalization values
-            SwrveWidgetView[] widgetViews = new SwrveWidgetView[page.Images.Count + page.Buttons.Count];
+            List<SwrveWidget> pageElements = GetPageElements(page);
+            SwrveWidgetView[] widgetViews = new SwrveWidgetView[pageElements.Count];
             int eindex = 0;
-            for (int ii = 0; ii < page.Images.Count; ii++)
+            for (int i = 0; i < pageElements.Count; i++)
             {
-                SwrveImage image = page.Images[ii];
-                SwrveWidgetView renderer;
-                if (image.Text != null)
+                SwrveWidget widget = pageElements[i];
+                if (widget is SwrveImage image)
                 {
-                    string resolvedTextTemplate = templatingResolver.TextResolution[image];
-                    SwrveTextViewStyle style = new SwrveTextViewStyle();
-                    style.FontSize = image.FontSize;
-                    style.HorizontalAlignment = image.HorizontalAlignment;
-                    style.TextBackgroundColor = inAppConfig.PersonalizedTextBackgroundColor;
-                    style.TextForegroundColor = inAppConfig.PersonalizedTextForegroundColor;
-                    style.TextFont = inAppConfig.PersonalizedTextFont;
-
-                    renderer = new SwrveTextWidgetView(image, resolvedTextTemplate, inAppConfig, style, format.Calibration);
+                    widgetViews[eindex++] = BuildSwrveImage(format, templatingResolver, inAppConfig, image);
                 }
-                else if (image.DynamicImageUrl != null && templatingResolver.DynamicImageResolution.ContainsKey(image))
+                else if (widget is SwrveButton button)
                 {
-                    string sha1DynamicImageAsset = ResolvePersonalization(image, templatingResolver, (image.File != null));
-                    renderer = new SwrveImageView(image, sha1DynamicImageAsset);
+                    widgetViews[eindex++] = BuildSwrveButton(format, templatingResolver, inAppConfig, button);
                 }
-                else
-                {
-                    renderer = new SwrveImageView(image, null);
-                }
-
-                widgetViews[eindex++] = renderer;
-            }
-
-            for (int bi = 0; bi < page.Buttons.Count; bi++)
-            {
-                SwrveButton button = page.Buttons[bi];
-                SwrveWidgetView renderer;
-                if (button.Text != null)
-                {
-                    string resolvedTextTemplate = templatingResolver.TextResolution[button];
-
-                    SwrveTextViewStyle style = new SwrveTextViewStyle();
-                    style.FontSize = button.FontSize;
-                    style.TextBackgroundColor = inAppConfig.PersonalizedTextBackgroundColor;
-                    style.TextForegroundColor = inAppConfig.PersonalizedTextForegroundColor;
-                    style.TextFont = inAppConfig.PersonalizedTextFont;
-
-                    renderer = new SwrveTextWidgetView(button, resolvedTextTemplate, inAppConfig, style, format.Calibration);
-                }
-                else if (button.DynamicImageUrl != null)
-                {
-                    string sha1DynamicImageAsset = ResolvePersonalization(button, templatingResolver, (button.Image != null));
-                    renderer = new SwrveButtonView(button, inAppConfig.ButtonClickTintColor, sha1DynamicImageAsset);
-                }
-                else
-                {
-                    renderer = new SwrveButtonView(button, inAppConfig.ButtonClickTintColor, null);
-                }
-
-                widgetViews[eindex++] = renderer;
             }
 
             return widgetViews;
+        }
+
+        private static List<SwrveWidget> GetPageElements(SwrveMessagePage page)
+        {
+            // Combine page elements together (images and buttons)
+            // Images must be added before buttons to preserve the order of the elements for backwards compatibility
+            // If iam_z_index is set then it will be sorted by the iam_z_index
+            List<SwrveWidget> allWidgets = new List<SwrveWidget>();
+            allWidgets.AddRange(page.Images);
+            allWidgets.AddRange(page.Buttons);
+            allWidgets.Sort((widget1, widget2) => widget1.IamZIndex.CompareTo(widget2.IamZIndex));
+            return allWidgets;
+        }
+
+        private static SwrveWidgetView BuildSwrveImage(SwrveMessageFormat format, SwrveMessageTextTemplatingResolver templatingResolver, SwrveInAppMessageConfig inAppConfig, SwrveImage image)
+        {
+            SwrveWidgetView renderer;
+            if (image.Text != null)
+            {
+                string resolvedTextTemplate = templatingResolver.TextResolution[image];
+                SwrveTextViewStyle style = new SwrveTextViewStyle();
+                style.FontSize = image.FontSize;
+                style.HorizontalAlignment = image.HorizontalAlignment;
+                style.TextBackgroundColor = inAppConfig.PersonalizedTextBackgroundColor;
+                style.TextForegroundColor = inAppConfig.PersonalizedTextForegroundColor;
+                style.TextFont = inAppConfig.PersonalizedTextFont;
+
+                renderer = new SwrveTextWidgetView(image, resolvedTextTemplate, inAppConfig, style, format.Calibration);
+            }
+            else if (image.DynamicImageUrl != null && templatingResolver.DynamicImageResolution.ContainsKey(image))
+            {
+                string sha1DynamicImageAsset = ResolvePersonalization(image, templatingResolver, (image.File != null));
+                renderer = new SwrveImageView(image, sha1DynamicImageAsset);
+            }
+            else
+            {
+                renderer = new SwrveImageView(image, null);
+            }
+            return renderer;
+        }
+
+        private static SwrveWidgetView BuildSwrveButton(SwrveMessageFormat format, SwrveMessageTextTemplatingResolver templatingResolver, SwrveInAppMessageConfig inAppConfig, SwrveButton button)
+        {
+            SwrveWidgetView renderer;
+            if (button.Text != null)
+            {
+                string resolvedTextTemplate = templatingResolver.TextResolution[button];
+
+                SwrveTextViewStyle style = new SwrveTextViewStyle();
+                style.FontSize = button.FontSize;
+                style.TextBackgroundColor = inAppConfig.PersonalizedTextBackgroundColor;
+                style.TextForegroundColor = inAppConfig.PersonalizedTextForegroundColor;
+                style.TextFont = inAppConfig.PersonalizedTextFont;
+
+                renderer = new SwrveTextWidgetView(button, resolvedTextTemplate, inAppConfig, style, format.Calibration);
+            }
+            else if (button.DynamicImageUrl != null)
+            {
+                string sha1DynamicImageAsset = ResolvePersonalization(button, templatingResolver, (button.Image != null));
+                renderer = new SwrveButtonView(button, inAppConfig.ButtonClickTintColor, sha1DynamicImageAsset);
+            }
+            else
+            {
+                renderer = new SwrveButtonView(button, inAppConfig.ButtonClickTintColor, null);
+            }
+            return renderer;
         }
 
         private static string ResolvePersonalization(SwrveWidget widget, SwrveMessageTextTemplatingResolver templatingResolver, bool hasFallback)
@@ -243,13 +264,18 @@ namespace SwrveUnity.Messaging
         {
             if (_ready)
             {
+                // Capture last view clicked (last rendered, rendered on top)
                 Vector3 mousePosition = inputManager.GetMousePosition();
-                for (int ii = 0; ii < _widgetViews.Length; ii++)
+                for (int ii = _widgetViews.Length - 1; ii >= 0; ii--)
                 {
                     SwrveWidgetView view = _widgetViews[ii];
-                    if (view is ISwrveButtonView)
+                    if (view.PointerRect.Contains(mousePosition))
                     {
-                        ((ISwrveButtonView)view).ProcessButtonDown(mousePosition);
+                        if (view.IsButton)
+                        {
+                            ((ISwrveButtonView)view).ProcessButtonDown(mousePosition);
+                        }
+                        break;
                     }
                 }
             }

@@ -8,7 +8,6 @@ import android.util.Log;
 
 import androidx.test.core.app.ApplicationProvider;
 
-import com.swrve.sdk.unitybridge.BuildConfig;
 import com.unity3d.player.UnityPlayer;
 
 import org.junit.After;
@@ -23,8 +22,8 @@ import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.shadows.ShadowLog;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.TIRAMISU)
-@TargetApi(Build.VERSION_CODES.TIRAMISU)
+@Config(sdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+@TargetApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 public abstract class SwrveBaseTest {
 
     protected ShadowApplication shadowApplication;

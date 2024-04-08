@@ -31,6 +31,7 @@ public class SwrveFirebaseMessagingService extends FirebaseMessagingService {
                 }
                 extras.putString("provider.message_id", remoteMessage.getMessageId());
                 extras.putString("provider.sent_time", String.valueOf(remoteMessage.getSentTime()));
+                extras.putString("provider.priority", String.valueOf(remoteMessage.getPriority()));
 
                 if (!SwrveHelper.isSwrvePush(extras)) {
                     SwrveLogger.i("SwrveSDK Received Push: but not processing as it doesn't contain: %s or %s", SWRVE_TRACKING_KEY, SWRVE_SILENT_TRACKING_KEY);

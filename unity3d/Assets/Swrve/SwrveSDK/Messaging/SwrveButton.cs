@@ -47,5 +47,10 @@ namespace SwrveUnity.Messaging
         /// Button user updates
         /// </summary>
         public IList<object> userUpdates;
+
+        /// <summary>
+        /// False if campaign uses a feature not yet supported.
+        /// </summary>
+        public bool IsSupportedBySDK = true;
     }
 }

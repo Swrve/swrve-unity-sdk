@@ -96,6 +96,7 @@ namespace SwrveUnity.Messaging
         public static SwrveInAppCampaign LoadFromJSON(ISwrveAssetsManager swrveAssetsManager, Dictionary<string, object> campaignData, int id, DateTime initialisedTime, Color? defaultBackgroundColor, List<SwrveQaUserCampaignInfo> qaUserCampaignInfoList)
         {
             SwrveInAppCampaign campaign = new SwrveInAppCampaign(initialisedTime);
+            campaign.Id = id;
 
             object _message = null;
             campaignData.TryGetValue("message", out _message);
@@ -109,25 +110,23 @@ namespace SwrveUnity.Messaging
 
             Dictionary<string, object> messageData = (Dictionary<string, object>)_message;
             SwrveMessage message = SwrveMessage.LoadFromJSON(swrveAssetsManager, campaign, messageData, defaultBackgroundColor);
-            campaign.Priority = message.Priority;
-            campaign.Name = message.Name;
-            if (message.Formats.Count > 0)
-            {
-                campaign.Message = message;
-            }
-
-            if (campaign.Message == null)
+            if (message == null)
             {
                 string reason = "Campaign [" + id + "] no message found, skipping.";
                 campaign.LogAndAddReason(reason, false, qaUserCampaignInfoList);
+                return null;
             }
+            campaign.Message = message;
 
-            if (!campaign.Message.IsSupportedBySDK())
+            if (!message.IsSupportedBySDK)
             {
                 string reason = "Campaign [" + id + "] is not currently supported by SDK, skipping.";
                 campaign.LogAndAddReason(reason, false, qaUserCampaignInfoList);
-                campaign = null;
+                return null;
             }
+
+            campaign.Priority = message.Priority;
+            campaign.Name = message.Name;
 
             return campaign;
         }

@@ -157,7 +157,7 @@ public class SwrveUnitySDKTest extends SwrveBaseTest {
         ClipboardManager clipboard = (ClipboardManager) ApplicationProvider.getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
         assertEquals("Lorem ipsum", clipboard.getPrimaryClip().getItemAt(0).coerceToText(ApplicationProvider.getApplicationContext()));
 
-        assertEquals(33, SwrveUnityCommon.getTargetOS());
+        assertEquals(34, SwrveUnityCommon.getTargetOS());
         assertEquals("denied", SwrveUnityCommon.getNotificationPermission());
         assertFalse(SwrveUnityCommon.getNotificationShowRationale());
     }
