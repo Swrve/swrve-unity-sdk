@@ -27,11 +27,6 @@ public class DemoMessageCenter : MonoBehaviour
 #endif
     }
 
-    private void ConversationEditorCallback(string obj)
-    {
-        Debug.Log("CallbackSample:" + obj);
-    }
-
     private void ResourcesUpdatedCallback()
     {
         CheckAndAddCampaigns();

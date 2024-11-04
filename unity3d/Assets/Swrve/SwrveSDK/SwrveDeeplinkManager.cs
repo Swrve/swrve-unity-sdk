@@ -192,12 +192,7 @@ namespace SwrveUnity
                     }
                     else
                     {
-                        if (campaign is SwrveConversationCampaign)
-                        {
-                            SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign)campaign;
-                            assetsQueue.UnionWith(conversationCampaign.Conversation.ConversationAssets);
-                        }
-                        else if (campaign is SwrveInAppCampaign)
+                        if (campaign is SwrveInAppCampaign)
                         {
                             Dictionary<string, string> personalizationProperties = this.sdk.GetPersonalizationProperties(null);
                             SwrveInAppCampaign messageCampaign = (SwrveInAppCampaign)campaign;

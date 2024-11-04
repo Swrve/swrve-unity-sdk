@@ -1,7 +1,6 @@
 #import "UnitySwrveExternC.h"
 #import "UnitySwrve.h"
 #import "UnitySwrveHelper.h"
-#import "SwrveBaseConversation.h"
 #import "SwrveUtils.h"
 
 #if !defined(SWRVE_NO_PUSH)
@@ -19,11 +18,6 @@
 extern "C"
 {
 #endif
-
-    int _swrveiOSConversationVersion()
-    {
-        return CONVERSATION_VERSION;
-    }
 
     char* _swrveiOSLanguage()
     {
@@ -70,11 +64,6 @@ extern "C"
         [UnitySwrve init:jsonConfig];
     }
 
-    void _swrveiOSShowConversation(char* conversation)
-    {
-        [[UnitySwrve sharedInstance] showConversationFromString:[UnitySwrveHelper CStringToNSString:conversation]];
-    }
-
     bool _swrveiOSIsSupportedOSVersion()
     {
         return [UnitySwrveHelper isSupportediOSVersion];
@@ -88,11 +77,6 @@ extern "C"
     char* _swrveiOSGetPlatformOS()
     {
         return [UnitySwrveHelper platformOS];
-    }
-
-    bool _swrveiOSIsConversationDisplaying()
-    {
-        return [[UnitySwrve sharedInstance] isConversationDisplaying];
     }
 
     char* _swrveInfluencedDataJson()

@@ -270,18 +270,6 @@ public class SwrveComponent : MonoBehaviour
         }
     }
 
-    public void NativeConversationClosed(string msg)
-    {
-        try
-        {
-            SDK.ConversationClosed();
-        }
-        catch (System.Exception e)
-        {
-            SwrveLog.LogError(e.ToString(), "nativeConversationClosed");
-        }
-    }
-
     // Keep the SDK alive between scene loads
     void Awake()
     {

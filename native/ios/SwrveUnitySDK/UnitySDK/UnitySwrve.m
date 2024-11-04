@@ -27,7 +27,6 @@
 #import "SwrveNotificationConstants.h"
 #import "SwrveQA.h"
 #import "SwrveCampaignInfluence.h"
-#import "UnitySwrveCommonMessageController.h"
 
 static UnitySwrve *_swrveSharedUnity = NULL;
 static dispatch_once_t sharedInstanceToken = 0;
@@ -61,9 +60,6 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
 @property(nonatomic, retain) id <SwrvePermissionsDelegate> internalPermissionsDelegate;
 
-/** this is the eventHandler for the conversations, used for getting state for Unity to use */
-@property(nonatomic) UnitySwrveMessageEventHandler *msgEventHandler;
-
 @end
 
 @implementation UnitySwrve
@@ -74,7 +70,6 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 @synthesize deviceInfo;
 @synthesize userId;
 @synthesize deviceUUID;
-@synthesize msgEventHandler;
 @synthesize appGroupIdentifierCache;
 @synthesize lastProcessedPushId;
 @synthesize internalPermissionsDelegate;
@@ -99,7 +94,6 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     [SwrveCommon addSharedInstance:nil];
     sharedInstanceToken = 0;
     _swrveSharedUnity = nil;
-    msgEventHandler = nil;
 }
 
 + (void)init:(char *)_jsonConfig {
@@ -290,28 +284,6 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
     struct timeval time;
     gettimeofday(&time, NULL);
     return (((UInt64) time.tv_sec) * 1000) + (((UInt64) time.tv_usec) / 1000);
-}
-
-#pragma mark - conversation handling
-
-- (void)showConversationFromString:(NSString *)conversation {
-    if (self.msgEventHandler == nil) {
-        self.msgEventHandler = [UnitySwrveMessageEventHandler alloc];
-    }
-    [self.msgEventHandler showConversationFromString:conversation];
-}
-
-- (bool)isConversationDisplaying {
-    if (self.msgEventHandler) {
-        return [self.msgEventHandler isConversationDisplaying];
-    }
-    return false;
-}
-
-- (int)conversationClosed {
-    // UnitySendMessage requires the message field occupied or we get EXC_BAD_ACCESS.
-    [self sendMessageUp:@"NativeConversationClosed" msg:@"closing native conversation.."];
-    return SWRVE_SUCCESS;
 }
 
 #pragma mark - event handling & REST
@@ -651,6 +623,11 @@ NSString *const SwrveUnityStoreConfigKey = @"storedConfig";
 
 - (void)setSwrveSessionDelegate:(id <SwrveSessionDelegate>)sessionDelegate {
     // added for geo, not supported in unity yet
+#pragma unused (sessionDelegate)
+}
+
+- (void)removeSwrveSessionDelegate:(id <SwrveSessionDelegate>)sessionDelegate {
+    // not supported in unity yet
 #pragma unused (sessionDelegate)
 }
     

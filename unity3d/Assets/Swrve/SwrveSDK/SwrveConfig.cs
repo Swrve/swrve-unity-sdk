@@ -85,11 +85,6 @@ namespace SwrveUnity
         public bool MessagingEnabled = true;
 
         /// <summary>
-        /// Enable or disable Conversations features for in-app campaigns.
-        /// </summary>
-        public bool ConversationsEnabled = true;
-
-        /// <summary>
         /// Automatically download campaigns and user resources.
         /// </summary>
         public bool AutoDownloadCampaignsAndResources = true;

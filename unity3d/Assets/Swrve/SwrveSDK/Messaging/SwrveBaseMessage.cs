@@ -4,7 +4,7 @@ using System.Collections;
 namespace SwrveUnity.Messaging
 {
     /// <summary>
-    /// Virtual super class of conversations and messages.
+    /// Virtual super class of messages.
     /// </summary>
     public abstract class SwrveBaseMessage
     {

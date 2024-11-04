@@ -72,11 +72,6 @@ public class SwrveEmpty : SwrveSDK
         yield return null;
     }
 
-    protected override IEnumerator ShowConversationForEvent(string eventName, SwrveConversation conversation)
-    {
-        yield return null;
-    }
-
     public override void DismissMessage()
     {
         // do nothing

@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 /// </summary>
 public partial class SwrveSDK
 {
-    public const string SdkVersion = "9.3.0";
+    public const string SdkVersion = "10.0.0";
 
     protected int appId;
     /// <summary>
@@ -94,10 +94,6 @@ public partial class SwrveSDK
     /// methods.
     /// </summary>
     public MonoBehaviour Container;
-
-#if UNITY_EDITOR
-    public Action<string> ConversationEditorCallback;
-#endif
 
     /// <summary>
     /// OnSuccessIdentify delegate for when Identify API call completes successfully
@@ -356,8 +352,7 @@ public partial class SwrveSDK
         {
             return;
         }
-
-        if (!string.IsNullOrEmpty(name) && !name.ToLower().StartsWith("swrve."))
+        if (!string.IsNullOrEmpty(name) && name.Trim() != "" && !name.ToLower().StartsWith("swrve."))
         {
             NamedEventInternal(name, payload);
         }
@@ -952,11 +947,6 @@ public partial class SwrveSDK
             DisableAutoShowAfterDelay();
             ProcessInfluenceData();
 
-            if (IsMessageDisplaying() == false)
-            {
-                ConversationClosed();
-            }
-
             DownloadAnyMissingAssets();
         }
 #endif
@@ -1323,104 +1313,6 @@ public partial class SwrveSDK
 #endif
     }
 
-    protected virtual SwrveConversation GetConversationForEvent(string eventName, IDictionary<string, string> eventPayload = null)
-    {
-        if (!IsSDKReady())
-        {
-            return null;
-        }
-
-        if (!checkGlobalRules(eventName, eventPayload, SwrveHelper.GetNow()))
-        {
-            return null;
-        }
-
-        try
-        {
-            return _getConversationForEvent(eventName, eventPayload);
-        }
-        catch (Exception e)
-        {
-            SwrveLog.LogError(e.ToString(), SwrveQaUserCampaignInfo.SwrveCampaignType.Conversation.Value);
-        }
-        return null;
-    }
-
-    private SwrveConversation _getConversationForEvent(string eventName, IDictionary<string, string> eventPayload = null)
-    {
-#if SWRVE_SUPPORTED_PLATFORM
-        SwrveConversation result = null;
-        SwrveBaseCampaign campaign = null;
-        SwrveLog.Log("Trying to get conversation for: " + eventName);
-
-        IEnumerator<SwrveBaseCampaign> itCampaign = campaigns.GetEnumerator();
-        List<SwrveConversation> availableConversations = new List<SwrveConversation>();
-
-        // Select conversations with higher priority
-        int minPriority = int.MaxValue;
-        List<SwrveConversation> candidateConversations = new List<SwrveConversation>();
-        List<SwrveQaUserCampaignInfo> qaCampaignInfoList = new List<SwrveQaUserCampaignInfo>();
-        while (itCampaign.MoveNext() && result == null)
-        {
-            if (!(itCampaign.Current is SwrveConversationCampaign))
-            {
-                continue;
-            }
-
-            SwrveConversationCampaign nextCampaign = (SwrveConversationCampaign)itCampaign.Current;
-            SwrveConversation nextConversation = nextCampaign.GetConversationForEvent(eventName, eventPayload, qaCampaignInfoList);
-            // Check if the message supports the current orientation
-            if (nextConversation != null)
-            {
-                availableConversations.Add(nextConversation);
-                if (nextConversation.Priority <= minPriority)
-                {
-                    if (nextConversation.Priority < minPriority)
-                    {
-                        // If it is lower than any of the previous ones
-                        // remove those from being candidates
-                        candidateConversations.Clear();
-                    }
-                    minPriority = nextConversation.Priority;
-                    candidateConversations.Add(nextConversation);
-                }
-            }
-        }
-        if (candidateConversations.Count > 0)
-        {
-            candidateConversations.Shuffle(); // Select randomly
-            result = candidateConversations[0];
-            campaign = result.Campaign;
-        }
-
-        if (SwrveQaUser.Instance.loggingEnabled && campaign != null && result != null)
-        {
-            // A message was chosen, check if other campaigns would have returned a message
-            IEnumerator<SwrveConversation> itOtherMessage = availableConversations.GetEnumerator();
-            while (itOtherMessage.MoveNext())
-            {
-                SwrveBaseCampaign otherCampaign = itOtherMessage.Current.Campaign;
-                if (otherCampaign != result.Campaign)
-                {
-                    int otherCampaignId = otherCampaign.Id;
-                    int otherVariantId = itOtherMessage.Current.Id;
-                    string reason = "Campaign " + campaign.Id + " was selected for display ahead of this campaign";
-                    SwrveQaUserCampaignInfo campaignInfo = new SwrveQaUserCampaignInfo(otherCampaignId, otherVariantId, otherCampaign.GetCampaignType(), false, reason);
-                    qaCampaignInfoList.Add(campaignInfo);
-                }
-                SwrveQaUserCampaignInfo triggeredCampaignInfo = new SwrveQaUserCampaignInfo(campaign.Id, result.Id, result.Campaign.GetCampaignType(), true);
-                qaCampaignInfoList.Add(triggeredCampaignInfo);
-            }
-        }
-
-        SwrveQaUser.CampaignTriggeredConversation(eventName, eventPayload, result != null, qaCampaignInfoList);
-
-        return result;
-#else
-        return null;
-#endif
-    }
-
     private bool checkGlobalRules(string eventName, IDictionary<string, string> eventPayload, DateTime now)
     {
         if ((campaigns == null) || (campaigns.Count == 0))
@@ -1668,21 +1560,6 @@ public partial class SwrveSDK
         }
 
         TaskFinished("ShowMessageForEvent");
-#else
-        yield return null;
-#endif
-    }
-
-    protected virtual IEnumerator ShowConversationForEvent(string eventName, SwrveConversation conversation)
-    {
-#if SWRVE_SUPPORTED_PLATFORM
-        if (!IsSDKReady())
-        {
-            yield return null;
-        }
-
-        yield return Container.StartCoroutine(LaunchConversation(conversation));
-        TaskFinished("ShowConversationForEvent");
 #else
         yield return null;
 #endif

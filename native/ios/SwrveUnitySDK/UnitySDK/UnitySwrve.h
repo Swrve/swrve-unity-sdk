@@ -41,10 +41,6 @@ void UnitySendMessage(const char *, const char *, const char *);
 - (void)setPermissionsDelegate:(id<SwrvePermissionsDelegate>)permissionsDelegate;
 - (void)shutdown;
 
-/** conversation handling **/
-- (void)showConversationFromString:(NSString*) conversation;
-- (bool)isConversationDisplaying;
-- (int)conversationClosed;
 - (void)updateQAUser:(NSString *)qaJson;
 
 #if !defined(SWRVE_NO_PUSH)

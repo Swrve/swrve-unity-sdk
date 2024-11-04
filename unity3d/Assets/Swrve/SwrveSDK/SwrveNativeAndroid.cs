@@ -15,8 +15,6 @@ public partial class SwrveSDK
     private const string SwrvePushSupport = "com.swrve.unity.SwrvePushSupport";
 
     private const string IsInitialisedName = "isInitialised";
-    private const string GetConversationVersionName = "getConversationVersion";
-    private const string ShowConversationName = "showConversation";
     private const string SetDefaultNotificationChannelName = "setDefaultNotificationChannel";
     private const string SwrveIsOSSupportedVersionName = "sdkAvailable";
     private const string SwrveGetOSDeviceTypeName = "getOSDeviceType";
@@ -748,35 +746,6 @@ public partial class SwrveSDK
     private void setNativeAppVersion()
     {
         config.AppVersion = AndroidGetAppVersion();
-    }
-
-    private void showNativeConversation(string conversation)
-    {
-        try
-        {
-            AndroidGetBridge().Call(ShowConversationName, conversation, config.Orientation.ToString());
-        }
-        catch (Exception exp)
-        {
-            SwrveLog.LogWarning("Couldn't show conversation from Android: " + exp.ToString());
-        }
-    }
-
-    private void setNativeConversationVersion()
-    {
-        try
-        {
-            SetConversationVersion(AndroidGetBridge().Call<int>(GetConversationVersionName));
-        }
-        catch (Exception exp)
-        {
-            SwrveLog.LogWarning("Couldn't get conversations version from Android: " + exp.ToString());
-        }
-    }
-
-    public static bool IsConversationDisplaying()
-    {
-        return false; // Android handles it's own queue. we just need to check application state.
     }
 
     private bool NativeIsBackPressed()

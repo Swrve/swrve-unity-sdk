@@ -3,7 +3,6 @@ extern "C"
 {
 #endif
 
-    int _swrveiOSConversationVersion(void);
     char* _swrveiOSLanguage(void);
     char* _swrveiOSTimeZone(void);
     char* _swrveiOSAppVersion(void);
@@ -11,11 +10,9 @@ extern "C"
     char* _swrveiOSLocaleCountry(void);
     char* _swrveiOSIDFV(void);
     void _swrveiOSInitNative(char* jsonConfig);
-    void _swrveiOSShowConversation(char* conversation);
     bool _swrveiOSIsSupportedOSVersion(void);
     char* _swrveiOSGetOSDeviceType(void);
     char* _swrveiOSGetPlatformOS(void);
-    bool _swrveiOSIsConversationDisplaying(void);
     char* _swrveInfluencedDataJson(void);
     char* _swrvePushNotificationStatus(char* componentName);
     char* _swrveBackgroundRefreshStatus(void);

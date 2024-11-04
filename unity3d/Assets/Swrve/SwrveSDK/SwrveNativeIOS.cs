@@ -251,12 +251,6 @@ public partial class SwrveSDK
     private static extern void _swrveiOSInitNative(string jsonConfig);
 
     [DllImport ("__Internal")]
-    private static extern void _swrveiOSShowConversation(string conversation);
-
-    [DllImport ("__Internal")]
-    private static extern int _swrveiOSConversationVersion();
-
-    [DllImport ("__Internal")]
     public static extern bool _swrveiOSIsSupportedOSVersion();
 
     [DllImport ("__Internal")]
@@ -264,9 +258,6 @@ public partial class SwrveSDK
 
     [DllImport ("__Internal")]
     public static extern string _swrveiOSGetPlatformOS();
-
-    [DllImport ("__Internal")]
-    public static extern bool _swrveiOSIsConversationDisplaying();
 
     [DllImport ("__Internal")]
     public static extern string _swrveInfluencedDataJson();
@@ -537,40 +528,6 @@ public partial class SwrveSDK
     {
 #if !UNITY_EDITOR
         _clearAllAuthenticatedNotifications();
-#endif
-    }
-
-    private void setNativeConversationVersion()
-    {
-#if !UNITY_EDITOR
-        try {
-            SetConversationVersion (_swrveiOSConversationVersion ());
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't start Conversations on iOS correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-#endif
-    }
-
-    private static bool IsConversationDisplaying()
-    {
-#if !UNITY_EDITOR
-        try {
-            return _swrveiOSIsConversationDisplaying();
-        } catch(Exception exp) {
-            SwrveLog.LogWarning("Couldn't init the native side correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
-#endif
-        return false; // Defaulting to false so messages can still appear in the editor
-    }
-
-    private void showNativeConversation(string conversation)
-    {
-#if !UNITY_EDITOR
-        try {
-            _swrveiOSShowConversation(conversation);
-        } catch (Exception exp) {
-            SwrveLog.LogWarning("Couldn't show conversation correctly, make sure you have the iOS plugin inside your project and you are running on a iOS device: " + exp.ToString());
-        }
 #endif
     }
 

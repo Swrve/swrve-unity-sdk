@@ -144,36 +144,6 @@ namespace SwrveUnity
             }
         }
 
-        public static void CampaignTriggeredConversationNoDisplay(string eventName, IDictionary<string, string> eventPayload)
-        {
-            if (!CanLog())
-            {
-                return;
-            }
-            SwrveQaUser qaUser = SwrveQaUser.Instance;
-            string reason = "No Conversation triggered because In App Message displayed";
-            qaUser.CampaignTriggered(eventName, eventPayload, false, reason);
-        }
-
-        public static void CampaignTriggeredConversation(string eventName, IDictionary<string, string> eventPayload, bool displayed, List<SwrveQaUserCampaignInfo> campaignInfoList)
-        {
-            if (!CanLog())
-            {
-                return;
-            }
-
-            try
-            {
-                SwrveQaUser qaUser = SwrveQaUser.Instance;
-                string noCampaignTriggeredReason = displayed ? "" : "The loaded campaigns returned no conversation";
-                qaUser.CampaignTriggered(eventName, eventPayload, displayed, noCampaignTriggeredReason, campaignInfoList);
-            }
-            catch (Exception ex)
-            {
-                SwrveLog.LogError("SwrveQaUser: CampaignTriggeredConversation exception:" + ex.ToString());
-            }
-        }
-
         public static void CampaignTriggeredMessage(string eventName, IDictionary<string, string> eventPayload, bool displayed, List<SwrveQaUserCampaignInfo> campaignInfoList)
         {
             if (!CanLog())

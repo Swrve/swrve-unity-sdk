@@ -147,7 +147,6 @@ public class SwrveUnitySDKTest extends SwrveBaseTest {
 
         // These functions are called by unity csharp layer.
 
-        assertTrue(String.format("Expected conversation version 4, got %d", swrveUnityCommon.getConversationVersion()), 4 == swrveUnityCommon.getConversationVersion());
         assertTrue("Expected notifications enabled True by default", SwrveUnityCommon.getAreNotificationsEnabled());
         assertEquals("android", SwrveUnityCommon.getPlatformOS());
         assertEquals("mobile", SwrveUnityCommon.getOSDeviceType());
@@ -157,55 +156,9 @@ public class SwrveUnitySDKTest extends SwrveBaseTest {
         ClipboardManager clipboard = (ClipboardManager) ApplicationProvider.getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
         assertEquals("Lorem ipsum", clipboard.getPrimaryClip().getItemAt(0).coerceToText(ApplicationProvider.getApplicationContext()));
 
-        assertEquals(34, SwrveUnityCommon.getTargetOS());
+        assertEquals(35, SwrveUnityCommon.getTargetOS());
         assertEquals("denied", SwrveUnityCommon.getNotificationPermission());
         assertFalse(SwrveUnityCommon.getNotificationShowRationale());
-    }
-
-    @Test
-    public void testConversations() throws JSONException {
-        try {
-            new SwrveBaseConversation(new JSONObject(""), null);
-            Assert.fail("Expected empty conversation string to throw JSONException");
-        } catch (JSONException e) {
-            //success
-        }
-        try {
-            new SwrveBaseConversation(new JSONObject("{}"), null);
-            Assert.fail("Expected empty json object to throw JSONException");
-        } catch (JSONException e) {
-            //success
-        }
-
-        final String jsonCampaign = getResourceAsText(mActivity, "campaign_conversation.json");
-        assertFalse("Expect loaded json campaign file to be full", null == jsonCampaign || "" == jsonCampaign);
-
-        SwrveBaseConversation conversation = new SwrveBaseConversation(new JSONObject(jsonCampaign), null);
-        assertNotNull("Expect loaded SwrveConversation to not be null", conversation);
-
-        checkInt("Conversation id", 82, conversation.getId());
-        checkString("Conversation name", "Choose one", conversation.getName());
-        checkInt("Conversation pages count", 1, conversation.getPages().size());
-
-        initSwrve();
-
-        SwrveUnityCommon swrveUnityCommonSpy = spy(getUnitySwrve());
-        SwrveUnityBackgroundEventSender backgroundEventSenderMock = mock(SwrveUnityBackgroundEventSender.class);
-        doNothing().when(backgroundEventSenderMock).send(anyString(), any(List.class));
-        doReturn(backgroundEventSenderMock).when(swrveUnityCommonSpy).getSwrveBackgroundEventSender(any(Context.class));
-        SwrveCommon.setSwrveCommon(swrveUnityCommonSpy);
-
-        SwrveConversationEventHelper conversationEventHelper = new SwrveConversationEventHelper();
-        conversationEventHelper.swrveConversationSDK = swrveUnityCommonSpy;
-
-        conversationEventHelper.conversationCallActionCalledByUser(conversation, "fromPageTag", "toActionTag");
-
-        Map<String, String> map = new HashMap();
-        map.put("control", "toActionTag");
-        map.put("page", "fromPageTag");
-        map.put("event", "call");
-        map.put("conversation", "82");
-        Mockito.verify(swrveUnityCommonSpy).queueConversationEvent("Swrve.Conversations.Conversation-82.call", "call", "fromPageTag", 82, map);
     }
 
     @Test

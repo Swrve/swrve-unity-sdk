@@ -1,9 +1,6 @@
 include ":SwrveSDKCommon"
 project(":SwrveSDKCommon").projectDir = new File(ANDROID_REPO_LOC, "/SwrveSDKCommon")
 
-include ":SwrveConversationSDK"
-project(":SwrveConversationSDK").projectDir = new File(ANDROID_REPO_LOC, "/SwrveConversationSDK")
-
 include ":SwrveSDKPush"
 project(":SwrveSDKPush").projectDir = new File(ANDROID_REPO_LOC, "/SwrveSDKPush")
 

@@ -7,7 +7,6 @@ namespace SwrveUnity.Messaging
     /// </summary>
     public enum SwrveActionType
     {
-        Install,
         Dismiss,
         Custom,
         CopyToClipboard,
@@ -24,8 +23,6 @@ namespace SwrveUnity.Messaging
         {
             switch (me)
             {
-                case SwrveActionType.Install:
-                    return "install";
                 case SwrveActionType.Dismiss:
                     return "dismiss";
                 case SwrveActionType.Custom:

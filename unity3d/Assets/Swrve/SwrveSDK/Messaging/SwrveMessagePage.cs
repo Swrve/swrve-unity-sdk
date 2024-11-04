@@ -185,11 +185,7 @@ namespace SwrveUnity.Messaging
 
             string actionTypeStr = StringValueFromAttribute(buttonData, "type");
             SwrveActionType actionType = SwrveActionType.Dismiss;
-            if (actionTypeStr.ToLower().Equals("install"))
-            {
-                actionType = SwrveActionType.Install;
-            }
-            else if (actionTypeStr.ToLower().Equals("custom"))
+            if (actionTypeStr.ToLower().Equals("custom"))
             {
                 actionType = SwrveActionType.Custom;
             }
@@ -228,14 +224,6 @@ namespace SwrveUnity.Messaging
             }
 
             button.Action = StringValueFromAttribute(buttonData, "action");
-            if (button.ActionType == SwrveActionType.Install)
-            {
-                string appId = StringValueFromAttribute(buttonData, "game_id");
-                if (appId != null && appId != string.Empty)
-                {
-                    button.AppId = int.Parse(appId);
-                }
-            }
 
             if (buttonData.ContainsKey("events"))
             {

@@ -20,7 +20,6 @@ import androidx.core.content.ContextCompat;
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
-import com.swrve.sdk.conversations.ui.ConversationActivity;
 import com.swrve.sdk.messaging.SwrveOrientation;
 import com.unity3d.player.UnityPlayer;
 
@@ -44,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
+public class SwrveUnityCommon implements ISwrveCommon {
 
     public final static String SWRVE_TEMPORARY_PATH_KEY = "swrveTemporaryPath";
     public final static String SDK_VERSION_KEY = "sdkVersion";
@@ -65,11 +64,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     public final static String CONTENT_SERVER_KEY = "contentServer";
     public final static String HTTP_TIMEOUT_KEY = "httpTimeout";
     public final static int MAX_CACHED_AUTHENTICATED_NOTIFICATIONS = 10;
-
-    public final static String EVENT_KEY = "event";
-    public final static String NAME_KEY = "name";
-    public final static String CONVERSATION_KEY = "conversation";
-    public final static String PAGE_KEY = "page";
 
     public final static String SHARED_PREFERENCE_FILENAME = "swrve_unity_json_data";
     public final static String PREF_NOTIFICATIONS_AUTHENTICATED_ID_CACHE_KEY = "notifications_id_cache_list";
@@ -402,11 +396,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     }
 
     @Override
-    public void sendQueuedEvents() {
-        // no operation, events will be send when the game is focused again
-    }
-
-    @Override
     public String getCachedData(String userId, String key) {
         String cacheData = null;
         switch (key) {
@@ -433,30 +422,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
 
     protected SwrveUnityBackgroundEventSender getSwrveBackgroundEventSender(Context context) {
         return new SwrveUnityBackgroundEventSender(context);
-    }
-
-    @Override
-    public void queueConversationEvent(String eventParamName, String eventPayloadName, String page, int conversationId,
-                                       Map<String, String> payload) {
-        if (payload == null) {
-            payload = new HashMap<>();
-        }
-        payload.put(EVENT_KEY, eventPayloadName);
-        payload.put(CONVERSATION_KEY, Integer.toString(conversationId));
-        payload.put(PAGE_KEY, page);
-
-        SwrveLogger.d("Sending view conversation event: %s", eventParamName);
-
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put(NAME_KEY, eventParamName);
-
-        ArrayList<String> conversationEvents = new ArrayList<>();
-        try {
-            conversationEvents.add(EventHelper.eventAsJSON(EVENT_KEY, parameters, payload, getNextSequenceNumber(), System.currentTimeMillis()));
-        } catch (JSONException e) {
-            SwrveLogger.e("Could not queue conversation events params: " + parameters, e);
-        }
-        sendEventsInBackground(context.get(), getUserId(), conversationEvents);
     }
 
     /***
@@ -488,21 +453,6 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     @CalledByUnity
     public static boolean isInitialised() {
         return null != SwrveCommon.getInstance();
-    }
-
-    @CalledByUnity
-    public void showConversation(String conversationJson, String orientation) {
-        try {
-            SwrveBaseConversation conversation = new SwrveBaseConversation(new JSONObject(conversationJson), cacheDir);
-            ConversationActivity.showConversation(context.get(), conversation, SwrveOrientation.parse(orientation));
-        } catch (Exception exc) {
-            SwrveLogger.e("Could not JSONify conversation (or another error), conversation string didn't have the correct structure.");
-        }
-    }
-
-    @CalledByUnity
-    public int getConversationVersion() {
-        return ISwrveConversationSDK.CONVERSATION_VERSION;
     }
 
     @CalledByUnity
@@ -800,6 +750,11 @@ public class SwrveUnityCommon implements ISwrveCommon, ISwrveConversationSDK {
     @Override
     public void setSessionListener(SwrveSessionListener sessionListener) {
         // Added for geo but not used in Unity yet
+    }
+
+    @Override
+    public void removeSessionListener(SwrveSessionListener sessionListener) {
+        // not used in Unity yet
     }
 
     @Override

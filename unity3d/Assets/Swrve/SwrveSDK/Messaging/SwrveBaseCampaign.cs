@@ -13,7 +13,6 @@ namespace SwrveUnity.Messaging
     public abstract class SwrveBaseCampaign
     {
         const string ID_KEY = "id";
-        const string CONVERSATION_KEY = "conversation";
         const string MESSAGE_KEY = "message";
         const string EMBEDDED_MESSAGE_KEY = "embedded_message";
         const string SUBJECT_KEY = "subject";
@@ -255,12 +254,7 @@ namespace SwrveUnity.Messaging
             if (SwrveQaUser.Instance.loggingEnabled && qaCampaignInfoList != null)
             {
                 SwrveQaUserCampaignInfo campaignInfo = null;
-                if (this is SwrveConversationCampaign)
-                {
-                    SwrveConversationCampaign conversationCampaign = (SwrveConversationCampaign)this;
-                    campaignInfo = new SwrveQaUserCampaignInfo(Id, conversationCampaign.Conversation.Id, conversationCampaign.GetCampaignType(), displayed, reason);
-                }
-                else if (this is SwrveInAppCampaign)
+                if (this is SwrveInAppCampaign)
                 {
                     SwrveInAppCampaign inAppCampaign = (SwrveInAppCampaign)this;
                     campaignInfo = new SwrveQaUserCampaignInfo(Id, inAppCampaign.Message.Id, inAppCampaign.GetCampaignType(), displayed, reason);
@@ -328,11 +322,7 @@ namespace SwrveUnity.Messaging
             int id = MiniJsonHelper.GetInt(campaignData, ID_KEY);
             SwrveBaseCampaign campaign = null;
 
-            if (campaignData.ContainsKey(CONVERSATION_KEY))
-            {
-                campaign = SwrveConversationCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime);
-            }
-            else if (campaignData.ContainsKey(MESSAGE_KEY))
+            if (campaignData.ContainsKey(MESSAGE_KEY))
             {
                 campaign = SwrveInAppCampaign.LoadFromJSON(swrveAssetsManager, campaignData, id, initialisedTime, defaultBackgroundColor, qaUserCampaignInfoList);
             }

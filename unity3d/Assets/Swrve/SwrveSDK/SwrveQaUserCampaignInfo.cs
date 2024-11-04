@@ -28,13 +28,6 @@ namespace SwrveUnity
                     return new SwrveCampaignType("iam");
                 }
             }
-            public static SwrveCampaignType Conversation
-            {
-                get
-                {
-                    return new SwrveCampaignType("conversation");
-                }
-            }
             public static SwrveCampaignType Embedded
             {
                 get

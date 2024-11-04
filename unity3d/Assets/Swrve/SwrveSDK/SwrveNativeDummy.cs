@@ -10,13 +10,7 @@ private void setNativeInfo (Dictionary<string, string> deviceInfo) {}
         return null;
     }
     private void setNativeAppVersion () {}
-    private void showNativeConversation (string conversation) {}
-    private void setNativeConversationVersion () {}
     private bool NativeIsBackPressed ()
-    {
-        return false;
-    }
-    private bool IsConversationDisplaying()
     {
         return false;
     }

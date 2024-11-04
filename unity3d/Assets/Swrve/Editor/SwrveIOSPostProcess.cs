@@ -14,7 +14,7 @@ using UnityEditor.iOS.Xcode;
 using UnityEditor.iOS.Xcode.Extensions;
 
 /// <summary>
-/// Integrates the native code required for Conversations support on iOS.
+/// Integrates the native code required for native Common support on iOS.
 /// </summary>
 public class SwrveIOSPostProcess : SwrveCommonBuildComponent
 {
@@ -57,7 +57,7 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         // 3. Remove Android content that gets injected in the XCode project
         xcodeproj = Regex.Replace(xcodeproj, @"^.*Libraries/Plugins/Android/SwrveSDKPushSupport.*$", "", RegexOptions.Multiline);
 
-        // 4. Add required frameworks for Conversations
+        // 4. Add required frameworks
         PBXProject project = new PBXProject();
         project.ReadFromString(xcodeproj);
 #if UNITY_2019_3_OR_NEWER
@@ -66,12 +66,6 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         string targetGuid = project.TargetGuidByName ("Unity-iPhone");
 #endif
         project.AddFrameworkToProject(targetGuid, "Webkit.framework", true /*weak*/);
-
-        // 6. Add conversations resources to bundle
-        if (!AddFolderToProject(project, targetGuid, "Assets/Plugins/iOS/SwrveConversationSDK/Resources", pathToProject, "Libraries/Plugins/iOS/SwrveConversationSDK/Resources"))
-        {
-            UnityEngine.Debug.LogError("Swrve SDK - Could not find the Conversation resources folder in your project. If you want to use Conversations please contact support@swrve.com");
-        }
 
         // 7. Add the required frameworks for push notifications
         project.AddFrameworkToProject(targetGuid, "UserNotifications.framework", true /*weak*/);
@@ -308,7 +302,6 @@ public class SwrveIOSPostProcess : SwrveCommonBuildComponent
         {
             string filePath = files[i];
             if (!filePath.EndsWith(".meta")
-                    && !filePath.Contains("SwrveConversation-tvos")
                     && !filePath.Contains("LICENSE"))
             {
                 string fileName = System.IO.Path.GetFileName(filePath);
